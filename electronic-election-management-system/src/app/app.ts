@@ -1,5 +1,5 @@
 import { Component, signal } from '@angular/core';
-import { RouterOutlet, RouterLink } from '@angular/router';
+import { RouterOutlet, RouterLink, Router } from '@angular/router';
 import { AuthService } from './core/services/auth.service';
 
 @Component({
@@ -11,9 +11,10 @@ import { AuthService } from './core/services/auth.service';
 export class App {
   protected readonly title = signal('electronic-election-management-system');
 
-  constructor(public authService: AuthService) {}
+  constructor(public authService: AuthService, private router: Router) {}
 
   logout(): void {
     this.authService.logout();
+    this.router.navigate(['/login']);
   }
 }
