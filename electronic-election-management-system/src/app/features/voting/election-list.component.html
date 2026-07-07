@@ -1,0 +1,45 @@
+<div class="page">
+  <div class="page-header">
+    <h2>Alegeri disponibile</h2>
+    @if (authService.isAdmin()) {
+      <a routerLink="/elections/new" class="btn-primary">+ Alegere noua</a>
+    }
+  </div>
+
+  @if (isLoading()) {
+    <p>Se incarca...</p>
+  } @else if (elections().length === 0) {
+    <p>Nu exista alegeri active momentan.</p>
+  } @else {
+    <div class="election-grid">
+      @for (election of elections(); track election.id) {
+        <div class="election-card">
+          <h3>{{ election.title }}</h3>
+          <p class="election-meta">
+            {{ election.type }} · {{ election.isAnonymous ? 'Anonim' : 'Neanonim' }}
+          </p>
+          <p>{{ election.description }}</p>
+
+          @if (election.hasUserVoted) {
+            <span class="badge-voted">Ai votat deja</span>
+          } @else {
+            <a [routerLink]="['/elections', election.id]" class="btn-secondary">Voteaza</a>
+          }
+
+          <a [routerLink]="['/elections', election.id, 'results']" class="link-results">
+            Vezi rezultate live
+          </a>
+
+          @if (authService.isAdmin()) {
+            <div class="admin-actions">
+              <a [routerLink]="['/elections', election.id, 'edit']" class="btn-secondary">Editeaza</a>
+              <button type="button" class="btn-danger" (click)="deleteElection(election.id, election.title)">
+                Sterge
+              </button>
+            </div>
+          }
+        </div>
+      }
+    </div>
+  }
+</div>

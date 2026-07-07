@@ -1,0 +1,41 @@
+<div class="page">
+  @if (voteConfirmed()) {
+    <div class="vote-confirmed">
+      <h2>Votul tau a fost inregistrat.</h2>
+      <p>Multumim pentru participare!</p>
+      <button (click)="goToResults()" class="btn-primary">Vezi rezultate live</button>
+    </div>
+  } @else if (election(); as e) {
+    <h2>{{ e.title }}</h2>
+    <p>{{ e.description }}</p>
+    <p class="election-meta">
+      {{ e.isAnonymous ? 'Vot anonim — identitatea ta nu va fi legata de optiunea aleasa.' : 'Vot neanonim.' }}
+    </p>
+
+    <div class="options-list">
+      @for (option of e.options; track option.id) {
+        <button
+          class="option-item"
+          [class.selected]="selectedOptionId() === option.id"
+          (click)="selectOption(option.id)"
+        >
+          {{ option.label }}
+        </button>
+      }
+    </div>
+
+    @if (errorMessage()) {
+      <p class="error-text">{{ errorMessage() }}</p>
+    }
+
+    <button
+      class="btn-primary"
+      [disabled]="!selectedOptionId() || isSubmitting()"
+      (click)="submitVote()"
+    >
+      {{ isSubmitting() ? 'Se trimite...' : 'Trimite votul' }}
+    </button>
+  } @else {
+    <p>Se incarca...</p>
+  }
+</div>

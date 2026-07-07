@@ -1,0 +1,27 @@
+<div class="page">
+  @if (isLoading()) {
+    <p>Se incarca rezultatele...</p>
+  } @else if (displayedResults(); as results) {
+    <h2>{{ results.title }}</h2>
+    <p class="election-meta">Total voturi: {{ results.totalVotes }} · actualizat live</p>
+
+    <div class="results-list">
+      @for (option of results.results; track option.optionId) {
+        <div class="result-row">
+          <div class="result-label">
+            <span>{{ option.label }}</span>
+            <span>{{ option.voteCount }} voturi</span>
+          </div>
+          <div class="result-bar-track">
+            <div
+              class="result-bar-fill"
+              [style.width.%]="percentFor(option.voteCount)"
+            ></div>
+          </div>
+        </div>
+      }
+    </div>
+  } @else {
+    <p>Nu exista rezultate momentan.</p>
+  }
+</div>

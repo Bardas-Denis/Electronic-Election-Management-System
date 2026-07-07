@@ -1,0 +1,52 @@
+<div class="page">
+  @if (isLoading()) {
+    <p>Se incarca alegerea...</p>
+  }
+  <form [formGroup]="form" (ngSubmit)="onSubmit()" class="auth-form" [class.hidden]="isLoading()">
+    <h2>{{ isEditMode() ? 'Editeaza alegerea' : 'Alegere noua' }}</h2>
+
+    <label for="title">Titlu</label>
+    <input id="title" type="text" formControlName="title" />
+
+    <label for="description">Descriere</label>
+    <textarea id="description" formControlName="description"></textarea>
+
+    <label for="type">Tip</label>
+    <select id="type" formControlName="type">
+      <option value="Politic">Politic</option>
+      <option value="Comercial">Comercial</option>
+    </select>
+
+    <label>
+      <input type="checkbox" formControlName="isAnonymous" />
+      Vot anonim
+    </label>
+
+    <label for="startsAt">Incepe la</label>
+    <input id="startsAt" type="datetime-local" formControlName="startsAt" />
+
+    <label for="endsAt">Se termina la</label>
+    <input id="endsAt" type="datetime-local" formControlName="endsAt" />
+
+    <h3>Optiuni de vot</h3>
+    <div formArrayName="optionLabels">
+      @for (option of optionLabels.controls; track $index) {
+        <div class="option-row">
+          <input type="text" [formControlName]="$index" placeholder="Optiune {{ $index + 1 }}" />
+          @if (optionLabels.length > 2) {
+            <button type="button" (click)="removeOption($index)">Sterge</button>
+          }
+        </div>
+      }
+    </div>
+    <button type="button" (click)="addOption()">+ Adauga optiune</button>
+
+    @if (errorMessage()) {
+      <p class="error-text">{{ errorMessage() }}</p>
+    }
+
+    <button type="submit" class="btn-primary" [disabled]="form.invalid || isSubmitting()">
+      {{ isSubmitting() ? 'Se salveaza...' : (isEditMode() ? 'Salveaza modificarile' : 'Creeaza alegerea') }}
+    </button>
+  </form>
+</div>

@@ -1,0 +1,59 @@
+<div class="page">
+  <div class="page-header">
+    <h2>Gestionare utilizatori si roluri</h2>
+  </div>
+
+  @if (errorMessage()) {
+    <p class="error-text">{{ errorMessage() }}</p>
+  }
+
+  @if (isLoading()) {
+    <p>Se incarca utilizatorii...</p>
+  } @else if (users().length === 0) {
+    <p>Nu exista utilizatori inregistrati.</p>
+  } @else {
+    <table class="users-table">
+      <thead>
+        <tr>
+          <th>Email</th>
+          <th>Rol</th>
+          <th>Creat la</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (user of users(); track user.id) {
+          <tr>
+            <td>
+              {{ user.email }}
+              @if (isCurrentUser(user)) {
+                <span class="badge-voted">(tu)</span>
+              }
+            </td>
+            <td>
+              <select
+                [ngModel]="user.role"
+                (ngModelChange)="onRoleChange(user, $event)"
+                [disabled]="savingUserId() === user.id"
+              >
+                <option value="Admin">Admin</option>
+                <option value="Voter">Voter</option>
+              </select>
+            </td>
+            <td>{{ user.createdAt | date: 'dd.MM.yyyy HH:mm' }}</td>
+            <td>
+              <button
+                type="button"
+                class="btn-danger"
+                [disabled]="isCurrentUser(user)"
+                (click)="deleteUser(user)"
+              >
+                Sterge
+              </button>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  }
+</div>

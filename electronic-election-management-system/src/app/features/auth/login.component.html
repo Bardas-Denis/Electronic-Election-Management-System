@@ -1,0 +1,21 @@
+<div class="auth-page">
+  <form [formGroup]="form" (ngSubmit)="onSubmit()" class="auth-form">
+    <h2>Autentificare</h2>
+
+    <label for="email">Email</label>
+    <input id="email" type="email" formControlName="email" placeholder="nume@exemplu.com" />
+
+    <label for="password">Parola</label>
+    <input id="password" type="password" formControlName="password" placeholder="••••••••" />
+
+    @if (errorMessage()) {
+      <p class="error-text">{{ errorMessage() }}</p>
+    }
+
+    <button type="submit" [disabled]="form.invalid || isLoading()">
+      {{ isLoading() ? 'Se autentifica...' : 'Intra in cont' }}
+    </button>
+
+    <p>Nu ai cont? <a routerLink="/register">Inregistreaza-te</a></p>
+  </form>
+</div>
