@@ -1,5 +1,6 @@
 using System.Text;
 using Electronic_Election_Management_System.Data;
+using Electronic_Election_Management_System.Data.Repositories;
 using Electronic_Election_Management_System.Models;
 using Electronic_Election_Management_System.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -16,6 +17,17 @@ builder.Services.AddDbContext<ElectionDbContext>(options =>
 
 // --- Servicii aplicatie ---
 builder.Services.AddSingleton<ITokenService, TokenService>();
+
+// --- Repositories (Data Access layer) ---
+builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IElectionRepository, ElectionRepository>();
+builder.Services.AddScoped<IAuditLogRepository, AuditLogRepository>();
+
+// --- Domain services (Business Logic layer) ---
+builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IElectionService, ElectionService>();
+builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IAuditService, AuditService>();
 
 // --- Autentificare JWT ---
 var jwtSection = builder.Configuration.GetSection("Jwt");
