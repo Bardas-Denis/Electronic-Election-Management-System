@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace ElectionSystem.Api.Dtos
+namespace Electronic_Election_Management_System.DTOs
 {
     // Folosit de admin pentru a lista utilizatorii (fara PasswordHash!)
     public class UserDto
@@ -28,4 +28,3 @@ namespace ElectionSystem.Api.Dtos
         public DateTime Timestamp { get; set; }
     }
 }
-

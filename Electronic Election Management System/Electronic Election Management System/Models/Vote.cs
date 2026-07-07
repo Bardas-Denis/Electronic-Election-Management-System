@@ -1,6 +1,6 @@
 using System;
 
-namespace ElectionSystem.Api.Entities
+namespace Electronic_Election_Management_System.Models
 {
     // Regula de anonimat (impusa si la nivel de baza de date prin CHECK constraint):
     //   - Alegere ANONIMA   -> VoteTokenId completat, UserId = null

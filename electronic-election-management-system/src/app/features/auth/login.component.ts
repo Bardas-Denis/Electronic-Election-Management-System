@@ -14,16 +14,18 @@ export class LoginComponent {
   errorMessage = signal<string | null>(null);
   isLoading = signal(false);
 
-  form = this.fb.group({
-    email: ['', [Validators.required, Validators.email]],
-    password: ['', [Validators.required, Validators.minLength(6)]]
-  });
+  form: ReturnType<FormBuilder['group']>;
 
   constructor(
     private fb: FormBuilder,
     private authService: AuthService,
     private router: Router
-  ) {}
+  ) {
+    this.form = this.fb.group({
+      email: ['', [Validators.required, Validators.email]],
+      password: ['', [Validators.required, Validators.minLength(6)]]
+    });
+  }
 
   onSubmit(): void {
     if (this.form.invalid) return;

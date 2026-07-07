@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace ElectionSystem.Api.Dtos
+namespace Electronic_Election_Management_System.DTOs
 {
     // Corespunde OptionDto din voting.model.ts (frontend)
     public class OptionDto

@@ -33,7 +33,7 @@ export class ResultsService {
     this.hubConnection
       .start()
       .then(() => this.hubConnection?.invoke('JoinElectionGroup', electionId))
-      .catch((err) => console.error('Eroare la conectarea SignalR:', err));
+      .catch((err: unknown) => console.error('Eroare la conectarea SignalR:', err));
 
     // Numele evenimentului trebuie sa corespunda cu ce trimite ResultsHub din backend
     this.hubConnection.on('ResultsUpdated', (results: ElectionResultsDto) => {

@@ -1,6 +1,6 @@
-using ElectionSystem.Api.Entities;
+using Electronic_Election_Management_System.Models;
 
-namespace ElectionSystem.Api.Services
+namespace Electronic_Election_Management_System.Services
 {
     public interface ITokenService
     {

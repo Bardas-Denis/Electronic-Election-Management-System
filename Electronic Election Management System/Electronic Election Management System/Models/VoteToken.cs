@@ -1,6 +1,6 @@
 using System;
 
-namespace ElectionSystem.Api.Entities
+namespace Electronic_Election_Management_System.Models
 {
     // Folosit DOAR pentru alegerile anonime.
     // Se emite o singura data per (User, Election). Se consuma la vot.

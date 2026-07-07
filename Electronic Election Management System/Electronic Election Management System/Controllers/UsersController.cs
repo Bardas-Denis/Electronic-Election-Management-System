@@ -1,12 +1,12 @@
 using System.Security.Claims;
-using ElectionSystem.Api.Data;
-using ElectionSystem.Api.Dtos;
-using ElectionSystem.Api.Entities;
+using Electronic_Election_Management_System.Data;
+using Electronic_Election_Management_System.DTOs;
+using Electronic_Election_Management_System.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
-namespace ElectionSystem.Api.Controllers
+namespace Electronic_Election_Management_System.Controllers
 {
     // Toate endpoint-urile de aici sunt exclusiv pentru Administrator (gestionarea utilizatorilor si rolurilor - Etapa 2).
     [ApiController]

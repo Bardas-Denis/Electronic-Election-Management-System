@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace ElectionSystem.Api.Entities
+namespace Electronic_Election_Management_System.Models
 {
     // Reprezinta o varianta de vot in cadrul unei alegeri (ex: un candidat, un raspuns de sondaj)
     public class Option

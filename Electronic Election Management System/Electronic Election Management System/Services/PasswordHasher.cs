@@ -1,6 +1,6 @@
 using System.Security.Cryptography;
 
-namespace ElectionSystem.Api.Services
+namespace Electronic_Election_Management_System.Services
 {
     // Hashing de parole folosind PBKDF2 (Rfc2898DeriveBytes), fara dependente externe.
     // Formatul stocat: {iterations}.{saltBase64}.{hashBase64}

@@ -1,10 +1,10 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
-using ElectionSystem.Api.Entities;
+using Electronic_Election_Management_System.Models;
 using Microsoft.IdentityModel.Tokens;
 
-namespace ElectionSystem.Api.Services
+namespace Electronic_Election_Management_System.Services
 {
     public class TokenService : ITokenService
     {

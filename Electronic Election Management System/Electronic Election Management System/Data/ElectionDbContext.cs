@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
-using ElectionSystem.Api.Entities;
+using Electronic_Election_Management_System.Models;
 
-namespace ElectionSystem.Api.Data
+namespace Electronic_Election_Management_System.Data
 {
     public class ElectionDbContext : DbContext
     {

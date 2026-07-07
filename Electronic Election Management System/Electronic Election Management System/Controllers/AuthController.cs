@@ -1,11 +1,11 @@
-using ElectionSystem.Api.Data;
-using ElectionSystem.Api.Dtos;
-using ElectionSystem.Api.Entities;
-using ElectionSystem.Api.Services;
+using Electronic_Election_Management_System.Data;
+using Electronic_Election_Management_System.DTOs;
+using Electronic_Election_Management_System.Models;
+using Electronic_Election_Management_System.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
-namespace ElectionSystem.Api.Controllers
+namespace Electronic_Election_Management_System.Controllers
 {
     [ApiController]
     [Route("api/auth")]

@@ -1,12 +1,12 @@
 using System.Security.Claims;
-using ElectionSystem.Api.Data;
-using ElectionSystem.Api.Dtos;
-using ElectionSystem.Api.Entities;
+using Electronic_Election_Management_System.Data;
+using Electronic_Election_Management_System.DTOs;
+using Electronic_Election_Management_System.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
-namespace ElectionSystem.Api.Controllers
+namespace Electronic_Election_Management_System.Controllers
 {
     // Ruta de baza corespunde VotingService din frontend: `${environment.apiUrl}/voting`
     [ApiController]
@@ -136,8 +136,6 @@ namespace ElectionSystem.Api.Controllers
             election.EndsAt = request.EndsAt;
 
             // Inlocuim optiunile existente cu cele noi.
-            // NOTA: intr-un MVP mai avansat (dupa ce voturile chiar exista - Etapa 3),
-            // stergerea optiunilor deja votate ar trebui blocata; pentru Etapa 2 nu exista inca voturi.
             _db.Options.RemoveRange(election.Options);
             election.Options = validLabels.Select(l => new Option { Label = l.Trim(), ElectionId = election.Id }).ToList();
 

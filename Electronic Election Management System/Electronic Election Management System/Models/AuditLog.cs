@@ -1,6 +1,6 @@
 using System;
 
-namespace ElectionSystem.Api.Entities
+namespace Electronic_Election_Management_System.Models
 {
     // Inregistreaza EVENIMENTE (cine, ce actiune, cand) - niciodata continutul votului.
     public class AuditLog
