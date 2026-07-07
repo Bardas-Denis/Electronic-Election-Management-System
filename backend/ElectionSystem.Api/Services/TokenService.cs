@@ -1,0 +1,53 @@
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
+using ElectionSystem.Api.Entities;
+using Microsoft.IdentityModel.Tokens;
+
+namespace ElectionSystem.Api.Services
+{
+    public class TokenService : ITokenService
+    {
+        private readonly IConfiguration _configuration;
+
+        public TokenService(IConfiguration configuration)
+        {
+            _configuration = configuration;
+        }
+
+        public (string Token, DateTime ExpiresAt) GenerateToken(User user)
+        {
+            var jwtSection = _configuration.GetSection("Jwt");
+            string key = jwtSection["Key"]!;
+            string issuer = jwtSection["Issuer"]!;
+            string audience = jwtSection["Audience"]!;
+            int expiresInMinutes = int.Parse(jwtSection["ExpiresInMinutes"] ?? "120");
+
+            var expiresAt = DateTime.UtcNow.AddMinutes(expiresInMinutes);
+
+            var claims = new[]
+            {
+                new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
+                new Claim(JwtRegisteredClaimNames.Email, user.Email),
+                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+                new Claim(ClaimTypes.Email, user.Email),
+                new Claim(ClaimTypes.Role, user.Role.ToString()),
+                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+            };
+
+            var signingKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key));
+            var credentials = new SigningCredentials(signingKey, SecurityAlgorithms.HmacSha256);
+
+            var token = new JwtSecurityToken(
+                issuer: issuer,
+                audience: audience,
+                claims: claims,
+                expires: expiresAt,
+                signingCredentials: credentials
+            );
+
+            string tokenString = new JwtSecurityTokenHandler().WriteToken(token);
+            return (tokenString, expiresAt);
+        }
+    }
+}
