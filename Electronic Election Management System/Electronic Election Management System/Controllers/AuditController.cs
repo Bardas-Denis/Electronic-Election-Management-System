@@ -1,8 +1,7 @@
-using Electronic_Election_Management_System.Data;
 using Electronic_Election_Management_System.DTOs;
+using Electronic_Election_Management_System.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace Electronic_Election_Management_System.Controllers
 {
@@ -12,11 +11,11 @@ namespace Electronic_Election_Management_System.Controllers
     [Authorize(Roles = "Admin")]
     public class AuditController : ControllerBase
     {
-        private readonly ElectionDbContext _db;
+        private readonly IAuditService _auditService;
 
-        public AuditController(ElectionDbContext db)
+        public AuditController(IAuditService auditService)
         {
-            _db = db;
+            _auditService = auditService;
         }
 
         // GET /api/audit?take=100
@@ -24,22 +23,7 @@ namespace Electronic_Election_Management_System.Controllers
         public async Task<ActionResult<List<AuditLogDto>>> GetAll([FromQuery] int take = 100)
         {
             take = Math.Clamp(take, 1, 500);
-
-            var logs = await _db.AuditLogs
-                .Include(a => a.User)
-                .Include(a => a.Election)
-                .OrderByDescending(a => a.Timestamp)
-                .Take(take)
-                .Select(a => new AuditLogDto
-                {
-                    Id = a.Id,
-                    UserEmail = a.User != null ? a.User.Email : "necunoscut",
-                    ElectionTitle = a.Election != null ? a.Election.Title : null,
-                    Action = a.Action,
-                    Timestamp = a.Timestamp
-                })
-                .ToListAsync();
-
+            var logs = await _auditService.GetLogsAsync(take);
             return Ok(logs);
         }
     }

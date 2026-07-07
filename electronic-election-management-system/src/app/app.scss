@@ -1,0 +1,63 @@
+// ─── Global Navbar Styles ────────────────────────────────────────────────────
+
+.navbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 52px;
+  padding: 0 1.5rem;
+  background: var(--bg-card);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.navbar .brand {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  text-decoration: none;
+}
+
+.navbar .nav-right {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+.navbar .nav-link {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  text-decoration: none;
+  transition: color var(--transition);
+
+  &:hover {
+    color: var(--text-primary);
+  }
+
+  &--cta {
+    color: var(--text-primary);
+  }
+}
+
+.navbar .nav-email {
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+}
+
+.navbar .nav-btn-logout {
+  font-size: 0.8125rem;
+  font-family: inherit;
+  font-weight: 500;
+  color: var(--text-primary);
+  background: none;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  padding: 0.3rem 0.75rem;
+  cursor: pointer;
+  transition: border-color var(--transition), background var(--transition);
+
+  &:hover {
+    background: var(--bg-page);
+    border-color: var(--text-muted);
+  }
+}
