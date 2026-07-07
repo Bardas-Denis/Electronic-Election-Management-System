@@ -1,18 +1,19 @@
 import { Component, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterLink],
-  templateUrl: './login.component.html'
+  imports: [ReactiveFormsModule, RouterLink],
+  templateUrl: './login.component.html',
+  styleUrl: './login.component.scss'
 })
 export class LoginComponent {
   errorMessage = signal<string | null>(null);
   isLoading = signal(false);
+  showPassword = signal(false);
 
   form: ReturnType<FormBuilder['group']>;
 
@@ -27,7 +28,15 @@ export class LoginComponent {
     });
   }
 
+  get emailCtrl() { return this.form.get('email')!; }
+  get passwordCtrl() { return this.form.get('password')!; }
+
+  togglePassword(): void {
+    this.showPassword.update(v => !v);
+  }
+
   onSubmit(): void {
+    this.form.markAllAsTouched();
     if (this.form.invalid) return;
 
     this.isLoading.set(true);
@@ -35,13 +44,12 @@ export class LoginComponent {
 
     this.authService.login(this.form.getRawValue() as any).subscribe({
       next: () => {
-        this.isLoading.set(false);
         this.router.navigate(['/elections']);
       },
       error: (err) => {
         this.isLoading.set(false);
         this.errorMessage.set(
-          err?.error?.message ?? 'Email sau parola incorecte.'
+          err?.error?.message ?? 'Email sau parolă incorecte.'
         );
       }
     });

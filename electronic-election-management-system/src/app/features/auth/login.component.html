@@ -1,21 +1,93 @@
 <div class="auth-page">
-  <form [formGroup]="form" (ngSubmit)="onSubmit()" class="auth-form">
-    <h2>Autentificare</h2>
+  <div class="auth-card">
 
-    <label for="email">Email</label>
-    <input id="email" type="email" formControlName="email" placeholder="nume@exemplu.com" />
+    <!-- Brand mark -->
+    <div class="brand">
+      <span class="brand-icon">
+        <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+          <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+        </svg>
+      </span>
+      <span class="brand-name">Votex</span>
+    </div>
 
-    <label for="password">Parola</label>
-    <input id="password" type="password" formControlName="password" placeholder="••••••••" />
+    <div class="card-header">
+      <h1>Bine ai revenit</h1>
+      <p class="subtitle">Autentifică-te pentru a continua</p>
+    </div>
 
-    @if (errorMessage()) {
-      <p class="error-text">{{ errorMessage() }}</p>
-    }
+    <form [formGroup]="form" (ngSubmit)="onSubmit()" novalidate>
 
-    <button type="submit" [disabled]="form.invalid || isLoading()">
-      {{ isLoading() ? 'Se autentifica...' : 'Intra in cont' }}
-    </button>
+      <!-- Email -->
+      <div class="field" [class.field--error]="emailCtrl.invalid && emailCtrl.touched">
+        <label for="email">Adresă de email</label>
+        <input
+          id="email"
+          type="email"
+          formControlName="email"
+          placeholder="nume@exemplu.com"
+          autocomplete="email"
+          aria-describedby="email-error"
+        />
+        @if (emailCtrl.touched && emailCtrl.hasError('required')) {
+          <span id="email-error" class="field-error" role="alert">Emailul este obligatoriu.</span>
+        } @else if (emailCtrl.touched && emailCtrl.hasError('email')) {
+          <span id="email-error" class="field-error" role="alert">Introdu o adresă de email validă.</span>
+        }
+      </div>
 
-    <p>Nu ai cont? <a routerLink="/register">Inregistreaza-te</a></p>
-  </form>
+      <!-- Password -->
+      <div class="field" [class.field--error]="passwordCtrl.invalid && passwordCtrl.touched">
+        <label for="password">Parolă</label>
+        <div class="input-wrapper">
+          <input
+            id="password"
+            [type]="showPassword() ? 'text' : 'password'"
+            formControlName="password"
+            placeholder="••••••••"
+            autocomplete="current-password"
+            aria-describedby="password-error"
+          />
+          <button type="button" class="toggle-btn" (click)="togglePassword()" [attr.aria-label]="showPassword() ? 'Ascunde parola' : 'Arată parola'">
+            @if (showPassword()) {
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
+            } @else {
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+            }
+          </button>
+        </div>
+        @if (passwordCtrl.touched && passwordCtrl.hasError('required')) {
+          <span id="password-error" class="field-error" role="alert">Parola este obligatorie.</span>
+        } @else if (passwordCtrl.touched && passwordCtrl.hasError('minlength')) {
+          <span id="password-error" class="field-error" role="alert">Parola trebuie să aibă minim 6 caractere.</span>
+        }
+      </div>
+
+      <!-- Server error -->
+      @if (errorMessage()) {
+        <div class="server-error" role="alert">
+          <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+          {{ errorMessage() }}
+        </div>
+      }
+
+      <!-- Submit -->
+      <button type="submit" class="btn-primary" [attr.disabled]="isLoading() || null">
+        @if (isLoading()) {
+          <span class="spinner"></span>
+          Se autentifică...
+        } @else {
+          Intră în cont
+        }
+      </button>
+
+    </form>
+
+    <p class="switch-link">
+      Nu ai cont?
+      <a routerLink="/register">Înregistrează-te</a>
+    </p>
+
+  </div>
 </div>
