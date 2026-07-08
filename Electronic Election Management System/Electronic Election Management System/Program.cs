@@ -4,15 +4,26 @@ using Electronic_Election_Management_System.Data.Repositories;
 using Electronic_Election_Management_System.Models;
 using Electronic_Election_Management_System.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// --- DbContext cu SQLite ---
+// --- Connection string SQLite cu busy_timeout=5000ms ---
+// "Default Timeout" (secunde) e mapat de Microsoft.Data.Sqlite pe sqlite3_busy_timeout,
+// aplicat automat pe FIECARE conexiune deschisa (nu doar la pornire).
+var sqliteConnectionStringBuilder = new SqliteConnectionStringBuilder(
+    builder.Configuration.GetConnectionString("DefaultConnection"))
+{
+    DefaultTimeout = 5 // 5s = 5000ms busy_timeout
+};
+var sqliteConnectionString = sqliteConnectionStringBuilder.ToString();
+
+// --- DbContext cu SQLite (WAL mode activat mai jos, dupa Migrate) ---
 builder.Services.AddDbContext<ElectionDbContext>(options =>
-    options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection"))
+    options.UseSqlite(sqliteConnectionString)
 );
 
 // --- Servicii aplicatie ---
@@ -108,6 +119,23 @@ using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<ElectionDbContext>();
     db.Database.Migrate();
+
+    // --- Activare WAL mode (persista in fisierul .db, setat o singura data) ---
+    db.Database.ExecuteSqlRaw("PRAGMA journal_mode=WAL;");
+    db.Database.ExecuteSqlRaw("PRAGMA busy_timeout=5000;");
+
+    var connection = db.Database.GetDbConnection();
+    if (connection.State != System.Data.ConnectionState.Open)
+    {
+        await connection.OpenAsync();
+    }
+    using (var checkCmd = connection.CreateCommand())
+    {
+        checkCmd.CommandText = "PRAGMA journal_mode;";
+        var currentJournalMode = (string?)await checkCmd.ExecuteScalarAsync() ?? "unknown";
+        app.Logger.LogInformation("SQLite journal_mode confirmat la pornire: {JournalMode}", currentJournalMode);
+    }
+
     await SeedData.EnsureAdminUserAsync(db);
 }
 

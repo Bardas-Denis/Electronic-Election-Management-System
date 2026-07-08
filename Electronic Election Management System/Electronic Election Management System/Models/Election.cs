@@ -35,5 +35,12 @@ namespace Electronic_Election_Management_System.Models
         public ICollection<Option> Options { get; set; } = new List<Option>();
         public ICollection<VoteToken> VoteTokens { get; set; } = new List<VoteToken>();
         public ICollection<AuditLog> AuditLogs { get; set; } = new List<AuditLog>();
+
+        // Regula de business: alegerea accepta voturi doar in intervalul [StartsAt, EndsAt].
+        public bool CanAcceptVotes()
+        {
+            var now = DateTime.UtcNow;
+            return now >= StartsAt && now <= EndsAt;
+        }
     }
 }
