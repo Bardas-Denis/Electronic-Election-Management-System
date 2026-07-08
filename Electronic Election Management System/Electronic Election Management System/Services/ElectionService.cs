@@ -32,7 +32,7 @@ namespace Electronic_Election_Management_System.Services
             if (!TryParseType(request.Type, out var type))
                 return ServiceResult<ElectionDto>.Fail("Tip invalid. Valorile acceptate sunt 'Politic' sau 'Comercial'.");
 
-            if (request.OptionLabels.Count(l => !string.IsNullOrWhiteSpace(l)) < 2)
+            if (request.Options.Count(o => !string.IsNullOrWhiteSpace(o.Label)) < 2)
                 return ServiceResult<ElectionDto>.Fail("O alegere trebuie sa aiba cel putin 2 optiuni de vot.");
 
             if (request.EndsAt <= request.StartsAt)
@@ -47,9 +47,9 @@ namespace Electronic_Election_Management_System.Services
                 IsAnonymous = request.IsAnonymous,
                 StartsAt = request.StartsAt,
                 EndsAt = request.EndsAt,
-                Options = request.OptionLabels
-                    .Where(l => !string.IsNullOrWhiteSpace(l))
-                    .Select(l => new Option { Label = l.Trim() })
+                Options = request.Options
+                    .Where(o => !string.IsNullOrWhiteSpace(o.Label))
+                    .Select(o => new Option { Label = o.Label.Trim(), Description = o.Description?.Trim() })
                     .ToList()
             };
 
@@ -70,8 +70,8 @@ namespace Electronic_Election_Management_System.Services
             if (!TryParseType(request.Type, out var type))
                 return ServiceResult<ElectionDto>.Fail("Tip invalid. Valorile acceptate sunt 'Politic' sau 'Comercial'.");
 
-            var validLabels = request.OptionLabels.Where(l => !string.IsNullOrWhiteSpace(l)).ToList();
-            if (validLabels.Count < 2)
+            var validOptions = request.Options.Where(o => !string.IsNullOrWhiteSpace(o.Label)).ToList();
+            if (validOptions.Count < 2)
                 return ServiceResult<ElectionDto>.Fail("O alegere trebuie sa aiba cel putin 2 optiuni de vot.");
 
             if (request.EndsAt <= request.StartsAt)
@@ -90,21 +90,27 @@ namespace Electronic_Election_Management_System.Services
 
             // Update existing options safely (keeps their IDs and prevents tracking conflicts)
             var optionsList = election.Options.ToList();
-            for (int i = 0; i < validLabels.Count; i++)
+            for (int i = 0; i < validOptions.Count; i++)
             {
                 if (i < optionsList.Count)
                 {
-                    optionsList[i].Label = validLabels[i].Trim();
+                    optionsList[i].Label = validOptions[i].Label.Trim();
+                    optionsList[i].Description = validOptions[i].Description?.Trim();
                 }
                 else
                 {
-                    election.Options.Add(new Option { Label = validLabels[i].Trim(), ElectionId = election.Id });
+                    election.Options.Add(new Option 
+                    { 
+                        Label = validOptions[i].Label.Trim(), 
+                        Description = validOptions[i].Description?.Trim(),
+                        ElectionId = election.Id 
+                    });
                 }
             }
 
-            if (optionsList.Count > validLabels.Count)
+            if (optionsList.Count > validOptions.Count)
             {
-                var toRemove = optionsList.Skip(validLabels.Count).ToList();
+                var toRemove = optionsList.Skip(validOptions.Count).ToList();
                 foreach (var opt in toRemove)
                 {
                     election.Options.Remove(opt);
@@ -157,7 +163,7 @@ namespace Electronic_Election_Management_System.Services
             IsAnonymous = e.IsAnonymous,
             StartsAt = e.StartsAt,
             EndsAt = e.EndsAt,
-            Options = e.Options.Select(o => new OptionDto { Id = o.Id, Label = o.Label }).ToList(),
+            Options = e.Options.Select(o => new OptionDto { Id = o.Id, Label = o.Label, Description = o.Description }).ToList(),
             HasUserVoted = false // populated in Stage 3 (voting flow)
         };
     }

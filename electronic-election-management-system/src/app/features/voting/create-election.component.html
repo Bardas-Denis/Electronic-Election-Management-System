@@ -29,11 +29,12 @@
     <input id="endsAt" type="datetime-local" formControlName="endsAt" />
 
     <h3>Optiuni de vot</h3>
-    <div formArrayName="optionLabels">
-      @for (option of optionLabels.controls; track $index) {
-        <div class="option-row">
-          <input type="text" [formControlName]="$index" placeholder="Optiune {{ $index + 1 }}" />
-          @if (optionLabels.length > 2) {
+    <div formArrayName="options">
+      @for (option of options.controls; track $index) {
+        <div class="option-row" [formGroupName]="$index">
+          <input type="text" formControlName="label" placeholder="Optiune {{ $index + 1 }}" />
+          <input type="text" formControlName="description" placeholder="Descriere (opțional)" />
+          @if (options.length > 2) {
             <button type="button" (click)="removeOption($index)">Sterge</button>
           }
         </div>

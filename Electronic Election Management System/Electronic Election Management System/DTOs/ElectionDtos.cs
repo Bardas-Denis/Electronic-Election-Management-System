@@ -7,6 +7,14 @@ namespace Electronic_Election_Management_System.DTOs
     {
         public Guid Id { get; set; } = Guid.Empty;
         public string Label { get; set; } = string.Empty;
+        public string? Description { get; set; }
+    }
+
+    public class CreateOptionDto
+    {
+        [Required]
+        public string Label { get; set; } = string.Empty;
+        public string? Description { get; set; }
     }
 
     // Corespunde ElectionDto din voting.model.ts (frontend)
@@ -46,7 +54,7 @@ namespace Electronic_Election_Management_System.DTOs
         public DateTime EndsAt { get; set; }
 
         [Required, MinLength(2)]
-        public List<string> OptionLabels { get; set; } = new();
+        public List<CreateOptionDto> Options { get; set; } = new();
     }
 
     // Folosit pentru PUT (editare alegere existenta) - acelasi shape ca la creare

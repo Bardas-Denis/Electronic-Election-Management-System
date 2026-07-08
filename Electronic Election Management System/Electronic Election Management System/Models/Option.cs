@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace Electronic_Election_Management_System.Models
 {
-    // Reprezinta o varianta de vot in cadrul unei alegeri (ex: un candidat, un raspuns de sondaj)
+    //Option inside an election
     public class Option
     {
         public Guid Id { get; set; } = Guid.NewGuid();
@@ -13,7 +13,8 @@ namespace Electronic_Election_Management_System.Models
 
         public string Label { get; set; } = string.Empty;
 
-        // Navigatie
+        public string? Description { get; set; }
+
         public ICollection<Vote> Votes { get; set; } = new List<Vote>();
     }
 }

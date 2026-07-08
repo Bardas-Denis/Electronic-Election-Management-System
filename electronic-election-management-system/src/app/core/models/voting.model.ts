@@ -3,6 +3,7 @@ export type ElectionType = 'Politic' | 'Comercial';
 export interface OptionDto {
   id: string;
   label: string;
+  description?: string;
 }
 
 export interface ElectionDto {
@@ -18,6 +19,11 @@ export interface ElectionDto {
   hasUserVoted?: boolean;
 }
 
+export interface OptionCreateDto {
+  label: string;
+  description?: string;
+}
+
 export interface CreateElectionRequest {
   title: string;
   description?: string;
@@ -25,7 +31,7 @@ export interface CreateElectionRequest {
   isAnonymous: boolean;
   startsAt: string;
   endsAt: string;
-  optionLabels: string[];
+  options: OptionCreateDto[];
 }
 
 export interface CastVoteRequest {

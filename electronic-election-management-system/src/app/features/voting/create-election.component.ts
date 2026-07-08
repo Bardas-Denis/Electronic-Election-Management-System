@@ -33,9 +33,15 @@ export class CreateElectionComponent implements OnInit {
     isAnonymous: [true],
     startsAt: ['', Validators.required],
     endsAt: ['', Validators.required],
-    optionLabels: this.fb.array([
-      this.fb.control('', Validators.required),
-      this.fb.control('', Validators.required)
+    options: this.fb.array([
+      this.fb.group({
+        label: ['', Validators.required],
+        description: ['']
+      }),
+      this.fb.group({
+        label: ['', Validators.required],
+        description: ['']
+      })
     ])
   });
 
@@ -51,9 +57,12 @@ export class CreateElectionComponent implements OnInit {
     this.votingService.getElectionById(this.editingElectionId).subscribe({
       next: (election) => {
         // reconstruim FormArray-ul de optiuni cu numarul exact de optiuni existente
-        this.optionLabels.clear();
+        this.options.clear();
         election.options.forEach((option) =>
-          this.optionLabels.push(this.fb.control(option.label, Validators.required))
+          this.options.push(this.fb.group({
+            label: [option.label, Validators.required],
+            description: [option.description ?? '']
+          }))
         );
 
         this.form.patchValue({
@@ -74,17 +83,20 @@ export class CreateElectionComponent implements OnInit {
     });
   }
 
-  get optionLabels(): FormArray {
-    return this.form.get('optionLabels') as FormArray;
+  get options(): FormArray {
+    return this.form.get('options') as FormArray;
   }
 
   addOption(): void {
-    this.optionLabels.push(this.fb.control('', Validators.required));
+    this.options.push(this.fb.group({
+      label: ['', Validators.required],
+      description: ['']
+    }));
   }
 
   removeOption(index: number): void {
-    if (this.optionLabels.length > 2) {
-      this.optionLabels.removeAt(index);
+    if (this.options.length > 2) {
+      this.options.removeAt(index);
     }
   }
 
