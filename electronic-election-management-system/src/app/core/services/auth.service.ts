@@ -5,12 +5,11 @@ import { environment } from '../../../environments/environment';
 import { LoginRequest, RegisterRequest, AuthResponse, CurrentUser } from '../models/auth.model';
 
 const TOKEN_KEY = 'election_app_token';
-const USER_KEY = 'election_app_user';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
-  // signal reactiv, folosit in toata aplicatia (ex: navbar, guards)
-  currentUser = signal<CurrentUser | null>(this.readUserFromStorage());
+  // signal reactiv, folosit in toata aplicatia
+  currentUser = signal<CurrentUser | null>(this.readUserFromToken());
 
   constructor(private http: HttpClient) {}
 
@@ -27,13 +26,12 @@ export class AuthService {
   }
 
   logout(): void {
-    localStorage.removeItem(TOKEN_KEY);
-    localStorage.removeItem(USER_KEY);
+    sessionStorage.removeItem(TOKEN_KEY);
     this.currentUser.set(null);
   }
 
   getToken(): string | null {
-    return localStorage.getItem(TOKEN_KEY);
+    return sessionStorage.getItem(TOKEN_KEY);
   }
 
   isLoggedIn(): boolean {
@@ -45,14 +43,23 @@ export class AuthService {
   }
 
   private saveSession(res: AuthResponse): void {
-    localStorage.setItem(TOKEN_KEY, res.token);
-    const user: CurrentUser = { userId: res.userId, email: res.email, role: res.role };
-    localStorage.setItem(USER_KEY, JSON.stringify(user));
-    this.currentUser.set(user);
+    sessionStorage.setItem(TOKEN_KEY, res.token);
+    this.currentUser.set(this.readUserFromToken());
   }
 
-  private readUserFromStorage(): CurrentUser | null {
-    const raw = localStorage.getItem(USER_KEY);
-    return raw ? (JSON.parse(raw) as CurrentUser) : null;
+  private readUserFromToken(): CurrentUser | null {
+    const token = sessionStorage.getItem(TOKEN_KEY);
+    if (!token) return null;
+
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      return {
+        userId: payload['sub'] ?? payload['nameid'],
+        email: payload['email'],
+        role: payload['role'], 
+      };
+    } catch {
+      return null;
+    }
   }
 }
