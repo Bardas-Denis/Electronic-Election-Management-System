@@ -1,4 +1,4 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormArray, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -13,6 +13,11 @@ import { VotingService } from '../../core/services/voting.service';
   templateUrl: './create-election.component.html'
 })
 export class CreateElectionComponent implements OnInit {
+  private fb = inject(FormBuilder);
+  private votingService = inject(VotingService);
+  private router = inject(Router);
+  private route = inject(ActivatedRoute);
+
   isSubmitting = signal(false);
   isLoading = signal(false);
   errorMessage = signal<string | null>(null);
@@ -21,27 +26,18 @@ export class CreateElectionComponent implements OnInit {
   private editingElectionId: string | null = null;
   isEditMode = signal(false);
 
-  form!: ReturnType<FormBuilder['group']>;
-
-  constructor(
-    private fb: FormBuilder,
-    private votingService: VotingService,
-    private router: Router,
-    private route: ActivatedRoute
-  ) {
-    this.form = this.fb.group({
-      title: ['', Validators.required],
-      description: [''],
-      type: ['Politic', Validators.required],
-      isAnonymous: [true],
-      startsAt: ['', Validators.required],
-      endsAt: ['', Validators.required],
-      optionLabels: this.fb.array([
-        this.fb.control('', Validators.required),
-        this.fb.control('', Validators.required)
-      ])
-    });
-  }
+  form = this.fb.group({
+    title: ['', Validators.required],
+    description: [''],
+    type: ['Politic', Validators.required],
+    isAnonymous: [true],
+    startsAt: ['', Validators.required],
+    endsAt: ['', Validators.required],
+    optionLabels: this.fb.array([
+      this.fb.control('', Validators.required),
+      this.fb.control('', Validators.required)
+    ])
+  });
 
   ngOnInit(): void {
     this.editingElectionId = this.route.snapshot.paramMap.get('id');

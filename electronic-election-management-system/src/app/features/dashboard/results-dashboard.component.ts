@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, signal, computed } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
 import { ResultsService } from '../../core/services/results.service';
@@ -11,6 +11,9 @@ import { ElectionResultsDto } from '../../core/models/results.model';
   templateUrl: './results-dashboard.component.html'
 })
 export class ResultsDashboardComponent implements OnInit, OnDestroy {
+  private route = inject(ActivatedRoute);
+  private resultsService = inject(ResultsService);
+
   isLoading = signal(true);
   snapshot = signal<ElectionResultsDto | null>(null);
 
@@ -24,11 +27,6 @@ export class ResultsDashboardComponent implements OnInit, OnDestroy {
   });
 
   private electionId!: string;
-
-  constructor(
-    private route: ActivatedRoute,
-    private resultsService: ResultsService
-  ) {}
 
   ngOnInit(): void {
     this.electionId = this.route.snapshot.paramMap.get('id')!;

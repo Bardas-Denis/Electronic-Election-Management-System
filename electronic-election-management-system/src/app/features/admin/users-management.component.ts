@@ -1,4 +1,4 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { UsersService } from '../../core/services/users.service';
@@ -13,17 +13,15 @@ import { UserDto, UserRole } from '../../core/models/user.model';
   templateUrl: './users-management.component.html'
 })
 export class UsersManagementComponent implements OnInit {
+  private usersService = inject(UsersService);
+  readonly authService = inject(AuthService);
+
   users = signal<UserDto[]>([]);
   isLoading = signal(true);
   errorMessage = signal<string | null>(null);
 
   // tine minte ce update de rol e in curs, ca sa dezactivam doar select-ul respectiv
   savingUserId = signal<string | null>(null);
-
-  constructor(
-    private usersService: UsersService,
-    public authService: AuthService
-  ) {}
 
   ngOnInit(): void {
     this.loadUsers();

@@ -1,4 +1,4 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { VotingService } from '../../core/services/voting.service';
@@ -11,6 +11,10 @@ import { ElectionDto } from '../../core/models/voting.model';
   templateUrl: './cast-vote.component.html'
 })
 export class CastVoteComponent implements OnInit {
+  private route = inject(ActivatedRoute);
+  private router = inject(Router);
+  private votingService = inject(VotingService);
+
   election = signal<ElectionDto | null>(null);
   selectedOptionId = signal<string | null>(null);
   isSubmitting = signal(false);
@@ -18,12 +22,6 @@ export class CastVoteComponent implements OnInit {
   voteConfirmed = signal(false);
 
   private electionId!: string;
-
-  constructor(
-    private route: ActivatedRoute,
-    private router: Router,
-    private votingService: VotingService
-  ) {}
 
   ngOnInit(): void {
     this.electionId = this.route.snapshot.paramMap.get('id')!;

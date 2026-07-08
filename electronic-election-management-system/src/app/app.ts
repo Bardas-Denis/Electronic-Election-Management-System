@@ -1,4 +1,4 @@
-import { Component, signal } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { RouterOutlet, RouterLink, Router } from '@angular/router';
 import { AuthService } from './core/services/auth.service';
 
@@ -9,9 +9,10 @@ import { AuthService } from './core/services/auth.service';
   styleUrl: './app.scss'
 })
 export class App {
-  protected readonly title = signal('electronic-election-management-system');
+  readonly authService = inject(AuthService);
+  private router = inject(Router);
 
-  constructor(public authService: AuthService, private router: Router) {}
+  protected readonly title = signal('electronic-election-management-system');
 
   logout(): void {
     this.authService.logout();

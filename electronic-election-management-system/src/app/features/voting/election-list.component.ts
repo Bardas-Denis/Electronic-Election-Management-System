@@ -1,4 +1,4 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { VotingService } from '../../core/services/voting.service';
@@ -12,13 +12,11 @@ import { ElectionDto } from '../../core/models/voting.model';
   templateUrl: './election-list.component.html'
 })
 export class ElectionListComponent implements OnInit {
+  private votingService = inject(VotingService);
+  readonly authService = inject(AuthService);
+
   elections = signal<ElectionDto[]>([]);
   isLoading = signal(true);
-
-  constructor(
-    private votingService: VotingService,
-    public authService: AuthService
-  ) {}
 
   ngOnInit(): void {
     this.loadElections();

@@ -1,4 +1,4 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, tap } from 'rxjs';
 import { environment } from '../../../environments/environment';
@@ -8,10 +8,10 @@ const TOKEN_KEY = 'election_app_token';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
+  private http = inject(HttpClient);
+
   // signal reactiv, folosit in toata aplicatia
   currentUser = signal<CurrentUser | null>(this.readUserFromToken());
-
-  constructor(private http: HttpClient) {}
 
   login(request: LoginRequest): Observable<AuthResponse> {
     return this.http
