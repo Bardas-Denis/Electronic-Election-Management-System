@@ -32,11 +32,11 @@ namespace Electronic_Election_Management_System.Services
             Guid targetId, UpdateUserRoleRequest request, Guid currentUserId)
         {
             if (!Enum.TryParse<UserRole>(request.Role, ignoreCase: true, out var newRole))
-                return ServiceResult<UserDto>.Fail("Rol invalid. Valorile acceptate sunt 'Admin' sau 'Voter'.");
+                return ServiceResult<UserDto>.Fail("Invalid role. Accepted values are 'Admin' or 'Voter'.");
 
             var user = await _users.GetByIdAsync(targetId);
             if (user is null)
-                return ServiceResult<UserDto>.NotFound("Utilizatorul nu a fost gasit.");
+                return ServiceResult<UserDto>.NotFound("User not found.");
 
             // Safety rule: an admin cannot demote the last remaining admin account.
             if (user.Id == currentUserId && newRole != UserRole.Admin)
@@ -44,7 +44,7 @@ namespace Electronic_Election_Management_System.Services
                 int adminCount = await _users.AdminCountAsync();
                 if (adminCount <= 1)
                     return ServiceResult<UserDto>.Fail(
-                        "Nu poti elimina rolul de Admin al singurului administrator ramas.");
+                        "You cannot remove the Admin role of the last remaining admin.");
             }
 
             user.Role = newRole;
@@ -52,7 +52,7 @@ namespace Electronic_Election_Management_System.Services
             await _auditLogs.AddAsync(new AuditLog
             {
                 UserId = currentUserId,
-                Action = $"a_schimbat_rolul_utilizatorului:{user.Email}->{newRole}"
+                Action = $"changed_user_role:{user.Email}->{newRole}"
             });
 
             await _users.SaveChangesAsync();
@@ -70,11 +70,11 @@ namespace Electronic_Election_Management_System.Services
         {
             if (targetId == currentUserId)
                 return ServiceResult<bool>.Fail(
-                    "Nu iti poti sterge propriul cont din panoul de administrare.");
+                    "You cannot delete your own account from the admin panel.");
 
             var user = await _users.GetByIdAsync(targetId);
             if (user is null)
-                return ServiceResult<bool>.NotFound("Utilizatorul nu a fost gasit.");
+                return ServiceResult<bool>.NotFound("User not found.");
 
             await _auditLogs.AddAsync(new AuditLog
             {
@@ -90,13 +90,11 @@ namespace Electronic_Election_Management_System.Services
             }
             catch (DbUpdateException)
             {
-                // The user has created at least one election (FK constraint on Elections.CreatedByUserId).
-                // Note: DbUpdateException is caught here as a known pragmatic tradeoff —
-                // the alternative (pre-checking for FK references) would require an extra DB query
-                // on every delete, for a constraint that is rarely violated.
+                // FK violation: user has created elections. Caught here instead of
+                // pre-checking, to avoid an extra query for a rare case.
                 return ServiceResult<bool>.Fail(
-                    "Acest utilizator a creat cel putin o alegere si nu poate fi sters. " +
-                    "Schimba-i rolul in Voter in loc sa il stergi.");
+                    "This user has created at least one election and cannot be deleted. " +
+                    "Change their role to Voter instead of deleting them.");
             }
 
             return ServiceResult<bool>.Ok(true);

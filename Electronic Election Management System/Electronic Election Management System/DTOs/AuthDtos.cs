@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Electronic_Election_Management_System.DTOs
 {
-    // Corespunde LoginRequest din auth.model.ts (frontend)
+    // SYNC: auth.model.ts -> LoginRequest
     public class LoginRequest
     {
         [Required, EmailAddress]
@@ -12,7 +12,7 @@ namespace Electronic_Election_Management_System.DTOs
         public string Password { get; set; } = string.Empty;
     }
 
-    // Corespunde RegisterRequest din auth.model.ts (frontend)
+    // SYNC: auth.model.ts -> RegisterRequest
     public class RegisterRequest
     {
         [Required, EmailAddress]
@@ -22,12 +22,13 @@ namespace Electronic_Election_Management_System.DTOs
         public string Password { get; set; } = string.Empty;
     }
 
-    // Corespunde AuthResponse din auth.model.ts (frontend)
+    // SYNC: auth.model.ts -> AuthResponse
     public class AuthResponse
     {
         public string Token { get; set; } = string.Empty;
         public Guid UserId { get; set; }
         public string Email { get; set; } = string.Empty;
+        /// <summary>The role assigned to the authenticated user. Valid values: <c>"Admin"</c> or <c>"Voter"</c>.</summary>
         public string Role { get; set; } = string.Empty; // "Admin" | "Voter"
         public DateTime ExpiresAt { get; set; }
     }

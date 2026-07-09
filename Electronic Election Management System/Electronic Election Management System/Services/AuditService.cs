@@ -19,7 +19,7 @@ namespace Electronic_Election_Management_System.Services
             return logs.Select(a => new AuditLogDto
             {
                 Id = a.Id,
-                UserEmail = a.User != null ? a.User.Email : "necunoscut",
+                UserEmail = a.User != null ? a.User.Email : "Unknown",
                 ElectionTitle = a.Election?.Title,
                 Action = a.Action,
                 Timestamp = a.Timestamp

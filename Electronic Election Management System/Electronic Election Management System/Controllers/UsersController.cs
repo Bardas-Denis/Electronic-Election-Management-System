@@ -6,7 +6,9 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Electronic_Election_Management_System.Controllers
 {
-    // Toate endpoint-urile de aici sunt exclusiv pentru Administrator (gestionarea utilizatorilor si rolurilor).
+    /// <summary>
+    /// Exposes user management endpoints for administrators.
+    /// </summary>
     [ApiController]
     [Route("api/users")]
     [Authorize(Roles = "Admin")]
@@ -19,7 +21,9 @@ namespace Electronic_Election_Management_System.Controllers
             _userService = userService;
         }
 
-        // GET /api/users
+        /// <summary>
+        /// Retrieves all users.
+        /// </summary>
         [HttpGet]
         public async Task<ActionResult<List<UserDto>>> GetAll()
         {
@@ -27,7 +31,11 @@ namespace Electronic_Election_Management_System.Controllers
             return Ok(users);
         }
 
-        // PUT /api/users/{id}/role
+        /// <summary>
+        /// Updates the role of a specific user.
+        /// </summary>
+        /// <param name="id">The id of the user to update.</param>
+        /// <param name="request">The role update request.</param>
         [HttpPut("{id:guid}/role")]
         public async Task<ActionResult<UserDto>> UpdateRole(Guid id, UpdateUserRoleRequest request)
         {
@@ -39,7 +47,10 @@ namespace Electronic_Election_Management_System.Controllers
             return Ok(result.Data);
         }
 
-        // DELETE /api/users/{id}
+        /// <summary>
+        /// Deletes a user.
+        /// </summary>
+        /// <param name="id">The id of the user to delete.</param>
         [HttpDelete("{id:guid}")]
         public async Task<IActionResult> Delete(Guid id)
         {
@@ -51,6 +62,9 @@ namespace Electronic_Election_Management_System.Controllers
             return NoContent();
         }
 
+        /// <summary>
+        /// Retrieves the ID of the current user.
+        /// </summary>
         private Guid GetCurrentUserId()
         {
             string? idClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);

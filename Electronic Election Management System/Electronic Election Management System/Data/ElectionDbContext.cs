@@ -17,34 +17,33 @@ namespace Electronic_Election_Management_System.Data
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            // ---------- Users ----------
             modelBuilder.Entity<User>()
                 .HasIndex(u => u.Email)
                 .IsUnique();
 
+            // Stored as string ("Admin"/"Voter")
             modelBuilder.Entity<User>()
                 .Property(u => u.Role)
-                .HasConversion<string>(); // salveaza enum-ul ca text ("Admin"/"Voter")
+                .HasConversion<string>();
 
-            // ---------- Elections ----------
             modelBuilder.Entity<Election>()
                 .Property(e => e.Type)
                 .HasConversion<string>();
 
+            // Restrict: prevents deleting a user who has created elections,
+            // so election ownership/history is never silently lost.
             modelBuilder.Entity<Election>()
                 .HasOne(e => e.CreatedByUser)
                 .WithMany(u => u.ElectionsCreated)
                 .HasForeignKey(e => e.CreatedByUserId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // ---------- Options ----------
             modelBuilder.Entity<Option>()
                 .HasOne(o => o.Election)
                 .WithMany(e => e.Options)
                 .HasForeignKey(o => o.ElectionId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            // ---------- VoteTokens ----------
             modelBuilder.Entity<VoteToken>()
                 .HasOne(vt => vt.User)
                 .WithMany(u => u.VoteTokens)
@@ -57,18 +56,18 @@ namespace Electronic_Election_Management_System.Data
                 .HasForeignKey(vt => vt.ElectionId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            // un user primeste cel mult un token per alegere
+            // A user can receive at most one token per election.
             modelBuilder.Entity<VoteToken>()
                 .HasIndex(vt => new { vt.UserId, vt.ElectionId })
                 .IsUnique();
-
-            // ---------- Votes ----------
             modelBuilder.Entity<Vote>()
                 .HasOne(v => v.Option)
                 .WithMany(o => o.Votes)
                 .HasForeignKey(v => v.OptionId)
                 .OnDelete(DeleteBehavior.Cascade);
 
+            // Restrict: a VoteToken that has already produced a Vote cannot be deleted
+            // out from under it.
             modelBuilder.Entity<Vote>()
                 .HasOne(v => v.VoteToken)
                 .WithOne(vt => vt.Vote)
@@ -81,13 +80,12 @@ namespace Electronic_Election_Management_System.Data
                 .HasForeignKey(v => v.UserId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // un token nu poate fi folosit de doua ori
+            // A VoteToken can be used at most once.
             modelBuilder.Entity<Vote>()
                 .HasIndex(v => v.VoteTokenId)
                 .IsUnique();
 
-            // Regula de anonimat impusa direct in baza de date:
-            // exact una din (VoteTokenId, UserId) trebuie sa fie completata.
+            // Enforce anonymity: exactly one of (VoteTokenId, UserId) must be set.
             modelBuilder.Entity<Vote>()
                 .ToTable(t => t.HasCheckConstraint(
                     "CK_Votes_ExactlyOneVoterIdentity",
@@ -95,13 +93,13 @@ namespace Electronic_Election_Management_System.Data
                     "OR (VoteTokenId IS NULL AND UserId IS NOT NULL))"
                 ));
 
-            // ---------- AuditLogs ----------
             modelBuilder.Entity<AuditLog>()
                 .HasOne(a => a.User)
                 .WithMany(u => u.AuditLogs)
                 .HasForeignKey(a => a.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
 
+            // SetNull: elections can be deleted independently of their audit logs.
             modelBuilder.Entity<AuditLog>()
                 .HasOne(a => a.Election)
                 .WithMany(e => e.AuditLogs)

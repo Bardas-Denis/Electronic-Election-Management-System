@@ -23,7 +23,7 @@ namespace Electronic_Election_Management_System.Services
 
             bool emailExists = await _users.ExistsByEmailAsync(normalizedEmail);
             if (emailExists)
-                return ServiceResult<AuthResponse>.Fail("Exista deja un cont cu acest email.");
+                return ServiceResult<AuthResponse>.Fail("An account with this email already exists.");
 
             var user = new User
             {
@@ -33,7 +33,7 @@ namespace Electronic_Election_Management_System.Services
             };
 
             await _users.AddAsync(user);
-            await _auditLogs.AddAsync(new AuditLog { UserId = user.Id, Action = "inregistrare_cont" });
+            await _auditLogs.AddAsync(new AuditLog { UserId = user.Id, Action = "account_created" });
             await _users.SaveChangesAsync();
 
             return ServiceResult<AuthResponse>.Ok(BuildAuthResponse(user));
@@ -45,7 +45,7 @@ namespace Electronic_Election_Management_System.Services
 
             var user = await _users.GetByEmailAsync(normalizedEmail);
             if (user is null || !PasswordHasher.Verify(request.Password, user.PasswordHash))
-                return ServiceResult<AuthResponse>.Fail("Email sau parola incorecte.");
+                return ServiceResult<AuthResponse>.Fail("Email or password incorrect.");
 
             await _auditLogs.AddAsync(new AuditLog { UserId = user.Id, Action = "login" });
             await _auditLogs.SaveChangesAsync();

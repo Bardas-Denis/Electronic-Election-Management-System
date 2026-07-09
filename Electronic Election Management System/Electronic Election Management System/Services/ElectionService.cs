@@ -30,13 +30,13 @@ namespace Electronic_Election_Management_System.Services
         public async Task<ServiceResult<ElectionDto>> CreateAsync(CreateElectionRequest request, Guid userId)
         {
             if (!TryParseType(request.Type, out var type))
-                return ServiceResult<ElectionDto>.Fail("Tip invalid. Valorile acceptate sunt 'Politic' sau 'Comercial'.");
+                return ServiceResult<ElectionDto>.Fail("Invalid type. Accepted values are 'Politic' or 'Comercial'.");
 
             if (request.Options.Count(o => !string.IsNullOrWhiteSpace(o.Label)) < 2)
-                return ServiceResult<ElectionDto>.Fail("O alegere trebuie sa aiba cel putin 2 optiuni de vot.");
+                return ServiceResult<ElectionDto>.Fail("An election needs to have at least 2 vote options");
 
             if (request.EndsAt <= request.StartsAt)
-                return ServiceResult<ElectionDto>.Fail("Data de sfarsit trebuie sa fie dupa data de inceput.");
+                return ServiceResult<ElectionDto>.Fail("End Date needs to be after start Date");
 
             var election = new Election
             {
@@ -58,7 +58,7 @@ namespace Electronic_Election_Management_System.Services
             {
                 UserId = userId,
                 ElectionId = election.Id,
-                Action = "a_creat_alegere"
+                Action = "created_election"
             });
             await _elections.SaveChangesAsync();
 
@@ -68,18 +68,18 @@ namespace Electronic_Election_Management_System.Services
         public async Task<ServiceResult<ElectionDto>> UpdateAsync(Guid id, UpdateElectionRequest request, Guid userId)
         {
             if (!TryParseType(request.Type, out var type))
-                return ServiceResult<ElectionDto>.Fail("Tip invalid. Valorile acceptate sunt 'Politic' sau 'Comercial'.");
+                return ServiceResult<ElectionDto>.Fail("Invalid type. Accepted values are 'Politic' or 'Comercial'.");
 
             var validOptions = request.Options.Where(o => !string.IsNullOrWhiteSpace(o.Label)).ToList();
             if (validOptions.Count < 2)
-                return ServiceResult<ElectionDto>.Fail("O alegere trebuie sa aiba cel putin 2 optiuni de vot.");
+                return ServiceResult<ElectionDto>.Fail("An election needs to have at least 2 vote options");
 
             if (request.EndsAt <= request.StartsAt)
-                return ServiceResult<ElectionDto>.Fail("Data de sfarsit trebuie sa fie dupa data de inceput.");
+                return ServiceResult<ElectionDto>.Fail("End Date needs to be after start Date");
 
             var election = await _elections.GetByIdWithOptionsAsync(id);
             if (election is null)
-                return ServiceResult<ElectionDto>.NotFound("Alegerea nu a fost gasita.");
+                return ServiceResult<ElectionDto>.NotFound("Election not found.");
 
             election.Title = request.Title.Trim();
             election.Description = request.Description;
@@ -122,7 +122,7 @@ namespace Electronic_Election_Management_System.Services
             {
                 UserId = userId,
                 ElectionId = election.Id,
-                Action = "a_modificat_alegere"
+                Action = "updated_election"
             });
             await _elections.SaveChangesAsync();
 
@@ -133,14 +133,14 @@ namespace Electronic_Election_Management_System.Services
         {
             var election = await _elections.GetByIdAsync(id);
             if (election is null)
-                return ServiceResult<bool>.NotFound("Alegerea nu a fost gasita.");
+                return ServiceResult<bool>.NotFound("Election not found.");
 
             // Audit log written before delete so we still have the title.
             await _auditLogs.AddAsync(new AuditLog
             {
                 UserId = userId,
-                ElectionId = null, // election is about to be deleted; don't keep a dangling FK
-                Action = $"a_sters_alegere:{election.Title}"
+                ElectionId = null,
+                Action = $"deleted_election:{election.Title}"
             });
 
             _elections.Remove(election);
@@ -149,7 +149,7 @@ namespace Electronic_Election_Management_System.Services
             return ServiceResult<bool>.Ok(true);
         }
 
-        // ---- Helpers -------------------------------------------------------
+        
 
         private static bool TryParseType(string raw, out ElectionType type)
             => Enum.TryParse(raw, ignoreCase: true, out type);
@@ -164,7 +164,7 @@ namespace Electronic_Election_Management_System.Services
             StartsAt = e.StartsAt,
             EndsAt = e.EndsAt,
             Options = e.Options.Select(o => new OptionDto { Id = o.Id, Label = o.Label, Description = o.Description }).ToList(),
-            HasUserVoted = false // populated in Stage 3 (voting flow)
+            HasUserVoted = false
         };
     }
 }

@@ -4,6 +4,9 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Electronic_Election_Management_System.Controllers
 {
+    /// <summary>
+    /// Handles user authentication and registration.
+    /// </summary>
     [ApiController]
     [Route("api/auth")]
     public class AuthController : ControllerBase
@@ -15,9 +18,10 @@ namespace Electronic_Election_Management_System.Controllers
             _authService = authService;
         }
 
-        // POST /api/auth/register
-        // Orice cont nou creat prin acest endpoint primeste rolul Voter.
-        // Un Admin poate promova ulterior un utilizator prin UsersController.
+        /// <summary>
+        /// Registers a new user.
+        /// </summary>
+        /// <param name="request">The registration request.</param>
         [HttpPost("register")]
         public async Task<ActionResult<AuthResponse>> Register(RegisterRequest request)
         {
@@ -27,7 +31,10 @@ namespace Electronic_Election_Management_System.Controllers
             return Ok(result.Data);
         }
 
-        // POST /api/auth/login
+        /// <summary>
+        /// Logs in a user.
+        /// </summary>
+        /// <param name="request">The login request.</param>
         [HttpPost("login")]
         public async Task<ActionResult<AuthResponse>> Login(LoginRequest request)
         {
