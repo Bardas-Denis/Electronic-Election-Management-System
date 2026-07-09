@@ -8,7 +8,8 @@ import { ElectionDto } from '../../core/models/voting.model';
   selector: 'app-cast-vote',
   standalone: true,
   imports: [CommonModule],
-  templateUrl: './cast-vote.component.html'
+  templateUrl: './cast-vote.component.html',
+  styleUrl: './cast-vote.component.scss'
 })
 export class CastVoteComponent implements OnInit {
   private route = inject(ActivatedRoute);

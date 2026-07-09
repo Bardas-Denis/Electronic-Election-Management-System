@@ -4,23 +4,48 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 52px;
+  height: 56px;
   padding: 0 1.5rem;
   background: var(--bg-card);
   border-bottom: 1px solid var(--border-color);
+  position: sticky;
+  top: 0;
+  z-index: 10;
 }
 
 .navbar .brand {
-  font-size: 1.8rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1.0625rem;
   font-weight: 700;
+  letter-spacing: -0.01em;
   color: var(--text-primary);
   text-decoration: none;
+}
+
+.navbar .brand-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  background: var(--accent);
+  color: #fff;
+  border-radius: var(--radius-sm);
+  flex-shrink: 0;
 }
 
 .navbar .nav-right {
   display: flex;
   align-items: center;
-  gap: 1.25rem;
+  gap: 1rem;
+}
+
+.navbar .nav-divider {
+  width: 1px;
+  height: 20px;
+  background: var(--border-color);
 }
 
 .navbar .nav-link {
@@ -28,6 +53,7 @@
   font-weight: 500;
   color: var(--text-secondary);
   text-decoration: none;
+  padding: 0.35rem 0;
   transition: color var(--transition);
 
   &:hover {
@@ -37,6 +63,31 @@
   &--cta {
     color: var(--text-primary);
   }
+
+  &--active {
+    color: var(--text-primary);
+  }
+}
+
+.navbar .nav-user {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.navbar .nav-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  flex-shrink: 0;
 }
 
 .navbar .nav-email {

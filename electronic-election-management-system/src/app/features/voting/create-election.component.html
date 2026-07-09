@@ -1,53 +1,88 @@
 <div class="page">
   @if (isLoading()) {
-    <p>Se incarca alegerea...</p>
+    <div class="state-block">
+      <span class="spinner"></span>
+      <p>Se încarcă alegerea...</p>
+    </div>
   }
-  <form [formGroup]="form" (ngSubmit)="onSubmit()" class="auth-form" [class.hidden]="isLoading()">
-    <h2>{{ isEditMode() ? 'Editeaza alegerea' : 'Alegere noua' }}</h2>
 
-    <label for="title">Titlu</label>
-    <input id="title" type="text" formControlName="title" />
+  <form [formGroup]="form" (ngSubmit)="onSubmit()" class="form-card" [class.hidden]="isLoading()">
+    <h2>{{ isEditMode() ? 'Editează alegerea' : 'Alegere nouă' }}</h2>
 
-    <label for="description">Descriere</label>
-    <textarea id="description" formControlName="description"></textarea>
+    <div class="field-group">
+      <label for="title">Titlu</label>
+      <input id="title" type="text" formControlName="title" placeholder="ex. Alegeri prezidențiale studențești" />
+    </div>
 
-    <label for="type">Tip</label>
-    <select id="type" formControlName="type">
-      <option value="Politic">Politic</option>
-      <option value="Comercial">Comercial</option>
-    </select>
+    <div class="field-group">
+      <label for="description">Descriere</label>
+      <textarea id="description" formControlName="description" placeholder="Descrie pe scurt scopul acestei alegeri"></textarea>
+    </div>
 
-    <label>
-      <input type="checkbox" formControlName="isAnonymous" />
-      Vot anonim
-    </label>
+    <div class="field-row">
+      <div class="field-group" style="margin-bottom: 0;">
+        <label for="type">Tip</label>
+        <select id="type" formControlName="type">
+          <option value="Politic">Politic</option>
+          <option value="Comercial">Comercial</option>
+        </select>
+      </div>
 
-    <label for="startsAt">Incepe la</label>
-    <input id="startsAt" type="datetime-local" formControlName="startsAt" />
+      <div class="field-group" style="margin-bottom: 0;">
+        <label>Confidențialitate</label>
+        <div class="checkbox-field" style="margin-bottom: 0; height: 40px;">
+          <input type="checkbox" id="isAnonymous" formControlName="isAnonymous" />
+          <label for="isAnonymous">Vot anonim</label>
+        </div>
+      </div>
+    </div>
 
-    <label for="endsAt">Se termina la</label>
-    <input id="endsAt" type="datetime-local" formControlName="endsAt" />
+    <div class="field-row">
+      <div class="field-group" style="margin-bottom: 0;">
+        <label for="startsAt">Începe la</label>
+        <input id="startsAt" type="datetime-local" formControlName="startsAt" />
+      </div>
 
-    <h3>Optiuni de vot</h3>
+      <div class="field-group" style="margin-bottom: 0;">
+        <label for="endsAt">Se termină la</label>
+        <input id="endsAt" type="datetime-local" formControlName="endsAt" />
+      </div>
+    </div>
+
+    <div class="section-divider">
+      <h3>Opțiuni de vot</h3>
+      <p>Adaugă minim două opțiuni pentru care participanții pot vota.</p>
+    </div>
+
     <div formArrayName="options">
       @for (option of options.controls; track $index) {
         <div class="option-row" [formGroupName]="$index">
-          <input type="text" formControlName="label" placeholder="Optiune {{ $index + 1 }}" />
+          <input type="text" formControlName="label" placeholder="Opțiune {{ $index + 1 }}" />
           <input type="text" formControlName="description" placeholder="Descriere (opțional)" />
           @if (options.length > 2) {
-            <button type="button" (click)="removeOption($index)">Sterge</button>
+            <button type="button" class="btn-danger" (click)="removeOption($index)" aria-label="Șterge opțiunea">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+            </button>
           }
         </div>
       }
     </div>
-    <button type="button" (click)="addOption()">+ Adauga optiune</button>
+    <button type="button" class="btn-add-option" (click)="addOption()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+      Adaugă opțiune
+    </button>
 
     @if (errorMessage()) {
       <p class="error-text">{{ errorMessage() }}</p>
     }
 
-    <button type="submit" class="btn-primary" [disabled]="form.invalid || isSubmitting()">
-      {{ isSubmitting() ? 'Se salveaza...' : (isEditMode() ? 'Salveaza modificarile' : 'Creeaza alegerea') }}
-    </button>
+    <div class="form-actions">
+      <button type="submit" class="btn-primary" [disabled]="form.invalid || isSubmitting()">
+        @if (isSubmitting()) {
+          <span class="spinner" style="border-color: rgba(255,255,255,0.3); border-top-color: #fff;"></span>
+        }
+        {{ isSubmitting() ? 'Se salvează...' : (isEditMode() ? 'Salvează modificările' : 'Creează alegerea') }}
+      </button>
+    </div>
   </form>
 </div>

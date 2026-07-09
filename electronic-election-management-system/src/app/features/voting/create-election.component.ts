@@ -10,7 +10,8 @@ import { VotingService } from '../../core/services/voting.service';
   selector: 'app-create-election',
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule],
-  templateUrl: './create-election.component.html'
+  templateUrl: './create-election.component.html',
+  styleUrl: './create-election.component.scss'
 })
 export class CreateElectionComponent implements OnInit {
   private fb = inject(FormBuilder);

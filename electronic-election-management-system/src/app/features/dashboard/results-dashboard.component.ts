@@ -8,7 +8,8 @@ import { ElectionResultsDto } from '../../core/models/results.model';
   selector: 'app-results-dashboard',
   standalone: true,
   imports: [CommonModule],
-  templateUrl: './results-dashboard.component.html'
+  templateUrl: './results-dashboard.component.html',
+  styleUrl: './results-dashboard.component.scss'
 })
 export class ResultsDashboardComponent implements OnInit, OnDestroy {
   private route = inject(ActivatedRoute);
@@ -49,7 +50,14 @@ export class ResultsDashboardComponent implements OnInit, OnDestroy {
   }
 
   percentFor(voteCount: number): number {
-    const max = this.maxVotes();
-    return max > 0 ? Math.round((voteCount / max) * 100) : 0;
+    const total = this.displayedResults()?.totalVotes ?? 0;
+    return total > 0 ? Math.round((voteCount / total) * 100) : 0;
+  }
+
+  isLeading(voteCount: number): boolean {
+    const results = this.displayedResults()?.results ?? [];
+    const total = this.displayedResults()?.totalVotes ?? 0;
+    if (total === 0 || voteCount === 0) return false;
+    return voteCount === Math.max(...results.map((r) => r.voteCount));
   }
 }

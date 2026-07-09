@@ -1,6 +1,9 @@
 <div class="page">
   <div class="page-header">
-    <h2>Gestionare utilizatori si roluri</h2>
+    <div>
+      <h2>Gestionare utilizatori și roluri</h2>
+      <p>Administrează accesul echipei și drepturile fiecărui cont.</p>
+    </div>
   </div>
 
   @if (errorMessage()) {
@@ -8,52 +11,63 @@
   }
 
   @if (isLoading()) {
-    <p>Se incarca utilizatorii...</p>
+    <div class="state-block">
+      <span class="spinner"></span>
+      <p>Se încarcă utilizatorii...</p>
+    </div>
   } @else if (users().length === 0) {
-    <p>Nu exista utilizatori inregistrati.</p>
+    <div class="state-block">
+      <p class="state-title">Nu există utilizatori înregistrați</p>
+    </div>
   } @else {
-    <table class="users-table">
-      <thead>
-        <tr>
-          <th>Email</th>
-          <th>Rol</th>
-          <th>Creat la</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody>
-        @for (user of users(); track user.id) {
+    <div class="table-card">
+      <table class="users-table">
+        <thead>
           <tr>
-            <td>
-              {{ user.email }}
-              @if (isCurrentUser(user)) {
-                <span class="badge-voted">(tu)</span>
-              }
-            </td>
-            <td>
-              <select
-                [ngModel]="user.role"
-                (ngModelChange)="onRoleChange(user, $event)"
-                [disabled]="savingUserId() === user.id"
-              >
-                <option value="Admin">Admin</option>
-                <option value="Voter">Voter</option>
-              </select>
-            </td>
-            <td>{{ user.createdAt | date: 'dd.MM.yyyy HH:mm' }}</td>
-            <td>
-              <button
-                type="button"
-                class="btn-danger"
-                [disabled]="isCurrentUser(user)"
-                (click)="deleteUser(user)"
-              >
-                Sterge
-              </button>
-            </td>
+            <th>Email</th>
+            <th>Rol</th>
+            <th>Creat la</th>
+            <th></th>
           </tr>
-        }
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          @for (user of users(); track user.id) {
+            <tr>
+              <td>
+                <span class="user-email">
+                  {{ user.email }}
+                  @if (isCurrentUser(user)) {
+                    <span class="badge badge--neutral">tu</span>
+                  }
+                </span>
+              </td>
+              <td>
+                <select
+                  class="role-select"
+                  [attr.data-role]="user.role"
+                  [ngModel]="user.role"
+                  (ngModelChange)="onRoleChange(user, $event)"
+                  [disabled]="savingUserId() === user.id"
+                >
+                  <option value="Admin">Admin</option>
+                  <option value="Voter">Voter</option>
+                </select>
+              </td>
+              <td>{{ user.createdAt | date: 'dd.MM.yyyy HH:mm' }}</td>
+              <td>
+                <button
+                  type="button"
+                  class="btn-danger btn-sm"
+                  [disabled]="isCurrentUser(user)"
+                  (click)="deleteUser(user)"
+                >
+                  Șterge
+                </button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
   }
 </div>

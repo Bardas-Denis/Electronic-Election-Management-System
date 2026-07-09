@@ -10,7 +10,8 @@ import { UserDto, UserRole } from '../../core/models/user.model';
   selector: 'app-users-management',
   standalone: true,
   imports: [CommonModule, FormsModule],
-  templateUrl: './users-management.component.html'
+  templateUrl: './users-management.component.html',
+  styleUrl: './users-management.component.scss'
 })
 export class UsersManagementComponent implements OnInit {
   private usersService = inject(UsersService);

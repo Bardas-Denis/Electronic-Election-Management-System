@@ -9,7 +9,8 @@ import { ElectionDto } from '../../core/models/voting.model';
   selector: 'app-election-list',
   standalone: true,
   imports: [CommonModule, RouterLink],
-  templateUrl: './election-list.component.html'
+  templateUrl: './election-list.component.html',
+  styleUrl: './election-list.component.scss'
 })
 export class ElectionListComponent implements OnInit {
   private votingService = inject(VotingService);
