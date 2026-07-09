@@ -6,6 +6,9 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Electronic_Election_Management_System.Controllers
 {
+    /// <summary>
+    /// Exposes election-related endpoints for voters and administrators.
+    /// </summary>
     [ApiController]
     [Route("api/voting/elections")]
     [Authorize]
@@ -18,7 +21,9 @@ namespace Electronic_Election_Management_System.Controllers
             _electionService = electionService;
         }
 
-        // GET /api/voting/elections
+        /// <summary>
+        /// Retrieves all elections.
+        /// </summary>
         [HttpGet]
         public async Task<ActionResult<List<ElectionDto>>> GetAll()
         {
@@ -26,7 +31,10 @@ namespace Electronic_Election_Management_System.Controllers
             return Ok(elections);
         }
 
-        // GET /api/voting/elections/{id}
+        /// <summary>
+        /// Retrieve election based on id.
+        /// </summary>
+        /// <param name="id">The id of the election to retrieve.</param>
         [HttpGet("{id:guid}")]
         public async Task<ActionResult<ElectionDto>> GetById(Guid id)
         {
@@ -36,7 +44,10 @@ namespace Electronic_Election_Management_System.Controllers
             return Ok(election);
         }
 
-        // POST /api/voting/elections  (doar Admin - CRUD alegeri, Etapa 2)
+        /// <summary>
+        /// Create a new election.
+        /// </summary>
+        /// <param name="request">The election to create.</param>
         [HttpPost]
         [Authorize(Roles = "Admin")]
         public async Task<ActionResult<ElectionDto>> Create(CreateElectionRequest request)
@@ -47,7 +58,11 @@ namespace Electronic_Election_Management_System.Controllers
             return CreatedAtAction(nameof(GetById), new { id = result.Data!.Id }, result.Data);
         }
 
-        // PUT /api/voting/elections/{id}  (doar Admin)
+        /// <summary>
+        /// Update election based on id.
+        /// </summary>
+        /// <param name="id">The id of the election to update.</param>
+        /// <param name="request">The election to update.</param>
         [HttpPut("{id:guid}")]
         [Authorize(Roles = "Admin")]
         public async Task<ActionResult<ElectionDto>> Update(Guid id, UpdateElectionRequest request)
@@ -60,7 +75,10 @@ namespace Electronic_Election_Management_System.Controllers
             return Ok(result.Data);
         }
 
-        // DELETE /api/voting/elections/{id}  (doar Admin)
+        /// <summary>
+        /// Delete election based on id.
+        /// </summary>
+        /// <param name="id">The id of the election to delete.</param>
         [HttpDelete("{id:guid}")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Delete(Guid id)
@@ -73,6 +91,9 @@ namespace Electronic_Election_Management_System.Controllers
             return NoContent();
         }
 
+        /// <summary>
+        /// Retrieves the ID of the current user.
+        /// </summary>
         private Guid GetCurrentUserId()
         {
             string? idClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);

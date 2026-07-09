@@ -2,23 +2,24 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Electronic_Election_Management_System.DTOs
 {
-    // Folosit de admin pentru a lista utilizatorii (fara PasswordHash!)
+    // SYNC: user.model.ts -> UserDto
     public class UserDto
     {
         public Guid Id { get; set; }
         public string Email { get; set; } = string.Empty;
-        public string Role { get; set; } = string.Empty; // "Admin" | "Voter"
+        /// <summary>The user's role. Valid values: <c>"Admin"</c> or <c>"Voter"</c>.</summary>
+        public string Role { get; set; } = string.Empty;
         public DateTime CreatedAt { get; set; }
     }
 
-    // Body pentru schimbarea rolului unui utilizator (doar Admin)
+    // SYNC: user.model.ts -> UpdateUserRoleRequest
     public class UpdateUserRoleRequest
     {
         [Required]
-        public string Role { get; set; } = string.Empty; // "Admin" | "Voter"
+        /// <summary>The role to assign to the user. Valid values: <c>"Admin"</c> or <c>"Voter"</c>.</summary>
+        public string Role { get; set; } = string.Empty;
     }
 
-    // Folosit de admin pentru vizualizarea auditului
     public class AuditLogDto
     {
         public Guid Id { get; set; }

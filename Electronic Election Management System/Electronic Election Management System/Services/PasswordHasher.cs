@@ -2,8 +2,10 @@ using System.Security.Cryptography;
 
 namespace Electronic_Election_Management_System.Services
 {
-    // Hashing de parole folosind PBKDF2 (Rfc2898DeriveBytes), fara dependente externe.
-    // Formatul stocat: {iterations}.{saltBase64}.{hashBase64}
+    /// <summary>
+    /// Password hashing using PBKDF2 (Rfc2898DeriveBytes).
+    /// Stored format: {iterations}.{saltBase64}.{hashBase64}
+    /// </summary>
     public static class PasswordHasher
     {
         private const int SaltSize = 16;       // 128 bit

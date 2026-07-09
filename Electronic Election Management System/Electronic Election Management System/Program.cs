@@ -1,4 +1,3 @@
-using System.Text;
 using Electronic_Election_Management_System.Data;
 using Electronic_Election_Management_System.Data.Repositories;
 using Electronic_Election_Management_System.Models;
@@ -8,12 +7,14 @@ using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
+using System.Reflection;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// --- Connection string SQLite cu busy_timeout=5000ms ---
-// "Default Timeout" (secunde) e mapat de Microsoft.Data.Sqlite pe sqlite3_busy_timeout,
-// aplicat automat pe FIECARE conexiune deschisa (nu doar la pornire).
+// SQLite connection string with busy_timeout=5000ms.
+// "Default Timeout" (seconds) is mapped by Microsoft.Data.Sqlite to
+// sqlite3_busy_timeout, applied automatically on every connection opened(not just at startup).
 var sqliteConnectionStringBuilder = new SqliteConnectionStringBuilder(
     builder.Configuration.GetConnectionString("DefaultConnection"))
 {
@@ -21,26 +22,21 @@ var sqliteConnectionStringBuilder = new SqliteConnectionStringBuilder(
 };
 var sqliteConnectionString = sqliteConnectionStringBuilder.ToString();
 
-// --- DbContext cu SQLite (WAL mode activat mai jos, dupa Migrate) ---
 builder.Services.AddDbContext<ElectionDbContext>(options =>
     options.UseSqlite(sqliteConnectionString)
 );
 
-// --- Servicii aplicatie ---
 builder.Services.AddSingleton<ITokenService, TokenService>();
 
-// --- Repositories (Data Access layer) ---
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IElectionRepository, ElectionRepository>();
 builder.Services.AddScoped<IAuditLogRepository, AuditLogRepository>();
 
-// --- Domain services (Business Logic layer) ---
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IElectionService, ElectionService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IAuditService, AuditService>();
 
-// --- Autentificare JWT ---
 var jwtSection = builder.Configuration.GetSection("Jwt");
 string jwtKey = jwtSection["Key"]!;
 string jwtIssuer = jwtSection["Issuer"]!;
@@ -71,7 +67,6 @@ builder.Services.AddAuthorization();
 
 builder.Services.AddControllers();
 
-// --- CORS pentru frontend-ul Angular (ng serve implicit pe 4200) ---
 const string AngularDevCorsPolicy = "AngularDevCorsPolicy";
 builder.Services.AddCors(options =>
 {
@@ -84,7 +79,6 @@ builder.Services.AddCors(options =>
     });
 });
 
-// --- Swagger cu suport pentru JWT (buton "Authorize") ---
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
@@ -97,24 +91,30 @@ builder.Services.AddSwaggerGen(options =>
         Scheme = "Bearer",
         BearerFormat = "JWT",
         In = ParameterLocation.Header,
-        Description = "Introduceti: Bearer {token}"
+        Description = "Enter: Bearer {token}"
     });
 
     options.AddSecurityRequirement(document => new OpenApiSecurityRequirement
     {
         [new OpenApiSecuritySchemeReference("Bearer", document)] = new List<string>()
     });
+
+    var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+    var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+    if (File.Exists(xmlPath))
+    {
+        options.IncludeXmlComments(xmlPath);
+    }
 });
 
 var app = builder.Build();
 
-// --- Creeaza / actualizeaza baza de date la pornire ---
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<ElectionDbContext>();
     db.Database.Migrate();
 
-    // --- Activare WAL mode (persista in fisierul .db, setat o singura data) ---
+    // Enable WAL mode
     db.Database.ExecuteSqlRaw("PRAGMA journal_mode=WAL;");
     db.Database.ExecuteSqlRaw("PRAGMA busy_timeout=5000;");
 
@@ -127,7 +127,7 @@ using (var scope = app.Services.CreateScope())
     {
         checkCmd.CommandText = "PRAGMA journal_mode;";
         var currentJournalMode = (string?)await checkCmd.ExecuteScalarAsync() ?? "unknown";
-        app.Logger.LogInformation("SQLite journal_mode confirmat la pornire: {JournalMode}", currentJournalMode);
+        app.Logger.LogInformation("SQLite journal_mode confirmed at startup: {JournalMode}", currentJournalMode);
     }
 
     await SeedData.EnsureAdminUserAsync(db);
@@ -147,10 +147,8 @@ app.MapControllers();
 
 app.Run();
 
-// ============================================================
-// Seed: creeaza un cont Admin implicit daca baza de date e goala,
-// ca echipa sa poata testa imediat panoul de administrare.
-// ============================================================
+// Seeds a default Admin account when the database is empty, so the team
+// can log into the admin panel immediately without a manual setup step.
 static class SeedData
 {
     public static async Task EnsureAdminUserAsync(ElectionDbContext db)

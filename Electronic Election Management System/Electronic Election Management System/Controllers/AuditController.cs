@@ -5,7 +5,10 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Electronic_Election_Management_System.Controllers
 {
-    // "vizualizarea auditului" - functionalitate de Administrator ceruta in PDF (sectiunea 5).
+    /// <summary>
+    /// Exposes system audit logs for administrators to monitor election-related events
+    /// (e.g. vote casts, election creation, role changes, new users).
+    /// </summary>
     [ApiController]
     [Route("api/audit")]
     [Authorize(Roles = "Admin")]
@@ -18,7 +21,13 @@ namespace Electronic_Election_Management_System.Controllers
             _auditService = auditService;
         }
 
-        // GET /api/audit?take=100
+        /// <summary>
+        /// Retrieves the most recent audit log entries, newest first.
+        /// </summary>
+        /// <param name="take">
+        /// Number of entries to return. Clamped server-side to the range 1–500
+        /// to prevent accidental full-table pulls.
+        /// </param>
         [HttpGet]
         public async Task<ActionResult<List<AuditLogDto>>> GetAll([FromQuery] int take = 100)
         {

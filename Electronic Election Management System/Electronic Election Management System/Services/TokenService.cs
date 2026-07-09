@@ -6,15 +6,27 @@ using Microsoft.IdentityModel.Tokens;
 
 namespace Electronic_Election_Management_System.Services
 {
+    /// <summary>
+    /// Token service using JWT.
+    /// </summary>
     public class TokenService : ITokenService
     {
         private readonly IConfiguration _configuration;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="TokenService"/> class.
+        /// </summary>
+        /// <param name="configuration">The application configuration.</param>
         public TokenService(IConfiguration configuration)
         {
             _configuration = configuration;
         }
 
+        /// <summary>
+        /// Generates a JWT token for the given user.
+        /// </summary>
+        /// <param name="user">The user for whom the token is to be generated.</param>
+        /// <returns>A tuple containing the JWT token and its expiration time.</returns>
         public (string Token, DateTime ExpiresAt) GenerateToken(User user)
         {
             var jwtSection = _configuration.GetSection("Jwt");

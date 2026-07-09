@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Electronic_Election_Management_System.DTOs
 {
-    // Corespunde OptionDto din voting.model.ts (frontend)
+    // SYNC: voting.model.ts -> OptionDto
     public class OptionDto
     {
         public Guid Id { get; set; } = Guid.Empty;
@@ -10,6 +10,7 @@ namespace Electronic_Election_Management_System.DTOs
         public string? Description { get; set; }
     }
 
+    // SYNC: voting.model.ts -> OptionCreateDto
     public class CreateOptionDto
     {
         [Required]
@@ -17,24 +18,27 @@ namespace Electronic_Election_Management_System.DTOs
         public string? Description { get; set; }
     }
 
-    // Corespunde ElectionDto din voting.model.ts (frontend)
+    // SYNC: voting.model.ts -> ElectionDto
     public class ElectionDto
     {
         public Guid Id { get; set; }
         public string Title { get; set; } = string.Empty;
         public string? Description { get; set; }
-        public string Type { get; set; } = string.Empty; // "Politic" | "Comercial"
+        /// <summary>The election category. Valid values: <c>"Politic"</c> or <c>"Comercial"</c>.</summary>
+        public string Type { get; set; } = string.Empty;
         public bool IsAnonymous { get; set; }
         public DateTime StartsAt { get; set; }
         public DateTime EndsAt { get; set; }
         public List<OptionDto> Options { get; set; } = new();
 
-        // Etapa 3 (votare) va completa asta pe baza userului curent.
-        // In Etapa 2 se intoarce mereu false, campul exista deja pentru compatibilitate cu frontend-ul.
+        
+        /// <summary>
+        /// Indicates whether the current user has already cast a vote in this election.
+        /// </summary>
         public bool HasUserVoted { get; set; } = false;
     }
 
-    // Corespunde CreateElectionRequest din voting.model.ts (frontend)
+    // SYNC: voting.model.ts -> CreateElectionRequest
     public class CreateElectionRequest
     {
         [Required]
@@ -43,7 +47,8 @@ namespace Electronic_Election_Management_System.DTOs
         public string? Description { get; set; }
 
         [Required]
-        public string Type { get; set; } = string.Empty; // "Politic" | "Comercial"
+        /// <summary>The election category. Valid values: <c>"Politic"</c> or <c>"Comercial"</c>.</summary>
+        public string Type { get; set; } = string.Empty;
 
         public bool IsAnonymous { get; set; } = true;
 
@@ -51,13 +56,15 @@ namespace Electronic_Election_Management_System.DTOs
         public DateTime StartsAt { get; set; }
 
         [Required]
+        /// <summary>The date and time when the election closes. Must be strictly after <see cref="StartsAt"/>.</summary>
         public DateTime EndsAt { get; set; }
 
         [Required, MinLength(2)]
+        /// <summary>The options for this election. Must contain at least 2 items.</summary>
         public List<CreateOptionDto> Options { get; set; } = new();
     }
 
-    // Folosit pentru PUT (editare alegere existenta) - acelasi shape ca la creare
+    // SYNC: voting.model.ts -> CreateElectionRequest (reused for PUT)
     public class UpdateElectionRequest : CreateElectionRequest
     {
     }
