@@ -44,6 +44,7 @@ export class UsersManagementComponent implements OnInit {
     });
   }
 
+  // schimba rolul unui user (ex: Voter -> Admin) direct din dropdown
   onRoleChange(user: UserDto, newRole: string): void {
     this.savingUserId.set(user.id);
 
@@ -73,6 +74,7 @@ export class UsersManagementComponent implements OnInit {
     });
   }
 
+  // folosit in template ca sa blocheze un admin sa se stearga pe sine insusi
   isCurrentUser(user: UserDto): boolean {
     return this.authService.currentUser()?.userId === user.id;
   }

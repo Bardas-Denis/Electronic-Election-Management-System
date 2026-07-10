@@ -4,13 +4,13 @@ import { Observable, tap } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { LoginRequest, RegisterRequest, AuthResponse, CurrentUser } from '../models/auth.model';
 
-const TOKEN_KEY = 'election_app_token';
+const TOKEN_KEY = 'election_app_token'; // sessionStorage, not localStorage - clears on tab close
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private http = inject(HttpClient);
 
-  // signal reactiv, folosit in toata aplicatia
+  // Reactive current-user state, read by guards/navbar/etc.
   currentUser = signal<CurrentUser | null>(this.readUserFromToken());
 
   login(request: LoginRequest): Observable<AuthResponse> {
@@ -47,6 +47,7 @@ export class AuthService {
     this.currentUser.set(this.readUserFromToken());
   }
 
+  // Decodes the JWT payload without verifying signature - UI display only
   private readUserFromToken(): CurrentUser | null {
     const token = sessionStorage.getItem(TOKEN_KEY);
     if (!token) return null;
@@ -59,7 +60,7 @@ export class AuthService {
         role: payload['role'], 
       };
     } catch {
-      return null;
+      return null; // malformed token, treat as logged out
     }
   }
 }

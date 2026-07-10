@@ -45,6 +45,7 @@ export class ResultsDashboardComponent implements OnInit, OnDestroy {
     this.resultsService.connectToLiveResults(this.electionId);
   }
 
+  // important: inchide conexiunea SignalR la parasirea paginii
   ngOnDestroy(): void {
     this.resultsService.disconnect();
   }
@@ -54,6 +55,7 @@ export class ResultsDashboardComponent implements OnInit, OnDestroy {
     return total > 0 ? Math.round((voteCount / total) * 100) : 0;
   }
 
+  // true daca aceasta optiune e in frunte (folosit probabil pt highlight in UI)
   isLeading(voteCount: number): boolean {
     const results = this.displayedResults()?.results ?? [];
     const total = this.displayedResults()?.totalVotes ?? 0;

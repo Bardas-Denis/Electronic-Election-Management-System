@@ -24,6 +24,7 @@ export interface OptionCreateDto {
   description?: string;
 }
 
+// Payload for both create AND update (same shape, different HTTP verb)
 export interface CreateElectionRequest {
   title: string;
   description?: string;

@@ -3,6 +3,7 @@ import { ReactiveFormsModule, FormBuilder, Validators, AbstractControl, Validati
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
 
+// Group-level validator: checks password === confirmPassword
 function passwordsMatch(control: AbstractControl): ValidationErrors | null {
   const password = control.get('password')?.value;
   const confirm = control.get('confirmPassword')?.value;
@@ -52,7 +53,7 @@ export class RegisterComponent {
     this.isLoading.set(true);
     this.errorMessage.set(null);
 
-    const { email, password } = this.form.getRawValue() as any;
+    const { email, password } = this.form.getRawValue() as any; // confirmPassword not sent to API
 
     this.authService.register({ email, password }).subscribe({
       next: () => {

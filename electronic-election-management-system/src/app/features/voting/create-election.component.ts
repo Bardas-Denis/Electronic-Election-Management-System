@@ -95,6 +95,7 @@ export class CreateElectionComponent implements OnInit {
     }));
   }
 
+  // minim 2 optiuni obligatorii
   removeOption(index: number): void {
     if (this.options.length > 2) {
       this.options.removeAt(index);

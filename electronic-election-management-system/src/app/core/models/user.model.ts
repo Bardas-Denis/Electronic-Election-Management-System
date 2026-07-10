@@ -1,5 +1,6 @@
 export type UserRole = 'Admin' | 'Voter';
 
+// Used in the admin users management page
 export interface UserDto {
   id: string;
   email: string;

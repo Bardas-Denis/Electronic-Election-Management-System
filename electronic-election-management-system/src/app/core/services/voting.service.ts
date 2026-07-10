@@ -4,6 +4,7 @@ import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { ElectionDto, CreateElectionRequest, CastVoteRequest } from '../models/voting.model';
 
+// Thin HTTP wrapper - no business logic, just calls the backend
 @Injectable({ providedIn: 'root' })
 export class VotingService {
   private baseUrl = `${environment.apiUrl}/voting`;

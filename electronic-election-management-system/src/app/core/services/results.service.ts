@@ -25,7 +25,7 @@ export class ResultsService {
   connectToLiveResults(electionId: string): void {
     this.hubConnection = new signalR.HubConnectionBuilder()
       .withUrl(environment.signalRUrl, {
-        accessTokenFactory: () => this.authService.getToken() ?? ''
+        accessTokenFactory: () => this.authService.getToken() ?? '' // JWT pentru autentificare SignalR
       })
       .withAutomaticReconnect()
       .build();

@@ -8,6 +8,7 @@ export interface RegisterRequest {
   password: string;
 }
 
+// Response from login/register - contains everything needed to start a session
 export interface AuthResponse {
   token: string;
   userId: string;
@@ -16,6 +17,7 @@ export interface AuthResponse {
   expiresAt: string;
 }
 
+// Decoded from the JWT payload, used for UI display (see auth.service.ts)
 export interface CurrentUser {
   userId: string;
   email: string;

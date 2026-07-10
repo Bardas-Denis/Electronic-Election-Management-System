@@ -4,6 +4,7 @@ import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { routes } from './app.routes';
 import { jwtInterceptor } from './core/interceptors/jwt.interceptor';
 
+// Global config: router + HTTP client with JWT interceptor
 export const appConfig: ApplicationConfig = {
   providers: [
     provideRouter(routes),

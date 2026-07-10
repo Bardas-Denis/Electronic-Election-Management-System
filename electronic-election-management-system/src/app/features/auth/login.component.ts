@@ -19,6 +19,7 @@ export class LoginComponent {
   isLoading = signal(false);
   showPassword = signal(false);
 
+  // Client-side validation only - real check happens server-side
   form = this.fb.group({
     email: ['', [Validators.required, Validators.email]],
     password: ['', [Validators.required, Validators.minLength(6)]]

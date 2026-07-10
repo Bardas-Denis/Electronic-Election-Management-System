@@ -1,9 +1,11 @@
 import { Routes } from '@angular/router';
 import { authGuard, adminGuard } from './core/guards/auth.guard';
 
+// All pages lazy-loaded. authGuard = any logged-in user, adminGuard = Admin only.
 export const routes: Routes = [
   { path: '', redirectTo: 'elections', pathMatch: 'full' },
 
+  // Public auth pages
   {
     path: 'login',
     loadComponent: () =>
@@ -15,6 +17,7 @@ export const routes: Routes = [
       import('./features/auth/register.component').then((m) => m.RegisterComponent)
   },
 
+  // Any logged-in user
   {
     path: 'elections',
     canActivate: [authGuard],
@@ -23,6 +26,8 @@ export const routes: Routes = [
         (m) => m.ElectionListComponent
       )
   },
+
+  // Admin only
   {
     path: 'elections/new',
     canActivate: [adminGuard],
@@ -31,6 +36,7 @@ export const routes: Routes = [
         (m) => m.CreateElectionComponent
       )
   },
+  // Same component as create - shared for both new/edit
   {
     path: 'elections/:id/edit',
     canActivate: [adminGuard],
@@ -39,6 +45,8 @@ export const routes: Routes = [
         (m) => m.CreateElectionComponent
       )
   },
+
+  // Any logged-in user
   {
     path: 'elections/:id',
     canActivate: [authGuard],
@@ -56,6 +64,7 @@ export const routes: Routes = [
       )
   },
 
+  // Admin only
   {
     path: 'admin/users',
     canActivate: [adminGuard],

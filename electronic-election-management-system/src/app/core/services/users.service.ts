@@ -4,6 +4,7 @@ import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { UserDto, UpdateUserRoleRequest } from '../models/user.model';
 
+// Admin-only endpoints - enforced server-side, not just by hiding the UI
 @Injectable({ providedIn: 'root' })
 export class UsersService {
   private baseUrl = `${environment.apiUrl}/users`;

@@ -1,3 +1,4 @@
+<!-- Navbar: changes based on login state -->
 <nav class="navbar">
   <a routerLink="/elections" class="brand">
     <span class="brand-icon">
@@ -8,13 +9,13 @@
     </span>
     Votex
   </a>
-
   @if (authService.isLoggedIn()) {
     <div class="nav-right">
       @if (authService.isAdmin()) {
         <a routerLink="/admin/users" routerLinkActive="nav-link--active" class="nav-link">Utilizatori</a>
       }
       <span class="nav-divider"></span>
+      <!-- Avatar shows first letter of email -->
       <span class="nav-user">
         <span class="nav-avatar">{{ (authService.currentUser()?.email ?? '?').charAt(0).toUpperCase() }}</span>
         <span class="nav-email">{{ authService.currentUser()?.email }}</span>
@@ -32,4 +33,5 @@
   }
 </nav>
 
+<!-- Every route/page renders here -->
 <router-outlet />
