@@ -57,7 +57,7 @@ export class AuthService {
       return {
         userId: payload['sub'] ?? payload['nameid'],
         email: payload['email'],
-        role: payload['role'], 
+        role: payload['role'] || payload['http://schemas.microsoft.com/ws/2008/06/identity/claims/role']
       };
     } catch {
       return null; // malformed token, treat as logged out
