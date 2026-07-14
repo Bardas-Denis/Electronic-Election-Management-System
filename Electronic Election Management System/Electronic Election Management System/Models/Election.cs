@@ -20,6 +20,9 @@ namespace Electronic_Election_Management_System.Models
 
         public string? Description { get; set; }
 
+        /// <summary>The actual question presented to voters, shown above the options on the voting screen.</summary>
+        public string? Question { get; set; }
+
         public ElectionType Type { get; set; }
 
         /// <summary>

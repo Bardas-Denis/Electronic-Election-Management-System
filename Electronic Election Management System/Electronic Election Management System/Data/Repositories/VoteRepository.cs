@@ -23,6 +23,18 @@ namespace Electronic_Election_Management_System.Data.Repositories
                 .Where(v => v.UserId == userId)
                 .AnyAsync(v => v.Option!.ElectionId == electionId);
 
+        public async Task<bool> HasUserVotedInElectionAsync(Guid userId, Guid electionId, bool isAnonymous)
+        {
+            if (isAnonymous)
+            {
+                var token = await _db.VoteTokens
+                    .FirstOrDefaultAsync(t => t.UserId == userId && t.ElectionId == electionId);
+                return token?.IsUsed == true;
+            }
+
+            return await HasUserVotedAsync(userId, electionId);
+        }
+
         public async Task AddVoteAsync(Vote vote)
             => await _db.Votes.AddAsync(vote);
 

@@ -8,17 +8,26 @@ namespace Electronic_Election_Management_System.Services
     {
         private readonly IElectionRepository _elections;
         private readonly IAuditLogRepository _auditLogs;
+        private readonly IVoteRepository _votes;
 
-        public ElectionService(IElectionRepository elections, IAuditLogRepository auditLogs)
+        public ElectionService(IElectionRepository elections, IAuditLogRepository auditLogs, IVoteRepository votes)
         {
             _elections = elections;
             _auditLogs = auditLogs;
+            _votes = votes;
         }
 
-        public async Task<List<ElectionDto>> GetAllAsync()
+        public async Task<List<ElectionDto>> GetAllAsync(Guid userId)
         {
             var elections = await _elections.GetAllWithOptionsAsync();
-            return elections.Select(MapToDto).ToList();
+            var dtos = new List<ElectionDto>();
+            foreach (var election in elections)
+            {
+                var dto = MapToDto(election);
+                dto.HasUserVoted = await _votes.HasUserVotedInElectionAsync(userId, election.Id, election.IsAnonymous);
+                dtos.Add(dto);
+            }
+            return dtos;
         }
 
         public async Task<List<ElectionDto>> GetCreatedByAsync(Guid userId)
@@ -27,10 +36,15 @@ namespace Electronic_Election_Management_System.Services
             return elections.Select(MapToDto).ToList();
         }
 
-        public async Task<ElectionDto?> GetByIdAsync(Guid id)
+        public async Task<ElectionDto?> GetByIdAsync(Guid id, Guid userId)
         {
             var election = await _elections.GetByIdWithOptionsAsync(id);
-            return election is null ? null : MapToDto(election);
+            if (election is null)
+                return null;
+
+            var dto = MapToDto(election);
+            dto.HasUserVoted = await _votes.HasUserVotedInElectionAsync(userId, election.Id, election.IsAnonymous);
+            return dto;
         }
 
         public async Task<ServiceResult<ElectionDto>> CreateAsync(CreateElectionRequest request, Guid userId)
@@ -49,6 +63,7 @@ namespace Electronic_Election_Management_System.Services
                 CreatedByUserId = userId,
                 Title = request.Title.Trim(),
                 Description = request.Description,
+                Question = request.Question?.Trim(),
                 Type = type,
                 IsAnonymous = request.IsAnonymous,
                 StartsAt = request.StartsAt,
@@ -92,6 +107,7 @@ namespace Electronic_Election_Management_System.Services
 
             election.Title = request.Title.Trim();
             election.Description = request.Description;
+            election.Question = request.Question?.Trim();
             election.Type = type;
             election.IsAnonymous = request.IsAnonymous;
             election.StartsAt = request.StartsAt;
@@ -171,6 +187,7 @@ namespace Electronic_Election_Management_System.Services
             Id = e.Id,
             Title = e.Title,
             Description = e.Description,
+            Question = e.Question,
             Type = e.Type.ToString(),
             IsAnonymous = e.IsAnonymous,
             StartsAt = e.StartsAt,

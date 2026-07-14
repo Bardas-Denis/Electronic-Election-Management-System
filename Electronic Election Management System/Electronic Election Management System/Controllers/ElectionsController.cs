@@ -27,7 +27,7 @@ namespace Electronic_Election_Management_System.Controllers
         [HttpGet]
         public async Task<ActionResult<List<ElectionDto>>> GetAll()
         {
-            var elections = await _electionService.GetAllAsync();
+            var elections = await _electionService.GetAllAsync(GetCurrentUserId());
             return Ok(elections);
         }
 
@@ -49,7 +49,7 @@ namespace Electronic_Election_Management_System.Controllers
         [HttpGet("{id:guid}")]
         public async Task<ActionResult<ElectionDto>> GetById(Guid id)
         {
-            var election = await _electionService.GetByIdAsync(id);
+            var election = await _electionService.GetByIdAsync(id, GetCurrentUserId());
             if (election is null)
                 return NotFound();
             return Ok(election);

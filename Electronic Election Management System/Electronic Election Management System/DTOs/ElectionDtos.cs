@@ -24,6 +24,8 @@ namespace Electronic_Election_Management_System.DTOs
         public Guid Id { get; set; }
         public string Title { get; set; } = string.Empty;
         public string? Description { get; set; }
+        /// <summary>The actual question presented to voters, shown above the options.</summary>
+        public string? Question { get; set; }
         /// <summary>The election category. Valid values: <c>"Politic"</c> or <c>"Comercial"</c>.</summary>
         public string Type { get; set; } = string.Empty;
         public bool IsAnonymous { get; set; }
@@ -45,6 +47,10 @@ namespace Electronic_Election_Management_System.DTOs
         public string Title { get; set; } = string.Empty;
 
         public string? Description { get; set; }
+
+        [Required]
+        /// <summary>The actual question presented to voters, shown above the options.</summary>
+        public string Question { get; set; } = string.Empty;
 
         [Required]
         /// <summary>The election category. Valid values: <c>"Politic"</c> or <c>"Comercial"</c>.</summary>

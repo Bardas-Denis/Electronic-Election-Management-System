@@ -30,6 +30,7 @@ export class CreateElectionComponent implements OnInit {
   form = this.fb.group({
     title: ['', Validators.required],
     description: [''],
+    question: ['', Validators.required],
     type: ['Politic', Validators.required],
     isAnonymous: [true],
     startsAt: ['', Validators.required],
@@ -79,6 +80,7 @@ export class CreateElectionComponent implements OnInit {
         this.form.patchValue({
           title: election.title,
           description: election.description ?? '',
+          question: election.question ?? '',
           type: election.type,
           isAnonymous: election.isAnonymous,
           startsAt: toDatetimeLocal(election.startsAt),
