@@ -17,6 +17,9 @@
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
           {{ e.isAnonymous ? 'Vot anonim — identitatea ta nu va fi legată de opțiunea aleasă.' : 'Vot neanonim.' }}
         </div>
+        @if (e.isExpired) {
+          <span class="badge badge--expired">Expirată</span>
+        }
       </div>
 
       @if (e.question) {
@@ -28,14 +31,18 @@
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
           Ai votat deja la această alegere. Opțiunile sunt blocate.
         </div>
+      } @else if (e.isExpired) {
+        <div class="error-text">
+          Această alegere s-a încheiat și nu mai acceptă voturi noi. Poți totuși consulta rezultatele înregistrate.
+        </div>
       }
 
-      <div class="options-list" [class.locked]="e.hasUserVoted">
+      <div class="options-list" [class.locked]="e.hasUserVoted || e.isExpired">
         @for (option of e.options; track option.id) {
           <button
             class="option-item"
             [class.selected]="selectedOptionId() === option.id"
-            [disabled]="e.hasUserVoted"
+            [disabled]="e.hasUserVoted || e.isExpired"
             (click)="selectOption(option.id)"
           >
             <span class="option-radio"><span class="option-radio-dot"></span></span>
@@ -53,7 +60,7 @@
         <p class="error-text">{{ errorMessage() }}</p>
       }
 
-      @if (!e.hasUserVoted) {
+      @if (!e.hasUserVoted && !e.isExpired) {
         <button
           class="btn-primary vote-submit"
           [disabled]="!selectedOptionId() || isSubmitting()"
@@ -64,6 +71,10 @@
           }
           {{ isSubmitting() ? 'Se trimite...' : 'Trimite votul' }}
         </button>
+      }
+
+      @if (e.isExpired) {
+        <button (click)="goToResults()" class="btn-secondary vote-submit">Vezi rezultate live</button>
       }
     </div>
   } @else {

@@ -19,6 +19,9 @@ export interface ElectionDto {
   options: OptionDto[];
   // completat de backend pe baza userului curent, ca sa stie UI-ul daca mai poate vota
   hasUserVoted?: boolean;
+  // true daca endsAt a trecut deja; alegerea nu mai accepta voturi noi, dar
+  // voturile inregistrate anterior si rezultatele raman accesibile
+  isExpired?: boolean;
 }
 
 export interface OptionCreateDto {

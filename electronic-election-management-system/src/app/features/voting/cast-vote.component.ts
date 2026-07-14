@@ -35,15 +35,15 @@ export class CastVoteComponent implements OnInit {
   }
 
   selectOption(optionId: string): void {
-    // Nu mai permitem schimbarea selectiei daca userul a votat deja
-    if (this.election()?.hasUserVoted) return;
+    // Nu mai permitem schimbarea selectiei daca userul a votat deja sau alegerea a expirat
+    if (this.election()?.hasUserVoted || this.election()?.isExpired) return;
     this.selectedOptionId.set(optionId);
   }
 
   // "Trimite votul" - anonymous elections vote immediately, non-anonymous ones
   // first collect a voter declaration via the popup (see voter-declaration-modal).
   submitVote(): void {
-    if (!this.selectedOptionId() || this.election()?.hasUserVoted) return;
+    if (!this.selectedOptionId() || this.election()?.hasUserVoted || this.election()?.isExpired) return;
 
     if (this.election()?.isAnonymous) {
       this.castVote();

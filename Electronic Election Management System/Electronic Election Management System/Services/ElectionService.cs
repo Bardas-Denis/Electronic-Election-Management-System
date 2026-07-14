@@ -193,7 +193,8 @@ namespace Electronic_Election_Management_System.Services
             StartsAt = e.StartsAt,
             EndsAt = e.EndsAt,
             Options = e.Options.Select(o => new OptionDto { Id = o.Id, Label = o.Label, Description = o.Description }).ToList(),
-            HasUserVoted = false
+            HasUserVoted = false,
+            IsExpired = DateTime.UtcNow > e.EndsAt
         };
     }
 }
