@@ -5,8 +5,8 @@ namespace Electronic_Election_Management_System.Services
     public interface IElectionService
     {
         /// <summary>
-        /// Retrieves all elections (voting list is open to every authenticated user), with
-        /// HasUserVoted computed for the given user.
+        /// Retrieves all elections (voting list — open to every authenticated user),
+        /// with HasUserVoted computed for the given user.
         /// </summary>
         Task<List<ElectionDto>> GetAllAsync(Guid userId);
 
@@ -14,6 +14,7 @@ namespace Electronic_Election_Management_System.Services
         /// Retrieves elections created by the specified user (management view).
         /// </summary>
         Task<List<ElectionDto>> GetCreatedByAsync(Guid userId);
+
 
         /// <summary>
         /// Retrieves an election by its ID, or null if not found. HasUserVoted is computed for the given user.

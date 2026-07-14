@@ -22,10 +22,15 @@ namespace Electronic_Election_Management_System.Data
                 .HasIndex(u => u.Email)
                 .IsUnique();
 
-            // Stored as string ("Admin"/"Voter")
+            // Stored as string ("Admin"/"ElectionManager"/"Voter").
+            // Explicit lambdas are used instead of HasConversion<string>() so that
+            // EF Core does NOT generate a cached switch-case expression that would
+            // break when new enum values are added without a full clean rebuild.
             modelBuilder.Entity<User>()
                 .Property(u => u.Role)
-                .HasConversion<string>();
+                .HasConversion(
+                    role => role.ToString(),
+                    value => (UserRole)Enum.Parse(typeof(UserRole), value));
 
             modelBuilder.Entity<Election>()
                 .Property(e => e.Type)
