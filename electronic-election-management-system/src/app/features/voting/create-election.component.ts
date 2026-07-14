@@ -143,7 +143,7 @@ export class CreateElectionComponent implements OnInit {
     request$.subscribe({
       next: (result) => {
         this.isSubmitting.set(false);
-        this.router.navigate(['/elections', result.id]);
+        this.router.navigate(['/elections']);
       },
       error: (err) => {
         this.isSubmitting.set(false);
