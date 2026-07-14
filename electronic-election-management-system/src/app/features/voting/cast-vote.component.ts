@@ -2,12 +2,13 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { VotingService } from '../../core/services/voting.service';
-import { ElectionDto } from '../../core/models/voting.model';
+import { ElectionDto, VoterDeclarationDto } from '../../core/models/voting.model';
+import { VoterDeclarationModalComponent } from './voter-declaration-modal.component';
 
 @Component({
   selector: 'app-cast-vote',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, VoterDeclarationModalComponent],
   templateUrl: './cast-vote.component.html',
   styleUrl: './cast-vote.component.scss'
 })
@@ -21,6 +22,7 @@ export class CastVoteComponent implements OnInit {
   isSubmitting = signal(false);
   errorMessage = signal<string | null>(null);
   voteConfirmed = signal(false);
+  showDeclarationModal = signal(false);
 
   private electionId!: string;
 
@@ -36,7 +38,28 @@ export class CastVoteComponent implements OnInit {
     this.selectedOptionId.set(optionId);
   }
 
+  // "Trimite votul" - anonymous elections vote immediately, non-anonymous ones
+  // first collect a voter declaration via the popup (see voter-declaration-modal).
   submitVote(): void {
+    if (!this.selectedOptionId()) return;
+
+    if (this.election()?.isAnonymous) {
+      this.castVote();
+    } else {
+      this.showDeclarationModal.set(true);
+    }
+  }
+
+  onDeclarationConfirmed(declaration: VoterDeclarationDto): void {
+    this.showDeclarationModal.set(false);
+    this.castVote(declaration);
+  }
+
+  onDeclarationCancelled(): void {
+    this.showDeclarationModal.set(false);
+  }
+
+  private castVote(voterDeclaration?: VoterDeclarationDto): void {
     const optionId = this.selectedOptionId();
     if (!optionId) return;
 
@@ -44,7 +67,7 @@ export class CastVoteComponent implements OnInit {
     this.errorMessage.set(null);
 
     this.votingService
-      .castVote({ electionId: this.electionId, optionId })
+      .castVote({ electionId: this.electionId, optionId, voterDeclaration })
       .subscribe({
         next: () => {
           this.isSubmitting.set(false);

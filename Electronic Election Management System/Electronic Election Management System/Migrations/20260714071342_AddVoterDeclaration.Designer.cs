@@ -3,6 +3,7 @@ using System;
 using Electronic_Election_Management_System.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Electronic_Election_Management_System.Migrations
 {
     [DbContext(typeof(ElectionDbContext))]
-    partial class ElectionDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260714071342_AddVoterDeclaration")]
+    partial class AddVoterDeclaration
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.9");
@@ -206,13 +209,7 @@ namespace Electronic_Election_Management_System.Migrations
                     b.Property<DateOnly?>("BirthDate")
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("Citizenship")
-                        .HasColumnType("TEXT");
-
                     b.Property<string>("Cnp")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Company")
                         .HasColumnType("TEXT");
 
                     b.Property<DateTime>("CreatedAt")
@@ -227,9 +224,6 @@ namespace Electronic_Election_Management_System.Migrations
                     b.Property<string>("DomiciliuJudet")
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("DomiciliuLocalitate")
-                        .HasColumnType("TEXT");
-
                     b.Property<string>("EmployeeId")
                         .HasColumnType("TEXT");
 
@@ -239,13 +233,7 @@ namespace Electronic_Election_Management_System.Migrations
                     b.Property<string>("Gender")
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("JobTitle")
-                        .HasColumnType("TEXT");
-
                     b.Property<Guid>("VoteId")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("WorkEmail")
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");

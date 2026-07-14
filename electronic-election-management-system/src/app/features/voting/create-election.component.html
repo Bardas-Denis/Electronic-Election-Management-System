@@ -37,6 +37,16 @@
       </div>
     </div>
 
+    <div class="info-box">
+      @if (isPoliticalElection) {
+        <strong>Alegeri politice</strong>
+        <p>Scop: verificarea identității și a dreptului de vot. Date recomandate: Nume, Prenume, CNP, Data nașterii (extrasă din CNP), Vârsta (calculată automat), Sex (extras automat din CNP), Județ, Localitate, Cetățenie. Reguli: CNP unic în aceeași alegere, vârsta ≥ 18 ani, un singur vot per persoană, vot anonim dezactivat.</p>
+      } @else {
+        <strong>Alegeri comerciale</strong>
+        <p>Scop: sondaje interne, voturi într-o companie, feedback. Date recomandate: Nume (opțional), Email muncă (opțional), Departament, Funcție, Companie, ID angajat (opțional). Sex opțional.</p>
+      }
+    </div>
+
     <div class="field-row">
       <div class="field-group" style="margin-bottom: 0;">
         <label for="startsAt">Începe la</label>

@@ -17,5 +17,8 @@ namespace Electronic_Election_Management_System.Models
         public User? User { get; set; }
 
         public DateTime CastAt { get; set; } = DateTime.UtcNow;
+
+        /// <summary>Present only when the parent election is non-anonymous.</summary>
+        public VoterDeclaration? VoterDeclaration { get; set; }
     }
 }

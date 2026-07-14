@@ -35,7 +35,26 @@ export interface CreateElectionRequest {
   options: OptionCreateDto[];
 }
 
+// Which fields matter depends on the election's type - see VoterDeclarationModalComponent.
+export interface VoterDeclarationDto {
+  cnp?: string;
+  fullName?: string;
+  domiciliuJudet?: string;
+  domiciliuAdresa?: string;
+  domiciliuLocalitate?: string;
+  citizenship?: string;
+
+  gender?: string;
+  workEmail?: string;
+  department?: string;
+  jobTitle?: string;
+  company?: string;
+  employeeId?: string;
+}
+
 export interface CastVoteRequest {
   electionId: string;
   optionId: string;
+  // Required by the backend when the election is not anonymous; omitted entirely for anonymous ones.
+  voterDeclaration?: VoterDeclarationDto;
 }

@@ -58,4 +58,12 @@
       <p>Se încarcă...</p>
     </div>
   }
+
+  @if (showDeclarationModal() && election(); as e) {
+    <app-voter-declaration-modal
+      [electionType]="e.type"
+      (confirmed)="onDeclarationConfirmed($event)"
+      (cancelled)="onDeclarationCancelled()"
+    ></app-voter-declaration-modal>
+  }
 </div>

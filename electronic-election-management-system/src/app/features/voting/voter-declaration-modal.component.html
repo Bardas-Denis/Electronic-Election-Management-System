@@ -1,0 +1,154 @@
+<div class="modal-backdrop" (click)="onCancel()">
+  <div class="modal-card" (click)="$event.stopPropagation()">
+
+    @if (isPolitic()) {
+      <div class="modal-header">
+        <h3>Declarație alegător</h3>
+        <p>Acesta este un vot neanonim. Confirmă-ți identitatea înainte de a trimite votul.</p>
+      </div>
+
+      <form [formGroup]="politicForm" (ngSubmit)="onConfirm()" novalidate>
+        <div class="field" [class.field--error]="cnpCtrl.invalid && cnpCtrl.touched">
+          <label for="cnp">CNP</label>
+          <input
+            id="cnp"
+            type="text"
+            inputmode="numeric"
+            maxlength="13"
+            formControlName="cnp"
+            placeholder="13 cifre"
+            autocomplete="off"
+          />
+          @if (cnpCtrl.touched && cnpCtrl.hasError('required')) {
+            <span class="field-error">CNP-ul este obligatoriu.</span>
+          } @else if (cnpCtrl.touched && (cnpCtrl.hasError('pattern') || cnpCtrl.hasError('invalidCnp'))) {
+            <span class="field-error">CNP invalid.</span>
+          }
+        </div>
+
+        @if (cnpPreview(); as preview) {
+          <div class="cnp-preview">
+            <div class="cnp-preview-item">
+              <span class="cnp-preview-label">Data nașterii</span>
+              <span class="cnp-preview-value">{{ preview.birthDate | date:'dd.MM.yyyy' }}</span>
+            </div>
+            <div class="cnp-preview-item">
+              <span class="cnp-preview-label">Sex</span>
+              <span class="cnp-preview-value">{{ preview.gender === 'M' ? 'Masculin' : 'Feminin' }}</span>
+            </div>
+            <div class="cnp-preview-item">
+              <span class="cnp-preview-label">Județ naștere</span>
+              <span class="cnp-preview-value">{{ preview.countyName }}</span>
+            </div>
+          </div>
+        }
+
+        <div class="field" [class.field--error]="fullNameCtrl.invalid && fullNameCtrl.touched">
+          <label for="fullName">Nume și prenume</label>
+          <input id="fullName" type="text" formControlName="fullName" placeholder="Ion Popescu" autocomplete="name" />
+          @if (fullNameCtrl.touched && fullNameCtrl.invalid) {
+            <span class="field-error">Numele complet este obligatoriu.</span>
+          }
+        </div>
+
+        <div class="field field--readonly">
+          <label for="age">Vârstă</label>
+          <input
+            id="age"
+            type="text"
+            readonly
+            [value]="cnpPreview() ? (cnpPreview()!.age + ' ani') : ''"
+            placeholder="Va apărea automat din CNP"
+          />
+        </div>
+
+        <div class="field" [class.field--error]="judetCtrl.invalid && judetCtrl.touched">
+          <label for="domiciliuJudet">Județ domiciliu</label>
+          <input id="domiciliuJudet" type="text" formControlName="domiciliuJudet" placeholder="ex: Brașov" autocomplete="address-level1" />
+          @if (judetCtrl.touched && judetCtrl.invalid) {
+            <span class="field-error">Județul de domiciliu este obligatoriu.</span>
+          }
+        </div>
+
+        <div class="field">
+          <label for="domiciliuLocalitate">Localitate <span class="optional">(opțional)</span></label>
+          <input id="domiciliuLocalitate" type="text" formControlName="domiciliuLocalitate" placeholder="ex: Brașov" autocomplete="address-level2" />
+        </div>
+
+        <div class="field">
+          <label for="citizenship">Cetățenie <span class="optional">(opțional)</span></label>
+          <input id="citizenship" type="text" formControlName="citizenship" placeholder="ex: Română" />
+        </div>
+
+        <div class="field" [class.field--error]="adresaCtrl.invalid && adresaCtrl.touched">
+          <label for="domiciliuAdresa">Adresă domiciliu</label>
+          <input id="domiciliuAdresa" type="text" formControlName="domiciliuAdresa" placeholder="Stradă, număr, localitate" autocomplete="street-address" />
+          @if (adresaCtrl.touched && adresaCtrl.invalid) {
+            <span class="field-error">Adresa de domiciliu este obligatorie.</span>
+          }
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" (click)="onCancel()">Anulează</button>
+          <button type="submit" class="btn-primary">Confirmă și votează</button>
+        </div>
+      </form>
+    } @else {
+      <div class="modal-header">
+        <h3>Declarație alegător</h3>
+        <p>Acesta este un vot neanonim. Completează informațiile de mai jos înainte de a trimite votul.</p>
+      </div>
+
+      <form [formGroup]="comercialForm" (ngSubmit)="onConfirm()" novalidate>
+        <div class="field">
+          <label for="gender">Sex <span class="optional">(opțional)</span></label>
+          <select id="gender" formControlName="gender">
+            <option value="">Nu declar</option>
+            <option value="M">Masculin</option>
+            <option value="F">Feminin</option>
+            <option value="Altul">Altul / prefer să nu spun</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="fullName">Nume complet <span class="optional">(opțional)</span></label>
+          <input id="fullName" type="text" formControlName="fullName" placeholder="ex: Ion Popescu" autocomplete="name" />
+        </div>
+
+        <div class="field" [class.field--error]="workEmailCtrl.invalid && workEmailCtrl.touched">
+          <label for="workEmail">Email muncă <span class="optional">(opțional)</span></label>
+          <input id="workEmail" type="email" formControlName="workEmail" placeholder="ex: ion.popescu@companie.ro" autocomplete="email" />
+          @if (workEmailCtrl.touched && workEmailCtrl.invalid) {
+            <span class="field-error">Adresa de email nu este validă.</span>
+          }
+        </div>
+
+        <div class="field">
+          <label for="department">Departament <span class="optional">(opțional)</span></label>
+          <input id="department" type="text" formControlName="department" placeholder="ex: Marketing" />
+        </div>
+
+        <div class="field">
+          <label for="jobTitle">Funcție <span class="optional">(opțional)</span></label>
+          <input id="jobTitle" type="text" formControlName="jobTitle" placeholder="ex: Product Manager" />
+        </div>
+
+        <div class="field">
+          <label for="company">Companie <span class="optional">(opțional)</span></label>
+          <input id="company" type="text" formControlName="company" placeholder="ex: Contoso SRL" />
+        </div>
+
+        <div class="field">
+          <label for="employeeId">ID angajat <span class="optional">(opțional)</span></label>
+          <input id="employeeId" type="text" formControlName="employeeId" placeholder="ex: EMP-0231" />
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" (click)="onCancel()">Anulează</button>
+          <button type="submit" class="btn-primary">Confirmă și votează</button>
+        </div>
+      </form>
+    }
+
+  </div>
+</div>

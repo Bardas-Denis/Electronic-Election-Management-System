@@ -13,6 +13,7 @@ namespace Electronic_Election_Management_System.Data
         public DbSet<Option> Options => Set<Option>();
         public DbSet<VoteToken> VoteTokens => Set<VoteToken>();
         public DbSet<Vote> Votes => Set<Vote>();
+        public DbSet<VoterDeclaration> VoterDeclarations => Set<VoterDeclaration>();
         public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -92,6 +93,14 @@ namespace Electronic_Election_Management_System.Data
                     "((VoteTokenId IS NOT NULL AND UserId IS NULL) " +
                     "OR (VoteTokenId IS NULL AND UserId IS NOT NULL))"
                 ));
+
+            // A VoterDeclaration only ever exists for a non-anonymous vote (UserId set, VoteTokenId null).
+            // Cascade: deleting the vote removes its declaration too.
+            modelBuilder.Entity<Vote>()
+                .HasOne(v => v.VoterDeclaration)
+                .WithOne(vd => vd.Vote)
+                .HasForeignKey<VoterDeclaration>(vd => vd.VoteId)
+                .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<AuditLog>()
                 .HasOne(a => a.User)

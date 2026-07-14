@@ -13,7 +13,7 @@ using System.Text;
 var builder = WebApplication.CreateBuilder(args);
 
 // SQLite connection string with busy_timeout=5000ms.
-// "Default Timeout" (seconds) is mapped by Microsoft.Data.Sqlite to
+// "Default Timeout" (seconds) is mapped by Microsoft.Data.Sqlite todo
 // sqlite3_busy_timeout, applied automatically on every connection opened(not just at startup).
 var sqliteConnectionStringBuilder = new SqliteConnectionStringBuilder(
     builder.Configuration.GetConnectionString("DefaultConnection"))
@@ -31,11 +31,14 @@ builder.Services.AddSingleton<ITokenService, TokenService>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IElectionRepository, ElectionRepository>();
 builder.Services.AddScoped<IAuditLogRepository, AuditLogRepository>();
+builder.Services.AddScoped<IVoteRepository, VoteRepository>();
 
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IElectionService, ElectionService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IAuditService, AuditService>();
+builder.Services.AddScoped<IVoteService, VoteService>();
+builder.Services.AddSingleton<ICnpService, CnpService>();
 
 var jwtSection = builder.Configuration.GetSection("Jwt");
 string jwtKey = jwtSection["Key"]!;
