@@ -15,6 +15,10 @@ export class VotingService {
     return this.http.get<ElectionDto[]>(`${this.baseUrl}/elections`);
   }
 
+  getMyElections(): Observable<ElectionDto[]> {
+    return this.http.get<ElectionDto[]>(`${this.baseUrl}/elections/mine`);
+  }
+
   getElectionById(id: string): Observable<ElectionDto> {
     return this.http.get<ElectionDto>(`${this.baseUrl}/elections/${id}`);
   }

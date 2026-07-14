@@ -42,6 +42,12 @@ export class AuthService {
     return this.currentUser()?.role === 'Admin';
   }
 
+  /** True for Admin or ElectionManager — can create/edit/delete elections they own. */
+  canManageElections(): boolean {
+    const role = this.currentUser()?.role;
+    return role === 'Admin' || role === 'ElectionManager';
+  }
+
   private saveSession(res: AuthResponse): void {
     sessionStorage.setItem(TOKEN_KEY, res.token);
     this.currentUser.set(this.readUserFromToken());

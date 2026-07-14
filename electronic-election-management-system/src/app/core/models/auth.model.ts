@@ -13,7 +13,7 @@ export interface AuthResponse {
   token: string;
   userId: string;
   email: string;
-  role: 'Admin' | 'Voter';
+  role: 'Admin' | 'ElectionManager' | 'Voter';
   expiresAt: string;
 }
 
@@ -21,5 +21,5 @@ export interface AuthResponse {
 export interface CurrentUser {
   userId: string;
   email: string;
-  role: 'Admin' | 'Voter';
+  role: 'Admin' | 'ElectionManager' | 'Voter';
 }

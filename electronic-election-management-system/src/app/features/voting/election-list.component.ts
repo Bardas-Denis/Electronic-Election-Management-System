@@ -14,7 +14,7 @@ import { ElectionDto } from '../../core/models/voting.model';
 })
 export class ElectionListComponent implements OnInit {
   private votingService = inject(VotingService);
-  readonly authService = inject(AuthService); // template checks isAdmin() for admin actions
+  readonly authService = inject(AuthService); // template checks canManageElections() for manager actions
 
   elections = signal<ElectionDto[]>([]);
   isLoading = signal(true);
@@ -31,18 +31,6 @@ export class ElectionListComponent implements OnInit {
         this.isLoading.set(false);
       },
       error: () => this.isLoading.set(false)
-    });
-  }
-
-  // Admin-only action, enforced by UI + backend role check
-  deleteElection(id: string, title: string): void {
-    if (!confirm(`Stergi alegerea "${title}"? Aceasta actiune nu poate fi anulata.`)) {
-      return;
-    }
-
-    this.votingService.deleteElection(id).subscribe({
-      next: () => this.loadElections(), // re-fetch to stay in sync with server
-      error: () => alert('Nu am putut sterge alegerea.')
     });
   }
 }

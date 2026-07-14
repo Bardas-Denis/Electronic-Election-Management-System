@@ -1,7 +1,7 @@
 import { Routes } from '@angular/router';
-import { authGuard, adminGuard } from './core/guards/auth.guard';
+import { authGuard, adminGuard, electionManagerGuard } from './core/guards/auth.guard';
 
-// All pages lazy-loaded. authGuard = any logged-in user, adminGuard = Admin only.
+// All pages lazy-loaded. authGuard = any logged-in user, adminGuard = Admin only, electionManagerGuard = Admin or ElectionManager.
 export const routes: Routes = [
   { path: '', redirectTo: 'elections', pathMatch: 'full' },
 
@@ -27,10 +27,18 @@ export const routes: Routes = [
       )
   },
 
-  // Admin only
+  // Admin or ElectionManager
+  {
+    path: 'elections/mine',
+    canActivate: [electionManagerGuard],
+    loadComponent: () =>
+      import('./features/voting/my-elections.component').then(
+        (m) => m.MyElectionsComponent
+      )
+  },
   {
     path: 'elections/new',
-    canActivate: [adminGuard],
+    canActivate: [electionManagerGuard],
     loadComponent: () =>
       import('./features/voting/create-election.component').then(
         (m) => m.CreateElectionComponent
@@ -39,7 +47,7 @@ export const routes: Routes = [
   // Same component as create - shared for both new/edit
   {
     path: 'elections/:id/edit',
-    canActivate: [adminGuard],
+    canActivate: [electionManagerGuard],
     loadComponent: () =>
       import('./features/voting/create-election.component').then(
         (m) => m.CreateElectionComponent
@@ -75,4 +83,4 @@ export const routes: Routes = [
   },
 
   { path: '**', redirectTo: 'elections' }
-];
+];

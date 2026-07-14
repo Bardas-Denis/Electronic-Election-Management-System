@@ -11,6 +11,12 @@ namespace Electronic_Election_Management_System.Data.Repositories
         /// <summary>True if this user already has a Vote recorded for this election (non-anonymous path only).</summary>
         Task<bool> HasUserVotedAsync(Guid userId, Guid electionId);
 
+        /// <summary>
+        /// True if this user has already voted in this election, regardless of whether it is
+        /// anonymous (checks the issued VoteToken) or non-anonymous (checks the Vote record).
+        /// </summary>
+        Task<bool> HasUserVotedInElectionAsync(Guid userId, Guid electionId, bool isAnonymous);
+
         Task<bool> HasCnpBeenUsedInElectionAsync(string cnp, Guid electionId);
 
         Task AddVoteAsync(Vote vote);

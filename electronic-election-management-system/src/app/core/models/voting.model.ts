@@ -10,6 +10,8 @@ export interface ElectionDto {
   id: string;
   title: string;
   description?: string;
+  // Intrebarea efectiva prezentata votantilor, afisata deasupra optiunilor
+  question?: string;
   type: ElectionType;
   isAnonymous: boolean;
   startsAt: string;
@@ -28,6 +30,7 @@ export interface OptionCreateDto {
 export interface CreateElectionRequest {
   title: string;
   description?: string;
+  question?: string;
   type: ElectionType;
   isAnonymous: boolean;
   startsAt: string;

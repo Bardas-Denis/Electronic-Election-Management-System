@@ -1,4 +1,4 @@
-export type UserRole = 'Admin' | 'Voter';
+export type UserRole = 'Admin' | 'ElectionManager' | 'Voter';
 
 // Used in the admin users management page
 export interface UserDto {
