@@ -6,6 +6,7 @@ namespace Electronic_Election_Management_System.Models
     public enum UserRole
     {
         Admin,
+        ElectionManager,
         Voter
     }
 
