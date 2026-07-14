@@ -32,7 +32,7 @@ namespace Electronic_Election_Management_System.Services
             Guid targetId, UpdateUserRoleRequest request, Guid currentUserId)
         {
             if (!Enum.TryParse<UserRole>(request.Role, ignoreCase: true, out var newRole))
-                return ServiceResult<UserDto>.Fail("Invalid role. Accepted values are 'Admin' or 'Voter'.");
+                return ServiceResult<UserDto>.Fail("Invalid role. Accepted values are 'Admin', 'ElectionManager' or 'Voter'.");
 
             var user = await _users.GetByIdAsync(targetId);
             if (user is null)

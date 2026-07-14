@@ -14,6 +14,9 @@
       @if (authService.isAdmin()) {
         <a routerLink="/admin/users" routerLinkActive="nav-link--active" class="nav-link">Utilizatori</a>
       }
+      @if (authService.canManageElections()) {
+        <a routerLink="/elections/mine" routerLinkActive="nav-link--active" class="nav-link">Alegerile mele</a>
+      }
       <span class="nav-divider"></span>
       <!-- Avatar shows first letter of email -->
       <span class="nav-user">
@@ -21,6 +24,9 @@
         <span class="nav-email">{{ authService.currentUser()?.email }}</span>
         @if (authService.isAdmin()) {
           <span class="badge badge--info">Admin</span>
+        }
+        @if (authService.currentUser()?.role === 'ElectionManager') {
+          <span class="badge badge--info">Manager</span>
         }
       </span>
       <button class="nav-btn-logout" (click)="logout()">Delogare</button>

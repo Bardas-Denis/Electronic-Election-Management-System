@@ -18,6 +18,13 @@ namespace Electronic_Election_Management_System.Data.Repositories
                 .OrderByDescending(e => e.CreatedAt)
                 .ToListAsync();
 
+        public Task<List<Election>> GetByCreatedByAsync(Guid userId)
+            => _db.Elections
+                .Where(e => e.CreatedByUserId == userId)
+                .Include(e => e.Options)
+                .OrderByDescending(e => e.CreatedAt)
+                .ToListAsync();
+
         public Task<Election?> GetByIdWithOptionsAsync(Guid id)
             => _db.Elections
                 .Include(e => e.Options)

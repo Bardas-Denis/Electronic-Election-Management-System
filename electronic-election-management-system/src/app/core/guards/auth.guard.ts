@@ -27,3 +27,16 @@ export const adminGuard: CanActivateFn = () => {
   router.navigate(['/elections']);
   return false;
 };
+
+// Blocks the route unless the user is logged in AND can manage elections (Admin or ElectionManager)
+export const electionManagerGuard: CanActivateFn = () => {
+  const authService = inject(AuthService);
+  const router = inject(Router);
+
+  if (authService.isLoggedIn() && authService.canManageElections()) {
+    return true;
+  }
+
+  router.navigate(['/elections']);
+  return false;
+};

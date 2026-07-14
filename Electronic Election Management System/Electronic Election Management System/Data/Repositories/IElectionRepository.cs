@@ -7,6 +7,9 @@ namespace Electronic_Election_Management_System.Data.Repositories
         /// <summary>Retrieves all elections including their options.</summary>
         Task<List<Election>> GetAllWithOptionsAsync();
 
+        /// <summary>Retrieves all elections created by a specific user, including their options.</summary>
+        Task<List<Election>> GetByCreatedByAsync(Guid userId);
+
         /// <summary>Retrieves an election by its ID, including its options.</summary>
         Task<Election?> GetByIdWithOptionsAsync(Guid id);
         Task<Election?> GetByIdAsync(Guid id);

@@ -5,9 +5,14 @@ namespace Electronic_Election_Management_System.Services
     public interface IElectionService
     {
         /// <summary>
-        /// Retrieves all elections.
+        /// Retrieves all elections (voting list is open to every authenticated user).
         /// </summary>
         Task<List<ElectionDto>> GetAllAsync();
+
+        /// <summary>
+        /// Retrieves elections created by the specified user (management view).
+        /// </summary>
+        Task<List<ElectionDto>> GetCreatedByAsync(Guid userId);
 
         /// <summary>
         /// Retrieves an election by its ID, or null if not found.

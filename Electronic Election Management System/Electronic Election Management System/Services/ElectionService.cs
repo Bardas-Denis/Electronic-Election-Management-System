@@ -21,6 +21,12 @@ namespace Electronic_Election_Management_System.Services
             return elections.Select(MapToDto).ToList();
         }
 
+        public async Task<List<ElectionDto>> GetCreatedByAsync(Guid userId)
+        {
+            var elections = await _elections.GetByCreatedByAsync(userId);
+            return elections.Select(MapToDto).ToList();
+        }
+
         public async Task<ElectionDto?> GetByIdAsync(Guid id)
         {
             var election = await _elections.GetByIdWithOptionsAsync(id);
@@ -81,6 +87,9 @@ namespace Electronic_Election_Management_System.Services
             if (election is null)
                 return ServiceResult<ElectionDto>.NotFound("Election not found.");
 
+            if (election.CreatedByUserId != userId)
+                return ServiceResult<ElectionDto>.Fail("Nu ești autorizat să editezi această alegere.");
+
             election.Title = request.Title.Trim();
             election.Description = request.Description;
             election.Type = type;
@@ -134,6 +143,9 @@ namespace Electronic_Election_Management_System.Services
             var election = await _elections.GetByIdAsync(id);
             if (election is null)
                 return ServiceResult<bool>.NotFound("Election not found.");
+
+            if (election.CreatedByUserId != userId)
+                return ServiceResult<bool>.Fail("Nu ești autorizat să ștergi această alegere.");
 
             // Audit log written before delete so we still have the title.
             await _auditLogs.AddAsync(new AuditLog

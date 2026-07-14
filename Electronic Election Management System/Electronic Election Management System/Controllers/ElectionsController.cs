@@ -22,12 +22,23 @@ namespace Electronic_Election_Management_System.Controllers
         }
 
         /// <summary>
-        /// Retrieves all elections.
+        /// Retrieves all elections (voting list can be seen by any authenticated role).
         /// </summary>
         [HttpGet]
         public async Task<ActionResult<List<ElectionDto>>> GetAll()
         {
             var elections = await _electionService.GetAllAsync();
+            return Ok(elections);
+        }
+
+        /// <summary>
+        /// Retrieves only the elections created by the current user (management view).
+        /// </summary>
+        [HttpGet("mine")]
+        [Authorize(Roles = "Admin,ElectionManager")]
+        public async Task<ActionResult<List<ElectionDto>>> GetMine()
+        {
+            var elections = await _electionService.GetCreatedByAsync(GetCurrentUserId());
             return Ok(elections);
         }
 
@@ -49,7 +60,7 @@ namespace Electronic_Election_Management_System.Controllers
         /// </summary>
         /// <param name="request">The election to create.</param>
         [HttpPost]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin,ElectionManager")]
         public async Task<ActionResult<ElectionDto>> Create(CreateElectionRequest request)
         {
             var result = await _electionService.CreateAsync(request, GetCurrentUserId());
@@ -64,7 +75,7 @@ namespace Electronic_Election_Management_System.Controllers
         /// <param name="id">The id of the election to update.</param>
         /// <param name="request">The election to update.</param>
         [HttpPut("{id:guid}")]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin,ElectionManager")]
         public async Task<ActionResult<ElectionDto>> Update(Guid id, UpdateElectionRequest request)
         {
             var result = await _electionService.UpdateAsync(id, request, GetCurrentUserId());
@@ -80,7 +91,7 @@ namespace Electronic_Election_Management_System.Controllers
         /// </summary>
         /// <param name="id">The id of the election to delete.</param>
         [HttpDelete("{id:guid}")]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin,ElectionManager")]
         public async Task<IActionResult> Delete(Guid id)
         {
             var result = await _electionService.DeleteAsync(id, GetCurrentUserId());
