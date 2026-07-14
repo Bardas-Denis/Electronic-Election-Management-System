@@ -46,7 +46,17 @@ export class CreateElectionComponent implements OnInit {
     ])
   });
 
+  get isPoliticalElection(): boolean {
+    return this.form.get('type')?.value === 'Politic';
+  }
+
   ngOnInit(): void {
+    this.form.get('type')?.valueChanges.subscribe((type) => {
+      this.syncAnonymousState(type);
+    });
+
+    this.syncAnonymousState(this.form.get('type')?.value);
+
     this.editingElectionId = this.route.snapshot.paramMap.get('id');
     if (!this.editingElectionId) {
       return;
@@ -75,6 +85,7 @@ export class CreateElectionComponent implements OnInit {
           endsAt: toDatetimeLocal(election.endsAt)
         });
 
+        this.syncAnonymousState(this.form.get('type')?.value);
         this.isLoading.set(false);
       },
       error: () => {
@@ -86,6 +97,21 @@ export class CreateElectionComponent implements OnInit {
 
   get options(): FormArray {
     return this.form.get('options') as FormArray;
+  }
+
+  private syncAnonymousState(type: string | null | undefined): void {
+    const anonymousControl = this.form.get('isAnonymous');
+
+    if (!anonymousControl) {
+      return;
+    }
+
+    if (type === 'Politic') {
+      anonymousControl.setValue(false, { emitEvent: false });
+      anonymousControl.disable({ emitEvent: false });
+    } else {
+      anonymousControl.enable({ emitEvent: false });
+    }
   }
 
   addOption(): void {

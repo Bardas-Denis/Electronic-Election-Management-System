@@ -31,7 +31,7 @@
       <div class="field-group" style="margin-bottom: 0;">
         <label>Confidențialitate</label>
         <div class="checkbox-field" style="margin-bottom: 0; height: 40px;">
-          <input type="checkbox" id="isAnonymous" formControlName="isAnonymous" />
+          <input type="checkbox" id="isAnonymous" formControlName="isAnonymous" [disabled]="isPoliticalElection" />
           <label for="isAnonymous">Vot anonim</label>
         </div>
       </div>
