@@ -32,6 +32,9 @@
           <div class="election-badges">
             <span class="badge badge--neutral">{{ election.type }}</span>
             <span class="badge badge--neutral">{{ election.isAnonymous ? 'Anonim' : 'Neanonim' }}</span>
+            @if (election.isExpired) {
+              <span class="badge badge--expired">Expirată</span>
+            }
           </div>
 
           <h3>{{ election.title }}</h3>

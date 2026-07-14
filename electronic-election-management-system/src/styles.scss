@@ -231,6 +231,12 @@ textarea {
   border-color: var(--info-border);
 }
 
+.badge--expired {
+  color: var(--error-color);
+  background: var(--error-bg);
+  border-color: var(--error-border);
+}
+
 .badge-voted {
   display: inline-flex;
   align-items: center;

@@ -38,6 +38,12 @@ namespace Electronic_Election_Management_System.DTOs
         /// Indicates whether the current user has already cast a vote in this election.
         /// </summary>
         public bool HasUserVoted { get; set; } = false;
+
+        /// <summary>
+        /// True once <see cref="EndsAt"/> has passed. Expired elections no longer accept new votes,
+        /// but their previously registered votes and results remain fully accessible.
+        /// </summary>
+        public bool IsExpired { get; set; } = false;
     }
 
     // SYNC: voting.model.ts -> CreateElectionRequest

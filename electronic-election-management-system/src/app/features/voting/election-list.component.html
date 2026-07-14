@@ -30,6 +30,9 @@
           <div class="election-badges">
             <span class="badge badge--neutral">{{ election.type }}</span>
             <span class="badge badge--neutral">{{ election.isAnonymous ? 'Anonim' : 'Neanonim' }}</span>
+            @if (election.isExpired) {
+              <span class="badge badge--expired">Expirată</span>
+            }
           </div>
 
           <h3>{{ election.title }}</h3>
@@ -41,6 +44,8 @@
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
                 Ai votat deja
               </span>
+            } @else if (election.isExpired) {
+              <span class="badge badge--expired">Votarea s-a încheiat</span>
             } @else {
               <a [routerLink]="['/elections', election.id]" class="btn-secondary">Votează</a>
             }
