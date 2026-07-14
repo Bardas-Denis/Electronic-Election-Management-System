@@ -135,7 +135,11 @@ export class CreateElectionComponent implements OnInit {
     this.errorMessage.set(null);
 
     const payload = this.form.getRawValue() as any;
-
+    // Ensure the datetime-local values are sent as UTC ISO strings so server comparisons use UTC correctly
+    try {
+      payload.startsAt = new Date(payload.startsAt).toISOString();
+      payload.endsAt = new Date(payload.endsAt).toISOString();
+    } catch { /* fall back to raw values if parsing fails */ }
     const request$ = this.editingElectionId
       ? this.votingService.updateElection(this.editingElectionId, payload)
       : this.votingService.createElection(payload);
