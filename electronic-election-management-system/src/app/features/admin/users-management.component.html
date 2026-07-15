@@ -7,68 +7,93 @@
   </div>
 
   @if (errorMessage()) {
-    <p class="error-text">{{ errorMessage() }}</p>
+  <p class="error-text">{{ errorMessage() }}</p>
+  }
+
+  <!-- Pending-changes action bar — visible only when at least one role has been staged -->
+  @if (hasPendingChanges()) {
+  <div class="pending-bar" [class.pending-bar--warning]="wouldLeaveZeroAdmins()">
+    <div class="pending-bar__info">
+      @if (wouldLeaveZeroAdmins()) {
+      <span class="pending-bar__warning-icon">⚠</span>
+      <span class="pending-bar__warning-text">
+        Modificările selectate ar elimina toți adminii. Cel puțin un cont Admin trebuie să existe.
+      </span>
+      } @else {
+      <span class="pending-bar__label">Ai modificări nesalvate.</span>
+      }
+    </div>
+    <div class="pending-bar__actions">
+      <button type="button" class="btn-ghost btn-sm" [disabled]="isSaving()" (click)="discardChanges()">
+        Renunță
+      </button>
+      <button type="button" class="btn-primary btn-sm" [disabled]="isSaving() || wouldLeaveZeroAdmins()"
+        (click)="saveChanges()">
+        @if (isSaving()) {
+        <span class="spinner spinner--sm"></span>
+        Se salvează...
+        } @else {
+        Salvează modificările
+        }
+      </button>
+    </div>
+  </div>
   }
 
   @if (isLoading()) {
-    <div class="state-block">
-      <span class="spinner"></span>
-      <p>Se încarcă utilizatorii...</p>
-    </div>
+  <div class="state-block">
+    <span class="spinner"></span>
+    <p>Se încarcă utilizatorii...</p>
+  </div>
   } @else if (users().length === 0) {
-    <div class="state-block">
-      <p class="state-title">Nu există utilizatori înregistrați</p>
-    </div>
+  <div class="state-block">
+    <p class="state-title">Nu există utilizatori înregistrați</p>
+  </div>
   } @else {
-    <div class="table-card">
-      <table class="users-table">
-        <thead>
-          <tr>
-            <th>Email</th>
-            <th>Rol</th>
-            <th>Creat la</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (user of users(); track user.id) {
-            <tr>
-              <td>
-                <span class="user-email">
-                  {{ user.email }}
-                  @if (isCurrentUser(user)) {
-                    <span class="badge badge--neutral">tu</span>
-                  }
-                </span>
-              </td>
-              <td>
-                <select
-                  class="role-select"
-                  [attr.data-role]="user.role"
-                  [ngModel]="user.role"
-                  (ngModelChange)="onRoleChange(user, $event)"
-                  [disabled]="savingUserId() === user.id"
-                >
-                  <option value="Admin">Admin</option>
-                  <option value="ElectionManager">ElectionManager</option>
-                  <option value="Voter">Voter</option>
-                </select>
-              </td>
-              <td>{{ user.createdAt | date: 'dd.MM.yyyy HH:mm' }}</td>
-              <td>
-                <button
-                  type="button"
-                  class="btn-danger btn-sm"
-                  [disabled]="isCurrentUser(user)"
-                  (click)="deleteUser(user)"
-                >
-                  Șterge
-                </button>
-              </td>
-            </tr>
-          }
-        </tbody>
-      </table>
-    </div>
+  <div class="table-card">
+    <table class="users-table">
+      <thead>
+        <tr>
+          <th>Email</th>
+          <th>Rol</th>
+          <th>Creat la</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (user of users(); track user.id) {
+        <tr [class.has-pending]="hasPendingChange(user)">
+          <td>
+            <span class="user-email">
+              {{ user.email }}
+              @if (isCurrentUser(user)) {
+              <span class="badge badge--neutral">tu</span>
+              }
+              @if (hasPendingChange(user)) {
+              <span class="badge badge--pending">modificat</span>
+              }
+            </span>
+          </td>
+          <td>
+            <select class="role-select" [attr.data-role]="getDisplayRole(user)" [ngModel]="getDisplayRole(user)"
+              (ngModelChange)="onRoleChange(user, $event)" [disabled]="isSaving()">
+              <option value="Admin">Admin</option>
+              <option value="ElectionManager">ElectionManager</option>
+              <option value="Voter">Voter</option>
+            </select>
+          </td>
+          <td>{{ user.createdAt | date: 'dd.MM.yyyy HH:mm' }}</td>
+          <td>
+            <button type="button" class="btn-danger btn-sm" [disabled]="isCurrentUser(user) || isSaving()"
+              (click)="deleteUser(user)">
+              Șterge
+            </button>
+          </td>
+        </tr>
+        }
+      </tbody>
+    </table>
+  </div>
   }
+
 </div>

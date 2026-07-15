@@ -27,6 +27,15 @@ namespace Electronic_Election_Management_System.Data.Repositories
         public Task<int> AdminCountAsync()
             => _db.Users.CountAsync(u => u.Role == UserRole.Admin);
 
+        public Task<bool> HasCreatedElectionsAsync(Guid userId)
+            => _db.Elections.AnyAsync(e => e.CreatedByUserId == userId);
+
+        public Task<bool> HasCastNonAnonymousVoteAsync(Guid userId)
+            => _db.Votes.AnyAsync(v => v.UserId == userId);
+
+        public Task<bool> HasCastAnonymousVoteAsync(Guid userId)
+            => _db.VoteTokens.AnyAsync(vt => vt.UserId == userId && vt.Vote != null);
+
         public async Task AddAsync(User user)
             => await _db.Users.AddAsync(user);
 
