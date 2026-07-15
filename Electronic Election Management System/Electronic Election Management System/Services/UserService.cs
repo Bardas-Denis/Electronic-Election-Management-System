@@ -38,13 +38,14 @@ namespace Electronic_Election_Management_System.Services
             if (user is null)
                 return ServiceResult<UserDto>.NotFound("User not found.");
 
-            // Safety rule: an admin cannot demote the last remaining admin account.
-            if (user.Id == currentUserId && newRole != UserRole.Admin)
+            // Safety rule: no one can demote the last remaining admin account,
+            // regardless of whether the target is the caller themselves or another user.
+            if (user.Role == UserRole.Admin && newRole != UserRole.Admin)
             {
                 int adminCount = await _users.AdminCountAsync();
                 if (adminCount <= 1)
                     return ServiceResult<UserDto>.Fail(
-                        "You cannot remove the Admin role of the last remaining admin.");
+                        "Cannot remove the Admin role from the last remaining admin account.");
             }
 
             user.Role = newRole;
@@ -76,11 +77,35 @@ namespace Electronic_Election_Management_System.Services
             if (user is null)
                 return ServiceResult<bool>.NotFound("User not found.");
 
+            // Safety rule: do not allow deleting the last remaining admin account.
+            if (user.Role == UserRole.Admin)
+            {
+                int adminCount = await _users.AdminCountAsync();
+                if (adminCount <= 1)
+                    return ServiceResult<bool>.Fail(
+                        "Cannot delete the last remaining admin account.");
+            }
+
             await _auditLogs.AddAsync(new AuditLog
             {
                 UserId = currentUserId,
                 Action = $"a_sters_utilizatorul:{user.Email}"
             });
+
+            if (await _users.HasCreatedElectionsAsync(targetId))
+                return ServiceResult<bool>.Fail(
+                    "This user has created at least one election and cannot be deleted. " +
+                    "Change their role to Voter inst    ead of deleting them.");
+
+            if (await _users.HasCastNonAnonymousVoteAsync(targetId))
+                return ServiceResult<bool>.Fail(
+                    "This user has cast a vote in a non-anonymous election and cannot be deleted. " +
+                    "Change their role to Voter instead of deleting them.");
+
+            if (await _users.HasCastAnonymousVoteAsync(targetId))
+                return ServiceResult<bool>.Fail(
+                    "This user has cast a vote (their vote token was consumed) and cannot be deleted. " +
+                    "Change their role to Voter instead of deleting them.");
 
             _users.Remove(user);
 
@@ -92,9 +117,8 @@ namespace Electronic_Election_Management_System.Services
             {
                 // FK violation: user has created elections. Caught here instead of
                 // pre-checking, to avoid an extra query for a rare case.
-                return ServiceResult<bool>.Fail(
-                    "This user has created at least one election and cannot be deleted. " +
-                    "Change their role to Voter instead of deleting them.");
+                 return ServiceResult<bool>.Fail(
+                    "This user cannot be deleted because other records still reference them.");
             }
 
             return ServiceResult<bool>.Ok(true);

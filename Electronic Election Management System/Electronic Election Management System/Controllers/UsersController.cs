@@ -36,9 +36,11 @@ namespace Electronic_Election_Management_System.Controllers
         /// </summary>
         /// <param name="id">The id of the user to update.</param>
         /// <param name="request">The role update request.</param>
+        /// to add requester id
         [HttpPut("{id:guid}/role")]
         public async Task<ActionResult<UserDto>> UpdateRole(Guid id, UpdateUserRoleRequest request)
         {
+            // Check if the person trying to update the role is allowed to do it
             var result = await _userService.UpdateRoleAsync(id, request, GetCurrentUserId());
             if (!result.Success)
                 return result.IsNotFound

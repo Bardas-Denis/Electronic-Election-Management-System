@@ -1,6 +1,7 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { from, concatMap, tap } from 'rxjs';
 import { UsersService } from '../../core/services/users.service';
 import { AuthService } from '../../core/services/auth.service';
 import { UserDto, UserRole } from '../../core/models/user.model';
@@ -20,9 +21,25 @@ export class UsersManagementComponent implements OnInit {
   users = signal<UserDto[]>([]);
   isLoading = signal(true);
   errorMessage = signal<string | null>(null);
+  isSaving = signal(false);
 
-  // tine minte ce update de rol e in curs, ca sa dezactivam doar select-ul respectiv
-  savingUserId = signal<string | null>(null);
+  // Staged role changes: userId → new role. Only populated when user edits a dropdown.
+  // No HTTP request is made until "Save changes" is clicked.
+  private pendingRoles = signal<Map<string, UserRole>>(new Map());
+
+  // True when there is at least one unsaved role change.
+  hasPendingChanges = computed(() => this.pendingRoles().size > 0);
+
+  // Live guard: simulate what admin count would be after applying all pending changes.
+  // Disables Save and shows a warning if the result is 0 admins.
+  wouldLeaveZeroAdmins = computed(() => {
+    const pending = this.pendingRoles();
+    const adminCount = this.users().filter((u) => {
+      const staged = pending.get(u.id);
+      return (staged ?? u.role) === 'Admin';
+    }).length;
+    return adminCount === 0;
+  });
 
   ngOnInit(): void {
     this.loadUsers();
@@ -44,23 +61,72 @@ export class UsersManagementComponent implements OnInit {
     });
   }
 
-  // schimba rolul unui user (ex: Voter -> Admin) direct din dropdown
-  onRoleChange(user: UserDto, newRole: string): void {
-    this.savingUserId.set(user.id);
+  // Returns the role to display for a user: staged change if any, otherwise the persisted role.
+  getDisplayRole(user: UserDto): UserRole {
+    return this.pendingRoles().get(user.id) ?? user.role;
+  }
 
-    this.usersService.updateRole(user.id, { role: newRole as UserRole }).subscribe({
-      next: (updated) => {
-        this.users.update((list) =>
-          list.map((u) => (u.id === updated.id ? updated : u))
-        );
-        this.savingUserId.set(null);
-      },
-      error: (err) => {
-        alert(err?.error?.message ?? 'Nu am putut schimba rolul acestui utilizator.');
-        this.savingUserId.set(null);
-        this.loadUsers(); // resincronizam select-ul cu starea reala din backend
+  // Returns true if this row has a staged (unsaved) role change.
+  hasPendingChange(user: UserDto): boolean {
+    return this.pendingRoles().has(user.id);
+  }
+
+  // Stage a role change locally. If the user reverts to their current role, remove the entry.
+  onRoleChange(user: UserDto, newRole: string): void {
+    const role = newRole as UserRole;
+    this.pendingRoles.update((map) => {
+      const next = new Map(map);
+      if (role === user.role) {
+        next.delete(user.id); // reverted — no longer pending
+      } else {
+        next.set(user.id, role);
       }
+      return next;
     });
+  }
+
+  // Send all staged changes sequentially (concatMap) to avoid the race condition where two
+  // concurrent requests each see >=1 admin remaining and both succeed, leaving zero admins.
+  saveChanges(): void {
+    if (this.isSaving() || this.wouldLeaveZeroAdmins()) return;
+
+    const entries = Array.from(this.pendingRoles().entries()); // [userId, newRole][]
+    this.isSaving.set(true);
+    this.errorMessage.set(null);
+
+    from(entries)
+      .pipe(
+        concatMap(([userId, role]) =>
+          this.usersService.updateRole(userId, { role }).pipe(
+            tap((updated) => {
+              // Apply each successful update to the live users list immediately.
+              this.users.update((list) =>
+                list.map((u) => (u.id === updated.id ? updated : u))
+              );
+            })
+          )
+        )
+      )
+      .subscribe({
+        error: (err) => {
+          this.errorMessage.set(
+            err?.error?.message ?? 'Nu am putut salva modificarile de rol.'
+          );
+          this.isSaving.set(false);
+          this.pendingRoles.set(new Map()); // clear staged state
+          this.loadUsers(); // reload to resync with server state
+        },
+        complete: () => {
+          this.isSaving.set(false);
+          this.pendingRoles.set(new Map());
+        }
+      });
+  }
+
+  // Discard all staged changes and reload to reset dropdowns to persisted state.
+  discardChanges(): void {
+    this.pendingRoles.set(new Map());
+    this.loadUsers();
   }
 
   deleteUser(user: UserDto): void {
