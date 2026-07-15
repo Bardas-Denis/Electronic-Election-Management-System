@@ -82,7 +82,32 @@
   border-top: 1px solid var(--border-color);
 
   .btn-secondary,
-  .btn-danger {
+  .btn-danger,
+  .btn-disabled {
     flex: 1;
   }
+}
+
+.btn-disabled {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  opacity: 0.55;
+  cursor: not-allowed;
+  pointer-events: none;
+  font-size: 0.75rem;
+  line-height: 1.2;
+}
+
+.expired-toggle-row {
+  display: flex;
+  justify-content: center;
+  margin-top: 1.5rem;
+}
+
+.expired-section {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px dashed var(--border-color);
 }

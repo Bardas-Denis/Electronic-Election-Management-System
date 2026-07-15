@@ -1,4 +1,4 @@
-﻿import { Component, OnInit, inject, signal } from '@angular/core';
+﻿import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { VotingService } from '../../core/services/voting.service';
@@ -21,6 +21,15 @@ export class MyElectionsComponent implements OnInit {
   elections = signal<ElectionDto[]>([]);
   isLoading = signal(true);
   errorMessage = signal<string | null>(null);
+
+  // alegerile active se afiseaza normal; cele expirate stau ascunse sub un buton, mai jos
+  activeElections = computed(() => this.elections().filter((e) => !e.isExpired));
+  expiredElections = computed(() => this.elections().filter((e) => e.isExpired));
+  showExpired = signal(false);
+
+  toggleExpired(): void {
+    this.showExpired.set(!this.showExpired());
+  }
 
   ngOnInit(): void {
     this.loadElections();

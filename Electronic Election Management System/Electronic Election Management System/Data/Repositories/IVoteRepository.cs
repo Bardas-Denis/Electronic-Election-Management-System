@@ -19,6 +19,9 @@ namespace Electronic_Election_Management_System.Data.Repositories
 
         Task<bool> HasCnpBeenUsedInElectionAsync(string cnp, Guid electionId);
 
+        /// <summary>True if at least one vote (from any voter) has been cast in this election. Used to lock editing.</summary>
+        Task<bool> HasAnyVotesInElectionAsync(Guid electionId);
+
         Task AddVoteAsync(Vote vote);
         Task AddVoterDeclarationAsync(VoterDeclaration declaration);
 

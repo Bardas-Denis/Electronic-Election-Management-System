@@ -1,4 +1,4 @@
-﻿<div class="page">
+<div class="page">
   <div class="page-header">
     <div>
       <h2>Alegerile mele</h2>
@@ -26,42 +26,75 @@
       <p>Creeaza prima ta alegere folosind butonul de mai sus.</p>
     </div>
   } @else {
-    <div class="election-grid">
-      @for (election of elections(); track election.id) {
-        <div class="election-card">
-          <div class="election-badges">
-            <span class="badge badge--neutral">{{ election.type }}</span>
-            <span class="badge badge--neutral">{{ election.isAnonymous ? 'Anonim' : 'Neanonim' }}</span>
-            @if (election.isExpired) {
-              <span class="badge badge--expired">Expirată</span>
-            }
-          </div>
+    @if (activeElections().length === 0) {
+      <div class="state-block">
+        <p class="state-title">Nu ai nicio alegere activa</p>
+        <p>Toate alegerile tale sunt expirate - le poti vedea mai jos.</p>
+      </div>
+    } @else {
+      <div class="election-grid">
+        @for (election of activeElections(); track election.id) {
+          <ng-container *ngTemplateOutlet="electionCard; context: { election: election }"></ng-container>
+        }
+      </div>
+    }
 
-          <h3>{{ election.title }}</h3>
-          <p>{{ election.description }}</p>
+    @if (expiredElections().length > 0) {
+      <div class="expired-toggle-row">
+        <button type="button" class="btn-secondary" (click)="toggleExpired()">
+          {{ showExpired() ? 'Ascunde' : 'Arata' }} alegerile expirate ({{ expiredElections().length }})
+        </button>
+      </div>
 
-          <div class="election-meta">
-            <span class="meta-item">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
-              {{ election.startsAt | date: 'dd.MM.yyyy HH:mm' }} &ndash; {{ election.endsAt | date: 'dd.MM.yyyy HH:mm' }}
-            </span>
-          </div>
-
-          <div class="election-actions">
-            <a [routerLink]="['/elections', election.id, 'results']" class="link-results">
-              Rezultate live
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="7" y1="17" x2="17" y2="7"></line><polyline points="7 7 17 7 17 17"></polyline></svg>
-            </a>
-          </div>
-
-          <div class="manage-actions">
-            <a [routerLink]="['/elections', election.id, 'edit']" class="btn-secondary">Editeaza</a>
-            <button type="button" class="btn-danger" (click)="deleteElection(election.id, election.title)">
-              Sterge
-            </button>
-          </div>
+      @if (showExpired()) {
+        <div class="election-grid expired-section">
+          @for (election of expiredElections(); track election.id) {
+            <ng-container *ngTemplateOutlet="electionCard; context: { election: election }"></ng-container>
+          }
         </div>
       }
-    </div>
+    }
   }
 </div>
+
+<ng-template #electionCard let-election="election">
+  <div class="election-card">
+    <div class="election-badges">
+      <span class="badge badge--neutral">{{ election.type }}</span>
+      <span class="badge badge--neutral">{{ election.isAnonymous ? 'Anonim' : 'Neanonim' }}</span>
+      @if (election.isExpired) {
+        <span class="badge badge--expired">Expirată</span>
+      }
+    </div>
+
+    <h3>{{ election.title }}</h3>
+    <p>{{ election.description }}</p>
+
+    <div class="election-meta">
+      <span class="meta-item">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+        {{ election.startsAt | date: 'dd.MM.yyyy HH:mm' }} &ndash; {{ election.endsAt | date: 'dd.MM.yyyy HH:mm' }}
+      </span>
+    </div>
+
+    <div class="election-actions">
+      <a [routerLink]="['/elections', election.id, 'results']" class="link-results">
+        Rezultate live
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="7" y1="17" x2="17" y2="7"></line><polyline points="7 7 17 7 17 17"></polyline></svg>
+      </a>
+    </div>
+
+    <div class="manage-actions">
+      @if (election.hasVotes) {
+        <span class="btn-secondary btn-disabled" title="Nu poți modifica alegerea deoarece deja s-a răspuns la ea.">
+          Editeaza
+        </span>
+      } @else {
+        <a [routerLink]="['/elections', election.id, 'edit']" class="btn-secondary">Editeaza</a>
+      }
+      <button type="button" class="btn-danger" (click)="deleteElection(election.id, election.title)">
+        Sterge
+      </button>
+    </div>
+  </div>
+</ng-template>

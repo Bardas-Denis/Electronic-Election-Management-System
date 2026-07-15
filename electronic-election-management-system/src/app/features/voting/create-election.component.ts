@@ -22,6 +22,8 @@ export class CreateElectionComponent implements OnInit {
   isSubmitting = signal(false);
   isLoading = signal(false);
   errorMessage = signal<string | null>(null);
+  // true cand alegerea are deja cel putin un vot inregistrat - editarea e blocata
+  isLocked = signal(false);
 
   // daca exista, suntem in mod editare
   private editingElectionId: string | null = null;
@@ -68,14 +70,21 @@ export class CreateElectionComponent implements OnInit {
 
     this.votingService.getElectionById(this.editingElectionId).subscribe({
       next: (election) => {
-        // reconstruim FormArray-ul de optiuni cu numarul exact de optiuni existente
+        // reconstruim FormArray-ul de optiuni cu numarul exact de optiuni existente primite de la server
         this.options.clear();
-        election.options.forEach((option) =>
+        const fetchedOptions = election.options ?? [];
+        fetchedOptions.forEach((option) =>
           this.options.push(this.fb.group({
-            label: [option.label, Validators.required],
+            label: [option.label ?? '', Validators.required],
             description: [option.description ?? '']
           }))
         );
+        // daca serverul nu a intors nicio optiune (nu ar trebui sa se intample), pastram
+        // macar doua randuri goale ca sa nu ramana formularul fara campuri de optiuni
+        if (fetchedOptions.length === 0) {
+          this.addOption();
+          this.addOption();
+        }
 
         this.form.patchValue({
           title: election.title,
@@ -88,9 +97,19 @@ export class CreateElectionComponent implements OnInit {
         });
 
         this.syncAnonymousState(this.form.get('type')?.value);
+
+        // Odata ce a fost inregistrat cel putin un vot, alegerea devine needitabila
+        // (backend-ul respinge oricum PUT-ul; aici blocam si UI-ul din start).
+        if (election.hasVotes) {
+          this.form.disable({ emitEvent: false });
+          this.isLocked.set(true);
+          this.errorMessage.set('Nu poți modifica alegerea deoarece deja s-a răspuns la ea.');
+        }
+
         this.isLoading.set(false);
       },
-      error: () => {
+      error: (err) => {
+        console.error('Nu am putut incarca alegerea pentru editare:', err);
         this.errorMessage.set('Nu am putut incarca alegerea pentru editare.');
         this.isLoading.set(false);
       }
@@ -131,7 +150,7 @@ export class CreateElectionComponent implements OnInit {
   }
 
   onSubmit(): void {
-    if (this.form.invalid) return;
+    if (this.form.invalid || this.isLocked()) return;
 
     this.isSubmitting.set(true);
     this.errorMessage.set(null);

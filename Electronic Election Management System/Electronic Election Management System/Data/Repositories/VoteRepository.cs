@@ -46,6 +46,9 @@ namespace Electronic_Election_Management_System.Data.Repositories
                 .Where(v => v.Option!.ElectionId == electionId && v.VoterDeclaration != null && v.VoterDeclaration.Cnp == cnp)
                 .AnyAsync();
 
+        public Task<bool> HasAnyVotesInElectionAsync(Guid electionId)
+            => _db.Votes.AnyAsync(v => v.Option!.ElectionId == electionId);
+
         public Task SaveChangesAsync()
             => _db.SaveChangesAsync();
     }
