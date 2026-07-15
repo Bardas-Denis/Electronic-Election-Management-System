@@ -134,6 +134,7 @@ using (var scope = app.Services.CreateScope())
     }
 
     await SeedData.EnsureAdminUserAsync(db);
+    await SeedData.EnsureTestDataAsync(db);
 }
 
 app.UseSwagger();
@@ -152,24 +153,3 @@ app.Run();
 
 // Seeds a default Admin account when the database is empty, so the team
 // can log into the admin panel immediately without a manual setup step.
-static class SeedData
-{
-    public static async Task EnsureAdminUserAsync(ElectionDbContext db)
-    {
-        bool anyUser = await db.Users.AnyAsync();
-        if (anyUser)
-        {
-            return;
-        }
-
-        var admin = new User
-        {
-            Email = "admin@election.local",
-            PasswordHash = PasswordHasher.Hash("Admin123!"),
-            Role = UserRole.Admin
-        };
-
-        db.Users.Add(admin);
-        await db.SaveChangesAsync();
-    }
-}
