@@ -89,7 +89,7 @@
     }
 
     <div class="form-actions">
-      <button type="submit" class="btn-primary" [disabled]="form.invalid || isSubmitting()">
+      <button type="submit" class="btn-primary" [disabled]="form.invalid || isSubmitting() || isLocked()">
         @if (isSubmitting()) {
           <span class="spinner" style="border-color: rgba(255,255,255,0.3); border-top-color: #fff;"></span>
         }

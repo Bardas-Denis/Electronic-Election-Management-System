@@ -55,7 +55,11 @@
           </div>
 
           <div class="manage-actions">
-            <a [routerLink]="['/elections', election.id, 'edit']" class="btn-secondary">Editeaza</a>
+            @if (election.hasVotes) {
+              <span class="btn-secondary" style="opacity: 0.5; cursor: not-allowed;" title="Nu mai poate fi editata deoarece a fost deja inregistrat cel putin un vot.">Editeaza</span>
+            } @else {
+              <a [routerLink]="['/elections', election.id, 'edit']" class="btn-secondary">Editeaza</a>
+            }
             <button type="button" class="btn-danger" (click)="deleteElection(election.id, election.title)">
               Sterge
             </button>

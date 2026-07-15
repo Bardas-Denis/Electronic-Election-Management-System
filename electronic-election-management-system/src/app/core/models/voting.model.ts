@@ -22,6 +22,8 @@ export interface ElectionDto {
   // true daca endsAt a trecut deja; alegerea nu mai accepta voturi noi, dar
   // voturile inregistrate anterior si rezultatele raman accesibile
   isExpired?: boolean;
+  // true daca a fost inregistrat cel putin un vot; odata true, alegerea nu mai poate fi editata
+  hasVotes?: boolean;
 }
 
 export interface OptionCreateDto {

@@ -33,7 +33,14 @@ namespace Electronic_Election_Management_System.Services
         public async Task<List<ElectionDto>> GetCreatedByAsync(Guid userId)
         {
             var elections = await _elections.GetByCreatedByAsync(userId);
-            return elections.Select(MapToDto).ToList();
+            var dtos = new List<ElectionDto>();
+            foreach (var election in elections)
+            {
+                var dto = MapToDto(election);
+                dto.HasVotes = await _votes.HasAnyVotesInElectionAsync(election.Id);
+                dtos.Add(dto);
+            }
+            return dtos;
         }
 
         public async Task<ElectionDto?> GetByIdAsync(Guid id, Guid userId)
@@ -44,6 +51,7 @@ namespace Electronic_Election_Management_System.Services
 
             var dto = MapToDto(election);
             dto.HasUserVoted = await _votes.HasUserVotedInElectionAsync(userId, election.Id, election.IsAnonymous);
+            dto.HasVotes = await _votes.HasAnyVotesInElectionAsync(election.Id);
             return dto;
         }
 
@@ -104,6 +112,9 @@ namespace Electronic_Election_Management_System.Services
 
             if (election.CreatedByUserId != userId)
                 return ServiceResult<ElectionDto>.Fail("Nu ești autorizat să editezi această alegere.");
+
+            if (await _votes.HasAnyVotesInElectionAsync(election.Id))
+                return ServiceResult<ElectionDto>.Fail("Această alegere nu mai poate fi editată deoarece a fost deja înregistrat cel puțin un vot.");
 
             election.Title = request.Title.Trim();
             election.Description = request.Description;

@@ -22,6 +22,8 @@ export class CreateElectionComponent implements OnInit {
   isSubmitting = signal(false);
   isLoading = signal(false);
   errorMessage = signal<string | null>(null);
+  // true cand alegerea are deja cel putin un vot inregistrat - editarea e blocata
+  isLocked = signal(false);
 
   // daca exista, suntem in mod editare
   private editingElectionId: string | null = null;
@@ -88,6 +90,15 @@ export class CreateElectionComponent implements OnInit {
         });
 
         this.syncAnonymousState(this.form.get('type')?.value);
+
+        // Odata ce a fost inregistrat cel putin un vot, alegerea devine needitabila
+        // (backend-ul respinge oricum PUT-ul; aici blocam si UI-ul din start).
+        if (election.hasVotes) {
+          this.form.disable({ emitEvent: false });
+          this.isLocked.set(true);
+          this.errorMessage.set('Această alegere nu mai poate fi editată deoarece a fost deja înregistrat cel puțin un vot.');
+        }
+
         this.isLoading.set(false);
       },
       error: () => {
@@ -131,7 +142,7 @@ export class CreateElectionComponent implements OnInit {
   }
 
   onSubmit(): void {
-    if (this.form.invalid) return;
+    if (this.form.invalid || this.isLocked()) return;
 
     this.isSubmitting.set(true);
     this.errorMessage.set(null);

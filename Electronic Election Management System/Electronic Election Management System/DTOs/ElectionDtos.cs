@@ -44,6 +44,12 @@ namespace Electronic_Election_Management_System.DTOs
         /// but their previously registered votes and results remain fully accessible.
         /// </summary>
         public bool IsExpired { get; set; } = false;
+
+        /// <summary>
+        /// True once at least one vote has been cast in this election (by anyone). Once true, the
+        /// election can no longer be edited — only viewed, results checked, or deleted.
+        /// </summary>
+        public bool HasVotes { get; set; } = false;
     }
 
     // SYNC: voting.model.ts -> CreateElectionRequest
