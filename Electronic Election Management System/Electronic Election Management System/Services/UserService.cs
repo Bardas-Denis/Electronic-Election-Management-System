@@ -95,7 +95,7 @@ namespace Electronic_Election_Management_System.Services
             if (await _users.HasCreatedElectionsAsync(targetId))
                 return ServiceResult<bool>.Fail(
                     "This user has created at least one election and cannot be deleted. " +
-                    "Change their role to Voter inst    ead of deleting them.");
+                    "Change their role to Voter instead of deleting them.");
 
             if (await _users.HasCastNonAnonymousVoteAsync(targetId))
                 return ServiceResult<bool>.Fail(
@@ -115,10 +115,9 @@ namespace Electronic_Election_Management_System.Services
             }
             catch (DbUpdateException)
             {
-                // FK violation: user has created elections. Caught here instead of
-                // pre-checking, to avoid an extra query for a rare case.
-                 return ServiceResult<bool>.Fail(
-                    "This user cannot be deleted because other records still reference them.");
+                // Generic safety net just in case some other constraint is violated.
+                return ServiceResult<bool>.Fail(
+                   "This user cannot be deleted because other records still reference them.");
             }
 
             return ServiceResult<bool>.Ok(true);

@@ -109,12 +109,12 @@ export class UsersManagementComponent implements OnInit {
       )
       .subscribe({
         error: (err) => {
-          this.errorMessage.set(
-            err?.error?.message ?? 'Nu am putut salva modificarile de rol.'
-          );
           this.isSaving.set(false);
           this.pendingRoles.set(new Map()); // clear staged state
           this.loadUsers(); // reload to resync with server state
+          this.errorMessage.set(
+            err?.error?.message ?? 'Nu am putut salva modificarile de rol.'
+          );
         },
         complete: () => {
           this.isSaving.set(false);
