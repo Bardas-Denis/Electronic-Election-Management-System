@@ -33,6 +33,12 @@ namespace Electronic_Election_Management_System.Data.Repositories
         public Task<Election?> GetByIdAsync(Guid id)
             => _db.Elections.FirstOrDefaultAsync(e => e.Id == id);
 
+        public Task<Election?> GetByIdWithResultsAsync(Guid id)
+            => _db.Elections
+                .Include(e => e.Options)
+                    .ThenInclude(o => o.Votes)
+                .FirstOrDefaultAsync(e => e.Id == id);
+
         public async Task AddAsync(Election election)
             => await _db.Elections.AddAsync(election);
 
