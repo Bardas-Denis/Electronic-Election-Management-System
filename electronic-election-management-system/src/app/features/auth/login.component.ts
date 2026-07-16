@@ -17,11 +17,7 @@ export class LoginComponent {
   private route = inject(ActivatedRoute);
 
   errorMessage = signal<string | null>(null);
-  infoMessage = signal<string | null>(
-    this.route.snapshot.queryParamMap.get('reason') === 'role-changed'
-      ? 'Rolul tau a fost schimbat. Te rugam sa te autentifici din nou pentru a continua.'
-      : null
-  );
+  infoMessage = signal<string | null>(this.resolveInfoMessage());
   isLoading = signal(false);
   showPassword = signal(false);
 
@@ -33,6 +29,17 @@ export class LoginComponent {
 
   get emailCtrl() { return this.form.get('email')!; }
   get passwordCtrl() { return this.form.get('password')!; }
+
+  private resolveInfoMessage(): string | null {
+    switch (this.route.snapshot.queryParamMap.get('reason')) {
+      case 'role-changed':
+        return 'Rolul tau a fost schimbat. Te rugam sa te autentifici din nou pentru a continua.';
+      case 'session-expired':
+        return 'Sesiunea ta a expirat. Te rugam sa te autentifici din nou.';
+      default:
+        return null;
+    }
+  }
 
   togglePassword(): void {
     this.showPassword.update(v => !v);
