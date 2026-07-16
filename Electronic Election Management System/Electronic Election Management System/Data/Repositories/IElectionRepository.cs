@@ -13,6 +13,10 @@ namespace Electronic_Election_Management_System.Data.Repositories
         /// <summary>Retrieves an election by its ID, including its options.</summary>
         Task<Election?> GetByIdWithOptionsAsync(Guid id);
         Task<Election?> GetByIdAsync(Guid id);
+
+        /// <summary>Retrieves an election including its options and each option's votes, for results tallying.</summary>
+        Task<Election?> GetByIdWithResultsAsync(Guid id);
+
         Task AddAsync(Election election);
         /// <summary>Removes a collection of options.</summary>
         void RemoveOptions(IEnumerable<Option> options);

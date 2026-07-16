@@ -1,6 +1,8 @@
 using Electronic_Election_Management_System.Data.Repositories;
 using Electronic_Election_Management_System.DTOs;
+using Electronic_Election_Management_System.Hubs;
 using Electronic_Election_Management_System.Models;
+using Microsoft.AspNetCore.SignalR;
 
 namespace Electronic_Election_Management_System.Services
 {
@@ -9,12 +11,21 @@ namespace Electronic_Election_Management_System.Services
         private readonly IElectionRepository _elections;
         private readonly IVoteRepository _votes;
         private readonly ICnpService _cnp;
+        private readonly IResultsService _results;
+        private readonly IHubContext<ResultsHub> _resultsHub;
 
-        public VoteService(IElectionRepository elections, IVoteRepository votes, ICnpService cnp)
+        public VoteService(
+            IElectionRepository elections,
+            IVoteRepository votes,
+            ICnpService cnp,
+            IResultsService results,
+            IHubContext<ResultsHub> resultsHub)
         {
             _elections = elections;
             _votes = votes;
             _cnp = cnp;
+            _results = results;
+            _resultsHub = resultsHub;
         }
 
         public async Task<ServiceResult<bool>> CastVoteAsync(CastVoteRequest request, Guid userId)
@@ -30,9 +41,28 @@ namespace Electronic_Election_Management_System.Services
             if (option is null)
                 return ServiceResult<bool>.Fail("The selected option does not belong to this election.");
 
-            return election.IsAnonymous
+            var result = election.IsAnonymous
                 ? await CastAnonymousAsync(election.Id, option.Id, userId)
                 : await CastIdentifiedAsync(election, option.Id, userId, request.VoterDeclaration);
+
+            // Vote was recorded successfully - push the fresh tally to everyone watching this
+            // election's live results dashboard.
+            if (result.Success)
+            {
+                await BroadcastResultsAsync(election.Id);
+            }
+
+            return result;
+        }
+
+        private async Task BroadcastResultsAsync(Guid electionId)
+        {
+            var updated = await _results.GetResultsAsync(electionId);
+            if (updated is not null)
+            {
+                await _resultsHub.Clients.Group(electionId.ToString())
+                    .SendAsync("ResultsUpdated", updated);
+            }
         }
 
         private async Task<ServiceResult<bool>> CastAnonymousAsync(Guid electionId, Guid optionId, Guid userId)

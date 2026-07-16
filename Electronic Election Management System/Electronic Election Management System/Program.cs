@@ -1,5 +1,6 @@
 using Electronic_Election_Management_System.Data;
 using Electronic_Election_Management_System.Data.Repositories;
+using Electronic_Election_Management_System.Hubs;
 using Electronic_Election_Management_System.Models;
 using Electronic_Election_Management_System.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -36,7 +37,10 @@ builder.Services.AddScoped<IElectionService, ElectionService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IAuditService, AuditService>();
 builder.Services.AddScoped<IVoteService, VoteService>();
+builder.Services.AddScoped<IResultsService, ResultsService>();
 builder.Services.AddSingleton<ICnpService, CnpService>();
+
+builder.Services.AddSignalR();
 
 var jwtSection = builder.Configuration.GetSection("Jwt");
 string jwtKey = jwtSection["Key"]!;
@@ -61,6 +65,23 @@ builder.Services
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
             ClockSkew = TimeSpan.FromSeconds(30)
         };
+
+        // SignalR's browser client can't attach an Authorization header to the websocket/SSE
+        // handshake, so it sends the JWT as an "access_token" query param instead
+        // (see accessTokenFactory in results.service.ts). Only trust that for hub requests.
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+            {
+                var accessToken = context.Request.Query["access_token"];
+                var path = context.HttpContext.Request.Path;
+                if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/hubs"))
+                {
+                    context.Token = accessToken;
+                }
+                return Task.CompletedTask;
+            }
+        };
     });
 
 builder.Services.AddAuthorization();
@@ -73,7 +94,8 @@ builder.Services.AddCors(options =>
         policy
             .WithOrigins("http://localhost:4200", "https://localhost:4200")
             .AllowAnyHeader()
-            .AllowAnyMethod();
+            .AllowAnyMethod()
+            .AllowCredentials(); // required for the SignalR negotiate handshake
     });
 });
 
@@ -142,4 +164,5 @@ app.UseCors(AngularDevCorsPolicy);
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+app.MapHub<ResultsHub>("/hubs/results");
 app.Run();
