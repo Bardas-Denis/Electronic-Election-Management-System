@@ -2,7 +2,6 @@
 using Microsoft.EntityFrameworkCore;
 using Electronic_Election_Management_System.Services;
 
-
 namespace Electronic_Election_Management_System.Data
 {
     // Seeds a default Admin account when the database is empty, so the team
@@ -11,15 +10,25 @@ namespace Electronic_Election_Management_System.Data
     {
         public static async Task EnsureAdminUserAsync(ElectionDbContext db)
         {
-            bool anyUser = await db.Users.AnyAsync();
-            if (anyUser)
+          
+            bool anyAdmin = await db.Users.AnyAsync(u => u.Role == UserRole.Admin);
+            if (anyAdmin)
             {
                 return;
             }
 
+            const string adminEmail = "admin@election.local";
+
+            
+            bool emailTaken = await db.Users.AnyAsync(u => u.Email == adminEmail);
+            if (emailTaken)
+            {
+                throw new System.InvalidOperationException($"Cannot seed default admin because '{adminEmail}' already exists.");
+            }
+
             var admin = new User
             {
-                Email = "admin@election.local",
+                Email = adminEmail,
                 PasswordHash = PasswordHasher.Hash("Admin123!"),
                 Role = UserRole.Admin
             };
@@ -33,28 +42,35 @@ namespace Electronic_Election_Management_System.Data
         // Runs only once - skips if elections already exist.
         public static async Task EnsureTestDataAsync(ElectionDbContext db)
         {
-            bool alreadySeeded = await db.Elections.AnyAsync(e => e.Title == "Alegeri Consiliul Studentesc 2025");
+            
+            bool alreadySeeded = await db.Elections.AnyAsync();
             if (alreadySeeded)
             {
                 return;
             }
 
-            var voters = new List<User>();
-
-            for (int i = 1; i <= 100; i++)
+            bool anyTestUsers = await db.Users.AnyAsync(u => u.Email.EndsWith("@test.com"));
+            if (!anyTestUsers)
             {
-                voters.Add(new User
+                var testPasswordHash = PasswordHasher.Hash("Test123!");
+                var voters = new List<User>();
+
+                for (int i = 1; i <= 100; i++)
                 {
-                    Email = $"user{i}@test.com",
-                    PasswordHash = PasswordHasher.Hash("Test123!"),
-                    Role = UserRole.Voter
-                });
+                    voters.Add(new User
+                    {
+                        Email = $"user{i}@test.com",
+                        PasswordHash = testPasswordHash,
+                        Role = UserRole.Voter
+                    });
+                }
+
+                db.Users.AddRange(voters);
+                await db.SaveChangesAsync();
             }
 
-            db.Users.AddRange(voters);
-            await db.SaveChangesAsync();
-
-            var admin = await db.Users.FirstAsync(u => u.Role == UserRole.Admin);
+            var admin = await db.Users.FirstOrDefaultAsync(u => u.Role == UserRole.Admin)
+                ?? throw new System.InvalidOperationException("Cannot seed test elections because no admin user exists. EnsureAdminUserAsync must run successfully first.");
 
             var now = DateTime.UtcNow;
             var elections = new List<Election>
