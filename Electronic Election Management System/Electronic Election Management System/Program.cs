@@ -27,12 +27,10 @@ builder.Services.AddDbContext<ElectionDbContext>(options =>
 );
 
 builder.Services.AddSingleton<ITokenService, TokenService>();
-
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IElectionRepository, ElectionRepository>();
 builder.Services.AddScoped<IAuditLogRepository, AuditLogRepository>();
 builder.Services.AddScoped<IVoteRepository, VoteRepository>();
-
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IElectionService, ElectionService>();
 builder.Services.AddScoped<IUserService, UserService>();
@@ -44,7 +42,6 @@ var jwtSection = builder.Configuration.GetSection("Jwt");
 string jwtKey = jwtSection["Key"]!;
 string jwtIssuer = jwtSection["Issuer"]!;
 string jwtAudience = jwtSection["Audience"]!;
-
 builder.Services
     .AddAuthentication(options =>
     {
@@ -67,9 +64,7 @@ builder.Services
     });
 
 builder.Services.AddAuthorization();
-
 builder.Services.AddControllers();
-
 const string AngularDevCorsPolicy = "AngularDevCorsPolicy";
 builder.Services.AddCors(options =>
 {
@@ -134,42 +129,17 @@ using (var scope = app.Services.CreateScope())
     }
 
     await SeedData.EnsureAdminUserAsync(db);
+    if (app.Environment.IsDevelopment())
+    {
+        await SeedData.EnsureTestDataAsync(db);
+    }
 }
 
 app.UseSwagger();
 app.UseSwaggerUI();
-
 app.UseHttpsRedirection();
-
 app.UseCors(AngularDevCorsPolicy);
-
 app.UseAuthentication();
 app.UseAuthorization();
-
 app.MapControllers();
-
 app.Run();
-
-// Seeds a default Admin account when the database is empty, so the team
-// can log into the admin panel immediately without a manual setup step.
-static class SeedData
-{
-    public static async Task EnsureAdminUserAsync(ElectionDbContext db)
-    {
-        bool anyUser = await db.Users.AnyAsync();
-        if (anyUser)
-        {
-            return;
-        }
-
-        var admin = new User
-        {
-            Email = "admin@election.local",
-            PasswordHash = PasswordHasher.Hash("Admin123!"),
-            Role = UserRole.Admin
-        };
-
-        db.Users.Add(admin);
-        await db.SaveChangesAsync();
-    }
-}
