@@ -1,6 +1,6 @@
 import { Component, inject, signal } from '@angular/core';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { Router, RouterLink, ActivatedRoute } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
 
 @Component({
@@ -14,8 +14,14 @@ export class LoginComponent {
   private fb = inject(FormBuilder);
   private authService = inject(AuthService);
   private router = inject(Router);
+  private route = inject(ActivatedRoute);
 
   errorMessage = signal<string | null>(null);
+  infoMessage = signal<string | null>(
+    this.route.snapshot.queryParamMap.get('reason') === 'role-changed'
+      ? 'Rolul tau a fost schimbat. Te rugam sa te autentifici din nou pentru a continua.'
+      : null
+  );
   isLoading = signal(false);
   showPassword = signal(false);
 
