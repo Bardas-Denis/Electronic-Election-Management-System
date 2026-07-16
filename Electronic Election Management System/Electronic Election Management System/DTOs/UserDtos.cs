@@ -7,7 +7,7 @@ namespace Electronic_Election_Management_System.DTOs
     {
         public Guid Id { get; set; }
         public string Email { get; set; } = string.Empty;
-        /// <summary>The user's role. Valid values: <c>"Admin"</c> or <c>"Voter"</c>.</summary>
+        /// <summary>The user's role. Valid values: <c>"Admin"</c>, <c>"ElectionManager"</c> or <c>"Voter"</c>.</summary>
         public string Role { get; set; } = string.Empty;
         public DateTime CreatedAt { get; set; }
     }
@@ -16,7 +16,7 @@ namespace Electronic_Election_Management_System.DTOs
     public class UpdateUserRoleRequest
     {
         [Required]
-        /// <summary>The role to assign to the user. Valid values: <c>"Admin"</c> or <c>"Voter"</c>.</summary>
+        /// <summary>The role to assign to the user. Valid values: <c>"Admin"</c>, <c>"ElectionManager"</c> or <c>"Voter"</c>.</summary>
         public string Role { get; set; } = string.Empty;
     }
 

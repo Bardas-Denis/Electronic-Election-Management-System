@@ -179,6 +179,24 @@ form {
   }
 }
 
+.server-info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: var(--info-bg);
+  border: 1px solid var(--info-border);
+  border-radius: var(--radius-sm);
+  font-size: 0.8125rem;
+  color: var(--info-color);
+  line-height: 1.4;
+  margin-bottom: 1rem;
+
+  svg {
+    flex-shrink: 0;
+  }
+}
+
 // ─── Primary Button ────────────────────────────────────────────────────────────
 .btn-primary {
   display: flex;

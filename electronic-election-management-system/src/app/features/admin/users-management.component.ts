@@ -1,6 +1,7 @@
 import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { from, concatMap, tap } from 'rxjs';
 import { UsersService } from '../../core/services/users.service';
 import { AuthService } from '../../core/services/auth.service';
@@ -17,6 +18,7 @@ import { UserDto, UserRole } from '../../core/models/user.model';
 export class UsersManagementComponent implements OnInit {
   private usersService = inject(UsersService);
   readonly authService = inject(AuthService);
+  private router = inject(Router);
 
   users = signal<UserDto[]>([]);
   isLoading = signal(true);
@@ -91,6 +93,9 @@ export class UsersManagementComponent implements OnInit {
     if (this.isSaving() || this.wouldLeaveZeroAdmins()) return;
 
     const entries = Array.from(this.pendingRoles().entries()); // [userId, newRole][]
+    const currentUserId = this.authService.currentUser()?.userId;
+    const isSelfRoleChange = entries.some(([userId]) => userId === currentUserId);
+
     this.isSaving.set(true);
     this.errorMessage.set(null);
 
@@ -119,6 +124,13 @@ export class UsersManagementComponent implements OnInit {
         complete: () => {
           this.isSaving.set(false);
           this.pendingRoles.set(new Map());
+
+          // Tokenul curent are încă rolul vechi. Pentru ca guard-urile și interfața
+          // să se sincronizeze cu noul rol, forțăm o nouă autentificare.
+          if (isSelfRoleChange) {
+            this.authService.logout();
+            this.router.navigate(['/login'], { queryParams: { reason: 'role-changed' } });
+          }
         }
       });
   }
