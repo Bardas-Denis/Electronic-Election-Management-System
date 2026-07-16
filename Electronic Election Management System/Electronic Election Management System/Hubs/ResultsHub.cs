@@ -8,12 +8,18 @@ namespace Electronic_Election_Management_System.Hubs
     {
         public async Task JoinElectionGroup(string electionId)
         {
-            await Groups.AddToGroupAsync(Context.ConnectionId, electionId);
+            if (!System.Guid.TryParse(electionId, out var parsedElectionId))
+                throw new HubException("Invalid electionId.");
+
+            await Groups.AddToGroupAsync(Context.ConnectionId, parsedElectionId.ToString());
         }
 
         public async Task LeaveElectionGroup(string electionId)
         {
-            await Groups.RemoveFromGroupAsync(Context.ConnectionId, electionId);
+            if (!System.Guid.TryParse(electionId, out var parsedElectionId))
+                throw new HubException("Invalid electionId.");
+
+            await Groups.RemoveFromGroupAsync(Context.ConnectionId, parsedElectionId.ToString());
         }
     }
 }
