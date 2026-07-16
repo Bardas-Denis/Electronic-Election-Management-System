@@ -18,9 +18,14 @@ export class LoginComponent {
 
   errorMessage = signal<string | null>(null);
   infoMessage = signal<string | null>(
-    this.route.snapshot.queryParamMap.get('reason') === 'role-changed'
-      ? 'Rolul tau a fost schimbat. Te rugam sa te autentifici din nou pentru a continua.'
-      : null
+    (() => {
+      const reason = this.route.snapshot.queryParamMap.get('reason');
+      if (reason === 'role-changed')
+        return 'Rolul tau a fost schimbat. Te rugam sa te autentifici din nou pentru a continua.';
+      if (reason === 'session-expired')
+        return 'Sesiunea ta a expirat sau nu mai este valida. Te rugam sa te autentifici din nou.';
+      return null;
+    })()
   );
   isLoading = signal(false);
   showPassword = signal(false);

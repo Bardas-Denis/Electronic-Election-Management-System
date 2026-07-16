@@ -49,6 +49,8 @@ namespace Electronic_Election_Management_System.Services
             }
 
             user.Role = newRole;
+            // Regenerate security stamp to immediately invalidate all JWT tokens issued previously
+            user.SecurityStamp = Guid.NewGuid().ToString();
 
             await _auditLogs.AddAsync(new AuditLog
             {

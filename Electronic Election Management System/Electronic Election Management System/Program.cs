@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 using System.Reflection;
+using System.Security.Claims;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -60,6 +61,31 @@ builder.Services
             ValidAudience = jwtAudience,
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
             ClockSkew = TimeSpan.FromSeconds(30)
+        };
+
+        // Verify security stamp for every request,
+        // direct database query to immediately invalidate JWT tokens after role change.
+        options.Events = new JwtBearerEvents
+        {
+            OnTokenValidated = async context =>
+            {
+                var userIdClaim = context.Principal!.FindFirstValue(ClaimTypes.NameIdentifier);
+                var tokenStamp = context.Principal.FindFirstValue("securityStamp");
+
+                if (userIdClaim is null || !Guid.TryParse(userIdClaim, out var userId))
+                {
+                    context.Fail("Invalid token.");
+                    return;
+                }
+
+                var users = context.HttpContext.RequestServices.GetRequiredService<IUserRepository>();
+                var user = await users.GetByIdAsync(userId);
+
+                if (user is null || user.SecurityStamp != tokenStamp)
+                {
+                    context.Fail("The token is no longer valid. The role or credentials have been modified.");
+                }
+            }
         };
     });
 
