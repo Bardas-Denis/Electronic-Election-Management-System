@@ -24,39 +24,66 @@
       <p>Revino mai târziu sau creează o alegere nouă.</p>
     </div>
   } @else {
-    <div class="election-grid">
-      @for (election of elections(); track election.id) {
-        <div class="election-card">
-          <div class="election-badges">
-            <span class="badge badge--neutral">{{ election.type }}</span>
-            <span class="badge badge--neutral">{{ election.isAnonymous ? 'Anonim' : 'Neanonim' }}</span>
-            @if (election.isExpired) {
-              <span class="badge badge--expired">Expirată</span>
-            }
-          </div>
+    @if (activeElections().length === 0) {
+      <div class="state-block">
+        <p class="state-title">Nu există alegeri active</p>
+        <p>Toate alegerile sunt expirate - le poți vedea mai jos.</p>
+      </div>
+    } @else {
+      <div class="election-grid">
+        @for (election of activeElections(); track election.id) {
+          <ng-container *ngTemplateOutlet="electionCard; context: { election: election }"></ng-container>
+        }
+      </div>
+    }
 
-          <h3>{{ election.title }}</h3>
-          <p>{{ election.description }}</p>
+    @if (expiredElections().length > 0) {
+      <div class="expired-toggle-row">
+        <button type="button" class="btn-secondary" (click)="toggleExpired()">
+          {{ showExpired() ? 'Ascunde' : 'Arată' }} alegerile expirate ({{ expiredElections().length }})
+        </button>
+      </div>
 
-          <div class="election-actions">
-            @if (election.hasUserVoted) {
-              <span class="badge-voted">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                Ai votat deja
-              </span>
-            } @else if (election.isExpired) {
-              <span class="badge badge--expired">Votarea s-a încheiat</span>
-            } @else {
-              <a [routerLink]="['/elections', election.id]" class="btn-secondary">Votează</a>
-            }
-
-            <a [routerLink]="['/elections', election.id, 'results']" class="link-results">
-              Rezultate live
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="7" y1="17" x2="17" y2="7"></line><polyline points="7 7 17 7 17 17"></polyline></svg>
-            </a>
-          </div>
+      @if (showExpired()) {
+        <div class="election-grid expired-section">
+          @for (election of expiredElections(); track election.id) {
+            <ng-container *ngTemplateOutlet="electionCard; context: { election: election }"></ng-container>
+          }
         </div>
       }
-    </div>
+    }
   }
 </div>
+
+<ng-template #electionCard let-election="election">
+  <div class="election-card">
+    <div class="election-badges">
+      <span class="badge badge--neutral">{{ election.type }}</span>
+      <span class="badge badge--neutral">{{ election.isAnonymous ? 'Anonim' : 'Neanonim' }}</span>
+      @if (election.isExpired) {
+        <span class="badge badge--expired">Expirată</span>
+      }
+    </div>
+
+    <h3>{{ election.title }}</h3>
+    <p>{{ election.description }}</p>
+
+    <div class="election-actions">
+      @if (election.hasUserVoted) {
+        <span class="badge-voted">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+          Ai votat deja
+        </span>
+      } @else if (election.isExpired) {
+        <span class="badge badge--expired">Votarea s-a încheiat</span>
+      } @else {
+        <a [routerLink]="['/elections', election.id]" class="btn-secondary">Votează</a>
+      }
+
+      <a [routerLink]="['/elections', election.id, 'results']" class="link-results">
+        Rezultate live
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="7" y1="17" x2="17" y2="7"></line><polyline points="7 7 17 7 17 17"></polyline></svg>
+      </a>
+    </div>
+  </div>
+</ng-template>
