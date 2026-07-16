@@ -49,7 +49,14 @@ namespace Electronic_Election_Management_System.Services
             // election's live results dashboard.
             if (result.Success)
             {
-                await BroadcastResultsAsync(election.Id);
+                try
+                {
+                    await BroadcastResultsAsync(election.Id);
+                }
+                catch
+                {
+                    // Broadcasting live results should not affect the vote-casting outcome.
+                }
             }
 
             return result;
