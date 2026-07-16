@@ -17,8 +17,10 @@ export const jwtInterceptor: HttpInterceptorFn = (req, next) => {
   return next(cloned).pipe(
     catchError(err => {
       if (err.status === 401) {
+        const backendReason = err.error?.reason;
+        const uiReason = backendReason === 'revoked' ? 'role-changed' : 'session-expired';
         authService.logout();
-        router.navigate(['/login'], { queryParams: { reason: 'session-expired' } });
+        router.navigate(['/login'], { queryParams: { reason: uiReason } });
       }
       return throwError(() => err);
     })

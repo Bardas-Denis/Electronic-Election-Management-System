@@ -100,8 +100,25 @@ builder.Services
 
                 if (user is null || user.SecurityStamp != tokenStamp)
                 {
-                    context.Fail("The token is no longer valid. The role or credentials have been modified.");
+                    context.Fail("revoked");
                 }
+            },
+            OnChallenge = async context =>
+            {
+                // Suppress the default empty 401 and replace it with a typed JSON body
+                // so the frontend can distinguish natural expiry from stamp-mismatch revocation.
+                context.HandleResponse();
+                context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                context.Response.ContentType = "application/json";
+
+                string reason = context.AuthenticateFailure switch
+                {
+                    SecurityTokenExpiredException => "expired",
+                    Exception ex when ex.Message == "revoked" => "revoked",
+                    _ => "invalid"
+                };
+
+                await context.Response.WriteAsJsonAsync(new { reason });
             }
         };
     });
