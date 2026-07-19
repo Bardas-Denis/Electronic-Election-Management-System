@@ -9,6 +9,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 using System.Reflection;
+using System.Security.Claims;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -80,6 +81,44 @@ builder.Services
                     context.Token = accessToken;
                 }
                 return Task.CompletedTask;
+            },
+            // Verify security stamp for every request,
+            // direct database query to immediately invalidate JWT tokens after role change.
+            OnTokenValidated = async context =>
+            {
+                var userIdClaim = context.Principal!.FindFirstValue(ClaimTypes.NameIdentifier);
+                var tokenStamp = context.Principal.FindFirstValue("securityStamp");
+
+                if (userIdClaim is null || !Guid.TryParse(userIdClaim, out var userId))
+                {
+                    context.Fail("Invalid token.");
+                    return;
+                }
+
+                var users = context.HttpContext.RequestServices.GetRequiredService<IUserRepository>();
+                var user = await users.GetByIdAsync(userId);
+
+                if (user is null || user.SecurityStamp != tokenStamp)
+                {
+                    context.Fail("revoked");
+                }
+            },
+            OnChallenge = async context =>
+            {
+                // Suppress the default empty 401 and replace it with a typed JSON body
+                // so the frontend can distinguish natural expiry from stamp-mismatch revocation.
+                context.HandleResponse();
+                context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                context.Response.ContentType = "application/json";
+
+                string reason = context.AuthenticateFailure switch
+                {
+                    SecurityTokenExpiredException => "expired",
+                    Exception ex when ex.Message == "revoked" => "revoked",
+                    _ => "invalid"
+                };
+
+                await context.Response.WriteAsJsonAsync(new { reason });
             }
         };
     });

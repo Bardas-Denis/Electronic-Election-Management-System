@@ -20,6 +20,12 @@ namespace Electronic_Election_Management_System.Models
 
         public UserRole Role { get; set; } = UserRole.Voter;
 
+        /// <summary>
+        /// Security stamp is regenerated at each role or credential change,
+        /// immediately invalidating all JWT tokens issued previously for this user.
+        /// </summary>
+        public string SecurityStamp { get; set; } = Guid.NewGuid().ToString();
+
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
         // Navigatie
