@@ -9,11 +9,13 @@ namespace Electronic_Election_Management_System.Services
     {
         private readonly IUserRepository _users;
         private readonly IAuditLogRepository _auditLogs;
+        private readonly IUserNotifier _notifier;
 
-        public UserService(IUserRepository users, IAuditLogRepository auditLogs)
+        public UserService(IUserRepository users, IAuditLogRepository auditLogs, IUserNotifier notifier)
         {
             _users = users;
             _auditLogs = auditLogs;
+            _notifier = notifier;
         }
 
         public async Task<List<UserDto>> GetAllAsync()
@@ -59,6 +61,10 @@ namespace Electronic_Election_Management_System.Services
             });
 
             await _users.SaveChangesAsync();
+
+            // Best-effort push: notifies the affected user that their role has changed.
+            // If the hub connection is absent the call is a no-op — SecurityStamp revocation remains the primary enforcement mechanism.
+            await _notifier.NotifyRoleChangedAsync(targetId);
 
             return ServiceResult<UserDto>.Ok(new UserDto
             {
