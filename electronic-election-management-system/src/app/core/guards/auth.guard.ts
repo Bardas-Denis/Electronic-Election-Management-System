@@ -1,5 +1,5 @@
 import { inject } from '@angular/core';
-import { CanActivateFn, Router } from '@angular/router';
+import { CanActivateFn, CanMatchFn, Router } from '@angular/router';
 import { AuthService } from '../services/auth.service';
 
 // Blocks the route if the user isn't logged in
@@ -39,4 +39,16 @@ export const electionManagerGuard: CanActivateFn = () => {
 
   router.navigate(['/elections']);
   return false;
+};
+
+// Prevents loading the guest-only home page for authenticated users.
+export const homeGuestGuard: CanMatchFn = () => {
+  const authService = inject(AuthService);
+  const router = inject(Router);
+
+  if (authService.isLoggedIn()) {
+    return router.createUrlTree(['/elections']);
+  }
+
+  return true;
 };
