@@ -3,7 +3,13 @@ import { authGuard, adminGuard, electionManagerGuard } from './core/guards/auth.
 
 // All pages lazy-loaded. authGuard = any logged-in user, adminGuard = Admin only, electionManagerGuard = Admin or ElectionManager.
 export const routes: Routes = [
-  { path: '', redirectTo: 'elections', pathMatch: 'full' },
+  // Public marketing / front page. Redirects logged-in users to /elections itself.
+  {
+    path: '',
+    pathMatch: 'full',
+    loadComponent: () =>
+      import('./features/home/home.component').then((m) => m.HomeComponent)
+  },
 
   // Public auth pages
   {

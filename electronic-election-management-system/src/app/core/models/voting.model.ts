@@ -10,23 +10,22 @@ export interface ElectionDto {
   id: string;
   title: string;
   description?: string;
-  // Intrebarea efectiva prezentata votantilor, afisata deasupra optiunilor
+  // The actual question shown to voters, displayed above the options
   question?: string;
   type: ElectionType;
   isAnonymous: boolean;
   startsAt: string;
   endsAt: string;
   options: OptionDto[];
-  // completat de backend pe baza userului curent, ca sa stie UI-ul daca mai poate vota
+  // Filled in by the backend based on the current user, so the UI knows whether the user can still vote
   hasUserVoted?: boolean;
-  // true daca endsAt a trecut deja; alegerea nu mai accepta voturi noi, dar
-  // voturile inregistrate anterior si rezultatele raman accesibile
+  // True if endsAt has already passed; the election no longer accepts new votes, but previously recorded votes and results remain accessible
   isExpired?: boolean;
-  // true daca a fost inregistrat cel putin un vot; odata true, alegerea nu mai poate fi editata
+  // True if at least one vote has been recorded; once true, the election can no longer be edited
   hasVotes?: boolean;
 }
 
-export interface OptionCreateDto {
+export interface CreateOptionDto {
   label: string;
   description?: string;
 }
@@ -40,7 +39,7 @@ export interface CreateElectionRequest {
   isAnonymous: boolean;
   startsAt: string;
   endsAt: string;
-  options: OptionCreateDto[];
+  options: CreateOptionDto[];
 }
 
 // Which fields matter depends on the election's type - see VoterDeclarationModalComponent.
