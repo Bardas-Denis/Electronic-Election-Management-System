@@ -1,5 +1,10 @@
 import { Routes } from '@angular/router';
-import { authGuard, adminGuard, electionManagerGuard } from './core/guards/auth.guard';
+import {
+  authGuard,
+  adminGuard,
+  electionManagerGuard,
+  homeGuestGuard
+} from './core/guards/auth.guard';
 
 // All pages lazy-loaded. authGuard = any logged-in user, adminGuard = Admin only, electionManagerGuard = Admin or ElectionManager.
 export const routes: Routes = [
@@ -7,6 +12,7 @@ export const routes: Routes = [
   {
     path: '',
     pathMatch: 'full',
+    canMatch: [homeGuestGuard],
     loadComponent: () =>
       import('./features/home/home.component').then((m) => m.HomeComponent)
   },
@@ -88,5 +94,5 @@ export const routes: Routes = [
       )
   },
 
-  { path: '**', redirectTo: 'elections' }
+  { path: '**', redirectTo: '' }
 ];

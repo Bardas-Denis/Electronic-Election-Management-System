@@ -19,7 +19,7 @@ export class HomeComponent {
 
   constructor() {
     if (this.authService.isLoggedIn()) {
-      this.router.navigate(['/elections']);
+      this.router.navigate(['/elections'], { replaceUrl: true });
     }
   }
 }
