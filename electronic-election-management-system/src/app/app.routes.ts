@@ -88,5 +88,5 @@ export const routes: Routes = [
       )
   },
 
-  { path: '**', redirectTo: 'elections' }
+  { path: '**', redirectTo: '' }
 ];
