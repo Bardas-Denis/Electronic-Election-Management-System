@@ -97,7 +97,7 @@ namespace Electronic_Election_Management_System.Services
             await _auditLogs.AddAsync(new AuditLog
             {
                 UserId = currentUserId,
-                Action = $"a_sters_utilizatorul:{user.Email}"
+                Action = $"deleted_user:{user.Email}"
             });
 
             if (await _users.HasCreatedElectionsAsync(targetId))
