@@ -40,6 +40,7 @@ builder.Services.AddScoped<IAuditService, AuditService>();
 builder.Services.AddScoped<IVoteService, VoteService>();
 builder.Services.AddScoped<IResultsService, ResultsService>();
 builder.Services.AddSingleton<ICnpService, CnpService>();
+builder.Services.AddScoped<IUserNotifier, SignalRUserNotifier>();
 
 builder.Services.AddSignalR();
 
@@ -204,4 +205,5 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 app.MapHub<ResultsHub>("/hubs/results");
+app.MapHub<NotificationsHub>("/hubs/notifications");
 app.Run();
