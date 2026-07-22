@@ -6,10 +6,10 @@
         <p>{{ e.description }}</p>
         <div class="election-meta">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-          {{ e.isAnonymous ? 'Vot anonim — identitatea ta nu va fi legată de opțiunea aleasă.' : 'Vot neanonim.' }}
+          {{ (e.isAnonymous ? 'vote.anonymousLabel' : 'vote.nonAnonymousLabel') | translate }}
         </div>
         @if (e.isExpired) {
-          <span class="badge badge--expired">Expirată</span>
+          <span class="badge badge--expired">{{ 'elections.expired' | translate }}</span>
         }
       </div>
 
@@ -17,29 +17,40 @@
         <p class="vote-question">{{ e.question }}</p>
       }
 
+      <!-- Already-voted banner + edit-used note -->
       @if (e.hasUserVoted && !isEditingVote()) {
         <div class="already-voted-banner">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-          Ai votat deja: <strong>{{ userVoteOptionLabel() ?? optionLabelById(userVoteOptionId()) ?? 'opțiune necunoscută' }}</strong>
+          {{ 'vote.alreadyVotedBanner' | translate }}
           @if (!canEditVote()) {
-            <span class="edit-used-note">Ai folosit deja singura modificare permisă (editare sau ștergere).</span>
+            <span class="edit-used-note">{{ 'vote.editUsed' | translate }}</span>
           }
         </div>
-        @if (!e.isExpired && canEditVote()) {
-          <div class="vote-actions">
-            <button type="button" class="btn-secondary" (click)="startEditVote()">Modifică răspunsul</button>
-            <button type="button" class="btn-danger" [disabled]="isDeletingVote()" (click)="deleteVote()">
-              {{ isDeletingVote() ? 'Se șterge...' : 'Șterge răspunsul' }}
-            </button>
-          </div>
-        }
-      } @else if (isEditingVote()) {
-        <div class="already-voted-banner">
-          Editezi răspunsul tău. Alege o nouă opțiune și trimite actualizarea.
+      }
+
+      <!-- Edit / Delete action row (only while edit budget remains and election is open) -->
+      @if (!e.isExpired && canEditVote() && e.hasUserVoted && !isEditingVote()) {
+        <div class="vote-actions">
+          <button type="button" class="btn-secondary" (click)="startEditVote()">
+            {{ 'vote.editVote' | translate }}
+          </button>
+          <button type="button" class="btn-danger" [disabled]="isDeletingVote()" (click)="deleteVote()">
+            {{ (isDeletingVote() ? 'vote.deleting' : 'vote.deleteVote') | translate }}
+          </button>
         </div>
-      } @else if (e.isExpired) {
+      }
+
+      <!-- Editing-mode banner -->
+      @if (isEditingVote()) {
+        <div class="already-voted-banner">
+          {{ 'vote.editingBanner' | translate }}
+        </div>
+      }
+
+      <!-- Expired banner -->
+      @if (e.isExpired) {
         <div class="error-text">
-          Această alegere s-a încheiat și nu mai acceptă voturi noi. Poți totuși consulta rezultatele înregistrate.
+          {{ 'vote.expiredBanner' | translate }}
         </div>
       }
 
@@ -62,14 +73,15 @@
         }
       </div>
 
-      @if (errorMessage()) {
-        <p class="error-text">{{ errorMessage() }}</p>
+      <!-- Error / success feedback -->
+      @if (errorMessageKey()) {
+        <p class="error-text">{{ errorMessageKey() | translate }}</p>
+      }
+      @if (successMessageKey()) {
+        <p class="success-text">{{ successMessageKey() | translate }}</p>
       }
 
-      @if (successMessage()) {
-        <p class="success-text">{{ successMessage() }}</p>
-      }
-
+      <!-- Submit / Update button -->
       @if (!e.isExpired && (!e.hasUserVoted || isEditingVote())) {
         <button
           class="btn-primary vote-submit"
@@ -79,25 +91,23 @@
           @if (isSubmitting()) {
             <span class="spinner"></span>
           }
-          {{
-            isSubmitting()
-              ? 'Se trimite...'
-              : (isEditingVote() ? 'Actualizează răspunsul' : 'Trimite votul')
-          }}
+          {{ (isSubmitting() ? 'vote.submitting' : (isEditingVote() ? 'vote.updateVote' : 'vote.submit')) | translate }}
         </button>
         @if (isEditingVote()) {
-          <button type="button" class="btn-ghost vote-cancel-edit" (click)="cancelEditVote()">Anulează</button>
+          <button type="button" class="btn-ghost vote-cancel-edit" (click)="cancelEditVote()">
+            {{ 'vote.cancelEdit' | translate }}
+          </button>
         }
       }
 
       @if (e.isExpired) {
-        <button (click)="goToResults()" class="btn-secondary vote-submit">Vezi rezultate live</button>
+        <button (click)="goToResults()" class="btn-secondary vote-submit">{{ 'vote.seeResults' | translate }}</button>
       }
     </div>
   } @else {
     <div class="state-block">
       <span class="spinner"></span>
-      <p>Se încarcă...</p>
+      <p>{{ 'vote.loading' | translate }}</p>
     </div>
   }
 

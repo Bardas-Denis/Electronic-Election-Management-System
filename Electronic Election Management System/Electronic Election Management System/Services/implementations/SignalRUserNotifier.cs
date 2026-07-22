@@ -1,3 +1,4 @@
+using Electronic_Election_Management_System.Constants;
 using Electronic_Election_Management_System.Hubs;
 using Microsoft.AspNetCore.SignalR;
 
@@ -16,7 +17,7 @@ namespace Electronic_Election_Management_System.Services
 
         public async Task NotifyRoleChangedAsync(Guid userId)
         {
-            await _hubContext.Clients.Group(userId.ToString()).SendAsync("RoleChanged");
+            await _hubContext.Clients.Group(userId.ToString()).SendAsync(HubEvents.RoleChanged);
         }
     }
 }

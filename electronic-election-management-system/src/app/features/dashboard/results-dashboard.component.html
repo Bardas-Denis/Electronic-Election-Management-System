@@ -2,18 +2,18 @@
   @if (isLoading()) {
     <div class="state-block">
       <span class="spinner"></span>
-      <p>Se încarcă rezultatele...</p>
+      <p>{{ 'results.loading' | translate }}</p>
     </div>
   } @else if (displayedResults(); as results) {
     <div class="results-card">
       <div class="results-header">
         <div>
           <h2>{{ results.title }}</h2>
-          <p class="total-votes">Total voturi: {{ results.totalVotes }}</p>
+          <p class="total-votes">{{ 'results.totalVotes' | translate }} {{ results.totalVotes }}</p>
         </div>
         <span class="live-indicator">
           <span class="live-dot"></span>
-          Live
+          {{ 'results.live' | translate }}
         </span>
       </div>
 
@@ -22,7 +22,7 @@
           <div class="result-row" [class.is-leading]="isLeading(option.voteCount)">
             <div class="result-label">
               <span>{{ option.label }}</span>
-              <span>{{ option.voteCount }} voturi · {{ percentFor(option.voteCount) }}%</span>
+              <span>{{ option.voteCount }} {{ 'results.votes' | translate }} · {{ percentFor(option.voteCount) }}%</span>
             </div>
             <div class="result-bar-track">
               <div
@@ -36,7 +36,7 @@
     </div>
   } @else {
     <div class="state-block">
-      <p class="state-title">Nu există rezultate momentan</p>
+      <p class="state-title">{{ 'results.noResults' | translate }}</p>
     </div>
   }
 </div>

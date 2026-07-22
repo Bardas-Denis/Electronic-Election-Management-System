@@ -1,6 +1,7 @@
 import { Component, EventEmitter, Input, Output, computed, effect, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators, AbstractControl, ValidationErrors } from '@angular/forms';
+import { TranslatePipe } from '@ngx-translate/core';
 import { ElectionType, VoterDeclarationDto } from '../../core/models/voting.model';
 import { parseCnp } from '../../core/utils/cnp.util';
 
@@ -21,7 +22,7 @@ function validCnp(control: AbstractControl): ValidationErrors | null {
 @Component({
   selector: 'app-voter-declaration-modal',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, TranslatePipe],
   templateUrl: './voter-declaration-modal.component.html',
   styleUrl: './voter-declaration-modal.component.scss'
 })

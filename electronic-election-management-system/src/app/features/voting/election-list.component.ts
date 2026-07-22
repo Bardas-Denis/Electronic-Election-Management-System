@@ -1,6 +1,7 @@
 import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
+import { TranslatePipe } from '@ngx-translate/core';
 import { VotingService } from '../../core/services/voting.service';
 import { AuthService } from '../../core/services/auth.service';
 import { ElectionDto } from '../../core/models/voting.model';
@@ -8,7 +9,7 @@ import { ElectionDto } from '../../core/models/voting.model';
 @Component({
   selector: 'app-election-list',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, RouterLink, TranslatePipe],
   templateUrl: './election-list.component.html',
   styleUrl: './election-list.component.scss'
 })

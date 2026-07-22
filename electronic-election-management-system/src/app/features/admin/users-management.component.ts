@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { from, concatMap, tap } from 'rxjs';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { UsersService } from '../../core/services/users.service';
 import { AuthService } from '../../core/services/auth.service';
 import { UserDto, UserRole } from '../../core/models/user.model';
@@ -10,7 +11,7 @@ import { UserDto, UserRole } from '../../core/models/user.model';
 @Component({
   selector: 'app-users-management',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, TranslatePipe],
   templateUrl: './users-management.component.html',
   styleUrl: './users-management.component.scss'
 })
@@ -19,11 +20,13 @@ export class UsersManagementComponent implements OnInit {
   private usersService = inject(UsersService);
   readonly authService = inject(AuthService);
   private router = inject(Router);
+  private translateService = inject(TranslateService);
 
   // Users and UI state signals
   users = signal<UserDto[]>([]);
   isLoading = signal(true);
-  errorMessage = signal<string | null>(null);
+  /** Translation key for inline errors — resolved via | translate in the template. */
+  errorMessageKey = signal<string | null>(null);
   isSaving = signal(false);
   isBulkActionSaving = signal(false);
 
@@ -93,7 +96,7 @@ export class UsersManagementComponent implements OnInit {
   // Load users list from the server
   loadUsers(): void {
     this.isLoading.set(true);
-    this.errorMessage.set(null);
+    this.errorMessageKey.set(null);
 
     this.usersService.getUsers().subscribe({
       next: (data) => {
@@ -101,7 +104,7 @@ export class UsersManagementComponent implements OnInit {
         this.isLoading.set(false);
       },
       error: () => {
-        this.errorMessage.set('Failed to load users list.');
+        this.errorMessageKey.set('users.loadFailed');
         this.isLoading.set(false);
       }
     });
@@ -186,7 +189,7 @@ export class UsersManagementComponent implements OnInit {
 
     if (idsToDelete.length === 0) return;
 
-    if (!confirm(`Are you sure you want to delete ${idsToDelete.length} selected users?`)) {
+    if (!confirm(this.translateService.instant('users.confirmBulkDelete', { count: idsToDelete.length }))) {
       return;
     }
 
@@ -204,7 +207,7 @@ export class UsersManagementComponent implements OnInit {
         },
         error: (err) => {
           this.isBulkActionSaving.set(false);
-          alert(err?.error?.message ?? 'An error occurred during bulk deletion.');
+          alert(this.translateService.instant('users.bulkDeleteError'));
           this.loadUsers();
         }
       });
@@ -268,7 +271,7 @@ export class UsersManagementComponent implements OnInit {
     const isSelfRoleChange = entries.some(([userId]) => userId === currentUserId);
 
     this.isSaving.set(true);
-    this.errorMessage.set(null);
+    this.errorMessageKey.set(null);
 
     from(entries)
       .pipe(
@@ -285,11 +288,10 @@ export class UsersManagementComponent implements OnInit {
       .subscribe({
         error: (err) => {
           this.isSaving.set(false);
-          this.pendingRoles.set(new Map());
-          this.loadUsers();
-          this.errorMessage.set(
-            err?.error?.message ?? 'Failed to save role changes.'
-          );
+          this.pendingRoles.set(new Map()); // clear staged state
+          this.loadUsers(); // reload to resync with server state
+          const code: string | undefined = err?.error?.errorCode;
+          this.errorMessageKey.set(code ? `errors.${code}` : 'users.saveFailed');
         },
         complete: () => {
           this.isSaving.set(false);
@@ -311,13 +313,19 @@ export class UsersManagementComponent implements OnInit {
 
   // Delete a single user
   deleteUser(user: UserDto): void {
-    if (!confirm(`Delete user ${user.email}? This action cannot be undone.`)) {
+    const msg = this.translateService.instant('users.confirmDelete', { email: user.email });
+    if (!confirm(msg)) {
       return;
     }
 
     this.usersService.deleteUser(user.id).subscribe({
       next: () => this.users.update((list) => list.filter((u) => u.id !== user.id)),
-      error: (err) => alert(err?.error?.message ?? 'Failed to delete this user.')
+      error: (err) => {
+        // window.alert is a non-display context — use instant() here
+        const code: string | undefined = err?.error?.errorCode;
+        const key = code ? `errors.${code}` : 'users.deleteFailed';
+        alert(this.translateService.instant(key));
+      }
     });
   }
 

@@ -32,8 +32,8 @@ namespace Electronic_Election_Management_System.Controllers
             var result = await _voteService.CastVoteAsync(request, GetCurrentUserId());
             if (!result.Success)
                 return result.IsNotFound
-                    ? NotFound(new { message = result.Error })
-                    : BadRequest(new { message = result.Error });
+                    ? NotFound(new { errorCode = result.ErrorCode })
+                    : BadRequest(new { errorCode = result.ErrorCode });
             return Ok();
         }
 
@@ -51,8 +51,8 @@ namespace Electronic_Election_Management_System.Controllers
             var result = await _voteService.UpdateVoteAsync(request, GetCurrentUserId());
             if (!result.Success)
                 return result.IsNotFound
-                    ? NotFound(new { message = result.Error })
-                    : BadRequest(new { message = result.Error });
+                    ? NotFound(new { errorCode = result.ErrorCode })
+                    : BadRequest(new { errorCode = result.ErrorCode });
             return Ok();
         }
 
@@ -66,8 +66,8 @@ namespace Electronic_Election_Management_System.Controllers
             var result = await _voteService.DeleteVoteAsync(electionId, GetCurrentUserId());
             if (!result.Success)
                 return result.IsNotFound
-                    ? NotFound(new { message = result.Error })
-                    : BadRequest(new { message = result.Error });
+                    ? NotFound(new { errorCode = result.ErrorCode })
+                    : BadRequest(new { errorCode = result.ErrorCode });
             return Ok();
         }
 
@@ -78,8 +78,8 @@ namespace Electronic_Election_Management_System.Controllers
             var result = await _voteService.GetMyVoteAsync(electionId, GetCurrentUserId());
             if (!result.Success)
                 return result.IsNotFound
-                    ? NotFound(new { message = result.Error })
-                    : BadRequest(new { message = result.Error });
+                    ? NotFound(new { errorCode = result.ErrorCode })
+                    : BadRequest(new { errorCode = result.ErrorCode });
             return Ok(result.Data);
         }
 

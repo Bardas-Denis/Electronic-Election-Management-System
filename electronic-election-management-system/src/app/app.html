@@ -1,91 +1,106 @@
 <!-- Navbar: changes based on login state -->
 <nav class="navbar" [class.navbar--home]="isHomePage">
-<a routerLink="/" class="brand">
+  <a routerLink="/" class="brand">
     <span class="brand-icon">
       <img src="logo.png" alt="Logo" width="40" height="40">
     </span>
-    Votex
+    {{ 'nav.brand' | translate }}
   </a>
   @if (authService.isLoggedIn()) {
-    <div class="nav-right">
+  <div class="nav-right">
+    @if (authService.isAdmin()) {
+    <a routerLink="/admin/users" routerLinkActive="nav-link--active" class="nav-link">{{ 'nav.users' | translate }}</a>
+    }
+    @if (authService.canManageElections()) {
+    <a routerLink="/elections/mine" routerLinkActive="nav-link--active" class="nav-link">{{ 'nav.myElections' |
+      translate }}</a>
+    }
+    <span class="nav-divider"></span>
+    <!-- Avatar shows first letter of email -->
+    <span class="nav-user">
+      <span class="nav-avatar">{{ (authService.currentUser()?.email ?? '?').charAt(0).toUpperCase() }}</span>
+      <span class="nav-email">{{ authService.currentUser()?.email }}</span>
       @if (authService.isAdmin()) {
-        <a routerLink="/admin/users" routerLinkActive="nav-link--active" class="nav-link">Utilizatori</a>
+      <span class="badge badge--info">{{ 'nav.adminBadge' | translate }}</span>
       }
-      @if (authService.canManageElections()) {
-        <a routerLink="/elections/mine" routerLinkActive="nav-link--active" class="nav-link">Alegerile mele</a>
+      @if (authService.currentUser()?.role === 'ElectionManager') {
+      <span class="badge badge--info">{{ 'nav.managerBadge' | translate }}</span>
       }
-      <span class="nav-divider"></span>
-      <!-- Avatar shows first letter of email -->
-      <span class="nav-user">
-        <span class="nav-avatar">{{ (authService.currentUser()?.email ?? '?').charAt(0).toUpperCase() }}</span>
-        <span class="nav-email">{{ authService.currentUser()?.email }}</span>
-        @if (authService.isAdmin()) {
-          <span class="badge badge--info">Admin</span>
-        }
-        @if (authService.currentUser()?.role === 'ElectionManager') {
-          <span class="badge badge--info">Manager</span>
-        }
+    </span>
+    <!-- Language toggle — always visible, after nav-right content -->
+    <div class="lang-switcher">
+      <button id="lang-ro" class="lang-btn" [class.active]="translate.currentLang() === 'ro'"
+        (click)="switchLanguage('ro')" aria-label="Română">RO</button>
+      <button id="lang-en" class="lang-btn" [class.active]="translate.currentLang() === 'en'"
+        (click)="switchLanguage('en')" aria-label="English">EN</button>
+    </div>
+    <button class="nav-btn-logout" (click)="logout()">{{ 'nav.logout' | translate }}</button>
+    <!-- Theme toggle (sliding) -->
+    <button class="theme-toggle" (click)="toggleTheme()" aria-label="Toggle theme"
+      [attr.aria-pressed]="currentTheme === 'dark'">
+      <!-- Sun SVG -->
+      <svg class="theme-icon theme-icon--sun" width="16" height="16" viewBox="0 0 24 24" fill="none"
+        xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <circle cx="12" cy="12" r="4" fill="currentColor" />
+        <g stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="12" y1="1.5" x2="12" y2="4.5" />
+          <line x1="12" y1="19.5" x2="12" y2="22.5" />
+          <line x1="1.5" y1="12" x2="4.5" y2="12" />
+          <line x1="19.5" y1="12" x2="22.5" y2="12" />
+          <line x1="4.2" y1="4.2" x2="6.3" y2="6.3" />
+          <line x1="17.7" y1="17.7" x2="19.8" y2="19.8" />
+          <line x1="4.2" y1="19.8" x2="6.3" y2="17.7" />
+          <line x1="17.7" y1="6.3" x2="19.8" y2="4.2" />
+        </g>
+      </svg>
+
+      <span class="theme-track" aria-hidden="true">
+        <span class="theme-thumb"></span>
       </span>
-      <button class="nav-btn-logout" (click)="logout()">Delogare</button>
-      <!-- Theme toggle (sliding) -->
-      <button class="theme-toggle" (click)="toggleTheme()" aria-label="Toggle theme" [attr.aria-pressed]="currentTheme === 'dark'">
-        <!-- Sun SVG -->
-        <svg class="theme-icon theme-icon--sun" width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-          <circle cx="12" cy="12" r="4" fill="currentColor" />
-          <g stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="12" y1="1.5" x2="12" y2="4.5" />
-            <line x1="12" y1="19.5" x2="12" y2="22.5" />
-            <line x1="1.5" y1="12" x2="4.5" y2="12" />
-            <line x1="19.5" y1="12" x2="22.5" y2="12" />
-            <line x1="4.2" y1="4.2" x2="6.3" y2="6.3" />
-            <line x1="17.7" y1="17.7" x2="19.8" y2="19.8" />
-            <line x1="4.2" y1="19.8" x2="6.3" y2="17.7" />
-            <line x1="17.7" y1="6.3" x2="19.8" y2="4.2" />
-          </g>
-        </svg>
 
-        <span class="theme-track" aria-hidden="true">
-          <span class="theme-thumb"></span>
-        </span>
-
-        <!-- Moon SVG -->
-        <svg class="theme-icon theme-icon--moon" width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-          <path d="M21 12.79A9 9 0 1 1 11.21 3a7 7 0 0 0 9.79 9.79z" fill="currentColor" />
-        </svg>
-      </button>
-    </div>
+      <!-- Moon SVG -->
+      <svg class="theme-icon theme-icon--moon" width="16" height="16" viewBox="0 0 24 24" fill="none"
+        xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <path d="M21 12.79A9 9 0 1 1 11.21 3a7 7 0 0 0 9.79 9.79z" fill="currentColor" />
+      </svg>
+    </button>
+  </div>
   } @else {
-    <div class="nav-right">
-      <a routerLink="/login" class="nav-link">Login</a>
-      <a routerLink="/register" class="nav-link nav-link--cta">Cont nou</a>
-      <!-- Theme toggle (sliding) visible to guests too -->
-      <button class="theme-toggle" (click)="toggleTheme()" aria-label="Toggle theme" [attr.aria-pressed]="currentTheme === 'dark'">
-        <!-- Sun SVG -->
-        <svg class="theme-icon theme-icon--sun" width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-          <circle cx="12" cy="12" r="4" fill="currentColor" />
-          <g stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="12" y1="1.5" x2="12" y2="4.5" />
-            <line x1="12" y1="19.5" x2="12" y2="22.5" />
-            <line x1="1.5" y1="12" x2="4.5" y2="12" />
-            <line x1="19.5" y1="12" x2="22.5" y2="12" />
-            <line x1="4.2" y1="4.2" x2="6.3" y2="6.3" />
-            <line x1="17.7" y1="17.7" x2="19.8" y2="19.8" />
-            <line x1="4.2" y1="19.8" x2="6.3" y2="17.7" />
-            <line x1="17.7" y1="6.3" x2="19.8" y2="4.2" />
-          </g>
-        </svg>
+  <div class="nav-right">
+    <a routerLink="/login" class="nav-link">{{ 'nav.login' | translate }}</a>
+    <a routerLink="/register" class="nav-link nav-link--cta">{{ 'nav.newAccount' | translate }}</a>
+    <!-- Theme toggle (sliding) visible to guests too -->
+    <button class="theme-toggle" (click)="toggleTheme()" aria-label="Toggle theme"
+      [attr.aria-pressed]="currentTheme === 'dark'">
+      <!-- Sun SVG -->
+      <svg class="theme-icon theme-icon--sun" width="16" height="16" viewBox="0 0 24 24" fill="none"
+        xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <circle cx="12" cy="12" r="4" fill="currentColor" />
+        <g stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="12" y1="1.5" x2="12" y2="4.5" />
+          <line x1="12" y1="19.5" x2="12" y2="22.5" />
+          <line x1="1.5" y1="12" x2="4.5" y2="12" />
+          <line x1="19.5" y1="12" x2="22.5" y2="12" />
+          <line x1="4.2" y1="4.2" x2="6.3" y2="6.3" />
+          <line x1="17.7" y1="17.7" x2="19.8" y2="19.8" />
+          <line x1="4.2" y1="19.8" x2="6.3" y2="17.7" />
+          <line x1="17.7" y1="6.3" x2="19.8" y2="4.2" />
+        </g>
+      </svg>
 
-        <span class="theme-track" aria-hidden="true">
-          <span class="theme-thumb"></span>
-        </span>
+      <span class="theme-track" aria-hidden="true">
+        <span class="theme-thumb"></span>
+      </span>
 
-        <!-- Moon SVG -->
-        <svg class="theme-icon theme-icon--moon" width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-          <path d="M21 12.79A9 9 0 1 1 11.21 3a7 7 0 0 0 9.79 9.79z" fill="currentColor" />
-        </svg>
-      </button>
-    </div>
+      <!-- Moon SVG -->
+      <svg class="theme-icon theme-icon--moon" width="16" height="16" viewBox="0 0 24 24" fill="none"
+        xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <path d="M21 12.79A9 9 0 1 1 11.21 3a7 7 0 0 0 9.79 9.79z" fill="currentColor" />
+      </svg>
+    </button>
+  </div>
   }
+
 </nav>
 
 <!-- Every route/page renders here -->

@@ -1,6 +1,7 @@
 import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
+import { TranslatePipe } from '@ngx-translate/core';
 import { VotingService } from '../../core/services/voting.service';
 import { ElectionDto, VoterDeclarationDto } from '../../core/models/voting.model';
 import { VoterDeclarationModalComponent } from './voter-declaration-modal.component';
@@ -8,7 +9,7 @@ import { VoterDeclarationModalComponent } from './voter-declaration-modal.compon
 @Component({
   selector: 'app-cast-vote',
   standalone: true,
-  imports: [CommonModule, VoterDeclarationModalComponent],
+  imports: [CommonModule, VoterDeclarationModalComponent, TranslatePipe],
   templateUrl: './cast-vote.component.html',
   styleUrl: './cast-vote.component.scss'
 })
@@ -24,8 +25,10 @@ export class CastVoteComponent implements OnInit {
   isEditingVote = signal(false);
   isDeletingVote = signal(false);
   isSubmitting = signal(false);
-  errorMessage = signal<string | null>(null);
-  successMessage = signal<string | null>(null);
+  /** Translation key for inline errors — resolved via | translate in the template. */
+  errorMessageKey = signal<string | null>(null);
+  /** Translation key for inline success messages — resolved via | translate in the template. */
+  successMessageKey = signal<string | null>(null);
   showDeclarationModal = signal(false);
   // Whether the current vote can still be edited - false once the one allowed edit is used.
   // Starts true optimistically; loadMyVote() corrects it as soon as the real vote loads.
@@ -50,7 +53,7 @@ export class CastVoteComponent implements OnInit {
           this.loadMyVote();
         }
       },
-      error: () => this.errorMessage.set('Nu am putut incarca alegerea.')
+      error: () => this.errorMessageKey.set('elections.loadOneFailed')
     });
   }
 
@@ -88,14 +91,14 @@ export class CastVoteComponent implements OnInit {
     if (votedOptionId) {
       this.selectedOptionId.set(votedOptionId);
     }
-    this.errorMessage.set(null);
-    this.successMessage.set(null);
+    this.errorMessageKey.set(null);
+    this.successMessageKey.set(null);
     this.isEditingVote.set(true);
   }
 
   cancelEditVote(): void {
     this.isEditingVote.set(false);
-    this.errorMessage.set(null);
+    this.errorMessageKey.set(null);
     const votedOptionId = this.userVoteOptionId() ?? this.election()?.userVoteOptionId ?? null;
     this.selectedOptionId.set(votedOptionId);
   }
@@ -105,8 +108,8 @@ export class CastVoteComponent implements OnInit {
     if (!e || !e.hasUserVoted || e.isExpired || this.isDeletingVote() || !this.canEditVote()) return;
 
     this.isDeletingVote.set(true);
-    this.errorMessage.set(null);
-    this.successMessage.set(null);
+    this.errorMessageKey.set(null);
+    this.successMessageKey.set(null);
 
     this.votingService.deleteMyVote(this.electionId).subscribe({
       next: () => {
@@ -118,7 +121,7 @@ export class CastVoteComponent implements OnInit {
         // Deleting consumes the same one-time change budget as editing does - if this stayed
         // true, someone could delete + revote in a loop to bypass the limit entirely.
         this.canEditVote.set(false);
-        this.successMessage.set('Răspunsul tău a fost șters.');
+        this.successMessageKey.set('vote.deleteSuccess');
         const current = this.election();
         if (current) {
           this.election.set({
@@ -131,7 +134,8 @@ export class CastVoteComponent implements OnInit {
       },
       error: (err) => {
         this.isDeletingVote.set(false);
-        this.errorMessage.set(err?.error?.message ?? 'Răspunsul nu a putut fi șters.');
+        const code: string | undefined = err?.error?.errorCode;
+        this.errorMessageKey.set(code ? `errors.${code}` : 'vote.deleteFailed');
       }
     });
   }
@@ -174,8 +178,8 @@ export class CastVoteComponent implements OnInit {
     if (!optionId) return;
 
     this.isSubmitting.set(true);
-    this.errorMessage.set(null);
-    this.successMessage.set(null);
+    this.errorMessageKey.set(null);
+    this.successMessageKey.set(null);
 
     const payload = { electionId: this.electionId, optionId, voterDeclaration };
     const wasEditing = this.isEditingVote();
@@ -191,18 +195,18 @@ export class CastVoteComponent implements OnInit {
           this.canEditVote.set(false);
         }
         this.isEditingVote.set(false);
-        this.successMessage.set(wasEditing ? 'Răspunsul a fost actualizat.' : 'Votul tău a fost înregistrat.');
+        this.successMessageKey.set(wasEditing ? 'vote.updateSuccess' : 'vote.castSuccess');
       },
       error: (err) => {
         // Note: on failure while editing (e.g. the one-time edit limit was already used),
         // we deliberately do NOT fall back to delete+recast - that would let someone bypass
         // the one-edit limit by just retrying. The error is shown as-is instead.
         this.isSubmitting.set(false);
-        this.errorMessage.set(
-          err?.error?.message ??
-            (wasEditing
-              ? 'Răspunsul nu a putut fi actualizat.'
-              : 'Votul nu a putut fi înregistrat. Poate ai votat deja.')
+        const code: string | undefined = err?.error?.errorCode;
+        this.errorMessageKey.set(
+          code
+            ? `errors.${code}`
+            : (wasEditing ? 'vote.updateFailed' : 'vote.castFailed')
         );
       }
     });

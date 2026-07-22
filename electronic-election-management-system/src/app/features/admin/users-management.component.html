@@ -1,18 +1,18 @@
 <div class="page">
   <div class="page-header">
     <div>
-      <h2>User and Role Management</h2>
-      <p>Manage team access and permissions for each account.</p>
+      <h2>{{ 'users.heading' | translate }}</h2>
+      <p>{{ 'users.subtitle' | translate }}</p>
     </div>
   </div>
 
   <!-- Search and filter bar -->
   <div class="filters-bar">
     <div class="search-box">
-      <input 
-        type="search" 
-        placeholder="Search by email..." 
-        [ngModel]="searchQuery()" 
+      <input
+        type="search"
+        [placeholder]="'users.searchPlaceholder' | translate"
+        [ngModel]="searchQuery()"
         (ngModelChange)="onSearchChange($event)"
         (search)="onSearchClear($event)"
         class="search-input"
@@ -20,13 +20,13 @@
     </div>
 
     <div class="role-filter-container">
-      <label for="roleFilter" class="role-filter-label">Role:</label>
-      <select 
-        id="roleFilter" 
-        class="role-filter-select" 
-        [ngModel]="selectedRoleFilter()" 
+      <label for="roleFilter" class="role-filter-label">{{ 'users.roleFilterLabel' | translate }}</label>
+      <select
+        id="roleFilter"
+        class="role-filter-select"
+        [ngModel]="selectedRoleFilter()"
         (ngModelChange)="setRoleFilter($event)">
-        <option value="ALL">All</option>
+        <option value="ALL">{{ 'users.roleFilterAll' | translate }}</option>
         <option value="Admin">Admin</option>
         <option value="ElectionManager">ElectionManager</option>
         <option value="Voter">Voter</option>
@@ -34,25 +34,25 @@
     </div>
   </div>
 
-  @if (errorMessage()) {
-    <p class="error-text">{{ errorMessage() }}</p>
+  @if (errorMessageKey()) {
+    <p class="error-text">{{ errorMessageKey() | translate }}</p>
   }
 
   <!-- Bulk actions bar (appears only when rows are selected) -->
   @if (selectedUserIds().size > 0) {
-    <div class="bulk-actions-bar" style="display: flex; justify-content: space-between; align-items: center; background: #f3f4f6; padding: 12px 16px; border-radius: 8px; margin-bottom: 16px;">
-      <span style="font-size: 0.875rem; font-weight: 500; color: #374151;">
-        Selected <strong>{{ selectedUserIds().size }}</strong> users
+    <div class="bulk-actions-bar">
+      <span class="bulk-selected-label">
+        {{ 'users.bulkSelected' | translate: { count: selectedUserIds().size } }}
       </span>
-      <div style="display: flex; gap: 8px; align-items: center;">
-        <select class="role-select" (change)="bulkChangeRole($any($event.target).value)" [disabled]="isBulkActionSaving()" style="padding: 6px 12px;">
-          <option value="" disabled selected>Stage role to...</option>
+      <div class="bulk-actions-controls">
+        <select class="role-select" (change)="bulkChangeRole($any($event.target).value)" [disabled]="isBulkActionSaving()">
+          <option value="" disabled selected>{{ 'users.bulkStageTo' | translate }}</option>
           <option value="Admin">Admin</option>
           <option value="ElectionManager">ElectionManager</option>
           <option value="Voter">Voter</option>
         </select>
         <button type="button" class="btn-danger btn-sm" [disabled]="isBulkActionSaving()" (click)="deleteSelectedUsers()">
-          Delete selected
+          {{ 'users.bulkDelete' | translate }}
         </button>
       </div>
     </div>
@@ -64,24 +64,21 @@
       <div class="pending-bar__info">
         @if (wouldLeaveZeroAdmins()) {
           <span class="pending-bar__warning-icon">⚠</span>
-          <span class="pending-bar__warning-text">
-            Selected modifications would remove all admins. At least one Admin account must exist.
-          </span>
+          <span class="pending-bar__warning-text">{{ 'users.pendingWarning' | translate }}</span>
         } @else {
-          <span class="pending-bar__label">You have unsaved changes.</span>
+          <span class="pending-bar__label">{{ 'users.pendingLabel' | translate }}</span>
         }
       </div>
       <div class="pending-bar__actions">
         <button type="button" class="btn-ghost btn-sm" [disabled]="isSaving()" (click)="discardChanges()">
-          Discard
+          {{ 'users.discard' | translate }}
         </button>
-        <button type="button" class="btn-primary btn-sm" [disabled]="isSaving() || wouldLeaveZeroAdmins()"
-          (click)="saveChanges()">
+        <button type="button" class="btn-primary btn-sm" [disabled]="isSaving() || wouldLeaveZeroAdmins()" (click)="saveChanges()">
           @if (isSaving()) {
             <span class="spinner spinner--sm"></span>
-            Saving...
+            {{ 'users.saving' | translate }}
           } @else {
-            Save changes
+            {{ 'users.save' | translate }}
           }
         </button>
       </div>
@@ -91,11 +88,11 @@
   @if (isLoading()) {
     <div class="state-block">
       <span class="spinner"></span>
-      <p>Loading users...</p>
+      <p>{{ 'users.loading' | translate }}</p>
     </div>
   } @else if (users().length === 0) {
     <div class="state-block">
-      <p class="state-title">No registered users found</p>
+      <p class="state-title">{{ 'users.noUsers' | translate }}</p>
     </div>
   } @else {
     <div class="table-card">
@@ -103,15 +100,15 @@
         <thead>
           <tr>
             <th style="width: 40px; text-align: center;">
-              <input 
-                type="checkbox" 
-                [checked]="isAllSelected()" 
+              <input
+                type="checkbox"
+                [checked]="isAllSelected()"
                 (change)="toggleSelectAll($event)"
               />
             </th>
-            <th>Email</th>
-            <th>Role</th>
-            <th>Created at</th>
+            <th>{{ 'users.colEmail' | translate }}</th>
+            <th>{{ 'users.colRole' | translate }}</th>
+            <th>{{ 'users.colCreatedAt' | translate }}</th>
             <th></th>
           </tr>
         </thead>
@@ -119,9 +116,9 @@
           @for (user of pagedUsers(); track user.id) {
             <tr [class.has-pending]="hasPendingChange(user)">
               <td style="text-align: center;">
-                <input 
-                  type="checkbox" 
-                  [checked]="isUserSelected(user.id)" 
+                <input
+                  type="checkbox"
+                  [checked]="isUserSelected(user.id)"
                   (change)="toggleUserSelection(user.id)"
                 />
               </td>
@@ -129,10 +126,10 @@
                 <span class="user-email">
                   {{ user.email }}
                   @if (isCurrentUser(user)) {
-                    <span class="badge badge--neutral">you</span>
+                    <span class="badge badge--neutral">{{ 'users.you' | translate }}</span>
                   }
                   @if (hasPendingChange(user)) {
-                    <span class="badge badge--pending">modified</span>
+                    <span class="badge badge--pending">{{ 'users.modified' | translate }}</span>
                   }
                 </span>
               </td>
@@ -148,14 +145,14 @@
               <td>
                 <button type="button" class="btn-danger btn-sm" [disabled]="isCurrentUser(user) || isSaving()"
                   (click)="deleteUser(user)">
-                  Delete
+                  {{ 'users.deleteBtn' | translate }}
                 </button>
               </td>
             </tr>
           } @empty {
             <tr>
               <td colspan="5" style="text-align: center; padding: 24px; color: #6b7280;">
-                No users match the selected filters.
+                {{ 'users.noFilterResults' | translate }}
               </td>
             </tr>
           }
@@ -164,16 +161,16 @@
 
       <!-- Pagination bar -->
       @if (totalPages() > 1) {
-        <div class="pagination-bar" style="display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; border-top: 1px solid #e5e7eb;">
-          <span style="font-size: 0.875rem; color: #6b7280;">
-            Page {{ currentPage() }} of {{ totalPages() }} (Total: {{ filteredUsers().length }} users)
+        <div class="pagination-bar">
+          <span class="pagination-info">
+            {{ 'users.pageInfo' | translate: { current: currentPage(), total: totalPages(), count: filteredUsers().length } }}
           </span>
-          <div style="display: flex; gap: 8px;">
+          <div class="pagination-controls">
             <button type="button" class="btn-ghost btn-sm" [disabled]="currentPage() === 1" (click)="prevPage()">
-              Previous
+              {{ 'users.pagePrev' | translate }}
             </button>
             <button type="button" class="btn-ghost btn-sm" [disabled]="currentPage() === totalPages()" (click)="nextPage()">
-              Next
+              {{ 'users.pageNext' | translate }}
             </button>
           </div>
         </div>

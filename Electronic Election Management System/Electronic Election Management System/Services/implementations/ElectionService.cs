@@ -1,3 +1,4 @@
+using Electronic_Election_Management_System.Constants;
 using Electronic_Election_Management_System.Data.Repositories;
 using Electronic_Election_Management_System.DTOs;
 using Electronic_Election_Management_System.Models;
@@ -58,13 +59,13 @@ namespace Electronic_Election_Management_System.Services
         public async Task<ServiceResult<ElectionDto>> CreateAsync(CreateElectionRequest request, Guid userId)
         {
             if (!TryParseType(request.Type, out var type))
-                return ServiceResult<ElectionDto>.Fail("Invalid type. Accepted values are 'Politic' or 'Comercial'.");
+                return ServiceResult<ElectionDto>.Fail(ErrorCode.InvalidElectionType);
 
             if (request.Options.Count(o => !string.IsNullOrWhiteSpace(o.Label)) < 2)
-                return ServiceResult<ElectionDto>.Fail("An election needs to have at least 2 vote options");
+                return ServiceResult<ElectionDto>.Fail(ErrorCode.TooFewOptions);
 
             if (request.EndsAt <= request.StartsAt)
-                return ServiceResult<ElectionDto>.Fail("End Date needs to be after start Date");
+                return ServiceResult<ElectionDto>.Fail(ErrorCode.InvalidDateRange);
 
             var election = new Election
             {
@@ -87,7 +88,7 @@ namespace Electronic_Election_Management_System.Services
             {
                 UserId = userId,
                 ElectionId = election.Id,
-                Action = "created_election"
+                Action = AuditAction.ElectionCreated.ToDbValue()
             });
             await _elections.SaveChangesAsync();
 
@@ -97,24 +98,24 @@ namespace Electronic_Election_Management_System.Services
         public async Task<ServiceResult<ElectionDto>> UpdateAsync(Guid id, UpdateElectionRequest request, Guid userId)
         {
             if (!TryParseType(request.Type, out var type))
-                return ServiceResult<ElectionDto>.Fail("Invalid type. Accepted values are 'Politic' or 'Comercial'.");
+                return ServiceResult<ElectionDto>.Fail(ErrorCode.InvalidElectionType);
 
             var validOptions = request.Options.Where(o => !string.IsNullOrWhiteSpace(o.Label)).ToList();
             if (validOptions.Count < 2)
-                return ServiceResult<ElectionDto>.Fail("An election needs to have at least 2 vote options");
+                return ServiceResult<ElectionDto>.Fail(ErrorCode.TooFewOptions);
 
             if (request.EndsAt <= request.StartsAt)
-                return ServiceResult<ElectionDto>.Fail("End Date needs to be after start Date");
+                return ServiceResult<ElectionDto>.Fail(ErrorCode.InvalidDateRange);
 
             var election = await _elections.GetByIdWithOptionsAsync(id);
             if (election is null)
-                return ServiceResult<ElectionDto>.NotFound("Election not found.");
+                return ServiceResult<ElectionDto>.NotFound(ErrorCode.ResourceNotFound);
 
             if (election.CreatedByUserId != userId)
-                return ServiceResult<ElectionDto>.Fail("Nu ești autorizat să editezi această alegere.");
+                return ServiceResult<ElectionDto>.Fail(ErrorCode.NotAuthorizedToEdit);
 
             if (await _votes.HasAnyVotesInElectionAsync(election.Id))
-                return ServiceResult<ElectionDto>.Fail("Nu poți modifica alegerea deoarece deja s-a răspuns la ea.");
+                return ServiceResult<ElectionDto>.Fail(ErrorCode.ElectionHasVotes);
 
             election.Title = request.Title.Trim();
             election.Description = request.Description;
@@ -158,7 +159,7 @@ namespace Electronic_Election_Management_System.Services
             {
                 UserId = userId,
                 ElectionId = election.Id,
-                Action = "updated_election"
+                Action = AuditAction.ElectionUpdated.ToDbValue()
             });
             await _elections.SaveChangesAsync();
 
@@ -169,17 +170,17 @@ namespace Electronic_Election_Management_System.Services
         {
             var election = await _elections.GetByIdAsync(id);
             if (election is null)
-                return ServiceResult<bool>.NotFound("Election not found.");
+                return ServiceResult<bool>.NotFound(ErrorCode.ResourceNotFound);
 
             if (election.CreatedByUserId != userId)
-                return ServiceResult<bool>.Fail("Nu ești autorizat să ștergi această alegere.");
+                return ServiceResult<bool>.Fail(ErrorCode.NotAuthorizedToDelete);
 
             // Audit log written before delete so we still have the title.
             await _auditLogs.AddAsync(new AuditLog
             {
                 UserId = userId,
                 ElectionId = null,
-                Action = $"deleted_election:{election.Title}"
+                Action = $"{AuditAction.ElectionDeleted.ToDbValue()}:{election.Title}"
             });
 
             _elections.Remove(election);
