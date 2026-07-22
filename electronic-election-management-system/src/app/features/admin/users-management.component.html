@@ -6,94 +6,178 @@
     </div>
   </div>
 
-  @if (errorMessage()) {
-  <p class="error-text">{{ errorMessage() }}</p>
-  }
-
-  <!-- Pending-changes action bar — visible only when at least one role has been staged -->
-  @if (hasPendingChanges()) {
-  <div class="pending-bar" [class.pending-bar--warning]="wouldLeaveZeroAdmins()">
-    <div class="pending-bar__info">
-      @if (wouldLeaveZeroAdmins()) {
-      <span class="pending-bar__warning-icon">⚠</span>
-      <span class="pending-bar__warning-text">
-        Modificările selectate ar elimina toți adminii. Cel puțin un cont Admin trebuie să existe.
-      </span>
-      } @else {
-      <span class="pending-bar__label">Ai modificări nesalvate.</span>
-      }
+  <!-- Bară de căutare și filtrare -->
+  <div class="filters-bar">
+    <div class="search-box">
+      <input 
+        type="search" 
+        placeholder="Caută după email..." 
+        [ngModel]="searchQuery()" 
+        (ngModelChange)="onSearchChange($event)"
+        (search)="onSearchClear($event)"
+        class="search-input"
+      />
     </div>
-    <div class="pending-bar__actions">
-      <button type="button" class="btn-ghost btn-sm" [disabled]="isSaving()" (click)="discardChanges()">
-        Renunță
-      </button>
-      <button type="button" class="btn-primary btn-sm" [disabled]="isSaving() || wouldLeaveZeroAdmins()"
-        (click)="saveChanges()">
-        @if (isSaving()) {
-        <span class="spinner spinner--sm"></span>
-        Se salvează...
-        } @else {
-        Salvează modificările
-        }
-      </button>
+
+    <div class="role-filter-container">
+      <label for="roleFilter" class="role-filter-label">Rol:</label>
+      <select 
+        id="roleFilter" 
+        class="role-filter-select" 
+        [ngModel]="selectedRoleFilter()" 
+        (ngModelChange)="setRoleFilter($event)">
+        <option value="ALL">Toți</option>
+        <option value="Admin">Admin</option>
+        <option value="ElectionManager">ElectionManager</option>
+        <option value="Voter">Voter</option>
+      </select>
     </div>
   </div>
+
+  @if (errorMessage()) {
+    <p class="error-text">{{ errorMessage() }}</p>
+  }
+
+  <!-- Bară de acțiuni în masă (apare doar când sunt rânduri selectate) -->
+  @if (selectedUserIds().size > 0) {
+    <div class="bulk-actions-bar" style="display: flex; justify-content: space-between; align-items: center; background: #f3f4f6; padding: 12px 16px; border-radius: 8px; margin-bottom: 16px;">
+      <span style="font-size: 0.875rem; font-weight: 500; color: #374151;">
+        Ai selectat <strong>{{ selectedUserIds().size }}</strong> utilizatori
+      </span>
+      <div style="display: flex; gap: 8px; align-items: center;">
+        <select class="role-select" (change)="bulkChangeRole($any($event.target).value)" [disabled]="isBulkActionSaving()" style="padding: 6px 12px;">
+          <option value="" disabled selected>Schimbă rolul în...</option>
+          <option value="Admin">Admin</option>
+          <option value="ElectionManager">ElectionManager</option>
+          <option value="Voter">Voter</option>
+        </select>
+        <button type="button" class="btn-danger btn-sm" [disabled]="isBulkActionSaving()" (click)="deleteSelectedUsers()">
+          Șterge selectate
+        </button>
+      </div>
+    </div>
+  }
+
+  <!-- Action bar pentru modificări nesalvate -->
+  @if (hasPendingChanges()) {
+    <div class="pending-bar" [class.pending-bar--warning]="wouldLeaveZeroAdmins()">
+      <div class="pending-bar__info">
+        @if (wouldLeaveZeroAdmins()) {
+          <span class="pending-bar__warning-icon">⚠</span>
+          <span class="pending-bar__warning-text">
+            Modificările selectate ar elimina toți adminii. Cel puțin un cont Admin trebuie să existe.
+          </span>
+        } @else {
+          <span class="pending-bar__label">Ai modificări nesalvate.</span>
+        }
+      </div>
+      <div class="pending-bar__actions">
+        <button type="button" class="btn-ghost btn-sm" [disabled]="isSaving()" (click)="discardChanges()">
+          Renunță
+        </button>
+        <button type="button" class="btn-primary btn-sm" [disabled]="isSaving() || wouldLeaveZeroAdmins()"
+          (click)="saveChanges()">
+          @if (isSaving()) {
+            <span class="spinner spinner--sm"></span>
+            Se salvează...
+          } @else {
+            Salvează modificările
+          }
+        </button>
+      </div>
+    </div>
   }
 
   @if (isLoading()) {
-  <div class="state-block">
-    <span class="spinner"></span>
-    <p>Se încarcă utilizatorii...</p>
-  </div>
+    <div class="state-block">
+      <span class="spinner"></span>
+      <p>Se încarcă utilizatorii...</p>
+    </div>
   } @else if (users().length === 0) {
-  <div class="state-block">
-    <p class="state-title">Nu există utilizatori înregistrați</p>
-  </div>
+    <div class="state-block">
+      <p class="state-title">Nu există utilizatori înregistrați</p>
+    </div>
   } @else {
-  <div class="table-card">
-    <table class="users-table">
-      <thead>
-        <tr>
-          <th>Email</th>
-          <th>Rol</th>
-          <th>Creat la</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody>
-        @for (user of users(); track user.id) {
-        <tr [class.has-pending]="hasPendingChange(user)">
-          <td>
-            <span class="user-email">
-              {{ user.email }}
-              @if (isCurrentUser(user)) {
-              <span class="badge badge--neutral">tu</span>
-              }
-              @if (hasPendingChange(user)) {
-              <span class="badge badge--pending">modificat</span>
-              }
-            </span>
-          </td>
-          <td>
-            <select class="role-select" [attr.data-role]="getDisplayRole(user)" [ngModel]="getDisplayRole(user)"
-              (ngModelChange)="onRoleChange(user, $event)" [disabled]="isSaving()">
-              <option value="Admin">Admin</option>
-              <option value="ElectionManager">ElectionManager</option>
-              <option value="Voter">Voter</option>
-            </select>
-          </td>
-          <td>{{ user.createdAt | date: 'dd.MM.yyyy HH:mm' }}</td>
-          <td>
-            <button type="button" class="btn-danger btn-sm" [disabled]="isCurrentUser(user) || isSaving()"
-              (click)="deleteUser(user)">
-              Șterge
-            </button>
-          </td>
-        </tr>
-        }
-      </tbody>
-    </table>
-  </div>
-  }
+    <div class="table-card">
+      <table class="users-table">
+        <thead>
+          <tr>
+            <th style="width: 40px; text-align: center;">
+              <input 
+                type="checkbox" 
+                [checked]="isAllSelected()" 
+                (change)="toggleSelectAll($event)"
+              />
+            </th>
+            <th>Email</th>
+            <th>Rol</th>
+            <th>Creat la</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (user of pagedUsers(); track user.id) {
+            <tr [class.has-pending]="hasPendingChange(user)">
+              <td style="text-align: center;">
+                <input 
+                  type="checkbox" 
+                  [checked]="isUserSelected(user.id)" 
+                  (change)="toggleUserSelection(user.id)"
+                />
+              </td>
+              <td>
+                <span class="user-email">
+                  {{ user.email }}
+                  @if (isCurrentUser(user)) {
+                    <span class="badge badge--neutral">tu</span>
+                  }
+                  @if (hasPendingChange(user)) {
+                    <span class="badge badge--pending">modificat</span>
+                  }
+                </span>
+              </td>
+              <td>
+                <select class="role-select" [attr.data-role]="getDisplayRole(user)" [ngModel]="getDisplayRole(user)"
+                  (ngModelChange)="onRoleChange(user, $event)" [disabled]="isSaving()">
+                  <option value="Admin">Admin</option>
+                  <option value="ElectionManager">ElectionManager</option>
+                  <option value="Voter">Voter</option>
+                </select>
+              </td>
+              <td>{{ user.createdAt | date: 'dd.MM.yyyy HH:mm' }}</td>
+              <td>
+                <button type="button" class="btn-danger btn-sm" [disabled]="isCurrentUser(user) || isSaving()"
+                  (click)="deleteUser(user)">
+                  Șterge
+                </button>
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="5" style="text-align: center; padding: 24px; color: #6b7280;">
+                Nu s-a găsit niciun utilizator conform filtrelor selectate.
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
 
+      <!-- Bară de Paginare -->
+      @if (totalPages() > 1) {
+        <div class="pagination-bar" style="display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; border-top: 1px solid #e5e7eb;">
+          <span style="font-size: 0.875rem; color: #6b7280;">
+            Pagina {{ currentPage() }} din {{ totalPages() }} (Total: {{ filteredUsers().length }} utilizatori)
+          </span>
+          <div style="display: flex; gap: 8px;">
+            <button type="button" class="btn-ghost btn-sm" [disabled]="currentPage() === 1" (click)="prevPage()">
+              Anterior
+            </button>
+            <button type="button" class="btn-ghost btn-sm" [disabled]="currentPage() === totalPages()" (click)="nextPage()">
+              Următor
+            </button>
+          </div>
+        </div>
+      }
+    </div>
+  }
 </div>
