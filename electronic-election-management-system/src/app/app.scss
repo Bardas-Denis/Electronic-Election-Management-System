@@ -13,6 +13,65 @@
   z-index: 10;
 }
 
+.navbar.navbar--home {
+  position: absolute;
+  inset: 0 0 auto;
+  height: 76px;
+  padding-inline: clamp(1.5rem, 4vw, 5rem);
+  color: #ffffff;
+  background: linear-gradient(180deg, rgba(5, 13, 22, 0.38), transparent);
+  border-bottom-color: rgba(255, 255, 255, 0.16);
+
+  .brand,
+  .nav-link {
+    color: #ffffff;
+  }
+
+  .brand {
+    font-size: 0.78rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+
+  .brand-icon {
+    width: 34px;
+    height: 34px;
+    padding: 4px;
+    border: 1px solid rgba(255, 255, 255, 0.42);
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.92);
+  }
+
+  .nav-link {
+    padding: 0.55rem 0.9rem;
+    font-size: 0.72rem;
+  }
+
+  .nav-link--cta {
+    border: 1px solid rgba(255, 255, 255, 0.55);
+
+    &:hover {
+      color: #101820;
+      background: #d9f45b;
+      border-color: #d9f45b;
+    }
+  }
+
+  .theme-toggle {
+    display: none;
+  }
+}
+
+@media (max-width: 560px) {
+  .navbar--home {
+    height: 64px;
+
+    .brand-icon { display: none; }
+    .nav-right { gap: 0.25rem; }
+    .nav-link { padding-inline: 0.65rem; }
+  }
+}
+
 .navbar .brand {
   display: flex;
   align-items: center;
