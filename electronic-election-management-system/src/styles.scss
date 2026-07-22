@@ -489,14 +489,15 @@ tbody td {
 :root .theme-icon--moon { opacity: 0; transform: translate(-50%, -50%) scale(0.9); }
 
 /* Dark theme: slide thumb to the right and swap icons */
+/* Dark theme: slide thumb to the right and swap icons */
 [data-theme="dark"] .theme-thumb {
   transform: translateY(-50%) translateX(22px);
-  background: #0b1220;
-  box-shadow: 0 2px 8px rgba(2,6,23,0.6);
+  background: #60a5fa;
+  box-shadow: 0 0 0 1px rgba(255,255,255,0.15), 0 2px 8px rgba(2,6,23,0.6);
 }
 
 [data-theme="dark"] .theme-track {
-  background: rgba(255,255,255,0.04);
+  background: rgba(255,255,255,0.12);
 }
 
 [data-theme="dark"] .theme-icon--sun { opacity: 0; transform: translate(-50%, -50%) scale(0.9); }

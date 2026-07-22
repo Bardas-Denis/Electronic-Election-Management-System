@@ -124,7 +124,7 @@
 /* Buttons inside the hero content should contrast with the panel */
 .hero-content .btn-primary {
   background: #ffffff;
-  color: var(--text-primary);
+  color: #000206;
   box-shadow: 0 8px 24px rgba(0,0,0,0.25);
 }
 
@@ -149,7 +149,7 @@
 
 [data-theme="dark"] .hero-content .btn-primary {
   background: #ffffff;
-  color: var(--text-primary);
+  color: #000206;
 }
 
 [data-theme="dark"] .hero-content .btn-secondary {
@@ -361,7 +361,7 @@
 
   .btn-primary {
     background: #ffffff;
-    color: var(--text-primary);
+    color: #000206;
 
     &:hover {
       background: rgba(255, 255, 255, 0.85);
