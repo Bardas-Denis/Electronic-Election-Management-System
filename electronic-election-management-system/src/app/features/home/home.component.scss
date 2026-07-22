@@ -34,17 +34,66 @@
 // ─── Hero ───────────────────────────────────────────────────────────────
 
 .hero {
+  position: relative;
+  overflow: hidden;
   padding: 5.5rem 1.5rem 4.5rem;
+  /* Default: no background when video is available. The no-video class shows the graceful gradient fallback. */
+  background: transparent;
+}
+
+.hero.no-video {
   background:
     radial-gradient(circle at 50% 0%, rgba(17, 17, 17, 0.05), transparent 60%),
     var(--bg-page);
 }
 
+/* Background video covers the hero area */
+.hero-video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 0;
+  filter: saturate(0.95) contrast(0.95) brightness(0.95);
+}
+
+/* subtle overlay to improve text contrast */
+.hero-video-overlay {
+  position: absolute;
+  inset: 0;
+  /* Much lighter overlay so the video remains visible */
+  background: linear-gradient(rgba(255,255,255,0.12), rgba(255,255,255,0.03));
+  z-index: 1;
+  pointer-events: none;
+}
+
+/* Ensure the video itself is visible and not dimmed too much */
+.hero-video {
+  opacity: 1;
+  will-change: opacity, transform;
+}
+
 .hero-inner {
+  position: relative;
+  z-index: 2;
   max-width: 720px;
   margin: 0 auto;
   text-align: center;
 }
+
+/* Dark mode overlay variant */
+[data-theme="dark"] .hero-video-overlay {
+  background: linear-gradient(rgba(2,6,23,0.6), rgba(2,6,23,0.35));
+}
+
+/* Make sure text colors stay readable on the hero */
+[data-theme="dark"] .hero h1,
+[data-theme="dark"] .hero-sub,
+[data-theme="dark"] .eyebrow {
+  color: var(--text-primary);
+}
+
 
 .eyebrow {
   display: inline-block;

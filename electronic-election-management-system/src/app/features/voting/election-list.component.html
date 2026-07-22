@@ -77,7 +77,7 @@
       } @else if (election.isExpired) {
         <span class="badge badge--expired">Votarea s-a încheiat</span>
       } @else {
-        <a [routerLink]="['/elections', election.id]" class="btn-secondary">Votează</a>
+        <a [routerLink]="['/elections', election.id]" class="btn-secondary btn-vote">Votează</a>
       }
 
       <a [routerLink]="['/elections', election.id, 'results']" class="link-results">

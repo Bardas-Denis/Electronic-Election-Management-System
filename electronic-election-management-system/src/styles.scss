@@ -1,7 +1,18 @@
 :root {
+  /* Semantic color tokens */
   --bg-page: #fafafa;
   --bg-card: #ffffff;
   --bg-subtle: #f5f5f5;
+
+  /* Soft radial gradient stops (combined into the page background) */
+  --bg-gradient-start: #f8fafc;
+  --bg-gradient-mid: #f1f5f9;
+  --bg-gradient-end: #ffffff;
+
+  /* Subtle dot grid overlay (size and color) */
+  --bg-dot-color: rgba(0,0,0,0.03);
+  --bg-dot-size: 24px;
+
   --text-primary: #111111;
   --text-secondary: #6b7280;
   --text-muted: #9ca3af;
@@ -21,13 +32,15 @@
   --info-color: #1d4ed8;
   --info-bg: #eff6ff;
   --info-border: #bfdbfe;
-  --radius-sm: 4px;
-  --radius-md: 8px;
-  --radius-lg: 12px;
+
+  /* Radii, fonts and layout tokens */
+  --radius-sm: 6px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
   --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  --transition: 0.15s ease;
-  --shadow-sm: 0 1px 2px rgba(17, 17, 17, 0.04);
-  --shadow-md: 0 4px 16px rgba(17, 17, 17, 0.06);
+  --transition: 0.18s ease;
+  --shadow-sm: 0 4px 12px rgba(17, 17, 17, 0.06);
+  --shadow-md: 0 10px 36px rgba(17, 17, 17, 0.08);
   --content-width: 960px;
 }
 
@@ -46,7 +59,15 @@ body {
 }
 
 body {
+  /* Layered background: soft radial gradient + faint dot grid overlay */
   background-color: var(--bg-page);
+  background-image:
+    radial-gradient(circle at top center, var(--bg-gradient-start) 0%, var(--bg-gradient-mid) 45%, var(--bg-gradient-end) 100%),
+    radial-gradient(var(--bg-dot-color) 1px, transparent 1px);
+  background-size: cover, var(--bg-dot-size) var(--bg-dot-size);
+  background-repeat: no-repeat, repeat;
+  background-position: top center, 0 0;
+
   font-family: var(--font-sans);
   color: var(--text-primary);
   -webkit-font-smoothing: antialiased;
@@ -356,4 +377,140 @@ tbody td {
 /* ─── Utilities ───────────────────────────────────────────────────────── */
 .hidden {
   display: none !important;
+}
+
+/* Dark theme overrides: toggled by setting data-theme="dark" on the root element */
+[data-theme="dark"] {
+  --bg-page: #0b1220;         /* page background */
+  --bg-card: #0f1724;         /* cards, panels */
+  --bg-subtle: #0b1220;       /* subtle surfaces */
+
+  /* Dark radial gradient stops */
+  --bg-gradient-start: #1e293b;
+  --bg-gradient-mid: #111827;
+  --bg-gradient-end: #030712;
+
+  /* Dot overlay for dark (subtle, light dots) */
+  --bg-dot-color: rgba(255,255,255,0.03);
+  --bg-dot-size: 24px;
+
+  --text-primary: #e6eef8;    /* main text */
+  --text-secondary: #b9c6d6;  /* secondary text */
+  --text-muted: #8b98a8;      /* muted text */
+  --border-color: #1f2937;    /* borders */
+  --border-focus: #60a5fa;    /* focus ring */
+  --accent: #60a5fa;          /* primary accent */
+  --accent-hover: #3b82f6;    /* accent hover */
+  --error-color: #f87171;
+  --error-bg: #2b0b0b;
+  --error-border: #7f1d1d;
+  --success-color: #34d399;
+  --success-bg: #052017;
+  --success-border: #064e3b;
+  --warning-color: #f59e0b;
+  --warning-bg: #2b1a03;
+  --warning-border: #452a03;
+  --info-color: #60a5fa;
+  --info-bg: #071533;
+  --info-border: #11334d;
+  --shadow-sm: 0 1px 2px rgba(2,6,23,0.6);
+  --shadow-md: 0 8px 30px rgba(2,6,23,0.6);
+}
+
+/* Sliding theme toggle control (compact, aligned, SVG-friendly) */
+.theme-toggle {
+  appearance: none;
+  display: inline-block;
+  width: 64px;
+  height: 32px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  position: relative; /* anchor for absolute children */
+}
+
+.theme-toggle:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(96,165,250,0.12);
+  border-radius: 999px;
+}
+
+/* Center track absolutely to avoid layout offsets */
+.theme-track {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 40px;
+  height: 20px;
+  background: var(--bg-subtle);
+  border-radius: 999px;
+  transition: background var(--transition), box-shadow var(--transition);
+}
+
+/* Circular thumb that slides inside the track. Keep it small so it doesn't cover icons */
+.theme-thumb {
+  position: absolute;
+  top: 50%;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  transform: translateY(-50%) translateX(0);
+  background: #ffffff;
+  border-radius: 50%;
+  box-shadow: 0 2px 6px rgba(2,6,23,0.12);
+  transition: transform 200ms cubic-bezier(.2,.8,.2,1), background 200ms ease, box-shadow 200ms ease;
+  z-index: 1;
+}
+
+/* Ensure inline SVGs don't introduce baseline gaps */
+.theme-icon svg { display: block; }
+
+/* Sun / Moon icons: positioned around the centered track and kept visible above the thumb */
+.theme-icon {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 16px;
+  height: 16px;
+  display: block;
+  pointer-events: none;
+  z-index: 2; /* ensure icons sit above the thumb */
+  transition: opacity 160ms ease, transform 200ms ease, color 160ms ease;
+}
+
+/* Position icons relative to the centered track: offset from 50% so they align with the track ends */
+.theme-icon--sun { left: calc(50% - 30px); color: #f59e0b; }
+.theme-icon--moon { left: calc(50% + 30px); color: #94a3b8; }
+
+/* Icon visibility states (use scale for a subtle pop) */
+:root .theme-icon--sun { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+:root .theme-icon--moon { opacity: 0; transform: translate(-50%, -50%) scale(0.9); }
+
+/* Dark theme: slide thumb to the right and swap icons */
+[data-theme="dark"] .theme-thumb {
+  transform: translateY(-50%) translateX(22px);
+  background: #0b1220;
+  box-shadow: 0 2px 8px rgba(2,6,23,0.6);
+}
+
+[data-theme="dark"] .theme-track {
+  background: rgba(255,255,255,0.04);
+}
+
+[data-theme="dark"] .theme-icon--sun { opacity: 0; transform: translate(-50%, -50%) scale(0.9); }
+[data-theme="dark"] .theme-icon--moon { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+
+/* Vote button color override in dark mode */
+[data-theme="dark"] .btn-vote {
+  background-color: #10B981; /* emerald */
+  color: #ffffff;
+  border-color: rgba(16,185,129,0.15);
+  box-shadow: 0 6px 18px rgba(16,185,129,0.12);
+}
+
+[data-theme="dark"] .btn-vote:hover {
+  background-color: #059669;
+  color: #ffffff;
 }

@@ -1,5 +1,9 @@
 <!-- ─── Hero ──────────────────────────────────────────────────────────── -->
-<section class="hero">
+<section class="hero no-video" #heroSection>
+  <video #heroVideo class="hero-video" autoplay muted loop playsinline preload="metadata" aria-hidden="true">
+    <source src="/assets/videos/hero.mp4" type="video/mp4">
+  </video>
+  <div class="hero-video-overlay" aria-hidden="true"></div>
   <div class="hero-inner">
     <span class="eyebrow">Platformă de vot electronic</span>
     <h1>Alegeri corecte, transparente<br />și fără hârtie.</h1>
