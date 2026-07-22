@@ -1,3 +1,4 @@
+using Electronic_Election_Management_System.Constants;
 using Electronic_Election_Management_System.Data.Repositories;
 using Electronic_Election_Management_System.DTOs;
 using Electronic_Election_Management_System.Models;
@@ -34,11 +35,11 @@ namespace Electronic_Election_Management_System.Services
             Guid targetId, UpdateUserRoleRequest request, Guid currentUserId)
         {
             if (!Enum.TryParse<UserRole>(request.Role, ignoreCase: true, out var newRole))
-                return ServiceResult<UserDto>.Fail("Invalid role. Accepted values are 'Admin', 'ElectionManager' or 'Voter'.");
+                return ServiceResult<UserDto>.Fail(ErrorCode.InvalidRole);
 
             var user = await _users.GetByIdAsync(targetId);
             if (user is null)
-                return ServiceResult<UserDto>.NotFound("User not found.");
+                return ServiceResult<UserDto>.NotFound(ErrorCode.ResourceNotFound);
 
             // Safety rule: no one can demote the last remaining admin account,
             // regardless of whether the target is the caller themselves or another user.
@@ -46,8 +47,7 @@ namespace Electronic_Election_Management_System.Services
             {
                 int adminCount = await _users.AdminCountAsync();
                 if (adminCount <= 1)
-                    return ServiceResult<UserDto>.Fail(
-                        "Cannot remove the Admin role from the last remaining admin account.");
+                    return ServiceResult<UserDto>.Fail(ErrorCode.LastAdminRoleProtected);
             }
 
             user.Role = newRole;
@@ -57,7 +57,7 @@ namespace Electronic_Election_Management_System.Services
             await _auditLogs.AddAsync(new AuditLog
             {
                 UserId = currentUserId,
-                Action = $"changed_user_role:{user.Email}->{newRole}"
+                Action = $"{AuditAction.ChangedUserRole.ToDbValue()}:{user.Email}->{newRole}"
             });
 
             await _users.SaveChangesAsync();
@@ -78,42 +78,34 @@ namespace Electronic_Election_Management_System.Services
         public async Task<ServiceResult<bool>> DeleteAsync(Guid targetId, Guid currentUserId)
         {
             if (targetId == currentUserId)
-                return ServiceResult<bool>.Fail(
-                    "You cannot delete your own account from the admin panel.");
+                return ServiceResult<bool>.Fail(ErrorCode.CannotDeleteSelf);
 
             var user = await _users.GetByIdAsync(targetId);
             if (user is null)
-                return ServiceResult<bool>.NotFound("User not found.");
+                return ServiceResult<bool>.NotFound(ErrorCode.ResourceNotFound);
 
             // Safety rule: do not allow deleting the last remaining admin account.
             if (user.Role == UserRole.Admin)
             {
                 int adminCount = await _users.AdminCountAsync();
                 if (adminCount <= 1)
-                    return ServiceResult<bool>.Fail(
-                        "Cannot delete the last remaining admin account.");
+                    return ServiceResult<bool>.Fail(ErrorCode.LastAdminDeleteProtected);
             }
 
             await _auditLogs.AddAsync(new AuditLog
             {
                 UserId = currentUserId,
-                Action = $"deleted_user:{user.Email}"
+                Action = $"{AuditAction.DeletedUser.ToDbValue()}:{user.Email}"
             });
 
             if (await _users.HasCreatedElectionsAsync(targetId))
-                return ServiceResult<bool>.Fail(
-                    "This user has created at least one election and cannot be deleted. " +
-                    "Change their role to Voter instead of deleting them.");
+                return ServiceResult<bool>.Fail(ErrorCode.UserHasCreatedElections);
 
             if (await _users.HasCastNonAnonymousVoteAsync(targetId))
-                return ServiceResult<bool>.Fail(
-                    "This user has cast a vote in a non-anonymous election and cannot be deleted. " +
-                    "Change their role to Voter instead of deleting them.");
+                return ServiceResult<bool>.Fail(ErrorCode.UserHasNonAnonymousVote);
 
             if (await _users.HasCastAnonymousVoteAsync(targetId))
-                return ServiceResult<bool>.Fail(
-                    "This user has cast a vote (their vote token was consumed) and cannot be deleted. " +
-                    "Change their role to Voter instead of deleting them.");
+                return ServiceResult<bool>.Fail(ErrorCode.UserHasAnonymousVote);
 
             _users.Remove(user);
 
@@ -124,8 +116,7 @@ namespace Electronic_Election_Management_System.Services
             catch (DbUpdateException)
             {
                 // Generic safety net just in case some other constraint is violated.
-                return ServiceResult<bool>.Fail(
-                   "This user cannot be deleted because other records still reference them.");
+                return ServiceResult<bool>.Fail(ErrorCode.UserHasDependentRecords);
             }
 
             return ServiceResult<bool>.Ok(true);

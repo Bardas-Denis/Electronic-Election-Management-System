@@ -87,10 +87,10 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 40px;      
+  width: 40px;
   height: 40px;
-  background: transparent;   
-  border-radius: 0;          
+  background: transparent;
+  border-radius: 0;
 }
 
 .navbar .brand-icon img {
@@ -173,5 +173,41 @@
   &:hover {
     background: var(--bg-page);
     border-color: var(--text-muted);
+  }
+}
+
+// ─── Language Switcher ────────────────────────────────────────────────────────
+
+.navbar .lang-switcher {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-left: 0.75rem;
+  padding-left: 0.75rem;
+  border-left: 1px solid var(--border-color);
+}
+
+.navbar .lang-btn {
+  font-size: 0.75rem;
+  font-family: inherit;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  color: var(--text-secondary);
+  background: none;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  padding: 0.2rem 0.5rem;
+  cursor: pointer;
+  transition: color var(--transition), border-color var(--transition), background var(--transition);
+
+  &:hover {
+    color: var(--text-primary);
+    border-color: var(--border-color);
+  }
+
+  &.active {
+    color: var(--text-primary);
+    border-color: var(--border-color);
+    background: var(--bg-subtle);
   }
 }

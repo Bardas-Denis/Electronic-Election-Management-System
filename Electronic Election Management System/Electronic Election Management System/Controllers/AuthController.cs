@@ -27,7 +27,7 @@ namespace Electronic_Election_Management_System.Controllers
         {
             var result = await _authService.RegisterAsync(request);
             if (!result.Success)
-                return Conflict(new { message = result.Error });
+                return Conflict(new { errorCode = result.ErrorCode });
             return Ok(result.Data);
         }
 
@@ -40,7 +40,7 @@ namespace Electronic_Election_Management_System.Controllers
         {
             var result = await _authService.LoginAsync(request);
             if (!result.Success)
-                return Unauthorized(new { message = result.Error });
+                return Unauthorized(new { errorCode = result.ErrorCode });
             return Ok(result.Data);
         }
     }

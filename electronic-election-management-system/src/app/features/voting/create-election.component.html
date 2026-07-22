@@ -2,77 +2,78 @@
   @if (isLoading()) {
     <div class="state-block">
       <span class="spinner"></span>
-      <p>Se încarcă alegerea...</p>
+      <p>{{ 'elections.loadingOne' | translate }}</p>
     </div>
   }
 
   <form [formGroup]="form" (ngSubmit)="onSubmit()" class="form-card" [class.hidden]="isLoading()">
-    <h2>{{ isEditMode() ? 'Editează alegerea' : 'Alegere nouă' }}</h2>
+    <h2>{{ (isEditMode() ? 'elections.editHeading' : 'elections.createHeading') | translate }}</h2>
 
     <div class="field-group">
-      <label for="title">Titlu</label>
-      <input id="title" type="text" formControlName="title" placeholder="ex. Alegeri prezidențiale studențești" />
+      <label for="title">{{ 'elections.titleLabel' | translate }}</label>
+      <input id="title" type="text" formControlName="title" [placeholder]="'elections.titlePlaceholder' | translate" />
     </div>
 
     <div class="field-group">
-      <label for="description">Descriere</label>
-      <textarea id="description" formControlName="description" placeholder="Descrie pe scurt scopul acestei alegeri"></textarea>
+      <label for="description">{{ 'elections.descriptionLabel' | translate }}</label>
+      <textarea id="description" formControlName="description" [placeholder]="'elections.descriptionPlaceholder' | translate"></textarea>
     </div>
 
     <div class="field-row">
       <div class="field-group" style="margin-bottom: 0;">
-        <label for="type">Tip</label>
+        <label for="type">{{ 'elections.typeLabel' | translate }}</label>
         <select id="type" formControlName="type">
-          <option value="Politic">Politic</option>
-          <option value="Comercial">Comercial</option>
+          <option value="Politic">{{ 'elections.typePolitical' | translate }}</option>
+          <option value="Comercial">{{ 'elections.typeCommercial' | translate }}</option>
         </select>
       </div>
 
       <div class="field-group" style="margin-bottom: 0;">
-        <label>Confidențialitate</label>
+        <label>{{ 'elections.privacyLabel' | translate }}</label>
         <div class="checkbox-field" style="margin-bottom: 0; height: 40px;">
           <input type="checkbox" id="isAnonymous" formControlName="isAnonymous" [disabled]="isPoliticalElection" />
-          <label for="isAnonymous">Vot anonim</label>
+          <label for="isAnonymous">{{ 'elections.anonymousVote' | translate }}</label>
         </div>
       </div>
     </div>
 
     <div class="info-box">
       @if (isPoliticalElection) {
-        <strong>Alegeri politice</strong>
+        <strong>{{ 'elections.infoPolitical' | translate }}</strong>
       } @else {
-        <strong>Alegeri comerciale</strong>}
+        <strong>{{ 'elections.infoCommercial' | translate }}</strong>
+      }
     </div>
 
     <div class="field-row">
       <div class="field-group" style="margin-bottom: 0;">
-        <label for="startsAt">Începe la</label>
+        <label for="startsAt">{{ 'elections.startsAtLabel' | translate }}</label>
         <input id="startsAt" type="datetime-local" formControlName="startsAt" />
       </div>
 
       <div class="field-group" style="margin-bottom: 0;">
-        <label for="endsAt">Se termină la</label>
+        <label for="endsAt">{{ 'elections.endsAtLabel' | translate }}</label>
         <input id="endsAt" type="datetime-local" formControlName="endsAt" />
       </div>
     </div>
 
     <div class="field-group">
-      <label for="question">Întrebare</label>
-      <input id="question" type="text" formControlName="question" placeholder="ex. Pe cine votați?" />
+      <label for="question">{{ 'elections.questionLabel' | translate }}</label>
+      <input id="question" type="text" formControlName="question" [placeholder]="'elections.questionPlaceholder' | translate" />
     </div>
 
     <div class="section-divider">
-      <h3>Opțiuni de vot</h3>
-      <p>Adaugă minim două opțiuni pentru care participanții pot vota.</p>
+      <h3>{{ 'elections.optionsSectionTitle' | translate }}</h3>
+      <p>{{ 'elections.optionsSectionSubtitle' | translate }}</p>
     </div>
 
     <div formArrayName="options">
       @for (option of options.controls; track $index) {
         <div class="option-row" [formGroupName]="$index">
-          <input type="text" formControlName="label" placeholder="Opțiune {{ $index + 1 }}" />
-          <input type="text" formControlName="description" placeholder="Descriere (opțional)" />
+          <input type="text" formControlName="label" [placeholder]="('elections.optionLabelPlaceholder' | translate) + ' ' + ($index + 1)" />
+          <input type="text" formControlName="description" [placeholder]="'elections.optionDescPlaceholder' | translate" />
           @if (options.length > 2) {
-            <button type="button" class="btn-danger" (click)="removeOption($index)" aria-label="Șterge opțiunea">
+            <button type="button" class="btn-danger" (click)="removeOption($index)" [attr.aria-label]="'elections.removeOption' | translate">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
             </button>
           }
@@ -81,11 +82,11 @@
     </div>
     <button type="button" class="btn-add-option" (click)="addOption()">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-      Adaugă opțiune
+      {{ 'elections.addOption' | translate }}
     </button>
 
-    @if (errorMessage()) {
-      <p class="error-text">{{ errorMessage() }}</p>
+    @if (errorMessageKey()) {
+      <p class="error-text">{{ errorMessageKey() | translate }}</p>
     }
 
     <div class="form-actions">
@@ -93,7 +94,13 @@
         @if (isSubmitting()) {
           <span class="spinner" style="border-color: rgba(255,255,255,0.3); border-top-color: #fff;"></span>
         }
-        {{ isSubmitting() ? 'Se salvează...' : (isEditMode() ? 'Salvează modificările' : 'Creează alegerea') }}
+        @if (isSubmitting()) {
+          {{ 'elections.submitting' | translate }}
+        } @else if (isEditMode()) {
+          {{ 'elections.submitEdit' | translate }}
+        } @else {
+          {{ 'elections.submitCreate' | translate }}
+        }
       </button>
     </div>
   </form>

@@ -1,5 +1,6 @@
 import { Component, OnInit, OnDestroy, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { TranslatePipe } from '@ngx-translate/core';
 import { ActivatedRoute } from '@angular/router';
 import { ResultsService } from '../../core/services/results.service';
 import { ElectionResultsDto } from '../../core/models/results.model';
@@ -7,7 +8,7 @@ import { ElectionResultsDto } from '../../core/models/results.model';
 @Component({
   selector: 'app-results-dashboard',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, TranslatePipe],
   templateUrl: './results-dashboard.component.html',
   styleUrl: './results-dashboard.component.scss'
 })

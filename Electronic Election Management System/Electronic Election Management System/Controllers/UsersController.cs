@@ -43,8 +43,8 @@ namespace Electronic_Election_Management_System.Controllers
             var result = await _userService.UpdateRoleAsync(id, request, GetCurrentUserId());
             if (!result.Success)
                 return result.IsNotFound
-                    ? NotFound(new { message = result.Error })
-                    : BadRequest(new { message = result.Error });
+                    ? NotFound(new { errorCode = result.ErrorCode })
+                    : BadRequest(new { errorCode = result.ErrorCode });
             return Ok(result.Data);
         }
 
@@ -58,8 +58,8 @@ namespace Electronic_Election_Management_System.Controllers
             var result = await _userService.DeleteAsync(id, GetCurrentUserId());
             if (!result.Success)
                 return result.IsNotFound
-                    ? NotFound(new { message = result.Error })
-                    : BadRequest(new { message = result.Error });
+                    ? NotFound(new { errorCode = result.ErrorCode })
+                    : BadRequest(new { errorCode = result.ErrorCode });
             return NoContent();
         }
 

@@ -9,47 +9,47 @@
           <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
         </svg>
       </span>
-      <span class="brand-name">Votex</span>
+      <span class="brand-name">{{ 'nav.brand' | translate }}</span>
     </div>
 
     <div class="card-header">
-      <h1>Creează un cont</h1>
-      <p class="subtitle">Înregistrare gratuită · Durează sub un minut</p>
+      <h1>{{ 'auth.register.heading' | translate }}</h1>
+      <p class="subtitle">{{ 'auth.register.subtitle' | translate }}</p>
     </div>
 
     <form [formGroup]="form" (ngSubmit)="onSubmit()" novalidate>
 
       <!-- Email -->
       <div class="field" [class.field--error]="emailCtrl.invalid && emailCtrl.touched">
-        <label for="reg-email">Adresă de email</label>
+        <label for="reg-email">{{ 'auth.register.emailLabel' | translate }}</label>
         <input
           id="reg-email"
           type="email"
           formControlName="email"
-          placeholder="nume@exemplu.com"
+          [placeholder]="'auth.register.emailPlaceholder' | translate"
           autocomplete="email"
           aria-describedby="reg-email-error"
         />
         @if (emailCtrl.touched && emailCtrl.hasError('required')) {
-          <span id="reg-email-error" class="field-error" role="alert">Emailul este obligatoriu.</span>
+          <span id="reg-email-error" class="field-error" role="alert">{{ 'auth.register.emailRequired' | translate }}</span>
         } @else if (emailCtrl.touched && emailCtrl.hasError('email')) {
-          <span id="reg-email-error" class="field-error" role="alert">Introdu o adresă de email validă.</span>
+          <span id="reg-email-error" class="field-error" role="alert">{{ 'auth.register.emailInvalid' | translate }}</span>
         }
       </div>
 
       <!-- Password -->
       <div class="field" [class.field--error]="passwordCtrl.invalid && passwordCtrl.touched">
-        <label for="reg-password">Parolă</label>
+        <label for="reg-password">{{ 'auth.register.passwordLabel' | translate }}</label>
         <div class="input-wrapper">
           <input
             id="reg-password"
             [type]="showPassword() ? 'text' : 'password'"
             formControlName="password"
-            placeholder="Minim 6 caractere"
+            [placeholder]="'auth.register.passwordPlaceholder' | translate"
             autocomplete="new-password"
             aria-describedby="reg-password-error"
           />
-          <button type="button" class="toggle-btn" (click)="togglePassword()" [attr.aria-label]="showPassword() ? 'Ascunde parola' : 'Arată parola'">
+          <button type="button" class="toggle-btn" (click)="togglePassword()" [attr.aria-label]="(showPassword() ? 'auth.register.hidePassword' : 'auth.register.showPassword') | translate">
             @if (showPassword()) {
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
             } @else {
@@ -58,25 +58,25 @@
           </button>
         </div>
         @if (passwordCtrl.touched && passwordCtrl.hasError('required')) {
-          <span id="reg-password-error" class="field-error" role="alert">Parola este obligatorie.</span>
+          <span id="reg-password-error" class="field-error" role="alert">{{ 'auth.register.passwordRequired' | translate }}</span>
         } @else if (passwordCtrl.touched && passwordCtrl.hasError('minlength')) {
-          <span id="reg-password-error" class="field-error" role="alert">Parola trebuie să aibă minim 6 caractere.</span>
+          <span id="reg-password-error" class="field-error" role="alert">{{ 'auth.register.passwordMinLength' | translate }}</span>
         }
       </div>
 
       <!-- Confirm Password -->
       <div class="field" [class.field--error]="(confirmCtrl.invalid && confirmCtrl.touched) || (form.hasError('passwordsMismatch') && confirmCtrl.touched)">
-        <label for="reg-confirm">Confirmă parola</label>
+        <label for="reg-confirm">{{ 'auth.register.confirmLabel' | translate }}</label>
         <div class="input-wrapper">
           <input
             id="reg-confirm"
             [type]="showConfirm() ? 'text' : 'password'"
             formControlName="confirmPassword"
-            placeholder="Repetă parola"
+            [placeholder]="'auth.register.confirmPlaceholder' | translate"
             autocomplete="new-password"
             aria-describedby="reg-confirm-error"
           />
-          <button type="button" class="toggle-btn" (click)="toggleConfirm()" [attr.aria-label]="showConfirm() ? 'Ascunde parola' : 'Arată parola'">
+          <button type="button" class="toggle-btn" (click)="toggleConfirm()" [attr.aria-label]="(showConfirm() ? 'auth.register.hidePassword' : 'auth.register.showPassword') | translate">
             @if (showConfirm()) {
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
             } @else {
@@ -85,17 +85,17 @@
           </button>
         </div>
         @if (confirmCtrl.touched && confirmCtrl.hasError('required')) {
-          <span id="reg-confirm-error" class="field-error" role="alert">Confirmarea parolei este obligatorie.</span>
+          <span id="reg-confirm-error" class="field-error" role="alert">{{ 'auth.register.confirmRequired' | translate }}</span>
         } @else if (confirmCtrl.touched && form.hasError('passwordsMismatch')) {
-          <span id="reg-confirm-error" class="field-error" role="alert">Parolele nu se potrivesc.</span>
+          <span id="reg-confirm-error" class="field-error" role="alert">{{ 'auth.register.passwordsMismatch' | translate }}</span>
         }
       </div>
 
       <!-- Server error -->
-      @if (errorMessage()) {
+      @if (errorMessageKey()) {
         <div class="server-error" role="alert">
           <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
-          {{ errorMessage() }}
+          {{ errorMessageKey() | translate }}
         </div>
       }
 
@@ -103,17 +103,17 @@
       <button type="submit" class="btn-primary" [attr.disabled]="isLoading() || null">
         @if (isLoading()) {
           <span class="spinner"></span>
-          Se creează contul...
+          {{ 'auth.register.submitting' | translate }}
         } @else {
-          Creează cont
+          {{ 'auth.register.submit' | translate }}
         }
       </button>
 
     </form>
 
     <p class="switch-link">
-      Ai deja cont?
-      <a routerLink="/login">Autentifică-te</a>
+      {{ 'auth.register.hasAccount' | translate }}
+      <a routerLink="/login">{{ 'auth.register.login' | translate }}</a>
     </p>
 
   </div>

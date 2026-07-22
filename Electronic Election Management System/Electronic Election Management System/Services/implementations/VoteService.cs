@@ -1,3 +1,4 @@
+using Electronic_Election_Management_System.Constants;
 using Electronic_Election_Management_System.Data.Repositories;
 using Electronic_Election_Management_System.DTOs;
 using Electronic_Election_Management_System.Hubs;
@@ -32,14 +33,14 @@ namespace Electronic_Election_Management_System.Services
         {
             var election = await _elections.GetByIdWithOptionsAsync(request.ElectionId);
             if (election is null)
-                return ServiceResult<bool>.NotFound("Election not found.");
+                return ServiceResult<bool>.NotFound(ErrorCode.ResourceNotFound);
 
             if (!election.CanAcceptVotes())
-                return ServiceResult<bool>.Fail("This election is not currently open for voting.");
+                return ServiceResult<bool>.Fail(ErrorCode.ElectionNotOpen);
 
             var option = election.Options.FirstOrDefault(o => o.Id == request.OptionId);
             if (option is null)
-                return ServiceResult<bool>.Fail("The selected option does not belong to this election.");
+                return ServiceResult<bool>.Fail(ErrorCode.InvalidOption);
 
             var result = election.IsAnonymous
                 ? await CastAnonymousAsync(election.Id, option.Id, userId)
@@ -66,14 +67,14 @@ namespace Electronic_Election_Management_System.Services
         {
             var election = await _elections.GetByIdWithOptionsAsync(request.ElectionId);
             if (election is null)
-                return ServiceResult<bool>.NotFound("Election not found.");
+                return ServiceResult<bool>.NotFound(ErrorCode.ResourceNotFound);
 
             if (!election.CanAcceptVotes())
-                return ServiceResult<bool>.Fail("This election is not currently open for voting.");
+                return ServiceResult<bool>.Fail(ErrorCode.ElectionNotOpen);
 
             var option = election.Options.FirstOrDefault(o => o.Id == request.OptionId);
             if (option is null)
-                return ServiceResult<bool>.Fail("The selected option does not belong to this election.");
+                return ServiceResult<bool>.Fail(ErrorCode.InvalidOption);
 
             var result = election.IsAnonymous
                 ? await UpdateAnonymousAsync(election.Id, option.Id, userId)
@@ -98,20 +99,20 @@ namespace Electronic_Election_Management_System.Services
         {
             var election = await _elections.GetByIdWithOptionsAsync(electionId);
             if (election is null)
-                return ServiceResult<bool>.NotFound("Election not found.");
+                return ServiceResult<bool>.NotFound(ErrorCode.ResourceNotFound);
 
             if (!election.CanAcceptVotes())
-                return ServiceResult<bool>.Fail("This election is not currently open for voting.");
+                return ServiceResult<bool>.Fail(ErrorCode.ElectionNotOpen);
 
             var changeCount = await _votes.GetChangeCountAsync(userId, electionId);
             if (changeCount >= 1)
-                return ServiceResult<bool>.Fail("You can only change your answer once (edit or delete-and-revote).");
+                return ServiceResult<bool>.Fail(ErrorCode.VoteChangeLimit);
 
             if (election.IsAnonymous)
             {
                 var token = await _votes.GetVoteTokenWithVoteAsync(userId, electionId);
                 if (token?.Vote is null)
-                    return ServiceResult<bool>.NotFound("No vote found to delete.");
+                    return ServiceResult<bool>.NotFound(ErrorCode.ResourceNotFound);
 
                 _votes.RemoveVote(token.Vote);
                 // Free the token up so the voter can cast a fresh vote afterwards.
@@ -121,7 +122,7 @@ namespace Electronic_Election_Management_System.Services
             {
                 var vote = await _votes.GetUserVoteInElectionAsync(userId, electionId);
                 if (vote is null)
-                    return ServiceResult<bool>.NotFound("No vote found to delete.");
+                    return ServiceResult<bool>.NotFound(ErrorCode.ResourceNotFound);
 
                 _votes.RemoveVote(vote);
             }
@@ -147,7 +148,7 @@ namespace Electronic_Election_Management_System.Services
         {
             var election = await _elections.GetByIdWithOptionsAsync(electionId);
             if (election is null)
-                return ServiceResult<UserVoteDto>.NotFound("Election not found.");
+                return ServiceResult<UserVoteDto>.NotFound(ErrorCode.ResourceNotFound);
 
             Vote? vote;
             if (election.IsAnonymous)
@@ -161,7 +162,7 @@ namespace Electronic_Election_Management_System.Services
             }
 
             if (vote is null)
-                return ServiceResult<UserVoteDto>.NotFound("You have not voted in this election.");
+                return ServiceResult<UserVoteDto>.NotFound(ErrorCode.ResourceNotFound);
 
             var changeCount = await _votes.GetChangeCountAsync(userId, electionId);
 
@@ -179,11 +180,11 @@ namespace Electronic_Election_Management_System.Services
         {
             var token = await _votes.GetVoteTokenWithVoteAsync(userId, electionId);
             if (token?.Vote is null)
-                return ServiceResult<bool>.Fail("You haven't voted in this election yet.");
+                return ServiceResult<bool>.Fail(ErrorCode.VoteNotFound);
 
             var changeCount = await _votes.GetChangeCountAsync(userId, electionId);
             if (changeCount >= 1)
-                return ServiceResult<bool>.Fail("You can only change your answer once (edit or delete-and-revote).");
+                return ServiceResult<bool>.Fail(ErrorCode.VoteChangeLimit);
 
             token.Vote.OptionId = optionId;
             await _votes.IncrementChangeCountAsync(userId, electionId);
@@ -197,15 +198,15 @@ namespace Electronic_Election_Management_System.Services
         {
             var vote = await _votes.GetUserVoteInElectionAsync(userId, election.Id);
             if (vote is null)
-                return ServiceResult<bool>.Fail("You haven't voted in this election yet.");
+                return ServiceResult<bool>.Fail(ErrorCode.VoteNotFound);
 
             var changeCount = await _votes.GetChangeCountAsync(userId, election.Id);
             if (changeCount >= 1)
-                return ServiceResult<bool>.Fail("You can only change your answer once (edit or delete-and-revote).");
+                return ServiceResult<bool>.Fail(ErrorCode.VoteChangeLimit);
 
             var declarationResult = BuildDeclaration(election.Type, declarationDto);
             if (!declarationResult.Success)
-                return ServiceResult<bool>.Fail(declarationResult.Error!);
+                return ServiceResult<bool>.Fail(declarationResult.ErrorCode!.Value);
 
             vote.OptionId = optionId;
 
@@ -244,7 +245,7 @@ namespace Electronic_Election_Management_System.Services
             if (updated is not null)
             {
                 await _resultsHub.Clients.Group(electionId.ToString())
-                    .SendAsync("ResultsUpdated", updated);
+                    .SendAsync(HubEvents.ResultsUpdated, updated);
             }
         }
 
@@ -258,7 +259,7 @@ namespace Electronic_Election_Management_System.Services
             }
             else if (token.IsUsed)
             {
-                return ServiceResult<bool>.Fail("You have already voted in this election.");
+                return ServiceResult<bool>.Fail(ErrorCode.AlreadyVoted);
             }
 
             token.IsUsed = true;
@@ -275,11 +276,11 @@ namespace Electronic_Election_Management_System.Services
             Election election, Guid optionId, Guid userId, VoterDeclarationDto? declarationDto)
         {
             if (await _votes.HasUserVotedAsync(userId, election.Id))
-                return ServiceResult<bool>.Fail("You have already voted in this election.");
+                return ServiceResult<bool>.Fail(ErrorCode.AlreadyVoted);
 
             var declarationResult = BuildDeclaration(election.Type, declarationDto);
             if (!declarationResult.Success)
-                return ServiceResult<bool>.Fail(declarationResult.Error!);
+                return ServiceResult<bool>.Fail(declarationResult.ErrorCode!.Value);
 
             var vote = new Vote { OptionId = optionId, UserId = userId };
             await _votes.AddVoteAsync(vote);
@@ -296,7 +297,7 @@ namespace Electronic_Election_Management_System.Services
         private ServiceResult<VoterDeclaration> BuildDeclaration(ElectionType type, VoterDeclarationDto? dto)
         {
             if (dto is null)
-                return ServiceResult<VoterDeclaration>.Fail("Voter declaration is required for this election.");
+                return ServiceResult<VoterDeclaration>.Fail(ErrorCode.DeclarationRequired);
 
             if (type == ElectionType.Politic)
             {
@@ -305,15 +306,14 @@ namespace Electronic_Election_Management_System.Services
                     string.IsNullOrWhiteSpace(dto.DomiciliuJudet) ||
                     string.IsNullOrWhiteSpace(dto.DomiciliuAdresa))
                 {
-                    return ServiceResult<VoterDeclaration>.Fail(
-                        "CNP, full name and domiciliu (județ + adresă) are required for Politic elections.");
+                    return ServiceResult<VoterDeclaration>.Fail(ErrorCode.IncompleteDeclaration);
                 }
 
                 // Gender/birth date are ALWAYS derived server-side from the CNP - never trust
                 // whatever the client might send for those fields.
                 var cnpInfo = _cnp.Parse(dto.Cnp);
                 if (cnpInfo is null)
-                    return ServiceResult<VoterDeclaration>.Fail("Invalid CNP.");
+                    return ServiceResult<VoterDeclaration>.Fail(ErrorCode.InvalidCnp);
 
                 return ServiceResult<VoterDeclaration>.Ok(new VoterDeclaration
                 {

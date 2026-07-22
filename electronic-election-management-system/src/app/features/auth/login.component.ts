@@ -1,12 +1,14 @@
 import { Component, inject, signal } from '@angular/core';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { Router, RouterLink, ActivatedRoute } from '@angular/router';
+import { TranslatePipe } from '@ngx-translate/core';
 import { AuthService } from '../../core/services/auth.service';
+
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [ReactiveFormsModule, RouterLink, TranslatePipe],
   templateUrl: './login.component.html',
   styleUrl: './login.component.scss'
 })
@@ -16,8 +18,10 @@ export class LoginComponent {
   private router = inject(Router);
   private route = inject(ActivatedRoute);
 
-  errorMessage = signal<string | null>(null);
-  infoMessage = signal<string | null>(this.resolveInfoMessage());
+  /** Translation key for inline server errors — resolved in template via | translate. */
+  errorMessageKey = signal<string | null>(null);
+  /** Translation key for info banners (role-changed, session-expired). */
+  infoMessageKey = signal<string | null>(this.resolveInfoMessageKey());
   isLoading = signal(false);
   showPassword = signal(false);
 
@@ -30,14 +34,11 @@ export class LoginComponent {
   get emailCtrl() { return this.form.get('email')!; }
   get passwordCtrl() { return this.form.get('password')!; }
 
-  private resolveInfoMessage(): string | null {
+  private resolveInfoMessageKey(): string | null {
     switch (this.route.snapshot.queryParamMap.get('reason')) {
-      case 'role-changed':
-        return 'Rolul tau a fost schimbat. Te rugam sa te autentifici din nou pentru a continua.';
-      case 'session-expired':
-        return 'Sesiunea ta a expirat. Te rugam sa te autentifici din nou.';
-      default:
-        return null;
+      case 'role-changed':   return 'auth.roleChanged';
+      case 'session-expired': return 'auth.sessionExpired';
+      default:               return null;
     }
   }
 
@@ -67,7 +68,7 @@ export class LoginComponent {
     if (this.form.invalid) return;
 
     this.isLoading.set(true);
-    this.errorMessage.set(null);
+    this.errorMessageKey.set(null);
 
     this.authService.login(this.form.getRawValue() as any).subscribe({
       next: () => {
@@ -75,24 +76,23 @@ export class LoginComponent {
       },
       error: (err) => {
         this.isLoading.set(false);
-        
-        let message = 'Email sau parolă incorecte.';
-        
-        if (err?.error?.message) {
-          message = err.error.message;
+
+        const code: string | undefined = err?.error?.errorCode;
+        if (code) {
+          this.errorMessageKey.set(`errors.${code}`);
         } else if (err?.status === 401) {
-          message = 'Email sau parolă incorecte.';
+          this.errorMessageKey.set('errors.invalidCredentials');
         } else if (err?.status === 403) {
-          message = 'Contul tău nu are permisiunea de a accesa această resursă.';
+          this.errorMessageKey.set('network.forbidden');
         } else if (err?.status === 400) {
-          message = 'Date invalide. Verfică email-ul și parola.';
+          this.errorMessageKey.set('network.badRequest');
         } else if (err?.status === 500) {
-          message = 'Eroare server. Încearcă din nou mai târziu.';
+          this.errorMessageKey.set('network.serverError');
         } else if (err?.status === 0) {
-          message = 'Eroare de rețea. Verifică conexiunea la internet.';
+          this.errorMessageKey.set('network.connectionError');
+        } else {
+          this.errorMessageKey.set('errors.unknown');
         }
-        
-        this.errorMessage.set(message);
       }
     });
   }

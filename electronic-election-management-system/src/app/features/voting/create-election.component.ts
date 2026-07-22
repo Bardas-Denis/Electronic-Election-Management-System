@@ -2,6 +2,7 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormArray, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
+import { TranslatePipe } from '@ngx-translate/core';
 import { VotingService } from '../../core/services/voting.service';
 
 // Componenta e folosita atat pentru creare (ruta /elections/new)
@@ -9,7 +10,7 @@ import { VotingService } from '../../core/services/voting.service';
 @Component({
   selector: 'app-create-election',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, TranslatePipe],
   templateUrl: './create-election.component.html',
   styleUrl: './create-election.component.scss'
 })
@@ -21,7 +22,8 @@ export class CreateElectionComponent implements OnInit {
 
   isSubmitting = signal(false);
   isLoading = signal(false);
-  errorMessage = signal<string | null>(null);
+  /** Translation key for inline errors — resolved via | translate in the template. */
+  errorMessageKey = signal<string | null>(null);
   // true cand alegerea are deja cel putin un vot inregistrat - editarea e blocata
   isLocked = signal(false);
 
@@ -103,14 +105,14 @@ export class CreateElectionComponent implements OnInit {
         if (election.hasVotes) {
           this.form.disable({ emitEvent: false });
           this.isLocked.set(true);
-          this.errorMessage.set('Nu poți modifica alegerea deoarece deja s-a răspuns la ea.');
+          this.errorMessageKey.set('elections.lockedByVotes');
         }
 
         this.isLoading.set(false);
       },
       error: (err) => {
         console.error('Nu am putut incarca alegerea pentru editare:', err);
-        this.errorMessage.set('Nu am putut incarca alegerea pentru editare.');
+        this.errorMessageKey.set('elections.loadEditFailed');
         this.isLoading.set(false);
       }
     });
@@ -153,7 +155,7 @@ export class CreateElectionComponent implements OnInit {
     if (this.form.invalid || this.isLocked()) return;
 
     this.isSubmitting.set(true);
-    this.errorMessage.set(null);
+    this.errorMessageKey.set(null);
 
     const payload = this.form.getRawValue() as any;
     // Ensure the datetime-local values are sent as UTC ISO strings so server comparisons use UTC correctly
@@ -166,14 +168,17 @@ export class CreateElectionComponent implements OnInit {
       : this.votingService.createElection(payload);
 
     request$.subscribe({
-      next: (result) => {
+      next: () => {
         this.isSubmitting.set(false);
         this.router.navigate(['/elections']);
       },
       error: (err) => {
         this.isSubmitting.set(false);
-        this.errorMessage.set(
-          err?.error?.message ?? (this.editingElectionId ? 'Nu am putut salva modificarile.' : 'Nu am putut crea alegerea.')
+        const code: string | undefined = err?.error?.errorCode;
+        this.errorMessageKey.set(
+          code
+            ? `errors.${code}`
+            : (this.editingElectionId ? 'elections.saveFailed' : 'elections.createFailed')
         );
       }
     });

@@ -1,7 +1,9 @@
 import { Component, inject, signal } from '@angular/core';
 import { ReactiveFormsModule, FormBuilder, Validators, AbstractControl, ValidationErrors } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
+import { TranslatePipe } from '@ngx-translate/core';
 import { AuthService } from '../../core/services/auth.service';
+
 
 // Group-level validator: checks password === confirmPassword
 function passwordsMatch(control: AbstractControl): ValidationErrors | null {
@@ -16,7 +18,7 @@ function passwordsMatch(control: AbstractControl): ValidationErrors | null {
 @Component({
   selector: 'app-register',
   standalone: true,
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [ReactiveFormsModule, RouterLink, TranslatePipe],
   templateUrl: './register.component.html',
   styleUrl: './register.component.scss'
 })
@@ -25,7 +27,8 @@ export class RegisterComponent {
   private authService = inject(AuthService);
   private router = inject(Router);
 
-  errorMessage = signal<string | null>(null);
+  /** Translation key for inline server errors — resolved in template via | translate. */
+  errorMessageKey = signal<string | null>(null);
   isLoading = signal(false);
   showPassword = signal(false);
   showConfirm = signal(false);
@@ -78,7 +81,7 @@ export class RegisterComponent {
     if (this.form.invalid) return;
 
     this.isLoading.set(true);
-    this.errorMessage.set(null);
+    this.errorMessageKey.set(null);
 
     const { email, password } = this.form.getRawValue() as any;
 
@@ -88,28 +91,21 @@ export class RegisterComponent {
       },
       error: (err) => {
         this.isLoading.set(false);
-        
-        let message = 'Nu am putut crea contul. Încearcă alt email.';
-        
-        if (err?.error?.message) {
-          message = err.error.message;
-        } else if (err?.error?.errors) {
-          // Handle validation errors from API
-          const errors = err.error.errors;
-          if (errors.email) message = `Email: ${errors.email}`;
-          else if (errors.password) message = `Parolă: ${errors.password}`;
-          else message = Object.values(errors)[0] as string;
+
+        const code: string | undefined = err?.error?.errorCode;
+        if (code) {
+          this.errorMessageKey.set(`errors.${code}`);
         } else if (err?.status === 409) {
-          message = 'Acest email este deja înregistrat.';
+          this.errorMessageKey.set('errors.emailAlreadyExists');
         } else if (err?.status === 400) {
-          message = 'Date invalide. Verifică formularul.';
+          this.errorMessageKey.set('network.badRequest');
         } else if (err?.status === 500) {
-          message = 'Eroare pe server. Încearcă mai târziu.';
+          this.errorMessageKey.set('network.serverError');
         } else if (err?.status === 0) {
-          message = 'Eroare de conectare. Verifică conexiunea la internet.';
+          this.errorMessageKey.set('network.connectionError');
+        } else {
+          this.errorMessageKey.set('errors.unknown');
         }
-        
-        this.errorMessage.set(message);
       }
     });
   }

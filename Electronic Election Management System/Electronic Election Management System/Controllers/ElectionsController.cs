@@ -65,7 +65,7 @@ namespace Electronic_Election_Management_System.Controllers
         {
             var result = await _electionService.CreateAsync(request, GetCurrentUserId());
             if (!result.Success)
-                return BadRequest(new { message = result.Error });
+                return BadRequest(new { errorCode = result.ErrorCode });
             return CreatedAtAction(nameof(GetById), new { id = result.Data!.Id }, result.Data);
         }
 
@@ -81,8 +81,8 @@ namespace Electronic_Election_Management_System.Controllers
             var result = await _electionService.UpdateAsync(id, request, GetCurrentUserId());
             if (!result.Success)
                 return result.IsNotFound
-                    ? NotFound(new { message = result.Error })
-                    : BadRequest(new { message = result.Error });
+                    ? NotFound(new { errorCode = result.ErrorCode })
+                    : BadRequest(new { errorCode = result.ErrorCode });
             return Ok(result.Data);
         }
 
@@ -97,8 +97,8 @@ namespace Electronic_Election_Management_System.Controllers
             var result = await _electionService.DeleteAsync(id, GetCurrentUserId());
             if (!result.Success)
                 return result.IsNotFound
-                    ? NotFound(new { message = result.Error })
-                    : BadRequest(new { message = result.Error });
+                    ? NotFound(new { errorCode = result.ErrorCode })
+                    : BadRequest(new { errorCode = result.ErrorCode });
             return NoContent();
         }
 
