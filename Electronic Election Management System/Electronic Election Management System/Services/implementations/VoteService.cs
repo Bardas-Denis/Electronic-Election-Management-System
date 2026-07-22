@@ -62,6 +62,182 @@ namespace Electronic_Election_Management_System.Services
             return result;
         }
 
+        public async Task<ServiceResult<bool>> UpdateVoteAsync(CastVoteRequest request, Guid userId)
+        {
+            var election = await _elections.GetByIdWithOptionsAsync(request.ElectionId);
+            if (election is null)
+                return ServiceResult<bool>.NotFound("Election not found.");
+
+            if (!election.CanAcceptVotes())
+                return ServiceResult<bool>.Fail("This election is not currently open for voting.");
+
+            var option = election.Options.FirstOrDefault(o => o.Id == request.OptionId);
+            if (option is null)
+                return ServiceResult<bool>.Fail("The selected option does not belong to this election.");
+
+            var result = election.IsAnonymous
+                ? await UpdateAnonymousAsync(election.Id, option.Id, userId)
+                : await UpdateIdentifiedAsync(election, option.Id, userId, request.VoterDeclaration);
+
+            if (result.Success)
+            {
+                try
+                {
+                    await BroadcastResultsAsync(election.Id);
+                }
+                catch
+                {
+                    // Broadcasting live results should not affect the vote-editing outcome.
+                }
+            }
+
+            return result;
+        }
+
+        public async Task<ServiceResult<bool>> DeleteVoteAsync(Guid electionId, Guid userId)
+        {
+            var election = await _elections.GetByIdWithOptionsAsync(electionId);
+            if (election is null)
+                return ServiceResult<bool>.NotFound("Election not found.");
+
+            if (!election.CanAcceptVotes())
+                return ServiceResult<bool>.Fail("This election is not currently open for voting.");
+
+            var changeCount = await _votes.GetChangeCountAsync(userId, electionId);
+            if (changeCount >= 1)
+                return ServiceResult<bool>.Fail("You can only change your answer once (edit or delete-and-revote).");
+
+            if (election.IsAnonymous)
+            {
+                var token = await _votes.GetVoteTokenWithVoteAsync(userId, electionId);
+                if (token?.Vote is null)
+                    return ServiceResult<bool>.NotFound("No vote found to delete.");
+
+                _votes.RemoveVote(token.Vote);
+                // Free the token up so the voter can cast a fresh vote afterwards.
+                token.IsUsed = false;
+            }
+            else
+            {
+                var vote = await _votes.GetUserVoteInElectionAsync(userId, electionId);
+                if (vote is null)
+                    return ServiceResult<bool>.NotFound("No vote found to delete.");
+
+                _votes.RemoveVote(vote);
+            }
+
+            // Deleting counts as the one allowed change, same as editing - otherwise someone
+            // could delete-and-revote in a loop to bypass the edit limit entirely.
+            await _votes.IncrementChangeCountAsync(userId, electionId);
+            await _votes.SaveChangesAsync();
+
+            try
+            {
+                await BroadcastResultsAsync(electionId);
+            }
+            catch
+            {
+                // Broadcasting live results should not affect the vote-deletion outcome.
+            }
+
+            return ServiceResult<bool>.Ok(true);
+        }
+
+        public async Task<ServiceResult<UserVoteDto>> GetMyVoteAsync(Guid electionId, Guid userId)
+        {
+            var election = await _elections.GetByIdWithOptionsAsync(electionId);
+            if (election is null)
+                return ServiceResult<UserVoteDto>.NotFound("Election not found.");
+
+            Vote? vote;
+            if (election.IsAnonymous)
+            {
+                var token = await _votes.GetVoteTokenWithVoteAsync(userId, electionId);
+                vote = token?.Vote;
+            }
+            else
+            {
+                vote = await _votes.GetUserVoteInElectionAsync(userId, electionId);
+            }
+
+            if (vote is null)
+                return ServiceResult<UserVoteDto>.NotFound("You have not voted in this election.");
+
+            var changeCount = await _votes.GetChangeCountAsync(userId, electionId);
+
+            return ServiceResult<UserVoteDto>.Ok(new UserVoteDto
+            {
+                ElectionId = electionId,
+                OptionId = vote.OptionId,
+                OptionLabel = vote.Option?.Label,
+                VotedAt = vote.CastAt,
+                CanEdit = changeCount < 1
+            });
+        }
+
+        private async Task<ServiceResult<bool>> UpdateAnonymousAsync(Guid electionId, Guid optionId, Guid userId)
+        {
+            var token = await _votes.GetVoteTokenWithVoteAsync(userId, electionId);
+            if (token?.Vote is null)
+                return ServiceResult<bool>.Fail("You haven't voted in this election yet.");
+
+            var changeCount = await _votes.GetChangeCountAsync(userId, electionId);
+            if (changeCount >= 1)
+                return ServiceResult<bool>.Fail("You can only change your answer once (edit or delete-and-revote).");
+
+            token.Vote.OptionId = optionId;
+            await _votes.IncrementChangeCountAsync(userId, electionId);
+            await _votes.SaveChangesAsync();
+
+            return ServiceResult<bool>.Ok(true);
+        }
+
+        private async Task<ServiceResult<bool>> UpdateIdentifiedAsync(
+            Election election, Guid optionId, Guid userId, VoterDeclarationDto? declarationDto)
+        {
+            var vote = await _votes.GetUserVoteInElectionAsync(userId, election.Id);
+            if (vote is null)
+                return ServiceResult<bool>.Fail("You haven't voted in this election yet.");
+
+            var changeCount = await _votes.GetChangeCountAsync(userId, election.Id);
+            if (changeCount >= 1)
+                return ServiceResult<bool>.Fail("You can only change your answer once (edit or delete-and-revote).");
+
+            var declarationResult = BuildDeclaration(election.Type, declarationDto);
+            if (!declarationResult.Success)
+                return ServiceResult<bool>.Fail(declarationResult.Error!);
+
+            vote.OptionId = optionId;
+
+            var updated = declarationResult.Data!;
+            if (vote.VoterDeclaration is not null)
+            {
+                var existing = vote.VoterDeclaration;
+                existing.Cnp = updated.Cnp;
+                existing.FullName = updated.FullName;
+                existing.DomiciliuJudet = updated.DomiciliuJudet;
+                existing.DomiciliuAdresa = updated.DomiciliuAdresa;
+                existing.DomiciliuLocalitate = updated.DomiciliuLocalitate;
+                existing.Citizenship = updated.Citizenship;
+                existing.BirthDate = updated.BirthDate;
+                existing.Gender = updated.Gender;
+                existing.EmployeeId = updated.EmployeeId;
+                existing.Department = updated.Department;
+                existing.WorkEmail = updated.WorkEmail;
+                existing.JobTitle = updated.JobTitle;
+                existing.Company = updated.Company;
+            }
+            else
+            {
+                updated.VoteId = vote.Id;
+                await _votes.AddVoterDeclarationAsync(updated);
+            }
+
+            await _votes.IncrementChangeCountAsync(userId, election.Id);
+            await _votes.SaveChangesAsync();
+            return ServiceResult<bool>.Ok(true);
+        }
+
         private async Task BroadcastResultsAsync(Guid electionId)
         {
             var updated = await _results.GetResultsAsync(electionId);

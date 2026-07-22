@@ -9,5 +9,8 @@ namespace Electronic_Election_Management_System.Services
         /// declaration stored) and the non-anonymous path (UserId + type-dependent VoterDeclaration).
         /// </summary>
         Task<ServiceResult<bool>> CastVoteAsync(CastVoteRequest request, Guid userId);
+        Task<ServiceResult<bool>> UpdateVoteAsync(CastVoteRequest request, Guid userId);
+        Task<ServiceResult<bool>> DeleteVoteAsync(Guid electionId, Guid userId);
+        Task<ServiceResult<UserVoteDto>> GetMyVoteAsync(Guid electionId, Guid userId);
     }
 }

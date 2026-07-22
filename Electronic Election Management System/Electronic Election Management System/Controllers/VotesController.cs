@@ -37,6 +37,52 @@ namespace Electronic_Election_Management_System.Controllers
             return Ok();
         }
 
+        /// <summary>
+        /// Edits the current user's existing vote for an election. Allowed only once per voter
+        /// per election, shared with the delete budget (see VoterChangeRecord / VoteService),
+        /// and only while the election is still open for voting.
+        /// </summary>
+        [HttpPut("{electionId:guid}")]
+        public async Task<IActionResult> UpdateVote(Guid electionId, CastVoteRequest request)
+        {
+            if (electionId != request.ElectionId)
+                return BadRequest(new { message = "Route election id does not match the request body." });
+
+            var result = await _voteService.UpdateVoteAsync(request, GetCurrentUserId());
+            if (!result.Success)
+                return result.IsNotFound
+                    ? NotFound(new { message = result.Error })
+                    : BadRequest(new { message = result.Error });
+            return Ok();
+        }
+
+        /// <summary>
+        /// Deletes the current user's vote for an election, freeing them to vote again.
+        /// Consumes the same one-time change budget as editing does - see VoterChangeRecord.
+        /// </summary>
+        [HttpDelete("{electionId:guid}")]
+        public async Task<IActionResult> DeleteVote(Guid electionId)
+        {
+            var result = await _voteService.DeleteVoteAsync(electionId, GetCurrentUserId());
+            if (!result.Success)
+                return result.IsNotFound
+                    ? NotFound(new { message = result.Error })
+                    : BadRequest(new { message = result.Error });
+            return Ok();
+        }
+
+        /// <summary>Returns the current user's vote for an election, if any.</summary>
+        [HttpGet("{electionId:guid}/me")]
+        public async Task<IActionResult> GetMyVote(Guid electionId)
+        {
+            var result = await _voteService.GetMyVoteAsync(electionId, GetCurrentUserId());
+            if (!result.Success)
+                return result.IsNotFound
+                    ? NotFound(new { message = result.Error })
+                    : BadRequest(new { message = result.Error });
+            return Ok(result.Data);
+        }
+
         private Guid GetCurrentUserId()
         {
             string? idClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);

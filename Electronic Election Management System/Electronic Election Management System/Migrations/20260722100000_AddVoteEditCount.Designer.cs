@@ -3,6 +3,7 @@ using System;
 using Electronic_Election_Management_System.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Electronic_Election_Management_System.Migrations
 {
     [DbContext(typeof(ElectionDbContext))]
-    partial class ElectionDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260722100000_AddVoteEditCount")]
+    partial class AddVoteEditCount
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.9");
@@ -152,6 +155,9 @@ namespace Electronic_Election_Management_System.Migrations
                     b.Property<DateTime>("CastAt")
                         .HasColumnType("TEXT");
 
+                    b.Property<int>("EditCount")
+                        .HasColumnType("INTEGER");
+
                     b.Property<Guid>("OptionId")
                         .HasColumnType("TEXT");
 
@@ -263,31 +269,6 @@ namespace Electronic_Election_Management_System.Migrations
                     b.ToTable("VoterDeclarations");
                 });
 
-            modelBuilder.Entity("Electronic_Election_Management_System.Models.VoterChangeRecord", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("TEXT");
-
-                    b.Property<int>("ChangeCount")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<Guid>("ElectionId")
-                        .HasColumnType("TEXT");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ElectionId");
-
-                    b.HasIndex("UserId", "ElectionId")
-                        .IsUnique();
-
-                    b.ToTable("VoterChangeRecords");
-                });
-
             modelBuilder.Entity("Electronic_Election_Management_System.Models.AuditLog", b =>
                 {
                     b.HasOne("Electronic_Election_Management_System.Models.Election", "Election")
@@ -381,25 +362,6 @@ namespace Electronic_Election_Management_System.Migrations
                         .IsRequired();
 
                     b.Navigation("Vote");
-                });
-
-            modelBuilder.Entity("Electronic_Election_Management_System.Models.VoterChangeRecord", b =>
-                {
-                    b.HasOne("Electronic_Election_Management_System.Models.Election", "Election")
-                        .WithMany()
-                        .HasForeignKey("ElectionId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Electronic_Election_Management_System.Models.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Election");
-
-                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("Electronic_Election_Management_System.Models.Election", b =>

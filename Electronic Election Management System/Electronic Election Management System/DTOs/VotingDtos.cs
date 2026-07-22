@@ -39,4 +39,15 @@ namespace Electronic_Election_Management_System.DTOs
         /// </summary>
         public VoterDeclarationDto? VoterDeclaration { get; set; }
     }
+
+    // SYNC: voting.model.ts -> UserVoteDto
+    public class UserVoteDto
+    {
+        public Guid ElectionId { get; set; }
+        public Guid OptionId { get; set; }
+        public string? OptionLabel { get; set; }
+        public DateTime? VotedAt { get; set; }
+        /// <summary>False once the voter has already used their one allowed change (edit or delete).</summary>
+        public bool CanEdit { get; set; } = true;
+    }
 }

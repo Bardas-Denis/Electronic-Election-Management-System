@@ -70,10 +70,13 @@
 
     <div class="election-actions">
       @if (election.hasUserVoted) {
-        <span class="badge-voted">
+        <a [routerLink]="['/elections', election.id]" class="badge-voted badge-voted--link">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
           Ai votat deja
-        </span>
+        </a>
+        @if (votedOptionLabel(election); as votedOption) {
+          <span class="voted-answer">Răspunsul tău: <strong>{{ votedOption }}</strong></span>
+        }
       } @else if (election.isExpired) {
         <span class="badge badge--expired">Votarea s-a încheiat</span>
       } @else {

@@ -49,6 +49,48 @@ namespace Electronic_Election_Management_System.Data.Repositories
         public Task<bool> HasAnyVotesInElectionAsync(Guid electionId)
             => _db.Votes.AnyAsync(v => v.Option!.ElectionId == electionId);
 
+        public Task<Vote?> GetUserVoteInElectionAsync(Guid userId, Guid electionId)
+            => _db.Votes
+                .Include(v => v.Option)
+                .Include(v => v.VoterDeclaration)
+                .FirstOrDefaultAsync(v => v.UserId == userId && v.Option!.ElectionId == electionId);
+
+        public Task<VoteToken?> GetVoteTokenWithVoteAsync(Guid userId, Guid electionId)
+            => _db.VoteTokens
+                .Include(t => t.Vote)
+                    .ThenInclude(v => v!.Option)
+                .FirstOrDefaultAsync(t => t.UserId == userId && t.ElectionId == electionId);
+
+        public void RemoveVote(Vote vote)
+            => _db.Votes.Remove(vote);
+
+        public async Task<int> GetChangeCountAsync(Guid userId, Guid electionId)
+        {
+            var record = await _db.VoterChangeRecords
+                .FirstOrDefaultAsync(r => r.UserId == userId && r.ElectionId == electionId);
+            return record?.ChangeCount ?? 0;
+        }
+
+        public async Task IncrementChangeCountAsync(Guid userId, Guid electionId)
+        {
+            var record = await _db.VoterChangeRecords
+                .FirstOrDefaultAsync(r => r.UserId == userId && r.ElectionId == electionId);
+
+            if (record is null)
+            {
+                await _db.VoterChangeRecords.AddAsync(new VoterChangeRecord
+                {
+                    UserId = userId,
+                    ElectionId = electionId,
+                    ChangeCount = 1
+                });
+            }
+            else
+            {
+                record.ChangeCount += 1;
+            }
+        }
+
         public Task SaveChangesAsync()
             => _db.SaveChangesAsync();
     }
