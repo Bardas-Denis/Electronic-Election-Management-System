@@ -263,6 +263,31 @@ namespace Electronic_Election_Management_System.Migrations
                     b.ToTable("VoterDeclarations");
                 });
 
+            modelBuilder.Entity("Electronic_Election_Management_System.Models.VoterChangeRecord", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("ChangeCount")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<Guid>("ElectionId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ElectionId");
+
+                    b.HasIndex("UserId", "ElectionId")
+                        .IsUnique();
+
+                    b.ToTable("VoterChangeRecords");
+                });
+
             modelBuilder.Entity("Electronic_Election_Management_System.Models.AuditLog", b =>
                 {
                     b.HasOne("Electronic_Election_Management_System.Models.Election", "Election")
@@ -356,6 +381,25 @@ namespace Electronic_Election_Management_System.Migrations
                         .IsRequired();
 
                     b.Navigation("Vote");
+                });
+
+            modelBuilder.Entity("Electronic_Election_Management_System.Models.VoterChangeRecord", b =>
+                {
+                    b.HasOne("Electronic_Election_Management_System.Models.Election", "Election")
+                        .WithMany()
+                        .HasForeignKey("ElectionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Electronic_Election_Management_System.Models.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Election");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("Electronic_Election_Management_System.Models.Election", b =>

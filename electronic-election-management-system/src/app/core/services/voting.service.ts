@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { ElectionDto, CreateElectionRequest, CastVoteRequest } from '../models/voting.model';
+import { ElectionDto, CreateElectionRequest, CastVoteRequest, UserVoteDto } from '../models/voting.model';
 
 // Thin HTTP wrapper - no business logic, just calls the backend
 @Injectable({ providedIn: 'root' })
@@ -37,5 +37,17 @@ export class VotingService {
 
   castVote(request: CastVoteRequest): Observable<void> {
     return this.http.post<void>(`${this.baseUrl}/votes`, request);
+  }
+
+  getMyVote(electionId: string): Observable<UserVoteDto> {
+    return this.http.get<UserVoteDto>(`${this.baseUrl}/votes/${electionId}/me`);
+  }
+
+  updateMyVote(request: CastVoteRequest): Observable<void> {
+    return this.http.put<void>(`${this.baseUrl}/votes/${request.electionId}`, request);
+  }
+
+  deleteMyVote(electionId: string): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/votes/${electionId}`);
   }
 }

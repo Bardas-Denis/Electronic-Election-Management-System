@@ -17,6 +17,9 @@ export class App {
 
   protected readonly title = signal('electronic-election-management-system'); // unused leftover
 
+  // Current theme for UI (light | dark). Kept as a simple property so templates can read it.
+  public currentTheme: 'light' | 'dark' = 'light';
+
   constructor() {
     // Mirror the auth signal: open the notifications hub for the whole authenticated
     // session, close it immediately on logout (or when the token is cleared by the
@@ -28,10 +31,39 @@ export class App {
         this.notifications.disconnect();
       }
     });
+
+    // Initialize theme from localStorage (if present) and apply it.
+    try {
+      const saved = localStorage.getItem('theme');
+      const init = saved === 'dark' ? 'dark' : 'light';
+      this.currentTheme = init;
+      this.applyTheme(init);
+    } catch (e) {
+      // localStorage may be unavailable in some environments; default to light
+      this.currentTheme = 'light';
+    }
+  }
+
+  toggleTheme(): void {
+    const next: 'light' | 'dark' = this.currentTheme === 'dark' ? 'light' : 'dark';
+    this.currentTheme = next;
+    try { localStorage.setItem('theme', next); } catch {}
+    this.applyTheme(next);
+  }
+
+  private applyTheme(theme: 'light' | 'dark'): void {
+    if (typeof document !== 'undefined' && document.documentElement) {
+      if (theme === 'dark') {
+        document.documentElement.setAttribute('data-theme', 'dark');
+      } else {
+        document.documentElement.removeAttribute('data-theme');
+      }
+    }
   }
 
   logout(): void {
     this.authService.logout();
-    this.router.navigate(['/login']);
+    // Navigate to the first (root) page after logout
+    this.router.navigate(['/']);
   }
-}
+}

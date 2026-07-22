@@ -19,6 +19,9 @@ export interface ElectionDto {
   options: OptionDto[];
   // Filled in by the backend based on the current user, so the UI knows whether the user can still vote
   hasUserVoted?: boolean;
+  // Optional current-user vote details (if backend returns them)
+  userVoteOptionId?: string;
+  userVoteOptionLabel?: string;
   // True if endsAt has already passed; the election no longer accepts new votes, but previously recorded votes and results remain accessible
   isExpired?: boolean;
   // True if at least one vote has been recorded; once true, the election can no longer be edited
@@ -64,4 +67,13 @@ export interface CastVoteRequest {
   optionId: string;
   // Required by the backend when the election is not anonymous; omitted entirely for anonymous ones.
   voterDeclaration?: VoterDeclarationDto;
+}
+
+export interface UserVoteDto {
+  electionId: string;
+  optionId: string;
+  optionLabel?: string;
+  votedAt?: string;
+  // False once the voter has already used their one allowed edit
+  canEdit?: boolean;
 }

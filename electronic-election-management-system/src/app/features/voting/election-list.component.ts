@@ -28,6 +28,13 @@ export class ElectionListComponent implements OnInit {
     this.showExpired.set(!this.showExpired());
   }
 
+  votedOptionLabel(election: ElectionDto): string | null {
+    if (election.userVoteOptionLabel) return election.userVoteOptionLabel;
+    if (!election.userVoteOptionId) return null;
+    const option = election.options.find((o) => o.id === election.userVoteOptionId);
+    return option?.label ?? null;
+  }
+
   ngOnInit(): void {
     this.loadElections();
   }
@@ -37,9 +44,36 @@ export class ElectionListComponent implements OnInit {
     this.votingService.getElections().subscribe({
       next: (data) => {
         this.elections.set(data);
+        this.loadUserVoteDetails(data);
         this.isLoading.set(false);
       },
       error: () => this.isLoading.set(false)
     });
+  }
+
+  private loadUserVoteDetails(elections: ElectionDto[]): void {
+    const votedElections = elections.filter((e) => e.hasUserVoted);
+    for (const election of votedElections) {
+      this.votingService.getMyVote(election.id).subscribe({
+        next: (vote) => {
+          this.elections.update((current) =>
+            current.map((item) =>
+              item.id === election.id
+                ? {
+                    ...item,
+                    userVoteOptionId: vote.optionId,
+                    userVoteOptionLabel:
+                      vote.optionLabel ??
+                      item.options.find((o) => o.id === vote.optionId)?.label
+                  }
+                : item
+            )
+          );
+        },
+        error: () => {
+          // Keep existing list data; details are optional.
+        }
+      });
+    }
   }
 }

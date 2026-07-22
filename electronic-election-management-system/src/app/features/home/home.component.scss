@@ -34,17 +34,142 @@
 // ─── Hero ───────────────────────────────────────────────────────────────
 
 .hero {
+  position: relative;
+  overflow: hidden;
   padding: 5.5rem 1.5rem 4.5rem;
+  /* Default: no background when video is available. The no-video class shows the graceful gradient fallback. */
+  background: transparent;
+  min-height: 520px; /* ensure hero has presence and video is visible */
+  display: flex;
+  align-items: center; /* vertically center content */
+}
+
+@media (max-width: 860px) {
+  .hero { min-height: 420px; padding-top: 4rem; padding-bottom: 3rem; }
+}
+
+@media (max-width: 560px) {
+  .hero { min-height: 360px; padding-top: 3rem; padding-bottom: 2.5rem; }
+}
+.hero.no-video {
   background:
     radial-gradient(circle at 50% 0%, rgba(17, 17, 17, 0.05), transparent 60%),
     var(--bg-page);
 }
 
+/* Background video covers the hero area */
+.hero-video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 0;
+  filter: saturate(0.95) contrast(0.95) brightness(0.95);
+}
+
+/* subtle overlay to improve text contrast */
+.hero-video-overlay {
+  position: absolute;
+  inset: 0;
+  /* Much lighter overlay so the video remains visible */
+  background: linear-gradient(rgba(255,255,255,0.12), rgba(255,255,255,0.03));
+  z-index: 1;
+  pointer-events: none;
+}
+
+/* Ensure the video itself is visible and not dimmed too much */
+.hero-video {
+  opacity: 1;
+  will-change: opacity, transform;
+}
+
 .hero-inner {
+  position: relative;
+  z-index: 2;
   max-width: 720px;
   margin: 0 auto;
   text-align: center;
 }
+
+/* Content panel to improve legibility over video */
+.hero-content {
+  position: relative;
+  z-index: 2;
+  max-width: 760px;
+  margin: 0 auto;
+  text-align: center;
+  background: rgba(0, 0, 0, 0.45); /* dark translucent panel */
+  padding: 2rem 2.25rem;
+  border-radius: 12px;
+  color: #ffffff;
+  backdrop-filter: blur(6px);
+}
+
+.hero-content .eyebrow {
+  background: rgba(255,255,255,0.06);
+  color: rgba(255,255,255,0.92);
+  border-color: rgba(255,255,255,0.10);
+}
+
+.hero-content h1 {
+  color: #ffffff;
+  text-shadow: 0 8px 24px rgba(0,0,0,0.6);
+}
+
+.hero-content .hero-sub {
+  color: rgba(255,255,255,0.85);
+}
+
+/* Buttons inside the hero content should contrast with the panel */
+.hero-content .btn-primary {
+  background: #ffffff;
+  color: #000206;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+}
+
+.hero-content .btn-secondary {
+  background: rgba(255,255,255,0.08);
+  color: #ffffff;
+  border-color: rgba(255,255,255,0.12);
+}
+
+.hero-content .hero-trust span {
+  color: rgba(255,255,255,0.78);
+}
+
+.hero-content .hero-trust svg {
+  color: rgba(255,255,255,0.6);
+}
+
+/* Dark mode tweaks for the content panel */
+[data-theme="dark"] .hero-content {
+  background: rgba(2,6,23,0.56);
+}
+
+[data-theme="dark"] .hero-content .btn-primary {
+  background: #ffffff;
+  color: #000206;
+}
+
+[data-theme="dark"] .hero-content .btn-secondary {
+  background: rgba(255,255,255,0.06);
+  color: #ffffff;
+  border-color: rgba(255,255,255,0.08);
+}
+
+/* Dark mode overlay variant */
+[data-theme="dark"] .hero-video-overlay {
+  background: linear-gradient(rgba(2,6,23,0.6), rgba(2,6,23,0.35));
+}
+
+/* Make sure text colors stay readable on the hero */
+[data-theme="dark"] .hero h1,
+[data-theme="dark"] .hero-sub,
+[data-theme="dark"] .eyebrow {
+  color: var(--text-primary);
+}
+
 
 .eyebrow {
   display: inline-block;
@@ -236,7 +361,7 @@
 
   .btn-primary {
     background: #ffffff;
-    color: var(--text-primary);
+    color: #000206;
 
     &:hover {
       background: rgba(255, 255, 255, 0.85);

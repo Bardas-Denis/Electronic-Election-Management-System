@@ -1,14 +1,5 @@
 <div class="page">
-  @if (voteConfirmed()) {
-    <div class="vote-confirmed">
-      <div class="vote-confirmed-icon">
-        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-      </div>
-      <h2>Votul tău a fost înregistrat</h2>
-      <p>Mulțumim pentru participare! Rezultatele se actualizează live.</p>
-      <button (click)="goToResults()" class="btn-primary">Vezi rezultate live</button>
-    </div>
-  } @else if (election(); as e) {
+  @if (election(); as e) {
     <div class="vote-card">
       <div class="vote-header">
         <h2>{{ e.title }}</h2>
@@ -26,10 +17,25 @@
         <p class="vote-question">{{ e.question }}</p>
       }
 
-      @if (e.hasUserVoted) {
+      @if (e.hasUserVoted && !isEditingVote()) {
         <div class="already-voted-banner">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-          Ai votat deja la această alegere. Opțiunile sunt blocate.
+          Ai votat deja: <strong>{{ userVoteOptionLabel() ?? optionLabelById(userVoteOptionId()) ?? 'opțiune necunoscută' }}</strong>
+          @if (!canEditVote()) {
+            <span class="edit-used-note">Ai folosit deja singura modificare permisă (editare sau ștergere).</span>
+          }
+        </div>
+        @if (!e.isExpired && canEditVote()) {
+          <div class="vote-actions">
+            <button type="button" class="btn-secondary" (click)="startEditVote()">Modifică răspunsul</button>
+            <button type="button" class="btn-danger" [disabled]="isDeletingVote()" (click)="deleteVote()">
+              {{ isDeletingVote() ? 'Se șterge...' : 'Șterge răspunsul' }}
+            </button>
+          </div>
+        }
+      } @else if (isEditingVote()) {
+        <div class="already-voted-banner">
+          Editezi răspunsul tău. Alege o nouă opțiune și trimite actualizarea.
         </div>
       } @else if (e.isExpired) {
         <div class="error-text">
@@ -37,12 +43,12 @@
         </div>
       }
 
-      <div class="options-list" [class.locked]="e.hasUserVoted || e.isExpired">
+      <div class="options-list" [class.locked]="!canSelectOptions()">
         @for (option of e.options; track option.id) {
           <button
             class="option-item"
             [class.selected]="selectedOptionId() === option.id"
-            [disabled]="e.hasUserVoted || e.isExpired"
+            [disabled]="!canSelectOptions()"
             (click)="selectOption(option.id)"
           >
             <span class="option-radio"><span class="option-radio-dot"></span></span>
@@ -60,17 +66,28 @@
         <p class="error-text">{{ errorMessage() }}</p>
       }
 
-      @if (!e.hasUserVoted && !e.isExpired) {
+      @if (successMessage()) {
+        <p class="success-text">{{ successMessage() }}</p>
+      }
+
+      @if (!e.isExpired && (!e.hasUserVoted || isEditingVote())) {
         <button
           class="btn-primary vote-submit"
-          [disabled]="!selectedOptionId() || isSubmitting()"
+          [disabled]="!selectedOptionId() || isSubmitting() || isDeletingVote()"
           (click)="submitVote()"
         >
           @if (isSubmitting()) {
             <span class="spinner"></span>
           }
-          {{ isSubmitting() ? 'Se trimite...' : 'Trimite votul' }}
+          {{
+            isSubmitting()
+              ? 'Se trimite...'
+              : (isEditingVote() ? 'Actualizează răspunsul' : 'Trimite votul')
+          }}
         </button>
+        @if (isEditingVote()) {
+          <button type="button" class="btn-ghost vote-cancel-edit" (click)="cancelEditVote()">Anulează</button>
+        }
       }
 
       @if (e.isExpired) {

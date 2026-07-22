@@ -24,6 +24,18 @@ namespace Electronic_Election_Management_System.Data.Repositories
 
         Task AddVoteAsync(Vote vote);
         Task AddVoterDeclarationAsync(VoterDeclaration declaration);
+        Task<Vote?> GetUserVoteInElectionAsync(Guid userId, Guid electionId);
+        Task<VoteToken?> GetVoteTokenWithVoteAsync(Guid userId, Guid electionId);
+        void RemoveVote(Vote vote);
+
+        /// <summary>
+        /// Number of edit/delete changes the user has already made to their answer in this
+        /// election. Persists independently of the Vote row so it survives deletion.
+        /// </summary>
+        Task<int> GetChangeCountAsync(Guid userId, Guid electionId);
+
+        /// <summary>Records that the user just used one of their allowed changes (edit or delete).</summary>
+        Task IncrementChangeCountAsync(Guid userId, Guid electionId);
 
         Task SaveChangesAsync();
     }

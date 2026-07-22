@@ -15,6 +15,7 @@ namespace Electronic_Election_Management_System.Data
         public DbSet<Vote> Votes => Set<Vote>();
         public DbSet<VoterDeclaration> VoterDeclarations => Set<VoterDeclaration>();
         public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
+        public DbSet<VoterChangeRecord> VoterChangeRecords => Set<VoterChangeRecord>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -119,6 +120,24 @@ namespace Electronic_Election_Management_System.Data
                 .WithMany(e => e.AuditLogs)
                 .HasForeignKey(a => a.ElectionId)
                 .OnDelete(DeleteBehavior.SetNull);
+
+            modelBuilder.Entity<VoterChangeRecord>()
+                .HasOne(r => r.User)
+                .WithMany()
+                .HasForeignKey(r => r.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<VoterChangeRecord>()
+                .HasOne(r => r.Election)
+                .WithMany()
+                .HasForeignKey(r => r.ElectionId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // At most one change-budget record per (user, election) - this is what actually
+            // enforces the one-change limit, since it survives the Vote row being deleted.
+            modelBuilder.Entity<VoterChangeRecord>()
+                .HasIndex(r => new { r.UserId, r.ElectionId })
+                .IsUnique();
         }
     }
 }
