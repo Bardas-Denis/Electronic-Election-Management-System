@@ -20,6 +20,10 @@ export class App {
   // Current theme for UI (light | dark). Kept as a simple property so templates can read it.
   public currentTheme: 'light' | 'dark' = 'light';
 
+  get isHomePage(): boolean {
+    return this.router.url === '/' || this.router.url.startsWith('/?');
+  }
+
   constructor() {
     // Mirror the auth signal: open the notifications hub for the whole authenticated
     // session, close it immediately on logout (or when the token is cleared by the

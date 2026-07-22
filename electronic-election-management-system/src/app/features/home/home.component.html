@@ -1,157 +1,178 @@
-<!-- ─── Hero ──────────────────────────────────────────────────────────── -->
-<section class="hero no-video" #heroSection>
-  <video #heroVideo class="hero-video" autoplay muted loop playsinline preload="metadata" aria-hidden="true">
-    <source src="/videos/hero.mp4" type="video/mp4">
-    <source src="assets/videos/hero.mp4" type="video/mp4">
-  </video>
-  <div class="hero-video-overlay" aria-hidden="true"></div>
-  <div class="hero-inner">
-    <div class="hero-content">
-      <span class="eyebrow">Platformă de vot electronic</span>
-      <h1>Alegeri corecte, transparente<br />și fără hârtie.</h1>
-      <p class="hero-sub">
-        Votex îți dă tot ce ai nevoie ca să organizezi o alegere de la un capăt la altul -
-        invitarea votanților, votul anonim și rezultate live, verificabile în timp real.
+<main class="home-page">
+  <section class="hero no-video" #heroSection aria-labelledby="hero-title">
+    <video #heroVideo class="hero-video" autoplay muted loop playsinline preload="metadata" aria-hidden="true">
+      <source src="/videos/hero.mp4" type="video/mp4">
+    </video>
+    <div class="hero-overlay" aria-hidden="true"></div>
+    <div class="hero-grain" aria-hidden="true"></div>
+
+    <div class="hero-layout">
+      <p class="hero-side hero-side--left">Platformă electorală<br>digitală</p>
+
+      <div class="hero-brand">
+        <span class="hero-kicker">Alegeri clare. Decizii de încredere.</span>
+        <h1 id="hero-title">VOTEX</h1>
+        <p>Un spațiu sigur în care comunitățile votează, iar fiecare rezultat rămâne transparent.</p>
+      </div>
+
+      <p class="hero-side hero-side--right">Încredere în<br>fiecare vot</p>
+
+      <a routerLink="/register" class="hero-cta" aria-label="Creează un cont și organizează prima ta alegere">
+        <span>
+          <small>Începe în câteva minute</small>
+          Creează prima ta alegere
+        </span>
+        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none">
+          <path d="M5 19 19 5M8 5h11v11" />
+        </svg>
+      </a>
+
+      <a href="#platforma" class="scroll-cue" aria-label="Descoperă platforma">
+        <span>Descoperă</span>
+        <i aria-hidden="true"></i>
+      </a>
+    </div>
+  </section>
+
+  <section class="intro section-shell" id="platforma">
+    <div class="section-label" data-reveal>
+      <span>01</span>
+      <p>O platformă completă</p>
+    </div>
+
+    <div class="intro-copy" data-reveal>
+      <p class="eyebrow">De la întrebare la rezultat</p>
+      <h2>Organizează alegeri care inspiră <em>încredere.</em></h2>
+      <p class="intro-lead">
+        Votex simplifică întregul proces electoral: creezi scrutinul, inviți participanții,
+        urmărești prezența și publici rezultate verificabile, dintr-un singur loc.
       </p>
-      <div class="hero-actions">
-        <a routerLink="/register" class="btn-primary btn-lg">
-          Creează cont gratuit
-          <svg aria-hidden="true" focusable="false" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+    </div>
+
+    <div class="stats" data-reveal>
+      <article>
+        <strong>3</strong>
+        <span>pași până la prima alegere</span>
+      </article>
+      <article>
+        <strong>Live</strong>
+        <span>rezultate actualizate în timp real</span>
+      </article>
+      <article>
+        <strong>100%</strong>
+        <span>trasabilitate prin jurnalul de audit</span>
+      </article>
+    </div>
+  </section>
+
+  <section class="capabilities">
+    <div class="section-shell">
+      <div class="section-label section-label--light" data-reveal>
+        <span>02</span>
+        <p>Conceput pentru claritate</p>
+      </div>
+
+      <div class="capabilities-head" data-reveal>
+        <p class="eyebrow">Control fără complexitate</p>
+        <h2>Tot ce contează.<br>Nimic în plus.</h2>
+      </div>
+
+      <div class="feature-list">
+        <article class="feature-row" data-reveal>
+          <span class="feature-number">01</span>
+          <div class="feature-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/><path d="m9 12 2 2 4-4"/></svg>
+          </div>
+          <div>
+            <h3>Vot sigur și configurabil</h3>
+            <p>Alegi între scrutin anonim sau nominal, cu acces controlat și sesiuni protejate.</p>
+          </div>
+        </article>
+
+        <article class="feature-row" data-reveal>
+          <span class="feature-number">02</span>
+          <div class="feature-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M4 19V9m6 10V5m6 14v-7m4 7H2"/></svg>
+          </div>
+          <div>
+            <h3>Rezultate în timp real</h3>
+            <p>Dashboard-ul se actualizează live, astfel încât deciziile pot fi urmărite fără reîncărcări.</p>
+          </div>
+        </article>
+
+        <article class="feature-row" data-reveal>
+          <span class="feature-number">03</span>
+          <div class="feature-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M8 6h11M8 12h11M8 18h11"/><path d="m3 6 1 1 2-2m-3 7 1 1 2-2m-3 7 1 1 2-2"/></svg>
+          </div>
+          <div>
+            <h3>Audit complet</h3>
+            <p>Acțiunile importante rămân înregistrate pentru un proces ușor de verificat și explicat.</p>
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="process section-shell">
+    <div class="section-label" data-reveal>
+      <span>03</span>
+      <p>Un parcurs simplu</p>
+    </div>
+
+    <div class="process-grid">
+      <div class="process-title" data-reveal>
+        <p class="eyebrow">Cum funcționează</p>
+        <h2>De la idee la rezultat, fără fricțiune.</h2>
+        <a routerLink="/register" class="text-link">
+          Pornește acum
+          <svg aria-hidden="true" viewBox="0 0 24 24" fill="none"><path d="M5 12h14m-5-5 5 5-5 5"/></svg>
         </a>
-        <a routerLink="/login" class="btn-secondary btn-lg">Autentificare</a>
       </div>
-      <div class="hero-trust">
-        <span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>Vot anonim &amp; securizat</span>
-        <span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>Rezultate live</span>
-        <span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"></path><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>Jurnal de audit complet</span>
-      </div>
+
+      <ol class="process-steps">
+        <li data-reveal>
+          <span>01</span>
+          <div><h3>Creezi</h3><p>Configurezi întrebarea, opțiunile, perioada și tipul votului.</p></div>
+        </li>
+        <li data-reveal>
+          <span>02</span>
+          <div><h3>Invită</h3><p>Participanții autentificați primesc accesul potrivit, fără pași inutili.</p></div>
+        </li>
+        <li data-reveal>
+          <span>03</span>
+          <div><h3>Decideți</h3><p>Voturile sunt colectate sigur, iar rezultatele devin imediat vizibile.</p></div>
+        </li>
+      </ol>
     </div>
-  </div>
-</section>
+  </section>
 
-<!-- ─── Feature cards ─────────────────────────────────────────────────── -->
-<section class="section">
-  <div class="section-inner">
-    <h2 class="section-title">Tot ce îți trebuie pentru o alegere reușită</h2>
-    <p class="section-sub">De la crearea alegerii până la afișarea rezultatelor - fără instalări, fără hârtie.</p>
-
-    <div class="feature-grid">
-      <div class="feature-card">
-        <div class="feature-icon">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
-        </div>
-        <h3>Vot anonim, la alegere</h3>
-        <p>Configurezi fiecare alegere ca anonimă sau nominală, în funcție de context - rezultatele rămân mereu de încredere.</p>
-      </div>
-
-      <div class="feature-card">
-        <div class="feature-icon">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
-        </div>
-        <h3>Rezultate live</h3>
-        <p>Urmărești voturile intrând în timp real, printr-un dashboard actualizat automat, fără să reîncarci pagina.</p>
-      </div>
-
-      <div class="feature-card">
-        <div class="feature-icon">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"></path><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>
-        </div>
-        <h3>Audit &amp; transparență</h3>
-        <p>Fiecare acțiune importantă e înregistrată într-un jurnal de audit, pentru încredere totală în proces.</p>
-      </div>
-
-      <div class="feature-card">
-        <div class="feature-icon">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
-        </div>
-        <h3>Roluri &amp; permisiuni</h3>
-        <p>Administratori, manageri de alegeri și votanți - fiecare vede exact ce are nevoie, nimic mai mult.</p>
-      </div>
-
-      <div class="feature-card">
-        <div class="feature-icon">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path></svg>
-        </div>
-        <h3>Notificări instant</h3>
-        <p>Ești anunțat imediat despre alegeri noi și modificări de rol, direct în aplicație.</p>
-      </div>
-
-      <div class="feature-card">
-        <div class="feature-icon">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-        </div>
-        <h3>Acces securizat</h3>
-        <p>Autentificare pe bază de token, sesiuni cu expirare automată și control strict al accesului.</p>
-      </div>
+  <section class="closing" data-reveal>
+    <div class="closing-inner">
+      <p class="eyebrow">Prima decizie începe aici</p>
+      <h2>Transformă vocea comunității într-un rezultat clar.</h2>
+      <a routerLink="/register" class="closing-cta">
+        Creează un cont gratuit
+        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none"><path d="M5 19 19 5M8 5h11v11"/></svg>
+      </a>
     </div>
-  </div>
-</section>
+  </section>
 
-<!-- ─── How it works ──────────────────────────────────────────────────── -->
-<section class="section section--muted">
-  <div class="section-inner">
-    <h2 class="section-title">Cum funcționează</h2>
-    <p class="section-sub">Trei pași, de la idee la rezultate finale.</p>
-
-    <div class="steps">
-      <div class="step">
-        <span class="step-number">1</span>
-        <h3>Creezi alegerea</h3>
-        <p>Definești titlul, opțiunile și dacă votul este anonim sau nu, în câteva minute.</p>
+  <footer class="footer">
+    <div class="footer-main">
+      <div>
+        <span class="footer-brand">VOTEX</span>
+        <p>Alegeri digitale, construite pentru încredere.</p>
       </div>
-      <div class="step">
-        <span class="step-number">2</span>
-        <h3>Votanții votează</h3>
-        <p>Utilizatorii autentificați văd alegerea în lista lor și votează cu un singur click.</p>
-      </div>
-      <div class="step">
-        <span class="step-number">3</span>
-        <h3>Urmărești rezultatele</h3>
-        <p>Rezultatele se actualizează live, iar jurnalul de audit rămâne disponibil oricând.</p>
-      </div>
+      <nav aria-label="Legături utile">
+        <a routerLink="/login">Autentificare</a>
+        <a routerLink="/register">Cont nou</a>
+        <a href="#platforma">Platformă</a>
+      </nav>
     </div>
-  </div>
-</section>
-
-<!-- ─── FAQ ────────────────────────────────────────────────────────────── -->
-<section class="section">
-  <div class="section-inner section-inner--narrow">
-    <h2 class="section-title">Întrebări frecvente</h2>
-
-    <div class="faq">
-      <div class="faq-item">
-        <h3>Cine poate crea o alegere?</h3>
-        <p>Conturile cu rol de Administrator sau Manager de alegeri pot crea și administra alegeri. Orice utilizator autentificat poate vota.</p>
-      </div>
-      <div class="faq-item">
-        <h3>Votul chiar este anonim?</h3>
-        <p>Da, dacă alegerea este marcată ca anonimă, sistemul nu păstrează nicio legătură între identitatea votantului și opțiunea aleasă.</p>
-      </div>
-      <div class="faq-item">
-        <h3>Pot vedea rezultatele înainte de final?</h3>
-        <p>Da - dashboard-ul de rezultate se actualizează live, pe măsură ce voturile intră în sistem.</p>
-      </div>
-      <div class="faq-item">
-        <h3>Este nevoie de instalare?</h3>
-        <p>Nu. Votex rulează direct în browser, atât pentru administratori, cât și pentru votanți.</p>
-      </div>
+    <div class="footer-bottom">
+      <span>© {{ currentYear }} Votex</span>
+      <span>Platformă de vot electronic</span>
     </div>
-  </div>
-</section>
-
-<!-- ─── Final CTA ──────────────────────────────────────────────────────── -->
-<section class="cta">
-  <div class="cta-inner">
-    <h2>Pregătit să organizezi prima ta alegere?</h2>
-    <p>Creează un cont gratuit și configurează prima alegere în câteva minute.</p>
-    <a routerLink="/register" class="btn-primary btn-lg">Creează cont gratuit</a>
-  </div>
-</section>
-
-<!-- ─── Footer ─────────────────────────────────────────────────────────── -->
-<footer class="footer">
-  <div class="footer-inner">
-    <span class="footer-brand">Votex</span>
-    <span class="footer-copy">&copy; {{ currentYear }} Votex. Platformă de vot electronic.</span>
-  </div>
-</footer>
+  </footer>
+</main>
