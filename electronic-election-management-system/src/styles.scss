@@ -381,6 +381,7 @@ tbody td {
 
 /* Dark theme overrides: toggled by setting data-theme="dark" on the root element */
 [data-theme="dark"] {
+  color-scheme: dark;
   --bg-page: #0b1220;         /* page background */
   --bg-card: #0f1724;         /* cards, panels */
   --bg-subtle: #0b1220;       /* subtle surfaces */

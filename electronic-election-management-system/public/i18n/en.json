@@ -3,6 +3,7 @@
     "brand": "Votex",
     "users": "Users",
     "myElections": "My elections",
+    "elections": "Elections",
     "login": "Login",
     "newAccount": "New account",
     "logout": "Log out",
@@ -326,6 +327,8 @@
       "sideRight": "Trust in<br>every vote",
       "ctaSmall": "Start in minutes",
       "cta": "Create your first election",
+      "userCtaSmall": "Your voting space",
+      "userCta": "View available elections",
       "discover": "Discover"
     },
     "intro": {

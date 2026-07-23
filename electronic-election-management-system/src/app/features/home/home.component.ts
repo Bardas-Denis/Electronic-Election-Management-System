@@ -2,11 +2,13 @@ import {
   AfterViewInit,
   Component,
   ElementRef,
+  inject,
   OnDestroy,
   ViewChild
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { TranslatePipe } from '@ngx-translate/core';
+import { AuthService } from '../../core/services/auth.service';
 
 @Component({
   selector: 'app-home',
@@ -16,6 +18,7 @@ import { TranslatePipe } from '@ngx-translate/core';
   styleUrl: './home.component.scss'
 })
 export class HomeComponent implements AfterViewInit, OnDestroy {
+  readonly authService = inject(AuthService);
   private revealObserver?: IntersectionObserver;
 
   readonly currentYear = new Date().getFullYear();

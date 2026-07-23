@@ -8,6 +8,7 @@
   </a>
   @if (authService.isLoggedIn()) {
   <div class="nav-right">
+    <a routerLink="/elections" routerLinkActive="nav-link--active" class="nav-link">{{ 'nav.elections' | translate }}</a>
     @if (authService.isAdmin()) {
     <a routerLink="/admin/users" routerLinkActive="nav-link--active" class="nav-link">{{ 'nav.users' | translate }}</a>
     }

@@ -3,6 +3,7 @@
     "brand": "Votex",
     "users": "Utilizatori",
     "myElections": "Alegerile mele",
+    "elections": "Alegeri",
     "login": "Login",
     "newAccount": "Cont nou",
     "logout": "Delogare",
@@ -326,6 +327,8 @@
       "sideRight": "Încredere în<br>fiecare vot",
       "ctaSmall": "Începe în câteva minute",
       "cta": "Creează prima ta alegere",
+      "userCtaSmall": "Spațiul tău de vot",
+      "userCta": "Vezi alegerile disponibile",
       "discover": "Descoperă"
     },
     "intro": {

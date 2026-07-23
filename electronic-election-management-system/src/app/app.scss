@@ -95,24 +95,27 @@
     background: rgba(255, 255, 255, 0.06);
 
     &:hover {
-      color: #101820;
-      border-color: #ffffff;
-      background: #ffffff;
-      text-shadow: none;
+      color: #d9f45b;
+      border-color: #d9f45b;
+      background: rgba(217, 244, 91, 0.1);
     }
   }
 
   .nav-link {
     padding: 0.55rem 0.9rem;
     font-size: 0.72rem;
+
+    &:hover {
+      color: #d9f45b;
+    }
   }
 
   .nav-link--cta {
     border: 1px solid rgba(255, 255, 255, 0.55);
 
     &:hover {
-      color: #101820;
-      background: #d9f45b;
+      color: #d9f45b;
+      background: rgba(5, 13, 22, 0.72);
       border-color: #d9f45b;
     }
   }

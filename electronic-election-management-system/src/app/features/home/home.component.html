@@ -17,10 +17,10 @@
 
       <p class="hero-side hero-side--right" [innerHTML]="'home.hero.sideRight' | translate"></p>
 
-      <a routerLink="/register" class="hero-cta" aria-label="Creează un cont și organizează prima ta alegere">
+      <a [routerLink]="authService.isLoggedIn() ? '/elections' : '/register'" class="hero-cta">
         <span>
-          <small>{{ 'home.hero.ctaSmall' | translate }}</small>
-          {{ 'home.hero.cta' | translate }}
+          <small>{{ (authService.isLoggedIn() ? 'home.hero.userCtaSmall' : 'home.hero.ctaSmall') | translate }}</small>
+          {{ (authService.isLoggedIn() ? 'home.hero.userCta' : 'home.hero.cta') | translate }}
         </span>
         <svg aria-hidden="true" viewBox="0 0 24 24" fill="none">
           <path d="M5 19 19 5M8 5h11v11" />
