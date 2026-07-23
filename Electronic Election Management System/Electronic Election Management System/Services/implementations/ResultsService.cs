@@ -6,6 +6,7 @@ namespace Electronic_Election_Management_System.Services
     public interface IResultsService
     {
         Task<ElectionResultsDto?> GetResultsAsync(Guid electionId);
+        Task<ElectionResultsDto?> GetResultsAsync(Guid electionId, Guid userId);
     }
 
     public class ResultsService : IResultsService
@@ -39,6 +40,14 @@ namespace Electronic_Election_Management_System.Services
                 TotalVotes = optionResults.Sum(r => r.VoteCount),
                 Results = optionResults
             };
+        }
+
+        public async Task<ElectionResultsDto?> GetResultsAsync(Guid electionId, Guid userId)
+        {
+            if (!await _elections.CanUserAccessAsync(electionId, userId))
+                return null;
+
+            return await GetResultsAsync(electionId);
         }
     }
 }

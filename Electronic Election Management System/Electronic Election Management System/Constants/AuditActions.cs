@@ -12,6 +12,8 @@ namespace Electronic_Election_Management_System.Constants
         ElectionDeleted,
         ChangedUserRole,
         DeletedUser,
+        ElectionInvitationsAdded,
+        ElectionInvitationRemoved,
     }
 
     /// <summary>
@@ -35,6 +37,8 @@ namespace Electronic_Election_Management_System.Constants
             AuditAction.ElectionDeleted => "deleted_election",
             AuditAction.ChangedUserRole => "changed_user_role",
             AuditAction.DeletedUser     => "deleted_user",
+            AuditAction.ElectionInvitationsAdded => "election_invitations_added",
+            AuditAction.ElectionInvitationRemoved => "election_invitation_removed",
             _ => throw new ArgumentOutOfRangeException(nameof(action), action, null)
         };
     }

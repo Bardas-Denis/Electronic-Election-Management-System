@@ -31,6 +31,7 @@ builder.Services.AddDbContext<ElectionDbContext>(options =>
 builder.Services.AddSingleton<ITokenService, TokenService>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IElectionRepository, ElectionRepository>();
+builder.Services.AddScoped<IElectionInvitationRepository, ElectionInvitationRepository>();
 builder.Services.AddScoped<IAuditLogRepository, AuditLogRepository>();
 builder.Services.AddScoped<IVoteRepository, VoteRepository>();
 builder.Services.AddScoped<IAuthService, AuthService>();

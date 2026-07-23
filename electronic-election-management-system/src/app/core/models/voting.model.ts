@@ -14,6 +14,8 @@ export interface ElectionDto {
   question?: string;
   type: ElectionType;
   isAnonymous: boolean;
+  // Closed elections are only visible to their creator and invited accounts/emails.
+  isClosed: boolean;
   startsAt: string;
   endsAt: string;
   options: OptionDto[];
@@ -40,6 +42,9 @@ export interface CreateElectionRequest {
   question?: string;
   type: ElectionType;
   isAnonymous: boolean;
+  isClosed: boolean;
+  invitedUserIds?: string[];
+  invitedEmails?: string[];
   startsAt: string;
   endsAt: string;
   options: CreateOptionDto[];
@@ -76,4 +81,22 @@ export interface UserVoteDto {
   votedAt?: string;
   // False once the voter has already used their one allowed edit
   canEdit?: boolean;
+}
+
+export interface InviteToElectionRequest {
+  userIds: string[];
+  emails: string[];
+}
+
+export interface ElectionInvitationDto {
+  id: string;
+  userId?: string;
+  email: string;
+  method: 'Manual' | 'Email';
+  createdAt: string;
+}
+
+export interface InvitationCandidateDto {
+  id: string;
+  email: string;
 }

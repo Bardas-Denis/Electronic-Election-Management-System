@@ -1,4 +1,5 @@
 using Electronic_Election_Management_System.Services;
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -19,10 +20,13 @@ namespace Electronic_Election_Management_System.Controllers
         [HttpGet("{electionId:guid}")]
         public async Task<IActionResult> GetResults(Guid electionId)
         {
-            var results = await _resultsService.GetResultsAsync(electionId);
+            var results = await _resultsService.GetResultsAsync(electionId, GetCurrentUserId());
             if (results is null)
                 return NotFound();
             return Ok(results);
         }
+
+        private Guid GetCurrentUserId()
+            => Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
     }
 }

@@ -2,6 +2,7 @@ using Electronic_Election_Management_System.Constants;
 using Electronic_Election_Management_System.Data.Repositories;
 using Electronic_Election_Management_System.DTOs;
 using Electronic_Election_Management_System.Models;
+using System.ComponentModel.DataAnnotations;
 
 namespace Electronic_Election_Management_System.Services
 {
@@ -10,17 +11,26 @@ namespace Electronic_Election_Management_System.Services
         private readonly IElectionRepository _elections;
         private readonly IAuditLogRepository _auditLogs;
         private readonly IVoteRepository _votes;
+        private readonly IUserRepository _users;
+        private readonly IElectionInvitationRepository _invitations;
 
-        public ElectionService(IElectionRepository elections, IAuditLogRepository auditLogs, IVoteRepository votes)
+        public ElectionService(
+            IElectionRepository elections,
+            IAuditLogRepository auditLogs,
+            IVoteRepository votes,
+            IUserRepository users,
+            IElectionInvitationRepository invitations)
         {
             _elections = elections;
             _auditLogs = auditLogs;
             _votes = votes;
+            _users = users;
+            _invitations = invitations;
         }
 
         public async Task<List<ElectionDto>> GetAllAsync(Guid userId)
         {
-            var elections = await _elections.GetAllWithOptionsAsync();
+            var elections = await _elections.GetVisibleToUserAsync(userId);
             var dtos = new List<ElectionDto>();
             foreach (var election in elections)
             {
@@ -46,7 +56,7 @@ namespace Electronic_Election_Management_System.Services
 
         public async Task<ElectionDto?> GetByIdAsync(Guid id, Guid userId)
         {
-            var election = await _elections.GetByIdWithOptionsAsync(id);
+            var election = await _elections.GetAccessibleByIdWithOptionsAsync(id, userId);
             if (election is null)
                 return null;
 
@@ -67,6 +77,22 @@ namespace Electronic_Election_Management_System.Services
             if (request.EndsAt <= request.StartsAt)
                 return ServiceResult<ElectionDto>.Fail(ErrorCode.InvalidDateRange);
 
+            if (!request.IsClosed &&
+                (request.InvitedUserIds.Count > 0 || request.InvitedEmails.Count > 0))
+            {
+                return ServiceResult<ElectionDto>.Fail(ErrorCode.InvitationsRequireClosedElection);
+            }
+
+            var invitationResult = request.IsClosed
+                ? await BuildInvitationsAsync(
+                    Guid.Empty,
+                    request.InvitedUserIds,
+                    request.InvitedEmails,
+                    userId)
+                : ServiceResult<List<ElectionInvitation>>.Ok(new List<ElectionInvitation>());
+            if (!invitationResult.Success)
+                return ServiceResult<ElectionDto>.Fail(invitationResult.ErrorCode!.Value);
+
             var election = new Election
             {
                 CreatedByUserId = userId,
@@ -75,13 +101,18 @@ namespace Electronic_Election_Management_System.Services
                 Question = request.Question?.Trim(),
                 Type = type,
                 IsAnonymous = request.IsAnonymous,
+                IsClosed = request.IsClosed,
                 StartsAt = request.StartsAt,
                 EndsAt = request.EndsAt,
                 Options = request.Options
                     .Where(o => !string.IsNullOrWhiteSpace(o.Label))
                     .Select(o => new Option { Label = o.Label.Trim(), Description = o.Description?.Trim() })
-                    .ToList()
+                    .ToList(),
+                Invitations = invitationResult.Data!
             };
+
+            foreach (var invitation in election.Invitations)
+                invitation.ElectionId = election.Id;
 
             await _elections.AddAsync(election);
             await _auditLogs.AddAsync(new AuditLog
@@ -122,6 +153,7 @@ namespace Electronic_Election_Management_System.Services
             election.Question = request.Question?.Trim();
             election.Type = type;
             election.IsAnonymous = request.IsAnonymous;
+            election.IsClosed = request.IsClosed;
             election.StartsAt = request.StartsAt;
             election.EndsAt = request.EndsAt;
 
@@ -189,7 +221,156 @@ namespace Electronic_Election_Management_System.Services
             return ServiceResult<bool>.Ok(true);
         }
 
-        
+        public async Task<ServiceResult<List<ElectionInvitationDto>>> GetInvitationsAsync(
+            Guid electionId,
+            Guid userId)
+        {
+            var election = await _elections.GetByIdAsync(electionId);
+            if (election is null)
+                return ServiceResult<List<ElectionInvitationDto>>.NotFound();
+
+            if (election.CreatedByUserId != userId)
+                return ServiceResult<List<ElectionInvitationDto>>.Fail(ErrorCode.NotAuthorizedToManageInvitations);
+
+            var invitations = await _invitations.GetByElectionAsync(electionId);
+            return ServiceResult<List<ElectionInvitationDto>>.Ok(invitations.Select(MapInvitationToDto).ToList());
+        }
+
+        public async Task<List<InvitationCandidateDto>> GetInvitationCandidatesAsync(Guid userId)
+        {
+            var users = await _users.GetAllAsync();
+            return users
+                .Where(user => user.Id != userId)
+                .Select(user => new InvitationCandidateDto
+                {
+                    Id = user.Id,
+                    Email = user.Email
+                })
+                .ToList();
+        }
+
+        public async Task<ServiceResult<List<ElectionInvitationDto>>> InviteAsync(
+            Guid electionId,
+            InviteToElectionRequest request,
+            Guid userId)
+        {
+            var election = await _elections.GetByIdAsync(electionId);
+            if (election is null)
+                return ServiceResult<List<ElectionInvitationDto>>.NotFound();
+
+            if (election.CreatedByUserId != userId)
+                return ServiceResult<List<ElectionInvitationDto>>.Fail(ErrorCode.NotAuthorizedToManageInvitations);
+
+            if (!election.IsClosed)
+                return ServiceResult<List<ElectionInvitationDto>>.Fail(ErrorCode.InvitationsRequireClosedElection);
+
+            var invitationResult = await BuildInvitationsAsync(
+                electionId,
+                request.UserIds,
+                request.Emails,
+                userId);
+            if (!invitationResult.Success)
+                return ServiceResult<List<ElectionInvitationDto>>.Fail(invitationResult.ErrorCode!.Value);
+
+            if (invitationResult.Data!.Count > 0)
+            {
+                await _invitations.AddRangeAsync(invitationResult.Data);
+                await _auditLogs.AddAsync(new AuditLog
+                {
+                    UserId = userId,
+                    ElectionId = electionId,
+                    Action = AuditAction.ElectionInvitationsAdded.ToDbValue()
+                });
+                await _invitations.SaveChangesAsync();
+            }
+
+            var invitations = await _invitations.GetByElectionAsync(electionId);
+            return ServiceResult<List<ElectionInvitationDto>>.Ok(invitations.Select(MapInvitationToDto).ToList());
+        }
+
+        public async Task<ServiceResult<bool>> RemoveInvitationAsync(
+            Guid electionId,
+            Guid invitationId,
+            Guid userId)
+        {
+            var election = await _elections.GetByIdAsync(electionId);
+            if (election is null)
+                return ServiceResult<bool>.NotFound();
+
+            if (election.CreatedByUserId != userId)
+                return ServiceResult<bool>.Fail(ErrorCode.NotAuthorizedToManageInvitations);
+
+            var invitation = await _invitations.GetByIdAsync(invitationId);
+            if (invitation is null || invitation.ElectionId != electionId)
+                return ServiceResult<bool>.NotFound();
+
+            _invitations.Remove(invitation);
+            await _auditLogs.AddAsync(new AuditLog
+            {
+                UserId = userId,
+                ElectionId = electionId,
+                Action = AuditAction.ElectionInvitationRemoved.ToDbValue()
+            });
+            await _invitations.SaveChangesAsync();
+            return ServiceResult<bool>.Ok(true);
+        }
+
+        private async Task<ServiceResult<List<ElectionInvitation>>> BuildInvitationsAsync(
+            Guid electionId,
+            IEnumerable<Guid> rawUserIds,
+            IEnumerable<string> rawEmails,
+            Guid creatorId)
+        {
+            var userIds = rawUserIds.Where(id => id != creatorId).Distinct().ToList();
+            var users = await _users.GetByIdsAsync(userIds);
+            if (users.Count != userIds.Count)
+                return ServiceResult<List<ElectionInvitation>>.Fail(ErrorCode.InvitedUserNotFound);
+
+            var normalizedEmails = rawEmails
+                .Where(email => !string.IsNullOrWhiteSpace(email))
+                .Select(email => email.Trim().ToLowerInvariant())
+                .Distinct()
+                .ToList();
+
+            var emailValidator = new EmailAddressAttribute();
+            if (normalizedEmails.Any(email => !emailValidator.IsValid(email)))
+                return ServiceResult<List<ElectionInvitation>>.Fail(ErrorCode.InvalidInvitationEmail);
+
+            var creator = await _users.GetByIdAsync(creatorId);
+            if (creator is not null)
+                normalizedEmails.Remove(creator.Email);
+
+            var registeredByEmail = (await _users.GetByEmailsAsync(normalizedEmails))
+                .ToDictionary(user => user.Email);
+
+            var candidates = users.Select(user => new ElectionInvitation
+                {
+                    ElectionId = electionId,
+                    UserId = user.Id,
+                    Email = user.Email,
+                    Method = ElectionInvitationMethod.Manual
+                })
+                .Concat(normalizedEmails.Select(email => new ElectionInvitation
+                {
+                    ElectionId = electionId,
+                    UserId = registeredByEmail.GetValueOrDefault(email)?.Id,
+                    Email = email,
+                    Method = ElectionInvitationMethod.Email
+                }))
+                .GroupBy(invitation => invitation.Email)
+                .Select(group => group.First())
+                .ToList();
+
+            if (electionId != Guid.Empty && candidates.Count > 0)
+            {
+                var existingEmails = await _invitations.GetExistingEmailsAsync(
+                    electionId,
+                    candidates.Select(invitation => invitation.Email));
+                candidates.RemoveAll(invitation => existingEmails.Contains(invitation.Email));
+            }
+
+            return ServiceResult<List<ElectionInvitation>>.Ok(candidates);
+        }
 
         private static bool TryParseType(string raw, out ElectionType type)
             => Enum.TryParse(raw, ignoreCase: true, out type);
@@ -202,11 +383,21 @@ namespace Electronic_Election_Management_System.Services
             Question = e.Question,
             Type = e.Type.ToString(),
             IsAnonymous = e.IsAnonymous,
+            IsClosed = e.IsClosed,
             StartsAt = e.StartsAt,
             EndsAt = e.EndsAt,
             Options = e.Options.Select(o => new OptionDto { Id = o.Id, Label = o.Label, Description = o.Description }).ToList(),
             HasUserVoted = false,
             IsExpired = DateTime.UtcNow > e.EndsAt
+        };
+
+        private static ElectionInvitationDto MapInvitationToDto(ElectionInvitation invitation) => new()
+        {
+            Id = invitation.Id,
+            UserId = invitation.UserId,
+            Email = invitation.Email,
+            Method = invitation.Method.ToString(),
+            CreatedAt = invitation.CreatedAt
         };
     }
 }

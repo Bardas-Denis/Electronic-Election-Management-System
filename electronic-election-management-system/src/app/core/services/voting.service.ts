@@ -2,7 +2,15 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { ElectionDto, CreateElectionRequest, CastVoteRequest, UserVoteDto } from '../models/voting.model';
+import {
+  ElectionDto,
+  CreateElectionRequest,
+  CastVoteRequest,
+  UserVoteDto,
+  InviteToElectionRequest,
+  ElectionInvitationDto,
+  InvitationCandidateDto
+} from '../models/voting.model';
 
 // Thin HTTP wrapper - no business logic, just calls the backend
 @Injectable({ providedIn: 'root' })
@@ -33,6 +41,22 @@ export class VotingService {
 
   deleteElection(id: string): Observable<void> {
     return this.http.delete<void>(`${this.baseUrl}/elections/${id}`);
+  }
+
+  getInvitationCandidates(): Observable<InvitationCandidateDto[]> {
+    return this.http.get<InvitationCandidateDto[]>(`${this.baseUrl}/elections/invitation-candidates`);
+  }
+
+  getElectionInvitations(id: string): Observable<ElectionInvitationDto[]> {
+    return this.http.get<ElectionInvitationDto[]>(`${this.baseUrl}/elections/${id}/invitations`);
+  }
+
+  inviteToElection(id: string, request: InviteToElectionRequest): Observable<ElectionInvitationDto[]> {
+    return this.http.post<ElectionInvitationDto[]>(`${this.baseUrl}/elections/${id}/invitations`, request);
+  }
+
+  removeElectionInvitation(id: string, invitationId: string): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/elections/${id}/invitations/${invitationId}`);
   }
 
   castVote(request: CastVoteRequest): Observable<void> {

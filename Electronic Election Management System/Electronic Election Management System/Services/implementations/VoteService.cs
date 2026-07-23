@@ -31,7 +31,7 @@ namespace Electronic_Election_Management_System.Services
 
         public async Task<ServiceResult<bool>> CastVoteAsync(CastVoteRequest request, Guid userId)
         {
-            var election = await _elections.GetByIdWithOptionsAsync(request.ElectionId);
+            var election = await _elections.GetAccessibleByIdWithOptionsAsync(request.ElectionId, userId);
             if (election is null)
                 return ServiceResult<bool>.NotFound(ErrorCode.ResourceNotFound);
 
@@ -65,7 +65,7 @@ namespace Electronic_Election_Management_System.Services
 
         public async Task<ServiceResult<bool>> UpdateVoteAsync(CastVoteRequest request, Guid userId)
         {
-            var election = await _elections.GetByIdWithOptionsAsync(request.ElectionId);
+            var election = await _elections.GetAccessibleByIdWithOptionsAsync(request.ElectionId, userId);
             if (election is null)
                 return ServiceResult<bool>.NotFound(ErrorCode.ResourceNotFound);
 
@@ -97,7 +97,7 @@ namespace Electronic_Election_Management_System.Services
 
         public async Task<ServiceResult<bool>> DeleteVoteAsync(Guid electionId, Guid userId)
         {
-            var election = await _elections.GetByIdWithOptionsAsync(electionId);
+            var election = await _elections.GetAccessibleByIdWithOptionsAsync(electionId, userId);
             if (election is null)
                 return ServiceResult<bool>.NotFound(ErrorCode.ResourceNotFound);
 
@@ -146,7 +146,7 @@ namespace Electronic_Election_Management_System.Services
 
         public async Task<ServiceResult<UserVoteDto>> GetMyVoteAsync(Guid electionId, Guid userId)
         {
-            var election = await _elections.GetByIdWithOptionsAsync(electionId);
+            var election = await _elections.GetAccessibleByIdWithOptionsAsync(electionId, userId);
             if (election is null)
                 return ServiceResult<UserVoteDto>.NotFound(ErrorCode.ResourceNotFound);
 

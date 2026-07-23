@@ -32,5 +32,6 @@ namespace Electronic_Election_Management_System.Models
         public ICollection<Election> ElectionsCreated { get; set; } = new List<Election>();
         public ICollection<VoteToken> VoteTokens { get; set; } = new List<VoteToken>();
         public ICollection<AuditLog> AuditLogs { get; set; } = new List<AuditLog>();
+        public ICollection<ElectionInvitation> ElectionInvitations { get; set; } = new List<ElectionInvitation>();
     }
 }

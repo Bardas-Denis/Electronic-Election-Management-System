@@ -35,5 +35,13 @@ namespace Electronic_Election_Management_System.Services
         /// Deletes an election.
         /// </summary>
         Task<ServiceResult<bool>> DeleteAsync(Guid id, Guid userId);
+
+        Task<ServiceResult<List<ElectionInvitationDto>>> GetInvitationsAsync(Guid electionId, Guid userId);
+        Task<ServiceResult<List<ElectionInvitationDto>>> InviteAsync(
+            Guid electionId,
+            InviteToElectionRequest request,
+            Guid userId);
+        Task<ServiceResult<bool>> RemoveInvitationAsync(Guid electionId, Guid invitationId, Guid userId);
+        Task<List<InvitationCandidateDto>> GetInvitationCandidatesAsync(Guid userId);
     }
 }

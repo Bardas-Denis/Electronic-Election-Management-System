@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using Electronic_Election_Management_System.Constants;
 using Electronic_Election_Management_System.DTOs;
 using Electronic_Election_Management_System.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -40,6 +41,17 @@ namespace Electronic_Election_Management_System.Controllers
         {
             var elections = await _electionService.GetCreatedByAsync(GetCurrentUserId());
             return Ok(elections);
+        }
+
+        /// <summary>
+        /// Returns the minimal registered-user list needed by the manual invitation picker.
+        /// </summary>
+        [HttpGet("invitation-candidates")]
+        [Authorize(Roles = "Admin,ElectionManager")]
+        public async Task<ActionResult<List<InvitationCandidateDto>>> GetInvitationCandidates()
+        {
+            var candidates = await _electionService.GetInvitationCandidatesAsync(GetCurrentUserId());
+            return Ok(candidates);
         }
 
         /// <summary>
@@ -99,6 +111,54 @@ namespace Electronic_Election_Management_System.Controllers
                 return result.IsNotFound
                     ? NotFound(new { errorCode = result.ErrorCode })
                     : BadRequest(new { errorCode = result.ErrorCode });
+            return NoContent();
+        }
+
+        /// <summary>Lists invitations for a closed election. Only its creator may call this endpoint.</summary>
+        [HttpGet("{id:guid}/invitations")]
+        [Authorize(Roles = "Admin,ElectionManager")]
+        public async Task<ActionResult<List<ElectionInvitationDto>>> GetInvitations(Guid id)
+        {
+            var result = await _electionService.GetInvitationsAsync(id, GetCurrentUserId());
+            if (!result.Success)
+                return result.IsNotFound
+                    ? NotFound(new { errorCode = result.ErrorCode })
+                    : Forbid();
+            return Ok(result.Data);
+        }
+
+        /// <summary>
+        /// Adds manual invitations by existing user ID and/or invitations by email.
+        /// Email invitations also work when the recipient registers after being invited.
+        /// </summary>
+        [HttpPost("{id:guid}/invitations")]
+        [Authorize(Roles = "Admin,ElectionManager")]
+        public async Task<ActionResult<List<ElectionInvitationDto>>> Invite(
+            Guid id,
+            InviteToElectionRequest request)
+        {
+            var result = await _electionService.InviteAsync(id, request, GetCurrentUserId());
+            if (!result.Success)
+            {
+                if (result.IsNotFound)
+                    return NotFound(new { errorCode = result.ErrorCode });
+                if (result.ErrorCode == ErrorCode.NotAuthorizedToManageInvitations)
+                    return Forbid();
+                return BadRequest(new { errorCode = result.ErrorCode });
+            }
+            return Ok(result.Data);
+        }
+
+        /// <summary>Revokes one invitation from a closed election.</summary>
+        [HttpDelete("{id:guid}/invitations/{invitationId:guid}")]
+        [Authorize(Roles = "Admin,ElectionManager")]
+        public async Task<IActionResult> RemoveInvitation(Guid id, Guid invitationId)
+        {
+            var result = await _electionService.RemoveInvitationAsync(id, invitationId, GetCurrentUserId());
+            if (!result.Success)
+                return result.IsNotFound
+                    ? NotFound(new { errorCode = result.ErrorCode })
+                    : Forbid();
             return NoContent();
         }
 

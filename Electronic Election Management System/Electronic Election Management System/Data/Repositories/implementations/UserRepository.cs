@@ -21,6 +21,18 @@ namespace Electronic_Election_Management_System.Data.Repositories
         public Task<User?> GetByEmailAsync(string normalizedEmail)
             => _db.Users.FirstOrDefaultAsync(u => u.Email == normalizedEmail);
 
+        public Task<List<User>> GetByIdsAsync(IEnumerable<Guid> ids)
+        {
+            var idList = ids.Distinct().ToList();
+            return _db.Users.Where(u => idList.Contains(u.Id)).ToListAsync();
+        }
+
+        public Task<List<User>> GetByEmailsAsync(IEnumerable<string> normalizedEmails)
+        {
+            var emailList = normalizedEmails.Distinct().ToList();
+            return _db.Users.Where(u => emailList.Contains(u.Email)).ToListAsync();
+        }
+
         public Task<bool> ExistsByEmailAsync(string normalizedEmail)
             => _db.Users.AnyAsync(u => u.Email == normalizedEmail);
 

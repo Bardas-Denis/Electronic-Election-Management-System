@@ -52,6 +52,22 @@ namespace Electronic_Election_Management_System.Constants
         [JsonStringEnumMemberName("notAuthorizedToDelete")]
         NotAuthorizedToDelete,
 
+        /// <summary>One or more supplied invitation emails are invalid.</summary>
+        [JsonStringEnumMemberName("invalidInvitationEmail")]
+        InvalidInvitationEmail,
+
+        /// <summary>One or more users selected for a manual invitation do not exist.</summary>
+        [JsonStringEnumMemberName("invitedUserNotFound")]
+        InvitedUserNotFound,
+
+        /// <summary>Invitations can only be managed for closed elections.</summary>
+        [JsonStringEnumMemberName("invitationsRequireClosedElection")]
+        InvitationsRequireClosedElection,
+
+        /// <summary>Only the election creator can manage invitations.</summary>
+        [JsonStringEnumMemberName("notAuthorizedToManageInvitations")]
+        NotAuthorizedToManageInvitations,
+
         //Vote Errors
 
         /// <summary>This election is not currently open for voting.</summary>
