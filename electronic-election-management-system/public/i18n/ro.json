@@ -270,5 +270,60 @@
     "connectionError": "Eroare de rețea. Verifică conexiunea la internet.",
     "forbidden": "Contul tău nu are permisiunea de a accesa această resursă.",
     "badRequest": "Date invalide. Verifică formularul."
+  },
+  "home": {
+    "hero": {
+      "sideLeft": "Platformă electorală<br>digitală",
+      "kicker": "Alegeri clare. Decizii de încredere.",
+      "subtitle": "Un spațiu sigur în care comunitățile votează, iar fiecare rezultat rămâne transparent.",
+      "sideRight": "Încredere în<br>fiecare vot",
+      "ctaSmall": "Începe în câteva minute",
+      "cta": "Creează prima ta alegere",
+      "discover": "Descoperă"
+    },
+    "intro": {
+      "label": "O platformă completă",
+      "eyebrow": "De la întrebare la rezultat",
+      "title": "Organizează alegeri care inspiră <em>încredere.</em>",
+      "lead": "Votex simplifică întregul proces electoral: creezi scrutinul, inviți participanții, urmărești prezența și publici rezultate verificabile, dintr-un singur loc.",
+      "stat1": "pași până la prima alegere",
+      "stat2": "rezultate actualizate în timp real",
+      "stat3": "trasabilitate prin jurnalul de audit"
+    },
+    "capabilities": {
+      "label": "Conceput pentru claritate",
+      "eyebrow": "Control fără complexitate",
+      "title": "Tot ce contează.<br>Nimic în plus.",
+      "feat1Title": "Vot sigur și configurabil",
+      "feat1Desc": "Alegi între scrutin anonim sau nominal, cu acces controlat și sesiuni protejate.",
+      "feat2Title": "Rezultate în timp real",
+      "feat2Desc": "Dashboard-ul se actualizează live, astfel încât deciziile pot fi urmărite fără reîncărcări.",
+      "feat3Title": "Audit complet",
+      "feat3Desc": "Acțiunile importante rămân înregistrate pentru un proces ușor de verificat și explicat."
+    },
+    "process": {
+      "label": "Un parcurs simplu",
+      "eyebrow": "Cum funcționează",
+      "title": "De la idee la rezultat, fără fricțiune.",
+      "start": "Pornește acum",
+      "step1Title": "Creezi",
+      "step1Desc": "Configurezi întrebarea, opțiunile, perioada și tipul votului.",
+      "step2Title": "Invită",
+      "step2Desc": "Participanții autentificați primesc accesul potrivit, fără pași inutili.",
+      "step3Title": "Decideți",
+      "step3Desc": "Voturile sunt colectate sigur, iar rezultatele devin imediat vizibile."
+    },
+    "closing": {
+      "eyebrow": "Prima decizie începe aici",
+      "title": "Transformă vocea comunității într-un rezultat clar.",
+      "cta": "Creează un cont gratuit"
+    },
+    "footer": {
+      "tagline": "Alegeri digitale, construite pentru încredere.",
+      "login": "Autentificare",
+      "register": "Cont nou",
+      "platform": "Platformă",
+      "copyrightTag": "Platformă de vot electronic"
+    }
   }
 }

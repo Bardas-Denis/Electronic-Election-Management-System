@@ -7,20 +7,20 @@
     <div class="hero-grain" aria-hidden="true"></div>
 
     <div class="hero-layout">
-      <p class="hero-side hero-side--left">Platformă electorală<br>digitală</p>
+      <p class="hero-side hero-side--left" [innerHTML]="'home.hero.sideLeft' | translate"></p>
 
       <div class="hero-brand">
-        <span class="hero-kicker">Alegeri clare. Decizii de încredere.</span>
+        <span class="hero-kicker">{{ 'home.hero.kicker' | translate }}</span>
         <h1 id="hero-title">VOTEX</h1>
-        <p>Un spațiu sigur în care comunitățile votează, iar fiecare rezultat rămâne transparent.</p>
+        <p>{{ 'home.hero.subtitle' | translate }}</p>
       </div>
 
-      <p class="hero-side hero-side--right">Încredere în<br>fiecare vot</p>
+      <p class="hero-side hero-side--right" [innerHTML]="'home.hero.sideRight' | translate"></p>
 
       <a routerLink="/register" class="hero-cta" aria-label="Creează un cont și organizează prima ta alegere">
         <span>
-          <small>Începe în câteva minute</small>
-          Creează prima ta alegere
+          <small>{{ 'home.hero.ctaSmall' | translate }}</small>
+          {{ 'home.hero.cta' | translate }}
         </span>
         <svg aria-hidden="true" viewBox="0 0 24 24" fill="none">
           <path d="M5 19 19 5M8 5h11v11" />
@@ -28,7 +28,7 @@
       </a>
 
       <a href="#platforma" class="scroll-cue" aria-label="Descoperă platforma">
-        <span>Descoperă</span>
+        <span>{{ 'home.hero.discover' | translate }}</span>
         <i aria-hidden="true"></i>
       </a>
     </div>
@@ -37,30 +37,27 @@
   <section class="intro section-shell" id="platforma">
     <div class="section-label" data-reveal>
       <span>01</span>
-      <p>O platformă completă</p>
+      <p>{{ 'home.intro.label' | translate }}</p>
     </div>
 
     <div class="intro-copy" data-reveal>
-      <p class="eyebrow">De la întrebare la rezultat</p>
-      <h2>Organizează alegeri care inspiră <em>încredere.</em></h2>
-      <p class="intro-lead">
-        Votex simplifică întregul proces electoral: creezi scrutinul, inviți participanții,
-        urmărești prezența și publici rezultate verificabile, dintr-un singur loc.
-      </p>
+      <p class="eyebrow">{{ 'home.intro.eyebrow' | translate }}</p>
+      <h2 [innerHTML]="'home.intro.title' | translate"></h2>
+      <p class="intro-lead">{{ 'home.intro.lead' | translate }}</p>
     </div>
 
     <div class="stats" data-reveal>
       <article>
         <strong>3</strong>
-        <span>pași până la prima alegere</span>
+        <span>{{ 'home.intro.stat1' | translate }}</span>
       </article>
       <article>
         <strong>Live</strong>
-        <span>rezultate actualizate în timp real</span>
+        <span>{{ 'home.intro.stat2' | translate }}</span>
       </article>
       <article>
         <strong>100%</strong>
-        <span>trasabilitate prin jurnalul de audit</span>
+        <span>{{ 'home.intro.stat3' | translate }}</span>
       </article>
     </div>
   </section>
@@ -69,12 +66,12 @@
     <div class="section-shell">
       <div class="section-label section-label--light" data-reveal>
         <span>02</span>
-        <p>Conceput pentru claritate</p>
+        <p>{{ 'home.capabilities.label' | translate }}</p>
       </div>
 
       <div class="capabilities-head" data-reveal>
-        <p class="eyebrow">Control fără complexitate</p>
-        <h2>Tot ce contează.<br>Nimic în plus.</h2>
+        <p class="eyebrow">{{ 'home.capabilities.eyebrow' | translate }}</p>
+        <h2 [innerHTML]="'home.capabilities.title' | translate"></h2>
       </div>
 
       <div class="feature-list">
@@ -84,8 +81,8 @@
             <svg viewBox="0 0 24 24" fill="none"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/><path d="m9 12 2 2 4-4"/></svg>
           </div>
           <div>
-            <h3>Vot sigur și configurabil</h3>
-            <p>Alegi între scrutin anonim sau nominal, cu acces controlat și sesiuni protejate.</p>
+            <h3>{{ 'home.capabilities.feat1Title' | translate }}</h3>
+            <p>{{ 'home.capabilities.feat1Desc' | translate }}</p>
           </div>
         </article>
 
@@ -95,8 +92,8 @@
             <svg viewBox="0 0 24 24" fill="none"><path d="M4 19V9m6 10V5m6 14v-7m4 7H2"/></svg>
           </div>
           <div>
-            <h3>Rezultate în timp real</h3>
-            <p>Dashboard-ul se actualizează live, astfel încât deciziile pot fi urmărite fără reîncărcări.</p>
+            <h3>{{ 'home.capabilities.feat2Title' | translate }}</h3>
+            <p>{{ 'home.capabilities.feat2Desc' | translate }}</p>
           </div>
         </article>
 
@@ -106,8 +103,8 @@
             <svg viewBox="0 0 24 24" fill="none"><path d="M8 6h11M8 12h11M8 18h11"/><path d="m3 6 1 1 2-2m-3 7 1 1 2-2m-3 7 1 1 2-2"/></svg>
           </div>
           <div>
-            <h3>Audit complet</h3>
-            <p>Acțiunile importante rămân înregistrate pentru un proces ușor de verificat și explicat.</p>
+            <h3>{{ 'home.capabilities.feat3Title' | translate }}</h3>
+            <p>{{ 'home.capabilities.feat3Desc' | translate }}</p>
           </div>
         </article>
       </div>
@@ -117,15 +114,15 @@
   <section class="process section-shell">
     <div class="section-label" data-reveal>
       <span>03</span>
-      <p>Un parcurs simplu</p>
+      <p>{{ 'home.process.label' | translate }}</p>
     </div>
 
     <div class="process-grid">
       <div class="process-title" data-reveal>
-        <p class="eyebrow">Cum funcționează</p>
-        <h2>De la idee la rezultat, fără fricțiune.</h2>
+        <p class="eyebrow">{{ 'home.process.eyebrow' | translate }}</p>
+        <h2>{{ 'home.process.title' | translate }}</h2>
         <a routerLink="/register" class="text-link">
-          Pornește acum
+          {{ 'home.process.start' | translate }}
           <svg aria-hidden="true" viewBox="0 0 24 24" fill="none"><path d="M5 12h14m-5-5 5 5-5 5"/></svg>
         </a>
       </div>
@@ -133,15 +130,15 @@
       <ol class="process-steps">
         <li data-reveal>
           <span>01</span>
-          <div><h3>Creezi</h3><p>Configurezi întrebarea, opțiunile, perioada și tipul votului.</p></div>
+          <div><h3>{{ 'home.process.step1Title' | translate }}</h3><p>{{ 'home.process.step1Desc' | translate }}</p></div>
         </li>
         <li data-reveal>
           <span>02</span>
-          <div><h3>Invită</h3><p>Participanții autentificați primesc accesul potrivit, fără pași inutili.</p></div>
+          <div><h3>{{ 'home.process.step2Title' | translate }}</h3><p>{{ 'home.process.step2Desc' | translate }}</p></div>
         </li>
         <li data-reveal>
           <span>03</span>
-          <div><h3>Decideți</h3><p>Voturile sunt colectate sigur, iar rezultatele devin imediat vizibile.</p></div>
+          <div><h3>{{ 'home.process.step3Title' | translate }}</h3><p>{{ 'home.process.step3Desc' | translate }}</p></div>
         </li>
       </ol>
     </div>
@@ -149,10 +146,10 @@
 
   <section class="closing" data-reveal>
     <div class="closing-inner">
-      <p class="eyebrow">Prima decizie începe aici</p>
-      <h2>Transformă vocea comunității într-un rezultat clar.</h2>
+      <p class="eyebrow">{{ 'home.closing.eyebrow' | translate }}</p>
+      <h2>{{ 'home.closing.title' | translate }}</h2>
       <a routerLink="/register" class="closing-cta">
-        Creează un cont gratuit
+        {{ 'home.closing.cta' | translate }}
         <svg aria-hidden="true" viewBox="0 0 24 24" fill="none"><path d="M5 19 19 5M8 5h11v11"/></svg>
       </a>
     </div>
@@ -162,17 +159,17 @@
     <div class="footer-main">
       <div>
         <span class="footer-brand">VOTEX</span>
-        <p>Alegeri digitale, construite pentru încredere.</p>
+        <p>{{ 'home.footer.tagline' | translate }}</p>
       </div>
       <nav aria-label="Legături utile">
-        <a routerLink="/login">Autentificare</a>
-        <a routerLink="/register">Cont nou</a>
-        <a href="#platforma">Platformă</a>
+        <a routerLink="/login">{{ 'home.footer.login' | translate }}</a>
+        <a routerLink="/register">{{ 'home.footer.register' | translate }}</a>
+        <a href="#platforma">{{ 'home.footer.platform' | translate }}</a>
       </nav>
     </div>
     <div class="footer-bottom">
       <span>© {{ currentYear }} Votex</span>
-      <span>Platformă de vot electronic</span>
+      <span>{{ 'home.footer.copyrightTag' | translate }}</span>
     </div>
   </footer>
 </main>

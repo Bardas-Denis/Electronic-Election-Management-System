@@ -69,6 +69,12 @@
   <div class="nav-right">
     <a routerLink="/login" class="nav-link">{{ 'nav.login' | translate }}</a>
     <a routerLink="/register" class="nav-link nav-link--cta">{{ 'nav.newAccount' | translate }}</a>
+    <div class="lang-switcher">
+      <button id="lang-ro" class="lang-btn" [class.active]="translate.currentLang() === 'ro'"
+        (click)="switchLanguage('ro')" aria-label="Română">RO</button>
+      <button id="lang-en" class="lang-btn" [class.active]="translate.currentLang() === 'en'"
+        (click)="switchLanguage('en')" aria-label="English">EN</button>
+    </div>
     <!-- Theme toggle (sliding) visible to guests too -->
     <button class="theme-toggle" (click)="toggleTheme()" aria-label="Toggle theme"
       [attr.aria-pressed]="currentTheme === 'dark'">
