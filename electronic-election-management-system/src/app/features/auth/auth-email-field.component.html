@@ -1,0 +1,21 @@
+<div class="field" [class.field--error]="control().invalid && control().touched">
+  <label [for]="inputId()">{{ labelKey() | translate }}</label>
+  <input
+    [id]="inputId()"
+    type="email"
+    [formControl]="control()"
+    [placeholder]="placeholderKey() | translate"
+    autocomplete="email"
+    required
+    [attr.aria-describedby]="inputId() + '-error'"
+  />
+  @if (control().touched && control().hasError('required')) {
+    <span [id]="inputId() + '-error'" class="field-error" role="alert">
+      {{ requiredErrorKey() | translate }}
+    </span>
+  } @else if (control().touched && control().hasError('email')) {
+    <span [id]="inputId() + '-error'" class="field-error" role="alert">
+      {{ invalidErrorKey() | translate }}
+    </span>
+  }
+</div>
