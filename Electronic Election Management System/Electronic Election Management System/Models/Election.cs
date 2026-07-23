@@ -31,6 +31,11 @@ namespace Electronic_Election_Management_System.Models
         /// </summary>
         public bool IsAnonymous { get; set; } = true;
 
+        /// <summary>
+        /// Closed elections are visible only to their creator and explicitly invited users.
+        /// </summary>
+        public bool IsClosed { get; set; }
+
         public DateTime StartsAt { get; set; }
         public DateTime EndsAt { get; set; }
 
@@ -39,6 +44,7 @@ namespace Electronic_Election_Management_System.Models
         public ICollection<Option> Options { get; set; } = new List<Option>();
         public ICollection<VoteToken> VoteTokens { get; set; } = new List<VoteToken>();
         public ICollection<AuditLog> AuditLogs { get; set; } = new List<AuditLog>();
+        public ICollection<ElectionInvitation> Invitations { get; set; } = new List<ElectionInvitation>();
 
         public bool CanAcceptVotes()
         {

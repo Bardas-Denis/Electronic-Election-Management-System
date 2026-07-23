@@ -18,6 +18,25 @@ namespace Electronic_Election_Management_System.Data.Repositories
                 .OrderByDescending(e => e.CreatedAt)
                 .ToListAsync();
 
+        public async Task<List<Election>> GetVisibleToUserAsync(Guid userId)
+        {
+            var email = await _db.Users
+                .Where(u => u.Id == userId)
+                .Select(u => u.Email)
+                .FirstOrDefaultAsync();
+
+            if (email is null)
+                return new List<Election>();
+
+            return await _db.Elections
+                .Where(e => !e.IsClosed ||
+                            e.CreatedByUserId == userId ||
+                            e.Invitations.Any(i => i.UserId == userId || i.Email == email))
+                .Include(e => e.Options)
+                .OrderByDescending(e => e.CreatedAt)
+                .ToListAsync();
+        }
+
         public Task<List<Election>> GetByCreatedByAsync(Guid userId)
             => _db.Elections
                 .Where(e => e.CreatedByUserId == userId)
@@ -30,6 +49,25 @@ namespace Electronic_Election_Management_System.Data.Repositories
                 .Include(e => e.Options)
                 .FirstOrDefaultAsync(e => e.Id == id);
 
+        public async Task<Election?> GetAccessibleByIdWithOptionsAsync(Guid id, Guid userId)
+        {
+            var email = await _db.Users
+                .Where(u => u.Id == userId)
+                .Select(u => u.Email)
+                .FirstOrDefaultAsync();
+
+            if (email is null)
+                return null;
+
+            return await _db.Elections
+                .Where(e => e.Id == id &&
+                            (!e.IsClosed ||
+                             e.CreatedByUserId == userId ||
+                             e.Invitations.Any(i => i.UserId == userId || i.Email == email)))
+                .Include(e => e.Options)
+                .FirstOrDefaultAsync();
+        }
+
         public Task<Election?> GetByIdAsync(Guid id)
             => _db.Elections.FirstOrDefaultAsync(e => e.Id == id);
 
@@ -38,6 +76,20 @@ namespace Electronic_Election_Management_System.Data.Repositories
                 .Include(e => e.Options)
                     .ThenInclude(o => o.Votes)
                 .FirstOrDefaultAsync(e => e.Id == id);
+
+        public async Task<bool> CanUserAccessAsync(Guid electionId, Guid userId)
+        {
+            var email = await _db.Users
+                .Where(u => u.Id == userId)
+                .Select(u => u.Email)
+                .FirstOrDefaultAsync();
+
+            return email is not null && await _db.Elections.AnyAsync(e =>
+                e.Id == electionId &&
+                (!e.IsClosed ||
+                 e.CreatedByUserId == userId ||
+                 e.Invitations.Any(i => i.UserId == userId || i.Email == email)));
+        }
 
         public async Task AddAsync(Election election)
             => await _db.Elections.AddAsync(election);

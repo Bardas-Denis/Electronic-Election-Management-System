@@ -29,6 +29,7 @@ namespace Electronic_Election_Management_System.DTOs
         /// <summary>The election category. Valid values: <c>"Politic"</c> or <c>"Comercial"</c>.</summary>
         public string Type { get; set; } = string.Empty;
         public bool IsAnonymous { get; set; }
+        public bool IsClosed { get; set; }
         public DateTime StartsAt { get; set; }
         public DateTime EndsAt { get; set; }
         public List<OptionDto> Options { get; set; } = new();
@@ -70,6 +71,15 @@ namespace Electronic_Election_Management_System.DTOs
 
         public bool IsAnonymous { get; set; } = true;
 
+        /// <summary>When true, only the creator and invited users can discover or access the election.</summary>
+        public bool IsClosed { get; set; }
+
+        /// <summary>Existing accounts to invite directly when the closed election is created.</summary>
+        public List<Guid> InvitedUserIds { get; set; } = new();
+
+        /// <summary>Email addresses to invite, including addresses that have not registered yet.</summary>
+        public List<string> InvitedEmails { get; set; } = new();
+
         [Required]
         public DateTime StartsAt { get; set; }
 
@@ -82,8 +92,32 @@ namespace Electronic_Election_Management_System.DTOs
         public List<CreateOptionDto> Options { get; set; } = new();
     }
 
-    // SYNC: voting.model.ts -> CreateElectionRequest (reused for PUT)
+    // SYNC: voting.model.ts -> CreateElectionRequest (reused for PUT).
+    // Invitation collections are used during creation only; later invitation
+    // changes go through the dedicated invitations endpoints.
     public class UpdateElectionRequest : CreateElectionRequest
     {
+    }
+
+    public class InviteToElectionRequest
+    {
+        public List<Guid> UserIds { get; set; } = new();
+        public List<string> Emails { get; set; } = new();
+    }
+
+    public class ElectionInvitationDto
+    {
+        public Guid Id { get; set; }
+        public Guid? UserId { get; set; }
+        public string Email { get; set; } = string.Empty;
+        public string Method { get; set; } = string.Empty;
+        public DateTime CreatedAt { get; set; }
+    }
+
+    /// <summary>Minimal account information exposed to election creators for manual invitations.</summary>
+    public class InvitationCandidateDto
+    {
+        public Guid Id { get; set; }
+        public string Email { get; set; } = string.Empty;
     }
 }

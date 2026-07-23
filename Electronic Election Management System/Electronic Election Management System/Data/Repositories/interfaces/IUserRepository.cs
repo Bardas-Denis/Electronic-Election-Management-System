@@ -7,6 +7,8 @@ namespace Electronic_Election_Management_System.Data.Repositories
         Task<List<User>> GetAllAsync();
         Task<User?> GetByIdAsync(Guid id);
         Task<User?> GetByEmailAsync(string normalizedEmail);
+        Task<List<User>> GetByIdsAsync(IEnumerable<Guid> ids);
+        Task<List<User>> GetByEmailsAsync(IEnumerable<string> normalizedEmails);
         /// <summary>Verifies if an user with the given email exists.</summary>
         Task<bool> ExistsByEmailAsync(string normalizedEmail);
         /// <summary>Returns the count of admin users.</summary>

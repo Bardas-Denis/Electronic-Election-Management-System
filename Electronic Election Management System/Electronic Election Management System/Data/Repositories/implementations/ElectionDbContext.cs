@@ -16,6 +16,7 @@ namespace Electronic_Election_Management_System.Data
         public DbSet<VoterDeclaration> VoterDeclarations => Set<VoterDeclaration>();
         public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
         public DbSet<VoterChangeRecord> VoterChangeRecords => Set<VoterChangeRecord>();
+        public DbSet<ElectionInvitation> ElectionInvitations => Set<ElectionInvitation>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -36,6 +37,26 @@ namespace Electronic_Election_Management_System.Data
             modelBuilder.Entity<Election>()
                 .Property(e => e.Type)
                 .HasConversion<string>();
+
+            modelBuilder.Entity<ElectionInvitation>()
+                .Property(i => i.Method)
+                .HasConversion<string>();
+
+            modelBuilder.Entity<ElectionInvitation>()
+                .HasIndex(i => new { i.ElectionId, i.Email })
+                .IsUnique();
+
+            modelBuilder.Entity<ElectionInvitation>()
+                .HasOne(i => i.Election)
+                .WithMany(e => e.Invitations)
+                .HasForeignKey(i => i.ElectionId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<ElectionInvitation>()
+                .HasOne(i => i.User)
+                .WithMany(u => u.ElectionInvitations)
+                .HasForeignKey(i => i.UserId)
+                .OnDelete(DeleteBehavior.SetNull);
 
             // Restrict: prevents deleting a user who has created elections,
             // so election ownership/history is never silently lost.
