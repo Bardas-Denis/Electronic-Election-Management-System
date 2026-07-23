@@ -1,6 +1,7 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using Electronic_Election_Management_System.Configuration;
 using Electronic_Election_Management_System.Models;
 using Microsoft.IdentityModel.Tokens;
 
@@ -11,15 +12,15 @@ namespace Electronic_Election_Management_System.Services
     /// </summary>
     public class TokenService : ITokenService
     {
-        private readonly IConfiguration _configuration;
+        private readonly JwtOptions _jwtOptions;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="TokenService"/> class.
         /// </summary>
-        /// <param name="configuration">The application configuration.</param>
-        public TokenService(IConfiguration configuration)
+        /// <param name="jwtOptions">Validated JWT configuration.</param>
+        public TokenService(JwtOptions jwtOptions)
         {
-            _configuration = configuration;
+            _jwtOptions = jwtOptions;
         }
 
         /// <summary>
@@ -29,13 +30,7 @@ namespace Electronic_Election_Management_System.Services
         /// <returns>A tuple containing the JWT token and its expiration time.</returns>
         public (string Token, DateTime ExpiresAt) GenerateToken(User user)
         {
-            var jwtSection = _configuration.GetSection("Jwt");
-            string key = jwtSection["Key"]!;
-            string issuer = jwtSection["Issuer"]!;
-            string audience = jwtSection["Audience"]!;
-            int expiresInMinutes = int.Parse(jwtSection["ExpiresInMinutes"] ?? "120");
-
-            var expiresAt = DateTime.UtcNow.AddMinutes(expiresInMinutes);
+            var expiresAt = DateTime.UtcNow.AddMinutes(_jwtOptions.ExpiresInMinutes);
 
             var claims = new[]
             {
@@ -49,12 +44,12 @@ namespace Electronic_Election_Management_System.Services
                 new Claim("securityStamp", user.SecurityStamp)
             };
 
-            var signingKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key));
+            var signingKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtOptions.Key));
             var credentials = new SigningCredentials(signingKey, SecurityAlgorithms.HmacSha256);
 
             var token = new JwtSecurityToken(
-                issuer: issuer,
-                audience: audience,
+                issuer: _jwtOptions.Issuer,
+                audience: _jwtOptions.Audience,
                 claims: claims,
                 expires: expiresAt,
                 signingCredentials: credentials

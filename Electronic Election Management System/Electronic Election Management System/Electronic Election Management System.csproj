@@ -5,6 +5,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>Electronic_Election_Management_System</RootNamespace>
+    <UserSecretsId>electronic-election-management-system-api</UserSecretsId>
 	<GenerateDocumentationFile>true</GenerateDocumentationFile>
 	<NoWarn>$(NoWarn);CS1591</NoWarn>
   </PropertyGroup>

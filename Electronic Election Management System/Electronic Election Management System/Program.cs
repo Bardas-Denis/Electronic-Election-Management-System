@@ -1,3 +1,4 @@
+using Electronic_Election_Management_System.Configuration;
 using Electronic_Election_Management_System.Data;
 using Electronic_Election_Management_System.Data.Repositories;
 using Electronic_Election_Management_System.Hubs;
@@ -28,6 +29,8 @@ builder.Services.AddDbContext<ElectionDbContext>(options =>
     options.UseSqlite(sqliteConnectionString)
 );
 
+var jwtOptions = JwtOptions.LoadAndValidate(builder.Configuration);
+builder.Services.AddSingleton(jwtOptions);
 builder.Services.AddSingleton<ITokenService, TokenService>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IElectionRepository, ElectionRepository>();
@@ -45,10 +48,6 @@ builder.Services.AddScoped<IUserNotifier, SignalRUserNotifier>();
 
 builder.Services.AddSignalR();
 
-var jwtSection = builder.Configuration.GetSection("Jwt");
-string jwtKey = jwtSection["Key"]!;
-string jwtIssuer = jwtSection["Issuer"]!;
-string jwtAudience = jwtSection["Audience"]!;
 builder.Services
     .AddAuthentication(options =>
     {
@@ -63,9 +62,9 @@ builder.Services
             ValidateAudience = true,
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
-            ValidIssuer = jwtIssuer,
-            ValidAudience = jwtAudience,
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
+            ValidIssuer = jwtOptions.Issuer,
+            ValidAudience = jwtOptions.Audience,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtOptions.Key)),
             ClockSkew = TimeSpan.FromSeconds(30)
         };
 
