@@ -270,5 +270,60 @@
     "connectionError": "Network error. Please check your internet connection.",
     "forbidden": "Your account does not have permission to access this resource.",
     "badRequest": "Invalid data. Please check the form."
+  },
+  "home": {
+    "hero": {
+      "sideLeft": "Digital electoral<br>platform",
+      "kicker": "Clear elections. Trusted decisions.",
+      "subtitle": "A secure space where communities vote, and every result remains transparent.",
+      "sideRight": "Trust in<br>every vote",
+      "ctaSmall": "Start in minutes",
+      "cta": "Create your first election",
+      "discover": "Discover"
+    },
+    "intro": {
+      "label": "A complete platform",
+      "eyebrow": "From question to result",
+      "title": "Organize elections that inspire <em>trust.</em>",
+      "lead": "Votex simplifies the entire electoral process: create the poll, invite participants, track attendance and publish verifiable results, all in one place.",
+      "stat1": "steps to your first election",
+      "stat2": "results updated in real time",
+      "stat3": "traceability through audit log"
+    },
+    "capabilities": {
+      "label": "Designed for clarity",
+      "eyebrow": "Control without complexity",
+      "title": "Everything that matters.<br>Nothing extra.",
+      "feat1Title": "Secure and configurable voting",
+      "feat1Desc": "Choose between anonymous or nominal polls, with controlled access and protected sessions.",
+      "feat2Title": "Real-time results",
+      "feat2Desc": "The dashboard updates live, so decisions can be tracked without reloading.",
+      "feat3Title": "Complete audit",
+      "feat3Desc": "Important actions remain recorded for an easy to verify and explain process."
+    },
+    "process": {
+      "label": "A simple path",
+      "eyebrow": "How it works",
+      "title": "From idea to result, without friction.",
+      "start": "Start now",
+      "step1Title": "Create",
+      "step1Desc": "Configure the question, options, period and vote type.",
+      "step2Title": "Invite",
+      "step2Desc": "Authenticated participants get the right access, without unnecessary steps.",
+      "step3Title": "Decide",
+      "step3Desc": "Votes are securely collected, and results become immediately visible."
+    },
+    "closing": {
+      "eyebrow": "The first decision starts here",
+      "title": "Turn the community's voice into a clear result.",
+      "cta": "Create a free account"
+    },
+    "footer": {
+      "tagline": "Digital elections, built for trust.",
+      "login": "Login",
+      "register": "New account",
+      "platform": "Platform",
+      "copyrightTag": "Electronic voting platform"
+    }
   }
 }
