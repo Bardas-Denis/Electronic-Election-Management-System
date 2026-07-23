@@ -1,4 +1,6 @@
+using Electronic_Election_Management_System.DTOs;
 using Electronic_Election_Management_System.Models;
+using Electronic_Election_Management_System.Services;
 using Microsoft.EntityFrameworkCore;
 
 namespace Electronic_Election_Management_System.Data.Repositories
@@ -56,5 +58,25 @@ namespace Electronic_Election_Management_System.Data.Repositories
 
         public Task SaveChangesAsync()
             => _db.SaveChangesAsync();
+
+        // --- UserDetails (editable profile) ---
+
+        public Task<UserDetails?> GetUserDetailsAsync(Guid userId)
+            => _db.UserDetails.FirstOrDefaultAsync(ud => ud.UserId == userId);
+
+        public async Task<UserDetails> SaveUserDetailsAsync(Guid userId, PersonalDetailsDto dto)
+        {
+            var entity = await _db.UserDetails.FirstOrDefaultAsync(ud => ud.UserId == userId);
+
+            if (entity is null)
+            {
+                entity = new UserDetails { UserId = userId };
+                await _db.UserDetails.AddAsync(entity);
+            }
+
+            PersonalDetailsMapper.ApplyTrimmed(dto, entity);
+            await _db.SaveChangesAsync();
+            return entity;
+        }
     }
 }

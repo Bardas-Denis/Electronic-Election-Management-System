@@ -2,10 +2,9 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Electronic_Election_Management_System.DTOs
 {
-    // SYNC: voting.model.ts -> VoterDeclarationDto
-    // Only the fields relevant to the election's Type need to be filled in by the client;
-    // the server validates/derives the rest. See VoteService.BuildDeclaration.
-    public class VoterDeclarationDto
+    // SYNC: user-details.model.ts -> PersonalDetailsDto
+    /// <summary>Shared DTO for vote declarations and user profiles.</summary>
+    public class PersonalDetailsDto
     {
         // --- Politic ---
         public string? Cnp { get; set; }
@@ -34,11 +33,8 @@ namespace Electronic_Election_Management_System.DTOs
         public Guid OptionId { get; set; }
         public List<Guid> OptionIds { get; set; } = new();
 
-        /// <summary>
-        /// Required when the target election has IsAnonymous == false; ignored (never persisted)
-        /// when the election is anonymous, since anonymous votes must not carry identity info.
-        /// </summary>
-        public VoterDeclarationDto? VoterDeclaration { get; set; }
+        /// <summary>Required for non-anonymous elections.</summary>
+        public PersonalDetailsDto? VoterDeclaration { get; set; }
     }
 
     // SYNC: voting.model.ts -> UserVoteDto

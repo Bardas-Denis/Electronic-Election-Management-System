@@ -202,7 +202,7 @@ namespace Electronic_Election_Management_System.Services
         }
 
         private async Task<ServiceResult<bool>> UpdateIdentifiedAsync(
-            Election election, List<Option> selected, Guid userId, VoterDeclarationDto? declarationDto)
+            Election election, List<Option> selected, Guid userId, PersonalDetailsDto? declarationDto)
         {
             var existingVotes = await _votes.GetUserVotesInElectionAsync(userId, election.Id);
             if (existingVotes.Count == 0)
@@ -286,7 +286,7 @@ namespace Electronic_Election_Management_System.Services
         }
 
         private async Task<ServiceResult<bool>> CastIdentifiedAsync(
-            Election election, List<Option> selected, Guid userId, VoterDeclarationDto? declarationDto)
+            Election election, List<Option> selected, Guid userId, PersonalDetailsDto? declarationDto)
         {
             if (await _votes.HasUserVotedAsync(userId, election.Id))
                 return ServiceResult<bool>.Fail(ErrorCode.AlreadyVoted);
@@ -308,7 +308,7 @@ namespace Electronic_Election_Management_System.Services
         }
 
         /// <summary>Validates and builds the VoterDeclaration expected for the election's Type.</summary>
-        private ServiceResult<VoterDeclaration> BuildDeclaration(ElectionType type, VoterDeclarationDto? dto)
+        private ServiceResult<VoterDeclaration> BuildDeclaration(ElectionType type, PersonalDetailsDto? dto)
         {
             if (dto is null)
                 return ServiceResult<VoterDeclaration>.Fail(ErrorCode.DeclarationRequired);
@@ -329,28 +329,22 @@ namespace Electronic_Election_Management_System.Services
                 if (cnpInfo is null)
                     return ServiceResult<VoterDeclaration>.Fail(ErrorCode.InvalidCnp);
 
-                return ServiceResult<VoterDeclaration>.Ok(new VoterDeclaration
+                var politic = new VoterDeclaration
                 {
-                    Cnp = dto.Cnp,
-                    FullName = dto.FullName.Trim(),
-                    DomiciliuJudet = dto.DomiciliuJudet.Trim(),
-                    DomiciliuAdresa = dto.DomiciliuAdresa.Trim(),
                     BirthDate = cnpInfo.BirthDate,
                     Gender = cnpInfo.Gender
-                });
+                };
+                PersonalDetailsMapper.ApplyTrimmed(dto, politic);
+                // Overwrite Gender with the CNP-derived value (ApplyTrimmed would have set the
+                // client-supplied value, but for Politic elections it must always come from the CNP).
+                politic.Gender = cnpInfo.Gender;
+                return ServiceResult<VoterDeclaration>.Ok(politic);
             }
 
             // Comercial
-            return ServiceResult<VoterDeclaration>.Ok(new VoterDeclaration
-            {
-                Gender = string.IsNullOrWhiteSpace(dto.Gender) ? null : dto.Gender.Trim(),
-                FullName = string.IsNullOrWhiteSpace(dto.FullName) ? null : dto.FullName.Trim(),
-                WorkEmail = string.IsNullOrWhiteSpace(dto.WorkEmail) ? null : dto.WorkEmail.Trim(),
-                Department = string.IsNullOrWhiteSpace(dto.Department) ? null : dto.Department.Trim(),
-                JobTitle = string.IsNullOrWhiteSpace(dto.JobTitle) ? null : dto.JobTitle.Trim(),
-                Company = string.IsNullOrWhiteSpace(dto.Company) ? null : dto.Company.Trim(),
-                EmployeeId = string.IsNullOrWhiteSpace(dto.EmployeeId) ? null : dto.EmployeeId.Trim()
-            });
+            var comercial = new VoterDeclaration();
+            PersonalDetailsMapper.ApplyTrimmed(dto, comercial);
+            return ServiceResult<VoterDeclaration>.Ok(comercial);
         }
     }
 }

@@ -75,6 +75,50 @@ namespace Electronic_Election_Management_System.Services
             });
         }
 
+        public async Task<PersonalDetailsDto?> GetMyDetailsAsync(Guid userId)
+        {
+            var entity = await _users.GetUserDetailsAsync(userId);
+            if (entity is null)
+                return null;
+
+            return new PersonalDetailsDto
+            {
+                Cnp                 = entity.Cnp,
+                FullName            = entity.FullName,
+                DomiciliuJudet      = entity.DomiciliuJudet,
+                DomiciliuAdresa     = entity.DomiciliuAdresa,
+                DomiciliuLocalitate = entity.DomiciliuLocalitate,
+                Citizenship         = entity.Citizenship,
+                Gender              = entity.Gender,
+                WorkEmail           = entity.WorkEmail,
+                EmployeeId          = entity.EmployeeId,
+                Department          = entity.Department,
+                JobTitle            = entity.JobTitle,
+                Company             = entity.Company
+            };
+        }
+
+        public async Task<ServiceResult<PersonalDetailsDto>> SaveMyDetailsAsync(Guid userId, PersonalDetailsDto dto)
+        {
+            var entity = await _users.SaveUserDetailsAsync(userId, dto);
+
+            return ServiceResult<PersonalDetailsDto>.Ok(new PersonalDetailsDto
+            {
+                Cnp                 = entity.Cnp,
+                FullName            = entity.FullName,
+                DomiciliuJudet      = entity.DomiciliuJudet,
+                DomiciliuAdresa     = entity.DomiciliuAdresa,
+                DomiciliuLocalitate = entity.DomiciliuLocalitate,
+                Citizenship         = entity.Citizenship,
+                Gender              = entity.Gender,
+                WorkEmail           = entity.WorkEmail,
+                EmployeeId          = entity.EmployeeId,
+                Department          = entity.Department,
+                JobTitle            = entity.JobTitle,
+                Company             = entity.Company
+            });
+        }
+
         public async Task<ServiceResult<bool>> DeleteAsync(Guid targetId, Guid currentUserId)
         {
             if (targetId == currentUserId)
