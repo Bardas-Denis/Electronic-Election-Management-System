@@ -1,4 +1,5 @@
 <div class="page">
+  <!-- Top header section -->
   <div class="page-header">
     <div>
       <h2>{{ 'elections.listHeading' | translate }}</h2>
@@ -12,48 +13,102 @@
     }
   </div>
 
-  @if (isLoading()) {
-    <div class="state-block">
-      <span class="spinner"></span>
-      <p>{{ 'elections.loading' | translate }}</p>
-    </div>
-  } @else if (elections().length === 0) {
-    <div class="state-block">
-      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-      <p class="state-title">{{ 'elections.noActive' | translate }}</p>
-      <p>{{ 'elections.comeback' | translate }}</p>
-    </div>
-  } @else {
-    @if (activeElections().length === 0) {
-      <div class="state-block">
-        <p class="state-title">{{ 'elections.noActive' | translate }}</p>
-        <p>{{ 'elections.noActiveAll' | translate }}</p>
-      </div>
-    } @else {
-      <div class="election-grid">
-        @for (election of activeElections(); track election.id) {
-          <ng-container *ngTemplateOutlet="electionCard; context: { election: election }"></ng-container>
-        }
-      </div>
-    }
+  <!-- Main layout: Sidebar Filters (left) & Content Grid (right) -->
+  <div class="elections-main-layout" style="display: flex; gap: 40px; align-items: flex-start; margin-top: 32px;">
 
-    @if (expiredElections().length > 0) {
-      <div class="expired-toggle-row">
-        <button type="button" class="btn-secondary" (click)="toggleExpired()">
-          {{ (showExpired() ? 'elections.hideExpired' : 'elections.showExpired') | translate }}
-          {{ 'elections.expiredCount' | translate }} ({{ expiredElections().length }})
-        </button>
+    <!-- Sidebar Filters (Left Column) -->
+    <aside class="filters-sidebar" style="width: 230px; flex-shrink: 0; background: var(--bg-card, #ffffff); padding: 20px; border-radius: 12px; border: 1px solid var(--border-color, #e5e7eb); box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);">
+      
+      <!-- Filter Header -->
+      <div style="margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--border-color, #f3f4f6);">
+        <h3 style="font-size: 0.95rem; font-weight: 600; color: inherit; margin: 0;">{{ 'elections.filterTitle' | translate }}</h3>
       </div>
 
-      @if (showExpired()) {
-        <div class="election-grid expired-section">
-          @for (election of expiredElections(); track election.id) {
+      <!-- Search input filter -->
+      <div style="margin-bottom: 20px;">
+        <label for="electionSearch" style="display: block; font-size: 0.8rem; font-weight: 500; margin-bottom: 6px; opacity: 0.8;">{{ 'elections.searchLabel' | translate }}</label>
+        <input 
+          id="electionSearch"
+          type="search" 
+          [placeholder]="'elections.searchPlaceholder' | translate" 
+          [ngModel]="searchQuery()" 
+          (ngModelChange)="onSearchChange($event)"
+          style="width: 100%; padding: 8px 12px; background: var(--input-bg, #f9fafb); border: 1px solid var(--border-color, #d1d5db); color: inherit; border-radius: 6px; font-size: 0.85rem;"
+        />
+      </div>
+
+      <!-- Multi-select Checkboxes for Filters -->
+      <div>
+        <span style="display: block; font-size: 0.8rem; font-weight: 600; margin-top: 20px; margin-bottom: 14px; opacity: 0.85;">{{ 'elections.categoriesStatus' | translate }}</span>
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+          
+          <label style="display: flex; align-items: center; gap: 10px; font-size: 0.85rem; cursor: pointer; color: inherit; opacity: 0.85;">
+            <input type="checkbox" [checked]="selectedFilters().politic" (change)="toggleFilter('politic')" style="width: 16px; height: 16px; margin: 0; cursor: pointer;" /> {{ 'elections.filterPolitic' | translate }}
+          </label>
+
+          <label style="display: flex; align-items: center; gap: 10px; font-size: 0.85rem; cursor: pointer; color: inherit; opacity: 0.85;">
+            <input type="checkbox" [checked]="selectedFilters().comercial" (change)="toggleFilter('comercial')" style="width: 16px; height: 16px; margin: 0; cursor: pointer;" /> {{ 'elections.filterComercial' | translate }}
+          </label>
+
+          <label style="display: flex; align-items: center; gap: 10px; font-size: 0.85rem; cursor: pointer; color: inherit; opacity: 0.85;">
+            <input type="checkbox" [checked]="selectedFilters().anonim" (change)="toggleFilter('anonim')" style="width: 16px; height: 16px; margin: 0; cursor: pointer;" /> {{ 'elections.filterAnonim' | translate }}
+          </label>
+
+          <label style="display: flex; align-items: center; gap: 10px; font-size: 0.85rem; cursor: pointer; color: inherit; opacity: 0.85;">
+            <input type="checkbox" [checked]="selectedFilters().neanonim" (change)="toggleFilter('neanonim')" style="width: 16px; height: 16px; margin: 0; cursor: pointer;" /> {{ 'elections.filterNeanonim' | translate }}
+          </label>
+
+          <label style="display: flex; align-items: center; gap: 10px; font-size: 0.85rem; cursor: pointer; color: inherit; opacity: 0.85;">
+            <input type="checkbox" [checked]="selectedFilters().votate" (change)="toggleFilter('votate')" style="width: 16px; height: 16px; margin: 0; cursor: pointer;" /> {{ 'elections.filterVotate' | translate }}
+          </label>
+
+          <label style="display: flex; align-items: center; gap: 10px; font-size: 0.85rem; cursor: pointer; color: inherit; opacity: 0.85;">
+            <input type="checkbox" [checked]="selectedFilters().nevotate" (change)="toggleFilter('nevotate')" style="width: 16px; height: 16px; margin: 0; cursor: pointer;" /> {{ 'elections.filterNevotate' | translate }}
+          </label>
+          
+          <label style="display: flex; align-items: center; gap: 10px; font-size: 0.85rem; cursor: pointer; color: inherit; opacity: 0.85;">
+            <input type="checkbox" [checked]="selectedFilters().active" (change)="toggleFilter('active')" style="width: 16px; height: 16px; margin: 0; cursor: pointer;" /> {{ 'elections.filterActive' | translate }}
+          </label>
+
+          <label style="display: flex; align-items: center; gap: 10px; font-size: 0.85rem; cursor: pointer; color: inherit; opacity: 0.85;">
+            <input type="checkbox" [checked]="selectedFilters().expirate" (change)="toggleFilter('expirate')" style="width: 16px; height: 16px; margin: 0; cursor: pointer;" /> {{ 'elections.filterExpirate' | translate }}
+          </label>
+
+          <label style="display: flex; align-items: center; gap: 10px; font-size: 0.85rem; cursor: pointer; color: inherit; opacity: 0.85;">
+            <input type="checkbox" [checked]="selectedFilters().saptamanaAceasta" (change)="toggleFilter('saptamanaAceasta')" style="width: 16px; height: 16px; margin: 0; cursor: pointer;" /> {{ 'elections.saptamanaAceasta' | translate }}
+          </label>
+
+          <label style="display: flex; align-items: center; gap: 10px; font-size: 0.85rem; cursor: pointer; color: inherit; opacity: 0.85;">
+            <input type="checkbox" [checked]="selectedFilters().maiMultDeOLuna" (change)="toggleFilter('maiMultDeOLuna')" style="width: 16px; height: 16px; margin: 0; cursor: pointer;" /> {{ 'elections.maiMultDeOLuna' | translate }}
+          </label>
+
+        </div>
+      </div>
+    </aside>
+
+    <!-- Content Area (Right Column - Election Grid) -->
+    <div class="elections-content-area" style="flex: 1; min-width: 0;">
+      @if (isLoading()) {
+        <div class="state-block">
+          <span class="spinner"></span>
+          <p>{{ 'elections.loading' | translate }}</p>
+        </div>
+      } @else if (filteredElections().length === 0) {
+        <div class="state-block">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+          <p class="state-title">{{ 'elections.noActive' | translate }}</p>
+          <p>{{ 'elections.comeback' | translate }}</p>
+        </div>
+      } @else {
+        <div class="election-grid">
+          @for (election of filteredElections(); track election.id) {
             <ng-container *ngTemplateOutlet="electionCard; context: { election: election }"></ng-container>
           }
         </div>
       }
-    }
-  }
+    </div>
+
+  </div>
 </div>
 
 <ng-template #electionCard let-election="election">

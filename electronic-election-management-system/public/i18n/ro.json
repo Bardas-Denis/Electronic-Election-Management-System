@@ -158,7 +158,22 @@
     "saveFailed": "Nu am putut salva modificările.",
     "createFailed": "Nu am putut crea alegerea.",
     "deleteFailed": "Nu am putut șterge alegerea.",
-    "lockedByVotes": "Nu poți modifica alegerea deoarece deja s-a răspuns la ea."
+    "lockedByVotes": "Nu poți modifica alegerea deoarece deja s-a răspuns la ea.",
+    "filterTitle": "Filtrare",
+    "searchLabel": "Căutare",
+    "searchPlaceholder": "Caută titlu...",
+    "categoriesStatus": "Categorii și Status",
+    "filterPolitic": "Politic",
+    "filterComercial": "Comercial",
+    "filterAnonim": "Anonim",
+    "filterNeanonim": "Neanonim",
+    "filterVotate": "Votate de tine",
+    "filterNevotate": "Nevotate active",
+    "filterActive": "Active",
+    "filterExpirate": "Expirate",
+    "saptamanaAceasta": "Săptămâna aceasta",
+    "maiMultDeOLuna": "In mai mult de o lună"
+
   },
   "vote": {
     "confirmed": "Votul tău a fost înregistrat",

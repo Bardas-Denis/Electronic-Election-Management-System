@@ -53,6 +53,7 @@
       "login": "Sign in"
     }
   },
+
   "elections": {
     "listHeading": "Available elections",
     "listSubtitle": "Browse active elections and vote, or follow live results.",
@@ -158,7 +159,21 @@
     "saveFailed": "Could not save the changes.",
     "createFailed": "Could not create the election.",
     "deleteFailed": "Could not delete the election.",
-    "lockedByVotes": "You cannot modify the election because it has already been voted on."
+    "lockedByVotes": "You cannot modify the election because it has already been voted on.",
+    "filterTitle": "Filters",
+    "searchLabel": "Search",
+    "searchPlaceholder": "Search title...",
+    "categoriesStatus": "Categories & Status",
+    "filterPolitic": "Political",
+    "filterComercial": "Commercial",
+    "filterAnonim": "Anonymous",
+    "filterNeanonim": "Non-anonymous",
+    "filterVotate": "Voted by you",
+    "filterNevotate": "Active unvoted",
+    "filterActive": "Active",
+    "filterExpirate": "Expired",
+    "saptamanaAceasta": "This week",
+    "maiMultDeOLuna": "More than a month"
   },
   "vote": {
     "confirmed": "Your vote has been recorded",
@@ -375,5 +390,6 @@
       "platform": "Platform",
       "copyrightTag": "Electronic voting platform"
     }
+    
   }
 }
