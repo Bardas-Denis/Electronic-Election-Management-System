@@ -21,6 +21,7 @@
       "emailRequired": "Email is required.",
       "emailInvalid": "Enter a valid email address.",
       "passwordLabel": "Password",
+      "passwordPlaceholder": "Enter your password",
       "passwordRequired": "Password is required.",
       "passwordMinLength": "Password must be at least 6 characters.",
       "showPassword": "Show password",

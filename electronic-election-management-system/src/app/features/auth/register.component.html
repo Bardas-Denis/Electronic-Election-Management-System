@@ -1,7 +1,5 @@
 <div class="auth-page">
   <div class="auth-card">
-
-    <!-- Brand mark -->
     <div class="brand">
       <span class="brand-icon">
         <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -18,80 +16,40 @@
     </div>
 
     <form [formGroup]="form" (ngSubmit)="onSubmit()" novalidate>
+      <app-auth-email-field
+        [control]="form.controls.email"
+        inputId="reg-email"
+        labelKey="auth.register.emailLabel"
+        placeholderKey="auth.register.emailPlaceholder"
+        requiredErrorKey="auth.register.emailRequired"
+        invalidErrorKey="auth.register.emailInvalid"
+      ></app-auth-email-field>
 
-      <!-- Email -->
-      <div class="field" [class.field--error]="emailCtrl.invalid && emailCtrl.touched">
-        <label for="reg-email">{{ 'auth.register.emailLabel' | translate }}</label>
-        <input
-          id="reg-email"
-          type="email"
-          formControlName="email"
-          [placeholder]="'auth.register.emailPlaceholder' | translate"
-          autocomplete="email"
-          aria-describedby="reg-email-error"
-        />
-        @if (emailCtrl.touched && emailCtrl.hasError('required')) {
-          <span id="reg-email-error" class="field-error" role="alert">{{ 'auth.register.emailRequired' | translate }}</span>
-        } @else if (emailCtrl.touched && emailCtrl.hasError('email')) {
-          <span id="reg-email-error" class="field-error" role="alert">{{ 'auth.register.emailInvalid' | translate }}</span>
-        }
-      </div>
+      <app-auth-password-field
+        [control]="form.controls.password"
+        inputId="reg-password"
+        labelKey="auth.register.passwordLabel"
+        placeholderKey="auth.register.passwordPlaceholder"
+        requiredErrorKey="auth.register.passwordRequired"
+        minLengthErrorKey="auth.register.passwordMinLength"
+        showPasswordKey="auth.register.showPassword"
+        hidePasswordKey="auth.register.hidePassword"
+        autocomplete="new-password"
+      ></app-auth-password-field>
 
-      <!-- Password -->
-      <div class="field" [class.field--error]="passwordCtrl.invalid && passwordCtrl.touched">
-        <label for="reg-password">{{ 'auth.register.passwordLabel' | translate }}</label>
-        <div class="input-wrapper">
-          <input
-            id="reg-password"
-            [type]="showPassword() ? 'text' : 'password'"
-            formControlName="password"
-            [placeholder]="'auth.register.passwordPlaceholder' | translate"
-            autocomplete="new-password"
-            aria-describedby="reg-password-error"
-          />
-          <button type="button" class="toggle-btn" (click)="togglePassword()" [attr.aria-label]="(showPassword() ? 'auth.register.hidePassword' : 'auth.register.showPassword') | translate">
-            @if (showPassword()) {
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
-            } @else {
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
-            }
-          </button>
-        </div>
-        @if (passwordCtrl.touched && passwordCtrl.hasError('required')) {
-          <span id="reg-password-error" class="field-error" role="alert">{{ 'auth.register.passwordRequired' | translate }}</span>
-        } @else if (passwordCtrl.touched && passwordCtrl.hasError('minlength')) {
-          <span id="reg-password-error" class="field-error" role="alert">{{ 'auth.register.passwordMinLength' | translate }}</span>
-        }
-      </div>
+      <app-auth-password-field
+        [control]="form.controls.confirmPassword"
+        inputId="reg-confirm"
+        labelKey="auth.register.confirmLabel"
+        placeholderKey="auth.register.confirmPlaceholder"
+        requiredErrorKey="auth.register.confirmRequired"
+        showPasswordKey="auth.register.showPassword"
+        hidePasswordKey="auth.register.hidePassword"
+        autocomplete="new-password"
+        [mismatch]="form.hasError('passwordsMismatch')"
+        mismatchErrorKey="auth.register.passwordsMismatch"
+      ></app-auth-password-field>
 
-      <!-- Confirm Password -->
-      <div class="field" [class.field--error]="(confirmCtrl.invalid && confirmCtrl.touched) || (form.hasError('passwordsMismatch') && confirmCtrl.touched)">
-        <label for="reg-confirm">{{ 'auth.register.confirmLabel' | translate }}</label>
-        <div class="input-wrapper">
-          <input
-            id="reg-confirm"
-            [type]="showConfirm() ? 'text' : 'password'"
-            formControlName="confirmPassword"
-            [placeholder]="'auth.register.confirmPlaceholder' | translate"
-            autocomplete="new-password"
-            aria-describedby="reg-confirm-error"
-          />
-          <button type="button" class="toggle-btn" (click)="toggleConfirm()" [attr.aria-label]="(showConfirm() ? 'auth.register.hidePassword' : 'auth.register.showPassword') | translate">
-            @if (showConfirm()) {
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
-            } @else {
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
-            }
-          </button>
-        </div>
-        @if (confirmCtrl.touched && confirmCtrl.hasError('required')) {
-          <span id="reg-confirm-error" class="field-error" role="alert">{{ 'auth.register.confirmRequired' | translate }}</span>
-        } @else if (confirmCtrl.touched && form.hasError('passwordsMismatch')) {
-          <span id="reg-confirm-error" class="field-error" role="alert">{{ 'auth.register.passwordsMismatch' | translate }}</span>
-        }
-      </div>
-
-      <!-- Server error -->
       @if (errorMessageKey()) {
         <div class="server-error" role="alert">
           <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
@@ -99,8 +57,7 @@
         </div>
       }
 
-      <!-- Submit -->
-      <button type="submit" class="btn-primary" [attr.disabled]="isLoading() || null">
+      <button type="submit" class="btn-primary" [disabled]="isLoading()">
         @if (isLoading()) {
           <span class="spinner"></span>
           {{ 'auth.register.submitting' | translate }}
@@ -108,13 +65,11 @@
           {{ 'auth.register.submit' | translate }}
         }
       </button>
-
     </form>
 
     <p class="switch-link">
       {{ 'auth.register.hasAccount' | translate }}
       <a routerLink="/login">{{ 'auth.register.login' | translate }}</a>
     </p>
-
   </div>
 </div>

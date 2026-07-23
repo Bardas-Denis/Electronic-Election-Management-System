@@ -21,6 +21,7 @@
       "emailRequired": "Emailul este obligatoriu.",
       "emailInvalid": "Introdu o adresă de email validă.",
       "passwordLabel": "Parolă",
+      "passwordPlaceholder": "Introdu parola",
       "passwordRequired": "Parola este obligatorie.",
       "passwordMinLength": "Parola trebuie să aibă minim 6 caractere.",
       "showPassword": "Arată parola",
