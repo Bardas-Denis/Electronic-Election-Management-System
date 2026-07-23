@@ -2,17 +2,15 @@ import { Routes } from '@angular/router';
 import {
   authGuard,
   adminGuard,
-  electionManagerGuard,
-  homeGuestGuard
+  electionManagerGuard
 } from './core/guards/auth.guard';
 
 // All pages lazy-loaded. authGuard = any logged-in user, adminGuard = Admin only, electionManagerGuard = Admin or ElectionManager.
 export const routes: Routes = [
-  // Public marketing / front page. Redirects logged-in users to /elections itself.
+  // Public marketing / front page, also reachable through the Votex brand.
   {
     path: '',
     pathMatch: 'full',
-    canMatch: [homeGuestGuard],
     loadComponent: () =>
       import('./features/home/home.component').then((m) => m.HomeComponent)
   },
@@ -95,4 +93,4 @@ export const routes: Routes = [
   },
 
   { path: '**', redirectTo: '' }
-];
+];

@@ -107,3 +107,10 @@
 .is-leading .result-bar-fill {
   background: var(--success-color);
 }
+.result-questions { display: grid; gap: 1.5rem; }
+.result-question { padding: 1rem; border: 1px solid #e4e9ee; border-radius: 14px; }
+.result-question h3 { margin: 0; }
+.question-votes { margin: .25rem 0 1rem; color: #667587; font-size: .875rem; }
+.result-row { display: flex; align-items: center; gap: .8rem; }
+.result-content { flex: 1; min-width: 0; }
+.result-option-image { width: 68px; height: 54px; object-fit: cover; border-radius: 9px; }

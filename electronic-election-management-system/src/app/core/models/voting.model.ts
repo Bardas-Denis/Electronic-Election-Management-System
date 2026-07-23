@@ -4,6 +4,14 @@ export interface OptionDto {
   id: string;
   label: string;
   description?: string;
+  imageDataUrl?: string;
+}
+
+export interface ElectionQuestionDto {
+  id: string;
+  text: string;
+  displayOrder: number;
+  options: OptionDto[];
 }
 
 export interface ElectionDto {
@@ -19,6 +27,7 @@ export interface ElectionDto {
   startsAt: string;
   endsAt: string;
   options: OptionDto[];
+  questions: ElectionQuestionDto[];
   // Filled in by the backend based on the current user, so the UI knows whether the user can still vote
   hasUserVoted?: boolean;
   // Optional current-user vote details (if backend returns them)
@@ -33,6 +42,12 @@ export interface ElectionDto {
 export interface CreateOptionDto {
   label: string;
   description?: string;
+  imageDataUrl?: string;
+}
+
+export interface CreateElectionQuestionDto {
+  text: string;
+  options: CreateOptionDto[];
 }
 
 // Payload for both create AND update (same shape, different HTTP verb)
@@ -48,6 +63,7 @@ export interface CreateElectionRequest {
   startsAt: string;
   endsAt: string;
   options: CreateOptionDto[];
+  questions: CreateElectionQuestionDto[];
 }
 
 // Which fields matter depends on the election's type - see VoterDeclarationModalComponent.
@@ -70,6 +86,7 @@ export interface VoterDeclarationDto {
 export interface CastVoteRequest {
   electionId: string;
   optionId: string;
+  optionIds: string[];
   // Required by the backend when the election is not anonymous; omitted entirely for anonymous ones.
   voterDeclaration?: VoterDeclarationDto;
 }
@@ -81,6 +98,7 @@ export interface UserVoteDto {
   votedAt?: string;
   // False once the voter has already used their one allowed edit
   canEdit?: boolean;
+  answers?: { questionId: string; optionId: string; optionLabel?: string }[];
 }
 
 export interface InviteToElectionRequest {

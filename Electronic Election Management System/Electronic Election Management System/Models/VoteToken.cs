@@ -17,6 +17,6 @@ namespace Electronic_Election_Management_System.Models
 
         public DateTime IssuedAt { get; set; } = DateTime.UtcNow;
 
-        public Vote? Vote { get; set; }
+        public ICollection<Vote> Votes { get; set; } = new List<Vote>();
     }
 }

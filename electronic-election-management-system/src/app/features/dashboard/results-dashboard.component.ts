@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { TranslatePipe } from '@ngx-translate/core';
 import { ActivatedRoute } from '@angular/router';
 import { ResultsService } from '../../core/services/results.service';
-import { ElectionResultsDto } from '../../core/models/results.model';
+import { ElectionResultsDto, QuestionResultDto } from '../../core/models/results.model';
 
 @Component({
   selector: 'app-results-dashboard',
@@ -22,11 +22,6 @@ export class ResultsDashboardComponent implements OnInit, OnDestroy {
   // liveResults vine direct din serviciu (SignalR); folosim computed
   // ca sa afisam mereu cea mai recenta versiune (live daca a venit, altfel snapshot-ul initial)
   displayedResults = computed(() => this.resultsService.liveResults() ?? this.snapshot());
-
-  maxVotes = computed(() => {
-    const results = this.displayedResults()?.results ?? [];
-    return Math.max(1, ...results.map((r) => r.voteCount));
-  });
 
   private electionId!: string;
 
@@ -51,16 +46,19 @@ export class ResultsDashboardComponent implements OnInit, OnDestroy {
     this.resultsService.disconnect();
   }
 
-  percentFor(voteCount: number): number {
-    const total = this.displayedResults()?.totalVotes ?? 0;
+  questions(results: ElectionResultsDto): QuestionResultDto[] {
+    return results.questions?.length
+      ? results.questions
+      : [{ questionId: '', text: results.title, totalVotes: results.totalVotes, results: results.results }];
+  }
+
+  percentFor(voteCount: number, total: number): number {
     return total > 0 ? Math.round((voteCount / total) * 100) : 0;
   }
 
   // true daca aceasta optiune e in frunte (folosit probabil pt highlight in UI)
-  isLeading(voteCount: number): boolean {
-    const results = this.displayedResults()?.results ?? [];
-    const total = this.displayedResults()?.totalVotes ?? 0;
-    if (total === 0 || voteCount === 0) return false;
-    return voteCount === Math.max(...results.map((r) => r.voteCount));
+  isLeading(voteCount: number, question: QuestionResultDto): boolean {
+    if (question.totalVotes === 0 || voteCount === 0) return false;
+    return voteCount === Math.max(...question.results.map((r) => r.voteCount));
   }
 }

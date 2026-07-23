@@ -32,6 +32,7 @@ namespace Electronic_Election_Management_System.DTOs
 
         [Required]
         public Guid OptionId { get; set; }
+        public List<Guid> OptionIds { get; set; } = new();
 
         /// <summary>
         /// Required when the target election has IsAnonymous == false; ignored (never persisted)
@@ -49,5 +50,13 @@ namespace Electronic_Election_Management_System.DTOs
         public DateTime? VotedAt { get; set; }
         /// <summary>False once the voter has already used their one allowed change (edit or delete).</summary>
         public bool CanEdit { get; set; } = true;
+        public List<UserVoteAnswerDto> Answers { get; set; } = new();
+    }
+
+    public class UserVoteAnswerDto
+    {
+        public Guid QuestionId { get; set; }
+        public Guid OptionId { get; set; }
+        public string? OptionLabel { get; set; }
     }
 }

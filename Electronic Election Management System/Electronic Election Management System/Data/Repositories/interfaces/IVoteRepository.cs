@@ -24,9 +24,10 @@ namespace Electronic_Election_Management_System.Data.Repositories
 
         Task AddVoteAsync(Vote vote);
         Task AddVoterDeclarationAsync(VoterDeclaration declaration);
-        Task<Vote?> GetUserVoteInElectionAsync(Guid userId, Guid electionId);
-        Task<VoteToken?> GetVoteTokenWithVoteAsync(Guid userId, Guid electionId);
+        Task<List<Vote>> GetUserVotesInElectionAsync(Guid userId, Guid electionId);
+        Task<VoteToken?> GetVoteTokenWithVotesAsync(Guid userId, Guid electionId);
         void RemoveVote(Vote vote);
+        void RemoveVotes(IEnumerable<Vote> votes);
 
         /// <summary>
         /// Number of edit/delete changes the user has already made to their answer in this

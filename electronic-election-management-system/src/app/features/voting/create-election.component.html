@@ -237,32 +237,54 @@
       </div>
     </div>
 
-    <div class="field-group">
-      <label for="question">{{ 'elections.questionLabel' | translate }}</label>
-      <input id="question" type="text" formControlName="question" [placeholder]="'elections.questionPlaceholder' | translate" />
-    </div>
-
     <div class="section-divider">
-      <h3>{{ 'elections.optionsSectionTitle' | translate }}</h3>
-      <p>{{ 'elections.optionsSectionSubtitle' | translate }}</p>
+      <h3>{{ 'elections.questionsSectionTitle' | translate }}</h3>
+      <p>{{ 'elections.questionsSectionSubtitle' | translate }}</p>
     </div>
 
-    <div formArrayName="options">
-      @for (option of options.controls; track $index) {
-        <div class="option-row" [formGroupName]="$index">
-          <input type="text" formControlName="label" [placeholder]="('elections.optionLabelPlaceholder' | translate) + ' ' + ($index + 1)" />
-          <input type="text" formControlName="description" [placeholder]="'elections.optionDescPlaceholder' | translate" />
-          @if (options.length > 2) {
-            <button type="button" class="btn-danger" (click)="removeOption($index)" [attr.aria-label]="'elections.removeOption' | translate">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-            </button>
-          }
-        </div>
+    <div formArrayName="questions" class="questions-list">
+      @for (question of questions.controls; track $index; let questionIndex = $index) {
+        <section class="question-card" [formGroupName]="questionIndex">
+          <div class="question-card__header">
+            <span class="question-number">{{ 'elections.questionNumber' | translate: { number: questionIndex + 1 } }}</span>
+            @if (questions.length > 1) {
+              <button type="button" class="btn-danger" (click)="removeQuestion(questionIndex)" [attr.aria-label]="'elections.removeQuestion' | translate">×</button>
+            }
+          </div>
+          <input type="text" formControlName="text" [placeholder]="'elections.questionPlaceholder' | translate" />
+
+          <div formArrayName="options" class="question-options">
+            @for (option of questionOptions(questionIndex).controls; track $index; let optionIndex = $index) {
+              <div class="option-row option-row--image" [formGroupName]="optionIndex">
+                <div class="option-fields">
+                  <input type="text" formControlName="label" [placeholder]="('elections.optionLabelPlaceholder' | translate) + ' ' + (optionIndex + 1)" />
+                  <input type="text" formControlName="description" [placeholder]="'elections.optionDescPlaceholder' | translate" />
+                </div>
+                <label class="image-upload">
+                  @if (option.get('imageDataUrl')?.value) {
+                    <img [src]="option.get('imageDataUrl')?.value" [alt]="option.get('label')?.value" />
+                  } @else {
+                    <span>＋</span>
+                  }
+                  <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" (change)="onOptionImageSelected($event, questionIndex, optionIndex)" />
+                </label>
+                @if (option.get('imageDataUrl')?.value) {
+                  <button type="button" class="btn-image-remove" (click)="removeOptionImage(questionIndex, optionIndex)">×</button>
+                }
+                @if (questionOptions(questionIndex).length > 2) {
+                  <button type="button" class="btn-danger" (click)="removeOption(questionIndex, optionIndex)" [attr.aria-label]="'elections.removeOption' | translate">×</button>
+                }
+              </div>
+            }
+          </div>
+          <button type="button" class="btn-add-option" (click)="addOption(questionIndex)">
+            + {{ 'elections.addOption' | translate }}
+          </button>
+        </section>
       }
     </div>
-    <button type="button" class="btn-add-option" (click)="addOption()">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-      {{ 'elections.addOption' | translate }}
+    <button type="button" class="btn-add-question" (click)="addQuestion()">
+      + {{ 'elections.addQuestion' | translate }}
     </button>
 
     @if (errorMessageKey()) {

@@ -49,20 +49,24 @@ namespace Electronic_Election_Management_System.Data.Repositories
         public Task<bool> HasAnyVotesInElectionAsync(Guid electionId)
             => _db.Votes.AnyAsync(v => v.Option!.ElectionId == electionId);
 
-        public Task<Vote?> GetUserVoteInElectionAsync(Guid userId, Guid electionId)
+        public Task<List<Vote>> GetUserVotesInElectionAsync(Guid userId, Guid electionId)
             => _db.Votes
                 .Include(v => v.Option)
                 .Include(v => v.VoterDeclaration)
-                .FirstOrDefaultAsync(v => v.UserId == userId && v.Option!.ElectionId == electionId);
+                .Where(v => v.UserId == userId && v.Option!.ElectionId == electionId)
+                .ToListAsync();
 
-        public Task<VoteToken?> GetVoteTokenWithVoteAsync(Guid userId, Guid electionId)
+        public Task<VoteToken?> GetVoteTokenWithVotesAsync(Guid userId, Guid electionId)
             => _db.VoteTokens
-                .Include(t => t.Vote)
-                    .ThenInclude(v => v!.Option)
+                .Include(t => t.Votes)
+                    .ThenInclude(v => v.Option)
                 .FirstOrDefaultAsync(t => t.UserId == userId && t.ElectionId == electionId);
 
         public void RemoveVote(Vote vote)
             => _db.Votes.Remove(vote);
+
+        public void RemoveVotes(IEnumerable<Vote> votes)
+            => _db.Votes.RemoveRange(votes);
 
         public async Task<int> GetChangeCountAsync(Guid userId, Guid electionId)
         {

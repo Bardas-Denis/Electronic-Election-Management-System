@@ -2,13 +2,11 @@ import {
   AfterViewInit,
   Component,
   ElementRef,
-  inject,
   OnDestroy,
   ViewChild
 } from '@angular/core';
-import { Router, RouterLink } from '@angular/router';
+import { RouterLink } from '@angular/router';
 import { TranslatePipe } from '@ngx-translate/core';
-import { AuthService } from '../../core/services/auth.service';
 
 @Component({
   selector: 'app-home',
@@ -18,8 +16,6 @@ import { AuthService } from '../../core/services/auth.service';
   styleUrl: './home.component.scss'
 })
 export class HomeComponent implements AfterViewInit, OnDestroy {
-  private authService = inject(AuthService);
-  private router = inject(Router);
   private revealObserver?: IntersectionObserver;
 
   readonly currentYear = new Date().getFullYear();
@@ -29,12 +25,6 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
 
   @ViewChild('heroSection', { static: false })
   private heroSection?: ElementRef<HTMLElement>;
-
-  constructor() {
-    if (this.authService.isLoggedIn()) {
-      this.router.navigate(['/elections'], { replaceUrl: true });
-    }
-  }
 
   ngAfterViewInit(): void {
     try {

@@ -43,7 +43,6 @@ export class CreateElectionComponent implements OnInit {
   form = this.fb.group({
     title: ['', Validators.required],
     description: [''],
-    question: ['', Validators.required],
     type: ['Politic', Validators.required],
     isAnonymous: [true],
     // Kept in the form payload even before the invitation UI is added, so editing
@@ -53,16 +52,7 @@ export class CreateElectionComponent implements OnInit {
     invitedEmails: this.fb.control<string[]>([]),
     startsAt: ['', Validators.required],
     endsAt: ['', Validators.required],
-    options: this.fb.array([
-      this.fb.group({
-        label: ['', Validators.required],
-        description: ['']
-      }),
-      this.fb.group({
-        label: ['', Validators.required],
-        description: ['']
-      })
-    ])
+    questions: this.fb.array([this.createQuestionGroup()])
   });
 
   get isPoliticalElection(): boolean {
@@ -98,25 +88,23 @@ export class CreateElectionComponent implements OnInit {
     this.votingService.getElectionById(this.editingElectionId).subscribe({
       next: (election) => {
         // reconstruim FormArray-ul de optiuni cu numarul exact de optiuni existente primite de la server
-        this.options.clear();
-        const fetchedOptions = election.options ?? [];
-        fetchedOptions.forEach((option) =>
-          this.options.push(this.fb.group({
-            label: [option.label ?? '', Validators.required],
-            description: [option.description ?? '']
-          }))
-        );
-        // daca serverul nu a intors nicio optiune (nu ar trebui sa se intample), pastram
-        // macar doua randuri goale ca sa nu ramana formularul fara campuri de optiuni
-        if (fetchedOptions.length === 0) {
-          this.addOption();
-          this.addOption();
-        }
+        this.questions.clear();
+        const fetchedQuestions = election.questions?.length
+          ? election.questions
+          : [{ id: '', text: election.question ?? '', displayOrder: 0, options: election.options ?? [] }];
+        fetchedQuestions.forEach(question => {
+          const group = this.createQuestionGroup();
+          group.patchValue({ text: question.text });
+          const options = group.get('options') as FormArray;
+          options.clear();
+          question.options.forEach(option => options.push(this.createOptionGroup(option)));
+          while (options.length < 2) options.push(this.createOptionGroup());
+          this.questions.push(group);
+        });
 
         this.form.patchValue({
           title: election.title,
           description: election.description ?? '',
-          question: election.question ?? '',
           type: election.type,
           isAnonymous: election.isAnonymous,
           isClosed: election.isClosed,
@@ -144,8 +132,27 @@ export class CreateElectionComponent implements OnInit {
     });
   }
 
-  get options(): FormArray {
-    return this.form.get('options') as FormArray;
+  get questions(): FormArray {
+    return this.form.get('questions') as FormArray;
+  }
+
+  questionOptions(questionIndex: number): FormArray {
+    return this.questions.at(questionIndex).get('options') as FormArray;
+  }
+
+  private createOptionGroup(option?: { label?: string; description?: string; imageDataUrl?: string }) {
+    return this.fb.group({
+      label: [option?.label ?? '', Validators.required],
+      description: [option?.description ?? ''],
+      imageDataUrl: [option?.imageDataUrl ?? '']
+    });
+  }
+
+  private createQuestionGroup() {
+    return this.fb.group({
+      text: ['', Validators.required],
+      options: this.fb.array([this.createOptionGroup(), this.createOptionGroup()])
+    });
   }
 
   private syncAnonymousState(type: string | null | undefined): void {
@@ -163,18 +170,41 @@ export class CreateElectionComponent implements OnInit {
     }
   }
 
-  addOption(): void {
-    this.options.push(this.fb.group({
-      label: ['', Validators.required],
-      description: ['']
-    }));
+  addQuestion(): void {
+    this.questions.push(this.createQuestionGroup());
+  }
+
+  removeQuestion(index: number): void {
+    if (this.questions.length > 1) this.questions.removeAt(index);
+  }
+
+  addOption(questionIndex: number): void {
+    this.questionOptions(questionIndex).push(this.createOptionGroup());
   }
 
   // minim 2 optiuni obligatorii
-  removeOption(index: number): void {
-    if (this.options.length > 2) {
-      this.options.removeAt(index);
+  removeOption(questionIndex: number, optionIndex: number): void {
+    const options = this.questionOptions(questionIndex);
+    if (options.length > 2) {
+      options.removeAt(optionIndex);
     }
+  }
+
+  onOptionImageSelected(event: Event, questionIndex: number, optionIndex: number): void {
+    const file = (event.target as HTMLInputElement).files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/') || file.size > 2_000_000) {
+      this.errorMessageKey.set('elections.optionImageInvalid');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => this.questionOptions(questionIndex).at(optionIndex)
+      .get('imageDataUrl')?.setValue(reader.result as string);
+    reader.readAsDataURL(file);
+  }
+
+  removeOptionImage(questionIndex: number, optionIndex: number): void {
+    this.questionOptions(questionIndex).at(optionIndex).get('imageDataUrl')?.setValue('');
   }
 
   addInviteEmail(): void {
@@ -304,6 +334,8 @@ export class CreateElectionComponent implements OnInit {
     this.errorMessageKey.set(null);
 
     const payload = this.form.getRawValue() as any;
+    payload.question = payload.questions[0].text;
+    payload.options = payload.questions[0].options;
     if (!payload.isClosed || this.editingElectionId) {
       // Existing invitation membership is managed by the invitation endpoints.
       payload.invitedUserIds = [];

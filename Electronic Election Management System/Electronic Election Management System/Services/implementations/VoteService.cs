@@ -38,13 +38,13 @@ namespace Electronic_Election_Management_System.Services
             if (!election.CanAcceptVotes())
                 return ServiceResult<bool>.Fail(ErrorCode.ElectionNotOpen);
 
-            var option = election.Options.FirstOrDefault(o => o.Id == request.OptionId);
-            if (option is null)
+            var selected = GetSelectedOptions(election, request);
+            if (selected is null)
                 return ServiceResult<bool>.Fail(ErrorCode.InvalidOption);
 
             var result = election.IsAnonymous
-                ? await CastAnonymousAsync(election.Id, option.Id, userId)
-                : await CastIdentifiedAsync(election, option.Id, userId, request.VoterDeclaration);
+                ? await CastAnonymousAsync(election.Id, selected, userId)
+                : await CastIdentifiedAsync(election, selected, userId, request.VoterDeclaration);
 
             // Vote was recorded successfully - push the fresh tally to everyone watching this
             // election's live results dashboard.
@@ -72,13 +72,13 @@ namespace Electronic_Election_Management_System.Services
             if (!election.CanAcceptVotes())
                 return ServiceResult<bool>.Fail(ErrorCode.ElectionNotOpen);
 
-            var option = election.Options.FirstOrDefault(o => o.Id == request.OptionId);
-            if (option is null)
+            var selected = GetSelectedOptions(election, request);
+            if (selected is null)
                 return ServiceResult<bool>.Fail(ErrorCode.InvalidOption);
 
             var result = election.IsAnonymous
-                ? await UpdateAnonymousAsync(election.Id, option.Id, userId)
-                : await UpdateIdentifiedAsync(election, option.Id, userId, request.VoterDeclaration);
+                ? await UpdateAnonymousAsync(election.Id, selected, userId)
+                : await UpdateIdentifiedAsync(election, selected, userId, request.VoterDeclaration);
 
             if (result.Success)
             {
@@ -110,21 +110,21 @@ namespace Electronic_Election_Management_System.Services
 
             if (election.IsAnonymous)
             {
-                var token = await _votes.GetVoteTokenWithVoteAsync(userId, electionId);
-                if (token?.Vote is null)
+                var token = await _votes.GetVoteTokenWithVotesAsync(userId, electionId);
+                if (token is null || token.Votes.Count == 0)
                     return ServiceResult<bool>.NotFound(ErrorCode.ResourceNotFound);
 
-                _votes.RemoveVote(token.Vote);
+                _votes.RemoveVotes(token.Votes);
                 // Free the token up so the voter can cast a fresh vote afterwards.
                 token.IsUsed = false;
             }
             else
             {
-                var vote = await _votes.GetUserVoteInElectionAsync(userId, electionId);
-                if (vote is null)
+                var votes = await _votes.GetUserVotesInElectionAsync(userId, electionId);
+                if (votes.Count == 0)
                     return ServiceResult<bool>.NotFound(ErrorCode.ResourceNotFound);
 
-                _votes.RemoveVote(vote);
+                _votes.RemoveVotes(votes);
             }
 
             // Deleting counts as the one allowed change, same as editing - otherwise someone
@@ -150,18 +150,18 @@ namespace Electronic_Election_Management_System.Services
             if (election is null)
                 return ServiceResult<UserVoteDto>.NotFound(ErrorCode.ResourceNotFound);
 
-            Vote? vote;
+            List<Vote> votes;
             if (election.IsAnonymous)
             {
-                var token = await _votes.GetVoteTokenWithVoteAsync(userId, electionId);
-                vote = token?.Vote;
+                var token = await _votes.GetVoteTokenWithVotesAsync(userId, electionId);
+                votes = token?.Votes.ToList() ?? new List<Vote>();
             }
             else
             {
-                vote = await _votes.GetUserVoteInElectionAsync(userId, electionId);
+                votes = await _votes.GetUserVotesInElectionAsync(userId, electionId);
             }
 
-            if (vote is null)
+            if (votes.Count == 0)
                 return ServiceResult<UserVoteDto>.NotFound(ErrorCode.ResourceNotFound);
 
             var changeCount = await _votes.GetChangeCountAsync(userId, electionId);
@@ -169,24 +169,32 @@ namespace Electronic_Election_Management_System.Services
             return ServiceResult<UserVoteDto>.Ok(new UserVoteDto
             {
                 ElectionId = electionId,
-                OptionId = vote.OptionId,
-                OptionLabel = vote.Option?.Label,
-                VotedAt = vote.CastAt,
+                OptionId = votes[0].OptionId,
+                OptionLabel = votes[0].Option?.Label,
+                VotedAt = votes.Min(v => v.CastAt),
+                Answers = votes.Select(v => new UserVoteAnswerDto
+                {
+                    QuestionId = v.Option?.QuestionId ?? Guid.Empty,
+                    OptionId = v.OptionId,
+                    OptionLabel = v.Option?.Label
+                }).ToList(),
                 CanEdit = changeCount < 1
             });
         }
 
-        private async Task<ServiceResult<bool>> UpdateAnonymousAsync(Guid electionId, Guid optionId, Guid userId)
+        private async Task<ServiceResult<bool>> UpdateAnonymousAsync(Guid electionId, List<Option> selected, Guid userId)
         {
-            var token = await _votes.GetVoteTokenWithVoteAsync(userId, electionId);
-            if (token?.Vote is null)
+            var token = await _votes.GetVoteTokenWithVotesAsync(userId, electionId);
+            if (token is null || token.Votes.Count == 0)
                 return ServiceResult<bool>.Fail(ErrorCode.VoteNotFound);
 
             var changeCount = await _votes.GetChangeCountAsync(userId, electionId);
             if (changeCount >= 1)
                 return ServiceResult<bool>.Fail(ErrorCode.VoteChangeLimit);
 
-            token.Vote.OptionId = optionId;
+            _votes.RemoveVotes(token.Votes);
+            foreach (var option in selected)
+                await _votes.AddVoteAsync(new Vote { OptionId = option.Id, VoteTokenId = token.Id });
             await _votes.IncrementChangeCountAsync(userId, electionId);
             await _votes.SaveChangesAsync();
 
@@ -194,10 +202,10 @@ namespace Electronic_Election_Management_System.Services
         }
 
         private async Task<ServiceResult<bool>> UpdateIdentifiedAsync(
-            Election election, Guid optionId, Guid userId, VoterDeclarationDto? declarationDto)
+            Election election, List<Option> selected, Guid userId, VoterDeclarationDto? declarationDto)
         {
-            var vote = await _votes.GetUserVoteInElectionAsync(userId, election.Id);
-            if (vote is null)
+            var existingVotes = await _votes.GetUserVotesInElectionAsync(userId, election.Id);
+            if (existingVotes.Count == 0)
                 return ServiceResult<bool>.Fail(ErrorCode.VoteNotFound);
 
             var changeCount = await _votes.GetChangeCountAsync(userId, election.Id);
@@ -208,31 +216,13 @@ namespace Electronic_Election_Management_System.Services
             if (!declarationResult.Success)
                 return ServiceResult<bool>.Fail(declarationResult.ErrorCode!.Value);
 
-            vote.OptionId = optionId;
-
+            _votes.RemoveVotes(existingVotes);
+            var newVotes = selected.Select(option => new Vote { OptionId = option.Id, UserId = userId }).ToList();
+            foreach (var vote in newVotes)
+                await _votes.AddVoteAsync(vote);
             var updated = declarationResult.Data!;
-            if (vote.VoterDeclaration is not null)
-            {
-                var existing = vote.VoterDeclaration;
-                existing.Cnp = updated.Cnp;
-                existing.FullName = updated.FullName;
-                existing.DomiciliuJudet = updated.DomiciliuJudet;
-                existing.DomiciliuAdresa = updated.DomiciliuAdresa;
-                existing.DomiciliuLocalitate = updated.DomiciliuLocalitate;
-                existing.Citizenship = updated.Citizenship;
-                existing.BirthDate = updated.BirthDate;
-                existing.Gender = updated.Gender;
-                existing.EmployeeId = updated.EmployeeId;
-                existing.Department = updated.Department;
-                existing.WorkEmail = updated.WorkEmail;
-                existing.JobTitle = updated.JobTitle;
-                existing.Company = updated.Company;
-            }
-            else
-            {
-                updated.VoteId = vote.Id;
-                await _votes.AddVoterDeclarationAsync(updated);
-            }
+            updated.VoteId = newVotes[0].Id;
+            await _votes.AddVoterDeclarationAsync(updated);
 
             await _votes.IncrementChangeCountAsync(userId, election.Id);
             await _votes.SaveChangesAsync();
@@ -249,7 +239,29 @@ namespace Electronic_Election_Management_System.Services
             }
         }
 
-        private async Task<ServiceResult<bool>> CastAnonymousAsync(Guid electionId, Guid optionId, Guid userId)
+        private static List<Option>? GetSelectedOptions(Election election, CastVoteRequest request)
+        {
+            var requestedIds = (request.OptionIds.Count > 0
+                    ? request.OptionIds
+                    : request.OptionId == Guid.Empty ? new List<Guid>() : new List<Guid> { request.OptionId })
+                .Distinct()
+                .ToList();
+            var selected = election.Options.Where(option => requestedIds.Contains(option.Id)).ToList();
+            if (selected.Count != requestedIds.Count)
+                return null;
+
+            var questionIds = election.Questions.Select(question => (Guid?)question.Id).ToList();
+            if (questionIds.Count == 0)
+                questionIds.Add(null);
+
+            return questionIds.All(questionId =>
+                       selected.Count(option => option.QuestionId == questionId) == 1) &&
+                   selected.Count == questionIds.Count
+                ? selected
+                : null;
+        }
+
+        private async Task<ServiceResult<bool>> CastAnonymousAsync(Guid electionId, List<Option> selected, Guid userId)
         {
             var token = await _votes.GetVoteTokenAsync(userId, electionId);
             if (token is null)
@@ -266,14 +278,15 @@ namespace Electronic_Election_Management_System.Services
 
             // Anonymous path: only VoteTokenId is set, no UserId and no VoterDeclaration - the
             // vote can never be traced back to who cast it.
-            await _votes.AddVoteAsync(new Vote { OptionId = optionId, VoteTokenId = token.Id });
+            foreach (var option in selected)
+                await _votes.AddVoteAsync(new Vote { OptionId = option.Id, VoteTokenId = token.Id });
             await _votes.SaveChangesAsync();
 
             return ServiceResult<bool>.Ok(true);
         }
 
         private async Task<ServiceResult<bool>> CastIdentifiedAsync(
-            Election election, Guid optionId, Guid userId, VoterDeclarationDto? declarationDto)
+            Election election, List<Option> selected, Guid userId, VoterDeclarationDto? declarationDto)
         {
             if (await _votes.HasUserVotedAsync(userId, election.Id))
                 return ServiceResult<bool>.Fail(ErrorCode.AlreadyVoted);
@@ -282,11 +295,12 @@ namespace Electronic_Election_Management_System.Services
             if (!declarationResult.Success)
                 return ServiceResult<bool>.Fail(declarationResult.ErrorCode!.Value);
 
-            var vote = new Vote { OptionId = optionId, UserId = userId };
-            await _votes.AddVoteAsync(vote);
+            var votes = selected.Select(option => new Vote { OptionId = option.Id, UserId = userId }).ToList();
+            foreach (var vote in votes)
+                await _votes.AddVoteAsync(vote);
 
             var declaration = declarationResult.Data!;
-            declaration.VoteId = vote.Id;
+            declaration.VoteId = votes[0].Id;
             await _votes.AddVoterDeclarationAsync(declaration);
 
             await _votes.SaveChangesAsync();

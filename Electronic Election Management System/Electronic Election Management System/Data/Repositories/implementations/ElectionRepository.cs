@@ -15,6 +15,7 @@ namespace Electronic_Election_Management_System.Data.Repositories
         public Task<List<Election>> GetAllWithOptionsAsync()
             => _db.Elections
                 .Include(e => e.Options)
+                .Include(e => e.Questions).ThenInclude(q => q.Options)
                 .OrderByDescending(e => e.CreatedAt)
                 .ToListAsync();
 
@@ -33,6 +34,7 @@ namespace Electronic_Election_Management_System.Data.Repositories
                             e.CreatedByUserId == userId ||
                             e.Invitations.Any(i => i.UserId == userId || i.Email == email))
                 .Include(e => e.Options)
+                .Include(e => e.Questions).ThenInclude(q => q.Options)
                 .OrderByDescending(e => e.CreatedAt)
                 .ToListAsync();
         }
@@ -41,12 +43,14 @@ namespace Electronic_Election_Management_System.Data.Repositories
             => _db.Elections
                 .Where(e => e.CreatedByUserId == userId)
                 .Include(e => e.Options)
+                .Include(e => e.Questions).ThenInclude(q => q.Options)
                 .OrderByDescending(e => e.CreatedAt)
                 .ToListAsync();
 
         public Task<Election?> GetByIdWithOptionsAsync(Guid id)
             => _db.Elections
                 .Include(e => e.Options)
+                .Include(e => e.Questions).ThenInclude(q => q.Options)
                 .FirstOrDefaultAsync(e => e.Id == id);
 
         public async Task<Election?> GetAccessibleByIdWithOptionsAsync(Guid id, Guid userId)
@@ -65,6 +69,7 @@ namespace Electronic_Election_Management_System.Data.Repositories
                              e.CreatedByUserId == userId ||
                              e.Invitations.Any(i => i.UserId == userId || i.Email == email)))
                 .Include(e => e.Options)
+                .Include(e => e.Questions).ThenInclude(q => q.Options)
                 .FirstOrDefaultAsync();
         }
 
@@ -75,6 +80,7 @@ namespace Electronic_Election_Management_System.Data.Repositories
             => _db.Elections
                 .Include(e => e.Options)
                     .ThenInclude(o => o.Votes)
+                .Include(e => e.Questions).ThenInclude(q => q.Options).ThenInclude(o => o.Votes)
                 .FirstOrDefaultAsync(e => e.Id == id);
 
         public async Task<bool> CanUserAccessAsync(Guid electionId, Guid userId)
@@ -96,6 +102,9 @@ namespace Electronic_Election_Management_System.Data.Repositories
 
         public void RemoveOptions(IEnumerable<Option> options)
             => _db.Options.RemoveRange(options);
+
+        public void RemoveQuestions(IEnumerable<ElectionQuestion> questions)
+            => _db.ElectionQuestions.RemoveRange(questions);
 
         public void Remove(Election election)
             => _db.Elections.Remove(election);

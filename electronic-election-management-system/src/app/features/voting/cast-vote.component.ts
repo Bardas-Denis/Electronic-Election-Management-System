@@ -19,7 +19,8 @@ export class CastVoteComponent implements OnInit {
   private votingService = inject(VotingService);
 
   election = signal<ElectionDto | null>(null);
-  selectedOptionId = signal<string | null>(null);
+  selectedOptionIds = signal<Record<string, string>>({});
+  userVoteAnswers = signal<Record<string, string>>({});
   userVoteOptionId = signal<string | null>(null);
   userVoteOptionLabel = signal<string | null>(null);
   isEditingVote = signal(false);
@@ -57,15 +58,30 @@ export class CastVoteComponent implements OnInit {
     });
   }
 
-  selectOption(optionId: string): void {
+  questions(election: ElectionDto) {
+    return election.questions?.length
+      ? election.questions
+      : [{ id: '', text: election.question ?? election.title, displayOrder: 0, options: election.options }];
+  }
+
+  selectOption(questionId: string, optionId: string): void {
     if (!this.canSelectOptions()) return;
-    this.selectedOptionId.set(optionId);
+    this.selectedOptionIds.update(selected => ({ ...selected, [questionId]: optionId }));
+  }
+
+  isOptionSelected(questionId: string, optionId: string): boolean {
+    return this.selectedOptionIds()[questionId] === optionId;
+  }
+
+  hasAllAnswers(): boolean {
+    const election = this.election();
+    return !!election && this.questions(election).every(q => !!this.selectedOptionIds()[q.id]);
   }
 
   // "Trimite votul" - anonymous elections vote immediately, non-anonymous ones
   // first collect a voter declaration via the popup (see voter-declaration-modal).
   submitVote(): void {
-    if (!this.selectedOptionId() || !this.canSelectOptions()) return;
+    if (!this.hasAllAnswers() || !this.canSelectOptions()) return;
 
     if (this.election()?.isAnonymous) {
       this.castOrUpdateVote();
@@ -87,10 +103,8 @@ export class CastVoteComponent implements OnInit {
     const e = this.election();
     if (!e || e.isExpired || !e.hasUserVoted || !this.canEditVote()) return;
 
-    const votedOptionId = this.userVoteOptionId() ?? e.userVoteOptionId ?? null;
-    if (votedOptionId) {
-      this.selectedOptionId.set(votedOptionId);
-    }
+    if (Object.keys(this.userVoteAnswers()).length)
+      this.selectedOptionIds.set({ ...this.userVoteAnswers() });
     this.errorMessageKey.set(null);
     this.successMessageKey.set(null);
     this.isEditingVote.set(true);
@@ -99,8 +113,7 @@ export class CastVoteComponent implements OnInit {
   cancelEditVote(): void {
     this.isEditingVote.set(false);
     this.errorMessageKey.set(null);
-    const votedOptionId = this.userVoteOptionId() ?? this.election()?.userVoteOptionId ?? null;
-    this.selectedOptionId.set(votedOptionId);
+    this.selectedOptionIds.set({ ...this.userVoteAnswers() });
   }
 
   deleteVote(): void {
@@ -117,7 +130,8 @@ export class CastVoteComponent implements OnInit {
         this.isEditingVote.set(false);
         this.userVoteOptionId.set(null);
         this.userVoteOptionLabel.set(null);
-        this.selectedOptionId.set(null);
+        this.selectedOptionIds.set({});
+        this.userVoteAnswers.set({});
         // Deleting consumes the same one-time change budget as editing does - if this stayed
         // true, someone could delete + revote in a loop to bypass the limit entirely.
         this.canEditVote.set(false);
@@ -142,7 +156,9 @@ export class CastVoteComponent implements OnInit {
 
   optionLabelById(optionId: string | null): string | null {
     if (!optionId) return null;
-    const option = this.election()?.options.find((o) => o.id === optionId);
+    const option = this.election()
+      ? this.questions(this.election()!).flatMap(q => q.options).find(o => o.id === optionId)
+      : undefined;
     return option?.label ?? null;
   }
 
@@ -150,7 +166,9 @@ export class CastVoteComponent implements OnInit {
     if (!election.hasUserVoted) return;
     if (election.userVoteOptionId) {
       this.userVoteOptionId.set(election.userVoteOptionId);
-      this.selectedOptionId.set(election.userVoteOptionId);
+      const answers = { [this.questions(election)[0]?.id ?? '']: election.userVoteOptionId };
+      this.selectedOptionIds.set(answers);
+      this.userVoteAnswers.set(answers);
     }
     if (election.userVoteOptionLabel) {
       this.userVoteOptionLabel.set(election.userVoteOptionLabel);
@@ -161,7 +179,16 @@ export class CastVoteComponent implements OnInit {
     this.votingService.getMyVote(this.electionId).subscribe({
       next: (vote) => {
         this.userVoteOptionId.set(vote.optionId);
-        this.selectedOptionId.set(vote.optionId);
+        if (vote.answers?.length) {
+          const answers = Object.fromEntries(vote.answers.map(answer => [answer.questionId, answer.optionId]));
+          this.selectedOptionIds.set(answers);
+          this.userVoteAnswers.set(answers);
+        } else {
+          const election = this.election();
+          const answers = { [election ? this.questions(election)[0]?.id ?? '' : '']: vote.optionId };
+          this.selectedOptionIds.set(answers);
+          this.userVoteAnswers.set(answers);
+        }
         this.userVoteOptionLabel.set(vote.optionLabel ?? this.optionLabelById(vote.optionId));
         this.canEditVote.set(vote.canEdit ?? true);
       },
@@ -174,14 +201,15 @@ export class CastVoteComponent implements OnInit {
   }
 
   private castOrUpdateVote(voterDeclaration?: VoterDeclarationDto): void {
-    const optionId = this.selectedOptionId();
-    if (!optionId) return;
+    const optionIds = Object.values(this.selectedOptionIds());
+    if (!this.hasAllAnswers()) return;
+    const optionId = optionIds[0];
 
     this.isSubmitting.set(true);
     this.errorMessageKey.set(null);
     this.successMessageKey.set(null);
 
-    const payload = { electionId: this.electionId, optionId, voterDeclaration };
+    const payload = { electionId: this.electionId, optionId, optionIds, voterDeclaration };
     const wasEditing = this.isEditingVote();
     const request$ = wasEditing
       ? this.votingService.updateMyVote(payload)
@@ -214,6 +242,7 @@ export class CastVoteComponent implements OnInit {
 
   private applyVoteLocally(optionId: string): void {
     this.userVoteOptionId.set(optionId);
+    this.userVoteAnswers.set({ ...this.selectedOptionIds() });
     this.userVoteOptionLabel.set(this.optionLabelById(optionId));
 
     const current = this.election();

@@ -25,6 +25,7 @@ namespace Electronic_Election_Management_System.Data.Repositories
         Task AddAsync(Election election);
         /// <summary>Removes a collection of options.</summary>
         void RemoveOptions(IEnumerable<Option> options);
+        void RemoveQuestions(IEnumerable<ElectionQuestion> questions);
         void Remove(Election election);
         Task SaveChangesAsync();
     }

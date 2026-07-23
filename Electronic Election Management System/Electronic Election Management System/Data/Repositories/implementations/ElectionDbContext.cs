@@ -17,6 +17,7 @@ namespace Electronic_Election_Management_System.Data
         public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
         public DbSet<VoterChangeRecord> VoterChangeRecords => Set<VoterChangeRecord>();
         public DbSet<ElectionInvitation> ElectionInvitations => Set<ElectionInvitation>();
+        public DbSet<ElectionQuestion> ElectionQuestions => Set<ElectionQuestion>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -72,6 +73,18 @@ namespace Electronic_Election_Management_System.Data
                 .HasForeignKey(o => o.ElectionId)
                 .OnDelete(DeleteBehavior.Cascade);
 
+            modelBuilder.Entity<ElectionQuestion>()
+                .HasOne(q => q.Election)
+                .WithMany(e => e.Questions)
+                .HasForeignKey(q => q.ElectionId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<Option>()
+                .HasOne(o => o.Question)
+                .WithMany(q => q.Options)
+                .HasForeignKey(o => o.QuestionId)
+                .OnDelete(DeleteBehavior.Cascade);
+
             modelBuilder.Entity<VoteToken>()
                 .HasOne(vt => vt.User)
                 .WithMany(u => u.VoteTokens)
@@ -98,8 +111,8 @@ namespace Electronic_Election_Management_System.Data
             // out from under it.
             modelBuilder.Entity<Vote>()
                 .HasOne(v => v.VoteToken)
-                .WithOne(vt => vt.Vote)
-                .HasForeignKey<Vote>(v => v.VoteTokenId)
+                .WithMany(vt => vt.Votes)
+                .HasForeignKey(v => v.VoteTokenId)
                 .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<Vote>()
@@ -109,9 +122,7 @@ namespace Electronic_Election_Management_System.Data
                 .OnDelete(DeleteBehavior.Restrict);
 
             // A VoteToken can be used at most once.
-            modelBuilder.Entity<Vote>()
-                .HasIndex(v => v.VoteTokenId)
-                .IsUnique();
+            modelBuilder.Entity<Vote>().HasIndex(v => v.VoteTokenId);
 
             // Enforce anonymity: exactly one of (VoteTokenId, UserId) must be set.
             modelBuilder.Entity<Vote>()

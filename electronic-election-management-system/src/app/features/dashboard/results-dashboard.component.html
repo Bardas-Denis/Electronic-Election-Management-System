@@ -11,26 +11,33 @@
           <h2>{{ results.title }}</h2>
           <p class="total-votes">{{ 'results.totalVotes' | translate }} {{ results.totalVotes }}</p>
         </div>
-        <span class="live-indicator">
-          <span class="live-dot"></span>
-          {{ 'results.live' | translate }}
-        </span>
+        <span class="live-indicator"><span class="live-dot"></span>{{ 'results.live' | translate }}</span>
       </div>
 
-      <div class="results-list">
-        @for (option of results.results; track option.optionId) {
-          <div class="result-row" [class.is-leading]="isLeading(option.voteCount)">
-            <div class="result-label">
-              <span>{{ option.label }}</span>
-              <span>{{ option.voteCount }} {{ 'results.votes' | translate }} · {{ percentFor(option.voteCount) }}%</span>
+      <div class="result-questions">
+        @for (question of questions(results); track question.questionId) {
+          <section class="result-question">
+            <h3>{{ question.text }}</h3>
+            <p class="question-votes">{{ question.totalVotes }} {{ 'results.votes' | translate }}</p>
+            <div class="results-list">
+              @for (option of question.results; track option.optionId) {
+                <div class="result-row" [class.is-leading]="isLeading(option.voteCount, question)">
+                  @if (option.imageDataUrl) {
+                    <img class="result-option-image" [src]="option.imageDataUrl" [alt]="option.label" />
+                  }
+                  <div class="result-content">
+                    <div class="result-label">
+                      <span>{{ option.label }}</span>
+                      <span>{{ option.voteCount }} {{ 'results.votes' | translate }} · {{ percentFor(option.voteCount, question.totalVotes) }}%</span>
+                    </div>
+                    <div class="result-bar-track">
+                      <div class="result-bar-fill" [style.width.%]="percentFor(option.voteCount, question.totalVotes)"></div>
+                    </div>
+                  </div>
+                </div>
+              }
             </div>
-            <div class="result-bar-track">
-              <div
-                class="result-bar-fill"
-                [style.width.%]="percentFor(option.voteCount)"
-              ></div>
-            </div>
-          </div>
+          </section>
         }
       </div>
     </div>

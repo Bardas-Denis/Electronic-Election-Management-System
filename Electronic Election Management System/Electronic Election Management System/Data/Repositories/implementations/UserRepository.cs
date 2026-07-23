@@ -46,7 +46,7 @@ namespace Electronic_Election_Management_System.Data.Repositories
             => _db.Votes.AnyAsync(v => v.UserId == userId);
 
         public Task<bool> HasCastAnonymousVoteAsync(Guid userId)
-            => _db.VoteTokens.AnyAsync(vt => vt.UserId == userId && vt.Vote != null);
+            => _db.VoteTokens.AnyAsync(vt => vt.UserId == userId && vt.Votes.Any());
 
         public async Task AddAsync(User user)
             => await _db.Users.AddAsync(user);

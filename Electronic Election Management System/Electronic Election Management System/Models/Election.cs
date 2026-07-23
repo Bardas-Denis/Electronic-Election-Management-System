@@ -42,6 +42,7 @@ namespace Electronic_Election_Management_System.Models
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
         public ICollection<Option> Options { get; set; } = new List<Option>();
+        public ICollection<ElectionQuestion> Questions { get; set; } = new List<ElectionQuestion>();
         public ICollection<VoteToken> VoteTokens { get; set; } = new List<VoteToken>();
         public ICollection<AuditLog> AuditLogs { get; set; } = new List<AuditLog>();
         public ICollection<ElectionInvitation> Invitations { get; set; } = new List<ElectionInvitation>();

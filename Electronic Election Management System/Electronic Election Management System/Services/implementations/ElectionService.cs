@@ -71,7 +71,8 @@ namespace Electronic_Election_Management_System.Services
             if (!TryParseType(request.Type, out var type))
                 return ServiceResult<ElectionDto>.Fail(ErrorCode.InvalidElectionType);
 
-            if (request.Options.Count(o => !string.IsNullOrWhiteSpace(o.Label)) < 2)
+            var questions = NormalizeQuestions(request);
+            if (!QuestionsAreValid(questions))
                 return ServiceResult<ElectionDto>.Fail(ErrorCode.TooFewOptions);
 
             if (request.EndsAt <= request.StartsAt)
@@ -98,18 +99,15 @@ namespace Electronic_Election_Management_System.Services
                 CreatedByUserId = userId,
                 Title = request.Title.Trim(),
                 Description = request.Description,
-                Question = request.Question?.Trim(),
+                Question = questions[0].Text.Trim(),
                 Type = type,
                 IsAnonymous = request.IsAnonymous,
                 IsClosed = request.IsClosed,
                 StartsAt = request.StartsAt,
                 EndsAt = request.EndsAt,
-                Options = request.Options
-                    .Where(o => !string.IsNullOrWhiteSpace(o.Label))
-                    .Select(o => new Option { Label = o.Label.Trim(), Description = o.Description?.Trim() })
-                    .ToList(),
                 Invitations = invitationResult.Data!
             };
+            election.Questions = BuildQuestions(questions, election.Id);
 
             foreach (var invitation in election.Invitations)
                 invitation.ElectionId = election.Id;
@@ -131,8 +129,8 @@ namespace Electronic_Election_Management_System.Services
             if (!TryParseType(request.Type, out var type))
                 return ServiceResult<ElectionDto>.Fail(ErrorCode.InvalidElectionType);
 
-            var validOptions = request.Options.Where(o => !string.IsNullOrWhiteSpace(o.Label)).ToList();
-            if (validOptions.Count < 2)
+            var questions = NormalizeQuestions(request);
+            if (!QuestionsAreValid(questions))
                 return ServiceResult<ElectionDto>.Fail(ErrorCode.TooFewOptions);
 
             if (request.EndsAt <= request.StartsAt)
@@ -150,42 +148,21 @@ namespace Electronic_Election_Management_System.Services
 
             election.Title = request.Title.Trim();
             election.Description = request.Description;
-            election.Question = request.Question?.Trim();
+            election.Question = questions[0].Text.Trim();
             election.Type = type;
             election.IsAnonymous = request.IsAnonymous;
             election.IsClosed = request.IsClosed;
             election.StartsAt = request.StartsAt;
             election.EndsAt = request.EndsAt;
 
-            // Update existing options safely (keeps their IDs and prevents tracking conflicts)
-            var optionsList = election.Options.ToList();
-            for (int i = 0; i < validOptions.Count; i++)
-            {
-                if (i < optionsList.Count)
-                {
-                    optionsList[i].Label = validOptions[i].Label.Trim();
-                    optionsList[i].Description = validOptions[i].Description?.Trim();
-                }
-                else
-                {
-                    election.Options.Add(new Option 
-                    { 
-                        Label = validOptions[i].Label.Trim(), 
-                        Description = validOptions[i].Description?.Trim(),
-                        ElectionId = election.Id 
-                    });
-                }
-            }
-
-            if (optionsList.Count > validOptions.Count)
-            {
-                var toRemove = optionsList.Skip(validOptions.Count).ToList();
-                foreach (var opt in toRemove)
-                {
-                    election.Options.Remove(opt);
-                }
-                _elections.RemoveOptions(toRemove);
-            }
+            var existingOptions = election.Options.ToList();
+            var existingQuestions = election.Questions.ToList();
+            _elections.RemoveOptions(existingOptions);
+            _elections.RemoveQuestions(existingQuestions);
+            election.Options.Clear();
+            election.Questions.Clear();
+            foreach (var question in BuildQuestions(questions, election.Id))
+                election.Questions.Add(question);
 
             await _auditLogs.AddAsync(new AuditLog
             {
@@ -375,8 +352,83 @@ namespace Electronic_Election_Management_System.Services
         private static bool TryParseType(string raw, out ElectionType type)
             => Enum.TryParse(raw, ignoreCase: true, out type);
 
-        private static ElectionDto MapToDto(Election e) => new()
+        private static List<CreateElectionQuestionDto> NormalizeQuestions(CreateElectionRequest request)
         {
+            var supplied = request.Questions
+                .Where(q => !string.IsNullOrWhiteSpace(q.Text))
+                .ToList();
+            if (supplied.Count > 0)
+                return supplied;
+
+            return new List<CreateElectionQuestionDto>
+            {
+                new()
+                {
+                    Text = request.Question,
+                    Options = request.Options
+                }
+            };
+        }
+
+        private static bool QuestionsAreValid(IEnumerable<CreateElectionQuestionDto> questions)
+            => questions.Any() && questions.All(q =>
+                !string.IsNullOrWhiteSpace(q.Text) &&
+                q.Options.Count(o => !string.IsNullOrWhiteSpace(o.Label)) >= 2 &&
+                q.Options.All(o => IsValidImage(o.ImageDataUrl)));
+
+        private static bool IsValidImage(string? image)
+            => string.IsNullOrWhiteSpace(image) ||
+               (image.Length <= 3_000_000 &&
+                (image.StartsWith("data:image/png;base64,", StringComparison.OrdinalIgnoreCase) ||
+                 image.StartsWith("data:image/jpeg;base64,", StringComparison.OrdinalIgnoreCase) ||
+                 image.StartsWith("data:image/webp;base64,", StringComparison.OrdinalIgnoreCase) ||
+                 image.StartsWith("data:image/gif;base64,", StringComparison.OrdinalIgnoreCase)));
+
+        private static List<ElectionQuestion> BuildQuestions(
+            IEnumerable<CreateElectionQuestionDto> questions,
+            Guid? electionId = null)
+            => questions.Select((question, questionIndex) => new ElectionQuestion
+            {
+                ElectionId = electionId ?? Guid.Empty,
+                Text = question.Text.Trim(),
+                DisplayOrder = questionIndex,
+                Options = question.Options
+                    .Where(option => !string.IsNullOrWhiteSpace(option.Label))
+                    .Select(option => new Option
+                    {
+                        ElectionId = electionId ?? Guid.Empty,
+                        Label = option.Label.Trim(),
+                        Description = option.Description?.Trim(),
+                        ImageDataUrl = option.ImageDataUrl
+                    })
+                    .ToList()
+            }).ToList();
+
+        private static ElectionDto MapToDto(Election e)
+        {
+            var questions = e.Questions
+                .OrderBy(q => q.DisplayOrder)
+                .Select(q => new ElectionQuestionDto
+                {
+                    Id = q.Id,
+                    Text = q.Text,
+                    DisplayOrder = q.DisplayOrder,
+                    Options = q.Options.Select(MapOptionToDto).ToList()
+                })
+                .ToList();
+
+            if (questions.Count == 0)
+            {
+                questions.Add(new ElectionQuestionDto
+                {
+                    Id = Guid.Empty,
+                    Text = e.Question ?? e.Title,
+                    Options = e.Options.Select(MapOptionToDto).ToList()
+                });
+            }
+
+            return new ElectionDto
+            {
             Id = e.Id,
             Title = e.Title,
             Description = e.Description,
@@ -386,9 +438,19 @@ namespace Electronic_Election_Management_System.Services
             IsClosed = e.IsClosed,
             StartsAt = e.StartsAt,
             EndsAt = e.EndsAt,
-            Options = e.Options.Select(o => new OptionDto { Id = o.Id, Label = o.Label, Description = o.Description }).ToList(),
+            Options = questions[0].Options,
+            Questions = questions,
             HasUserVoted = false,
             IsExpired = DateTime.UtcNow > e.EndsAt
+            };
+        }
+
+        private static OptionDto MapOptionToDto(Option option) => new()
+        {
+            Id = option.Id,
+            Label = option.Label,
+            Description = option.Description,
+            ImageDataUrl = option.ImageDataUrl
         };
 
         private static ElectionInvitationDto MapInvitationToDto(ElectionInvitation invitation) => new()

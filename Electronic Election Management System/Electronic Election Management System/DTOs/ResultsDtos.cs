@@ -9,6 +9,15 @@ namespace Electronic_Election_Management_System.DTOs
         public Guid OptionId { get; set; }
         public string Label { get; set; } = string.Empty;
         public int VoteCount { get; set; }
+        public string? ImageDataUrl { get; set; }
+    }
+
+    public class QuestionResultDto
+    {
+        public Guid QuestionId { get; set; }
+        public string Text { get; set; } = string.Empty;
+        public int TotalVotes { get; set; }
+        public List<OptionResultDto> Results { get; set; } = new();
     }
 
     // SYNC: results.model.ts -> ElectionResultsDto
@@ -18,5 +27,6 @@ namespace Electronic_Election_Management_System.DTOs
         public string Title { get; set; } = string.Empty;
         public int TotalVotes { get; set; }
         public List<OptionResultDto> Results { get; set; } = new();
+        public List<QuestionResultDto> Questions { get; set; } = new();
     }
 }

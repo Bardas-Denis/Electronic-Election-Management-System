@@ -8,6 +8,7 @@ namespace Electronic_Election_Management_System.DTOs
         public Guid Id { get; set; } = Guid.Empty;
         public string Label { get; set; } = string.Empty;
         public string? Description { get; set; }
+        public string? ImageDataUrl { get; set; }
     }
 
     // SYNC: voting.model.ts -> OptionCreateDto
@@ -16,6 +17,23 @@ namespace Electronic_Election_Management_System.DTOs
         [Required]
         public string Label { get; set; } = string.Empty;
         public string? Description { get; set; }
+        public string? ImageDataUrl { get; set; }
+    }
+
+    public class ElectionQuestionDto
+    {
+        public Guid Id { get; set; }
+        public string Text { get; set; } = string.Empty;
+        public int DisplayOrder { get; set; }
+        public List<OptionDto> Options { get; set; } = new();
+    }
+
+    public class CreateElectionQuestionDto
+    {
+        [Required]
+        public string Text { get; set; } = string.Empty;
+        [Required, MinLength(2)]
+        public List<CreateOptionDto> Options { get; set; } = new();
     }
 
     // SYNC: voting.model.ts -> ElectionDto
@@ -33,6 +51,7 @@ namespace Electronic_Election_Management_System.DTOs
         public DateTime StartsAt { get; set; }
         public DateTime EndsAt { get; set; }
         public List<OptionDto> Options { get; set; } = new();
+        public List<ElectionQuestionDto> Questions { get; set; } = new();
 
         
         /// <summary>
@@ -90,6 +109,7 @@ namespace Electronic_Election_Management_System.DTOs
         [Required, MinLength(2)]
         /// <summary>The options for this election. Must contain at least 2 items.</summary>
         public List<CreateOptionDto> Options { get; set; } = new();
+        public List<CreateElectionQuestionDto> Questions { get; set; } = new();
     }
 
     // SYNC: voting.model.ts -> CreateElectionRequest (reused for PUT).

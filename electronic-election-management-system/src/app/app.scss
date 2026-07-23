@@ -31,15 +31,75 @@
     font-size: 0.78rem;
     letter-spacing: 0.14em;
     text-transform: uppercase;
+    text-shadow: 0 1px 8px rgba(0, 0, 0, 0.72);
   }
 
   .brand-icon {
     width: 34px;
     height: 34px;
-    padding: 4px;
-    border: 1px solid rgba(255, 255, 255, 0.42);
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.92);
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    filter: drop-shadow(0 2px 7px rgba(0, 0, 0, 0.48));
+  }
+
+  .nav-right {
+    padding: 0.45rem 0.55rem 0.45rem 0.75rem;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 12px;
+    background: rgba(5, 13, 22, 0.62);
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.2);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+
+  .nav-email,
+  .lang-btn,
+  .nav-btn-logout {
+    color: rgba(255, 255, 255, 0.92);
+    text-shadow: 0 1px 5px rgba(0, 0, 0, 0.55);
+  }
+
+  .nav-divider,
+  .lang-switcher {
+    border-color: rgba(255, 255, 255, 0.28);
+  }
+
+  .nav-divider {
+    background: rgba(255, 255, 255, 0.28);
+  }
+
+  .nav-avatar {
+    color: #17212b;
+    background: rgba(255, 255, 255, 0.94);
+    border-color: rgba(255, 255, 255, 0.75);
+  }
+
+  .lang-btn {
+    &.active {
+      color: #101820;
+      background: #ffffff;
+      border-color: #ffffff;
+      text-shadow: none;
+    }
+
+    &:hover:not(.active) {
+      color: #ffffff;
+      border-color: rgba(255, 255, 255, 0.46);
+    }
+  }
+
+  .nav-btn-logout {
+    border-color: rgba(255, 255, 255, 0.68);
+    background: rgba(255, 255, 255, 0.06);
+
+    &:hover {
+      color: #101820;
+      border-color: #ffffff;
+      background: #ffffff;
+      text-shadow: none;
+    }
   }
 
   .nav-link {

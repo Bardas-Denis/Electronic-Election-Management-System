@@ -13,10 +13,6 @@
         }
       </div>
 
-      @if (e.question) {
-        <p class="vote-question">{{ e.question }}</p>
-      }
-
       <!-- Already-voted banner + edit-used note -->
       @if (e.hasUserVoted && !isEditingVote()) {
         <div class="already-voted-banner">
@@ -54,22 +50,37 @@
         </div>
       }
 
-      <div class="options-list" [class.locked]="!canSelectOptions()">
-        @for (option of e.options; track option.id) {
-          <button
-            class="option-item"
-            [class.selected]="selectedOptionId() === option.id"
-            [disabled]="!canSelectOptions()"
-            (click)="selectOption(option.id)"
-          >
-            <span class="option-radio"><span class="option-radio-dot"></span></span>
-            <span class="option-body">
-              <span class="option-title">{{ option.label }}</span>
-              @if (option.description) {
-                <span class="option-description">{{ option.description }}</span>
+      <div class="vote-questions">
+        @for (question of questions(e); track question.id; let questionIndex = $index) {
+          <section class="vote-question-block">
+            <p class="vote-question">
+              @if (questions(e).length > 1) {
+                <span>{{ questionIndex + 1 }}.</span>
               }
-            </span>
-          </button>
+              {{ question.text }}
+            </p>
+            <div class="options-list" [class.locked]="!canSelectOptions()">
+              @for (option of question.options; track option.id) {
+                <button
+                  class="option-item"
+                  [class.selected]="isOptionSelected(question.id, option.id)"
+                  [disabled]="!canSelectOptions()"
+                  (click)="selectOption(question.id, option.id)"
+                >
+                  @if (option.imageDataUrl) {
+                    <img class="option-image" [src]="option.imageDataUrl" [alt]="option.label" />
+                  }
+                  <span class="option-radio"><span class="option-radio-dot"></span></span>
+                  <span class="option-body">
+                    <span class="option-title">{{ option.label }}</span>
+                    @if (option.description) {
+                      <span class="option-description">{{ option.description }}</span>
+                    }
+                  </span>
+                </button>
+              }
+            </div>
+          </section>
         }
       </div>
 
@@ -85,7 +96,7 @@
       @if (!e.isExpired && (!e.hasUserVoted || isEditingVote())) {
         <button
           class="btn-primary vote-submit"
-          [disabled]="!selectedOptionId() || isSubmitting() || isDeletingVote()"
+          [disabled]="!hasAllAnswers() || isSubmitting() || isDeletingVote()"
           (click)="submitVote()"
         >
           @if (isSubmitting()) {
