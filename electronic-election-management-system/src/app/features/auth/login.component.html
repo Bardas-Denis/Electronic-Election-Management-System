@@ -1,7 +1,5 @@
 <div class="auth-page">
   <div class="auth-card">
-
-    <!-- Brand mark -->
     <div class="brand">
       <span class="brand-icon">
         <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -18,8 +16,6 @@
     </div>
 
     <form [formGroup]="form" (ngSubmit)="onSubmit()" novalidate>
-
-      <!-- Server info -->
       @if (infoMessageKey()) {
         <div class="server-info" role="status">
           <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
@@ -27,52 +23,27 @@
         </div>
       }
 
-      <!-- Email -->
-      <div class="field" [class.field--error]="emailCtrl.invalid && emailCtrl.touched">
-        <label for="email">{{ 'auth.login.emailLabel' | translate }}</label>
-        <input
-          id="email"
-          type="email"
-          formControlName="email"
-          [placeholder]="'auth.login.emailPlaceholder' | translate"
-          autocomplete="email"
-          aria-describedby="email-error"
-        />
-        @if (emailCtrl.touched && emailCtrl.hasError('required')) {
-          <span id="email-error" class="field-error" role="alert">{{ 'auth.login.emailRequired' | translate }}</span>
-        } @else if (emailCtrl.touched && emailCtrl.hasError('email')) {
-          <span id="email-error" class="field-error" role="alert">{{ 'auth.login.emailInvalid' | translate }}</span>
-        }
-      </div>
+      <app-auth-email-field
+        [control]="form.controls.email"
+        inputId="email"
+        labelKey="auth.login.emailLabel"
+        placeholderKey="auth.login.emailPlaceholder"
+        requiredErrorKey="auth.login.emailRequired"
+        invalidErrorKey="auth.login.emailInvalid"
+      ></app-auth-email-field>
 
-      <!-- Password -->
-      <div class="field" [class.field--error]="passwordCtrl.invalid && passwordCtrl.touched">
-        <label for="password">{{ 'auth.login.passwordLabel' | translate }}</label>
-        <div class="input-wrapper">
-          <input
-            id="password"
-            [type]="showPassword() ? 'text' : 'password'"
-            formControlName="password"
-            placeholder="••••••••"
-            autocomplete="current-password"
-            aria-describedby="password-error"
-          />
-          <button type="button" class="toggle-btn" (click)="togglePassword()" [attr.aria-label]="(showPassword() ? 'auth.login.hidePassword' : 'auth.login.showPassword') | translate">
-            @if (showPassword()) {
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
-            } @else {
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
-            }
-          </button>
-        </div>
-        @if (passwordCtrl.touched && passwordCtrl.hasError('required')) {
-          <span id="password-error" class="field-error" role="alert">{{ 'auth.login.passwordRequired' | translate }}</span>
-        } @else if (passwordCtrl.touched && passwordCtrl.hasError('minlength')) {
-          <span id="password-error" class="field-error" role="alert">{{ 'auth.login.passwordMinLength' | translate }}</span>
-        }
-      </div>
+      <app-auth-password-field
+        [control]="form.controls.password"
+        inputId="password"
+        labelKey="auth.login.passwordLabel"
+        placeholderKey="auth.login.passwordPlaceholder"
+        requiredErrorKey="auth.login.passwordRequired"
+        minLengthErrorKey="auth.login.passwordMinLength"
+        showPasswordKey="auth.login.showPassword"
+        hidePasswordKey="auth.login.hidePassword"
+        autocomplete="current-password"
+      ></app-auth-password-field>
 
-      <!-- Server error -->
       @if (errorMessageKey()) {
         <div class="server-error" role="alert">
           <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
@@ -80,8 +51,7 @@
         </div>
       }
 
-      <!-- Submit -->
-      <button type="submit" class="btn-primary" [attr.disabled]="isLoading() || null">
+      <button type="submit" class="btn-primary" [disabled]="isLoading()">
         @if (isLoading()) {
           <span class="spinner"></span>
           {{ 'auth.login.submitting' | translate }}
@@ -89,13 +59,11 @@
           {{ 'auth.login.submit' | translate }}
         }
       </button>
-
     </form>
 
     <p class="switch-link">
       {{ 'auth.login.noAccount' | translate }}
       <a routerLink="/register">{{ 'auth.login.register' | translate }}</a>
     </p>
-
   </div>
 </div>
