@@ -14,6 +14,7 @@ namespace Electronic_Election_Management_System.Data
         public DbSet<VoteToken> VoteTokens => Set<VoteToken>();
         public DbSet<Vote> Votes => Set<Vote>();
         public DbSet<VoterDeclaration> VoterDeclarations => Set<VoterDeclaration>();
+        public DbSet<UserDetails> UserDetails => Set<UserDetails>();
         public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
         public DbSet<VoterChangeRecord> VoterChangeRecords => Set<VoterChangeRecord>();
         public DbSet<ElectionInvitation> ElectionInvitations => Set<ElectionInvitation>();
@@ -169,6 +170,18 @@ namespace Electronic_Election_Management_System.Data
             // enforces the one-change limit, since it survives the Vote row being deleted.
             modelBuilder.Entity<VoterChangeRecord>()
                 .HasIndex(r => new { r.UserId, r.ElectionId })
+                .IsUnique();
+
+            // UserDetails: one editable profile row per user, null until first PUT.
+            // Cascade: deleting a User removes their UserDetails row.
+            modelBuilder.Entity<User>()
+                .HasOne(u => u.UserDetails)
+                .WithOne(ud => ud.User)
+                .HasForeignKey<UserDetails>(ud => ud.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<UserDetails>()
+                .HasIndex(ud => ud.UserId)
                 .IsUnique();
         }
     }

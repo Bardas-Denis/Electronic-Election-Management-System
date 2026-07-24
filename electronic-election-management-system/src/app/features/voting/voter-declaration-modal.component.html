@@ -62,17 +62,17 @@
           />
         </div>
 
-        <div class="field" [class.field--error]="judetCtrl.invalid && judetCtrl.touched">
-          <label for="domiciliuJudet">{{ 'declaration.domiciliiJudetLabel' | translate }}</label>
-          <input id="domiciliuJudet" type="text" formControlName="domiciliuJudet" [placeholder]="'declaration.domiciliiJudetPlaceholder' | translate" autocomplete="address-level1" />
-          @if (judetCtrl.touched && judetCtrl.invalid) {
+        <div class="field" [class.field--error]="residenceCountyCtrl.invalid && residenceCountyCtrl.touched">
+          <label for="residenceCounty">{{ 'declaration.domiciliiJudetLabel' | translate }}</label>
+          <input id="residenceCounty" type="text" formControlName="residenceCounty" [placeholder]="'declaration.domiciliiJudetPlaceholder' | translate" autocomplete="address-level1" />
+          @if (residenceCountyCtrl.touched && residenceCountyCtrl.invalid) {
             <span class="field-error">{{ 'declaration.domiciliiJudetRequired' | translate }}</span>
           }
         </div>
 
         <div class="field">
-          <label for="domiciliuLocalitate">{{ 'declaration.localitateOptLabel' | translate }}</label>
-          <input id="domiciliuLocalitate" type="text" formControlName="domiciliuLocalitate" [placeholder]="'declaration.localiatePlaceholder' | translate" autocomplete="address-level2" />
+          <label for="residenceCity">{{ 'declaration.localitateOptLabel' | translate }}</label>
+          <input id="residenceCity" type="text" formControlName="residenceCity" [placeholder]="'declaration.localiatePlaceholder' | translate" autocomplete="address-level2" />
         </div>
 
         <div class="field">
@@ -80,10 +80,10 @@
           <input id="citizenship" type="text" formControlName="citizenship" [placeholder]="'declaration.cetateeniePlaceholder' | translate" />
         </div>
 
-        <div class="field" [class.field--error]="adresaCtrl.invalid && adresaCtrl.touched">
-          <label for="domiciliuAdresa">{{ 'declaration.adresaLabel' | translate }}</label>
-          <input id="domiciliuAdresa" type="text" formControlName="domiciliuAdresa" [placeholder]="'declaration.adresaPlaceholder' | translate" autocomplete="street-address" />
-          @if (adresaCtrl.touched && adresaCtrl.invalid) {
+        <div class="field" [class.field--error]="residenceAddressCtrl.invalid && residenceAddressCtrl.touched">
+          <label for="residenceAddress">{{ 'declaration.adresaLabel' | translate }}</label>
+          <input id="residenceAddress" type="text" formControlName="residenceAddress" [placeholder]="'declaration.adresaPlaceholder' | translate" autocomplete="street-address" />
+          @if (residenceAddressCtrl.touched && residenceAddressCtrl.invalid) {
             <span class="field-error">{{ 'declaration.adresaRequired' | translate }}</span>
           }
         </div>

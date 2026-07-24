@@ -38,9 +38,9 @@ export class VoterDeclarationModalComponent {
   politicForm = this.fb.group({
     cnp: ['', [Validators.required, Validators.pattern(/^\d{13}$/), validCnp]],
     fullName: ['', [Validators.required, Validators.minLength(3)]],
-    domiciliuJudet: ['', [Validators.required]],
-    domiciliuAdresa: ['', [Validators.required, Validators.minLength(3)]],
-    domiciliuLocalitate: [''],
+    residenceCounty: ['', [Validators.required]],
+    residenceAddress: ['', [Validators.required, Validators.minLength(3)]],
+    residenceCity: [''],
     citizenship: ['']
   });
 
@@ -58,8 +58,8 @@ export class VoterDeclarationModalComponent {
 
   get cnpCtrl() { return this.politicForm.get('cnp')!; }
   get fullNameCtrl() { return this.politicForm.get('fullName')!; }
-  get judetCtrl() { return this.politicForm.get('domiciliuJudet')!; }
-  get adresaCtrl() { return this.politicForm.get('domiciliuAdresa')!; }
+  get residenceCountyCtrl() { return this.politicForm.get('residenceCounty')!; }
+  get residenceAddressCtrl() { return this.politicForm.get('residenceAddress')!; }
   get genderCtrl() { return this.comercialForm.get('gender')!; }
   get workEmailCtrl() { return this.comercialForm.get('workEmail')!; }
 
@@ -73,8 +73,8 @@ export class VoterDeclarationModalComponent {
 
     effect(() => {
       const preview = this.cnpPreview();
-      if (preview && !this.judetCtrl.dirty) {
-        this.judetCtrl.setValue(preview.countyName);
+      if (preview && !this.residenceCountyCtrl.dirty) {
+        this.residenceCountyCtrl.setValue(preview.countyName);
       }
     });
   }
@@ -89,12 +89,12 @@ export class VoterDeclarationModalComponent {
       if (this.politicForm.invalid) return;
 
       this.cnpValue.set(this.cnpCtrl.value ?? '');
-      const { cnp, fullName, domiciliuJudet, domiciliuAdresa } = this.politicForm.getRawValue();
+      const { cnp, fullName, residenceCounty, residenceAddress } = this.politicForm.getRawValue();
       this.confirmed.emit({
         cnp: cnp!,
         fullName: fullName!,
-        domiciliuJudet: domiciliuJudet!,
-        domiciliuAdresa: domiciliuAdresa!
+        residenceCounty: residenceCounty!,
+        residenceAddress: residenceAddress!
       });
       return;
     }

@@ -391,6 +391,48 @@
       "platform": "Platform",
       "copyrightTag": "Electronic voting platform"
     }
+  },
+  "profile": {
+    "title": "My profile",
+    "subtitle": "View and update your personal details used in non-anonymous elections.",
+    "loading": "Loading your details...",
+    "save": "Save changes",
+    "saveFailed": "Could not save your details. Please try again.",
+    "saveSuccess": "Your details have been saved.",
+    "section": {
+      "personal": "Personal information",
+      "domicile": "Domicile",
+      "professional": "Professional details"
+    },
+    "field": {
+      "fullName": "Full name",
+      "fullNamePlaceholder": "e.g. John Smith",
+      "cnp": "CNP",
+      "cnpPlaceholder": "13 digits",
+      "citizenship": "Citizenship",
+      "citizenshipPlaceholder": "e.g. Romanian",
+      "gender": "Gender",
+      "genderSelect": "Select…",
+      "genderMale": "Male",
+      "genderFemale": "Female",
+      "genderOther": "Other / prefer not to say",
+      "judet": "County of residence",
+      "judetPlaceholder": "e.g. Brașov",
+      "localitate": "City",
+      "localitatesPlaceholder": "e.g. Brașov",
+      "adresa": "Home address",
+      "adresaPlaceholder": "Street, number, city",
+      "company": "Company",
+      "companyPlaceholder": "e.g. Contoso Ltd",
+      "jobTitle": "Job title",
+      "jobTitlePlaceholder": "e.g. Product Manager",
+      "department": "Department",
+      "departmentPlaceholder": "e.g. Marketing",
+      "employeeId": "Employee ID",
+      "employeeIdPlaceholder": "e.g. EMP-0231",
+      "workEmail": "Work email",
+      "workEmailPlaceholder": "e.g. john.smith@company.com"
+    }
     
   }
 }

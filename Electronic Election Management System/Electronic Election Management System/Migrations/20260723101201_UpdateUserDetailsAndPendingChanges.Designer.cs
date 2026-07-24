@@ -3,6 +3,7 @@ using System;
 using Electronic_Election_Management_System.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Electronic_Election_Management_System.Migrations
 {
     [DbContext(typeof(ElectionDbContext))]
-    partial class ElectionDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260723101201_UpdateUserDetailsAndPendingChanges")]
+    partial class UpdateUserDetailsAndPendingChanges
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.9");
@@ -231,6 +234,15 @@ namespace Electronic_Election_Management_System.Migrations
                     b.Property<string>("Department")
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("DomiciliuAdresa")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("DomiciliuJudet")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("DomiciliuLocalitate")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("EmployeeId")
                         .HasColumnType("TEXT");
 
@@ -241,15 +253,6 @@ namespace Electronic_Election_Management_System.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<string>("JobTitle")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("ResidenceAddress")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("ResidenceCity")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("ResidenceCounty")
                         .HasColumnType("TEXT");
 
                     b.Property<DateTime>("UpdatedAt")
@@ -378,6 +381,15 @@ namespace Electronic_Election_Management_System.Migrations
                     b.Property<string>("Department")
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("DomiciliuAdresa")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("DomiciliuJudet")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("DomiciliuLocalitate")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("EmployeeId")
                         .HasColumnType("TEXT");
 
@@ -388,15 +400,6 @@ namespace Electronic_Election_Management_System.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<string>("JobTitle")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("ResidenceAddress")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("ResidenceCity")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("ResidenceCounty")
                         .HasColumnType("TEXT");
 
                     b.Property<Guid>("VoteId")

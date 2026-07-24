@@ -17,8 +17,8 @@
       translate }}</a>
     }
     <span class="nav-divider"></span>
-    <!-- Avatar shows first letter of email -->
-    <span class="nav-user">
+    <!-- Avatar: click to open profile page -->
+    <a routerLink="/profile" class="nav-user nav-user--link" title="My Profile">
       <span class="nav-avatar">{{ (authService.currentUser()?.email ?? '?').charAt(0).toUpperCase() }}</span>
       <span class="nav-email">{{ authService.currentUser()?.email }}</span>
       @if (authService.isAdmin()) {
@@ -27,7 +27,7 @@
       @if (authService.currentUser()?.role === 'ElectionManager') {
       <span class="badge badge--info">{{ 'nav.managerBadge' | translate }}</span>
       }
-    </span>
+    </a>
     <!-- Language toggle — always visible, after nav-right content -->
     <div class="lang-switcher">
       <button id="lang-ro" class="lang-btn" [class.active]="translate.currentLang() === 'ro'"

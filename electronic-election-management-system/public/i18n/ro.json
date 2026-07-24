@@ -391,5 +391,47 @@
       "platform": "Platformă",
       "copyrightTag": "Platformă de vot electronic"
     }
+  },
+  "profile": {
+    "title": "Profilul meu",
+    "subtitle": "Vizualizează și actualizează datele personale folosite în alegerile neanonime.",
+    "loading": "Se încarcă detaliile tale...",
+    "save": "Salvează modificările",
+    "saveFailed": "Nu am putut salva detaliile. Încercă din nou.",
+    "saveSuccess": "Detaliile tale au fost salvate.",
+    "section": {
+      "personal": "Informații personale",
+      "domicile": "Domiciliu",
+      "professional": "Date profesionale"
+    },
+    "field": {
+      "fullName": "Nume și prenume",
+      "fullNamePlaceholder": "ex: Ion Popescu",
+      "cnp": "CNP",
+      "cnpPlaceholder": "13 cifre",
+      "citizenship": "Cetățenie",
+      "citizenshipPlaceholder": "ex: Română",
+      "gender": "Sex",
+      "genderSelect": "Alege…",
+      "genderMale": "Masculin",
+      "genderFemale": "Feminin",
+      "genderOther": "Altul / prefer să nu spun",
+      "judet": "Județ domiciliu",
+      "judetPlaceholder": "ex: Brașov",
+      "localitate": "Localitate",
+      "localitatesPlaceholder": "ex: Brașov",
+      "adresa": "Adresă domiciliu",
+      "adresaPlaceholder": "Stradă, număr, localitate",
+      "company": "Companie",
+      "companyPlaceholder": "ex: Contoso SRL",
+      "jobTitle": "Funcție",
+      "jobTitlePlaceholder": "ex: Product Manager",
+      "department": "Departament",
+      "departmentPlaceholder": "ex: Marketing",
+      "employeeId": "ID angajat",
+      "employeeIdPlaceholder": "ex: EMP-0231",
+      "workEmail": "Email muncă",
+      "workEmailPlaceholder": "ex: ion.popescu@companie.ro"
+    }
   }
 }

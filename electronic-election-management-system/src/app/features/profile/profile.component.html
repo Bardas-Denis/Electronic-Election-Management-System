@@ -1,0 +1,204 @@
+<section class="page profile-page">
+  <!-- Page header -->
+  <div class="page-header">
+    <div>
+      <h2>{{ 'profile.title' | translate }}</h2>
+      <p>{{ 'profile.subtitle' | translate }}</p>
+    </div>
+  </div>
+
+  <!-- Identity card -->
+  <div class="profile-identity-card">
+    <div class="profile-avatar-lg">{{ avatarLetter }}</div>
+    <div class="profile-identity-info">
+      <div class="profile-identity-email">{{ userEmail }}</div>
+      <span class="badge badge--info">{{ userRole }}</span>
+    </div>
+  </div>
+
+  <!-- Loading state -->
+  @if (isLoading()) {
+    <div class="state-block">
+      <div class="spinner"></div>
+      <p>{{ 'profile.loading' | translate }}</p>
+    </div>
+  } @else {
+
+    <!-- Success banner -->
+    @if (saveSuccess()) {
+      <div class="profile-banner profile-banner--success">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        {{ 'profile.saveSuccess' | translate }}
+      </div>
+    }
+
+    <!-- Error banner -->
+    @if (errorKey()) {
+      <div class="error-text">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5"/>
+          <line x1="12" y1="8" x2="12" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          <circle cx="12" cy="16" r="1" fill="currentColor"/>
+        </svg>
+        {{ errorKey()! | translate }}
+      </div>
+    }
+
+    <form class="profile-form" (ngSubmit)="save()" #profileForm="ngForm">
+
+      <!-- ── Section: Personal Info ── -->
+      <div class="profile-section">
+        <div class="profile-section-header">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <circle cx="12" cy="8" r="4" stroke="currentColor" stroke-width="1.5"/>
+            <path d="M4 20c0-4 3.582-7 8-7s8 3 8 7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+          <span>{{ 'profile.section.personal' | translate }}</span>
+        </div>
+
+        <div class="profile-grid">
+          <div class="form-group">
+            <label for="profile-fullName">{{ 'profile.field.fullName' | translate }}</label>
+            <input id="profile-fullName" type="text"
+              [value]="getField('fullName')"
+              (input)="updateField('fullName', $any($event.target).value)"
+              [placeholder]="'profile.field.fullNamePlaceholder' | translate" />
+          </div>
+
+          <div class="form-group">
+            <label for="profile-cnp">{{ 'profile.field.cnp' | translate }}</label>
+            <input id="profile-cnp" type="text"
+              [value]="getField('cnp')"
+              (input)="updateField('cnp', $any($event.target).value)"
+              [placeholder]="'profile.field.cnpPlaceholder' | translate" />
+          </div>
+
+          <div class="form-group">
+            <label for="profile-citizenship">{{ 'profile.field.citizenship' | translate }}</label>
+            <input id="profile-citizenship" type="text"
+              [value]="getField('citizenship')"
+              (input)="updateField('citizenship', $any($event.target).value)"
+              [placeholder]="'profile.field.citizenshipPlaceholder' | translate" />
+          </div>
+
+          <div class="form-group">
+            <label for="profile-gender">{{ 'profile.field.gender' | translate }}</label>
+            <select id="profile-gender"
+              [value]="getField('gender')"
+              (change)="updateField('gender', $any($event.target).value)">
+              <option value="">{{ 'profile.field.genderSelect' | translate }}</option>
+              <option value="Male">{{ 'profile.field.genderMale' | translate }}</option>
+              <option value="Female">{{ 'profile.field.genderFemale' | translate }}</option>
+              <option value="Other">{{ 'profile.field.genderOther' | translate }}</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Section: Domicile ── -->
+      <div class="profile-section">
+        <div class="profile-section-header">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9.5z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+            <path d="M9 21V12h6v9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <span>{{ 'profile.section.domicile' | translate }}</span>
+        </div>
+
+        <div class="profile-grid">
+          <div class="form-group">
+            <label for="profile-residenceCounty">{{ 'profile.field.judet' | translate }}</label>
+            <input id="profile-residenceCounty" type="text"
+              [value]="getField('residenceCounty')"
+              (input)="updateField('residenceCounty', $any($event.target).value)"
+              [placeholder]="'profile.field.judetPlaceholder' | translate" />
+          </div>
+
+          <div class="form-group">
+            <label for="profile-residenceCity">{{ 'profile.field.localitate' | translate }}</label>
+            <input id="profile-residenceCity" type="text"
+              [value]="getField('residenceCity')"
+              (input)="updateField('residenceCity', $any($event.target).value)"
+              [placeholder]="'profile.field.localitatesPlaceholder' | translate" />
+          </div>
+
+          <div class="form-group profile-grid--full">
+            <label for="profile-residenceAddress">{{ 'profile.field.adresa' | translate }}</label>
+            <input id="profile-residenceAddress" type="text"
+              [value]="getField('residenceAddress')"
+              (input)="updateField('residenceAddress', $any($event.target).value)"
+              [placeholder]="'profile.field.adresaPlaceholder' | translate" />
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Section: Professional ── -->
+      <div class="profile-section">
+        <div class="profile-section-header">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <rect x="2" y="7" width="20" height="14" rx="2" stroke="currentColor" stroke-width="1.5"/>
+            <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2" stroke="currentColor" stroke-width="1.5"/>
+            <line x1="12" y1="12" x2="12" y2="16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            <line x1="8" y1="12" x2="16" y2="12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+          <span>{{ 'profile.section.professional' | translate }}</span>
+        </div>
+
+        <div class="profile-grid">
+          <div class="form-group">
+            <label for="profile-company">{{ 'profile.field.company' | translate }}</label>
+            <input id="profile-company" type="text"
+              [value]="getField('company')"
+              (input)="updateField('company', $any($event.target).value)"
+              [placeholder]="'profile.field.companyPlaceholder' | translate" />
+          </div>
+
+          <div class="form-group">
+            <label for="profile-jobTitle">{{ 'profile.field.jobTitle' | translate }}</label>
+            <input id="profile-jobTitle" type="text"
+              [value]="getField('jobTitle')"
+              (input)="updateField('jobTitle', $any($event.target).value)"
+              [placeholder]="'profile.field.jobTitlePlaceholder' | translate" />
+          </div>
+
+          <div class="form-group">
+            <label for="profile-department">{{ 'profile.field.department' | translate }}</label>
+            <input id="profile-department" type="text"
+              [value]="getField('department')"
+              (input)="updateField('department', $any($event.target).value)"
+              [placeholder]="'profile.field.departmentPlaceholder' | translate" />
+          </div>
+
+          <div class="form-group">
+            <label for="profile-employeeId">{{ 'profile.field.employeeId' | translate }}</label>
+            <input id="profile-employeeId" type="text"
+              [value]="getField('employeeId')"
+              (input)="updateField('employeeId', $any($event.target).value)"
+              [placeholder]="'profile.field.employeeIdPlaceholder' | translate" />
+          </div>
+
+          <div class="form-group profile-grid--full">
+            <label for="profile-workEmail">{{ 'profile.field.workEmail' | translate }}</label>
+            <input id="profile-workEmail" type="email"
+              [value]="getField('workEmail')"
+              (input)="updateField('workEmail', $any($event.target).value)"
+              [placeholder]="'profile.field.workEmailPlaceholder' | translate" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Save button -->
+      <div class="profile-actions">
+        <button id="profile-save-btn" type="submit" class="btn-primary" [disabled]="isSaving()">
+          @if (isSaving()) {
+            <span class="spinner"></span>
+          }
+          {{ 'profile.save' | translate }}
+        </button>
+      </div>
+
+    </form>
+  }
+</section>
