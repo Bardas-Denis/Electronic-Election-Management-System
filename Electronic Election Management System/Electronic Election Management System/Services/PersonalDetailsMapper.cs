@@ -15,9 +15,9 @@ namespace Electronic_Election_Management_System.Services
         {
             target.Cnp               = Trim(source.Cnp);
             target.FullName          = Trim(source.FullName);
-            target.DomiciliuJudet    = Trim(source.DomiciliuJudet);
-            target.DomiciliuAdresa   = Trim(source.DomiciliuAdresa);
-            target.DomiciliuLocalitate = Trim(source.DomiciliuLocalitate);
+            target.ResidenceCounty   = Trim(source.ResidenceCounty);
+            target.ResidenceAddress  = Trim(source.ResidenceAddress);
+            target.ResidenceCity     = Trim(source.ResidenceCity);
             target.Citizenship       = Trim(source.Citizenship);
             target.Gender            = Trim(source.Gender);
             target.WorkEmail         = Trim(source.WorkEmail);
@@ -34,9 +34,9 @@ namespace Electronic_Election_Management_System.Services
         {
             target.Cnp               = Trim(source.Cnp);
             target.FullName          = Trim(source.FullName);
-            target.DomiciliuJudet    = Trim(source.DomiciliuJudet);
-            target.DomiciliuAdresa   = Trim(source.DomiciliuAdresa);
-            target.DomiciliuLocalitate = Trim(source.DomiciliuLocalitate);
+            target.ResidenceCounty   = Trim(source.ResidenceCounty);
+            target.ResidenceAddress  = Trim(source.ResidenceAddress);
+            target.ResidenceCity     = Trim(source.ResidenceCity);
             target.Citizenship       = Trim(source.Citizenship);
             target.Gender            = Trim(source.Gender);
             target.WorkEmail         = Trim(source.WorkEmail);

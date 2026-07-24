@@ -27,9 +27,9 @@ export class ProfileComponent implements OnInit {
   form = signal<PersonalDetailsDto>({
     cnp: '',
     fullName: '',
-    domiciliuJudet: '',
-    domiciliuAdresa: '',
-    domiciliuLocalitate: '',
+    residenceCounty: '',
+    residenceAddress: '',
+    residenceCity: '',
     citizenship: '',
     gender: '',
     workEmail: '',

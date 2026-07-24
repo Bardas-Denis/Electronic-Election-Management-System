@@ -70,9 +70,9 @@ export interface CreateElectionRequest {
 export interface VoterDeclarationDto {
   cnp?: string;
   fullName?: string;
-  domiciliuJudet?: string;
-  domiciliuAdresa?: string;
-  domiciliuLocalitate?: string;
+  residenceCounty?: string;
+  residenceAddress?: string;
+  residenceCity?: string;
   citizenship?: string;
 
   gender?: string;

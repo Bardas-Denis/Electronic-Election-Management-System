@@ -317,8 +317,8 @@ namespace Electronic_Election_Management_System.Services
             {
                 if (string.IsNullOrWhiteSpace(dto.Cnp) ||
                     string.IsNullOrWhiteSpace(dto.FullName) ||
-                    string.IsNullOrWhiteSpace(dto.DomiciliuJudet) ||
-                    string.IsNullOrWhiteSpace(dto.DomiciliuAdresa))
+                    string.IsNullOrWhiteSpace(dto.ResidenceCounty) ||
+                    string.IsNullOrWhiteSpace(dto.ResidenceAddress))
                 {
                     return ServiceResult<VoterDeclaration>.Fail(ErrorCode.IncompleteDeclaration);
                 }

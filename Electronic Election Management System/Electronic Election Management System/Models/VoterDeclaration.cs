@@ -20,13 +20,13 @@ namespace Electronic_Election_Management_System.Models
         /// <summary>
         /// Raw Romanian CNP, kept only for the demo/audit trail of this student project.
         /// In a real deployment this should NOT be stored in plaintext (or at all) once
-        /// BirthDate/Gender/DomiciliuJudet have been derived from it - see CnpService.
+        /// BirthDate/Gender/ResidenceCounty have been derived from it - see CnpService.
         /// </summary>
         public string? Cnp { get; set; }
         public string? FullName { get; set; }
-        public string? DomiciliuJudet { get; set; }
-        public string? DomiciliuAdresa { get; set; }
-        public string? DomiciliuLocalitate { get; set; }
+        public string? ResidenceCounty { get; set; }
+        public string? ResidenceAddress { get; set; }
+        public string? ResidenceCity { get; set; }
         public string? Citizenship { get; set; }
         /// <summary>Derived from the CNP server-side. Never taken as-is from the client.</summary>
         public DateOnly? BirthDate { get; set; }

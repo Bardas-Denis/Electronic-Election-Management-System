@@ -109,26 +109,26 @@
 
         <div class="profile-grid">
           <div class="form-group">
-            <label for="profile-judet">{{ 'profile.field.judet' | translate }}</label>
-            <input id="profile-judet" type="text"
-              [value]="getField('domiciliuJudet')"
-              (input)="updateField('domiciliuJudet', $any($event.target).value)"
+            <label for="profile-residenceCounty">{{ 'profile.field.judet' | translate }}</label>
+            <input id="profile-residenceCounty" type="text"
+              [value]="getField('residenceCounty')"
+              (input)="updateField('residenceCounty', $any($event.target).value)"
               [placeholder]="'profile.field.judetPlaceholder' | translate" />
           </div>
 
           <div class="form-group">
-            <label for="profile-localitate">{{ 'profile.field.localitate' | translate }}</label>
-            <input id="profile-localitate" type="text"
-              [value]="getField('domiciliuLocalitate')"
-              (input)="updateField('domiciliuLocalitate', $any($event.target).value)"
+            <label for="profile-residenceCity">{{ 'profile.field.localitate' | translate }}</label>
+            <input id="profile-residenceCity" type="text"
+              [value]="getField('residenceCity')"
+              (input)="updateField('residenceCity', $any($event.target).value)"
               [placeholder]="'profile.field.localitatesPlaceholder' | translate" />
           </div>
 
           <div class="form-group profile-grid--full">
-            <label for="profile-adresa">{{ 'profile.field.adresa' | translate }}</label>
-            <input id="profile-adresa" type="text"
-              [value]="getField('domiciliuAdresa')"
-              (input)="updateField('domiciliuAdresa', $any($event.target).value)"
+            <label for="profile-residenceAddress">{{ 'profile.field.adresa' | translate }}</label>
+            <input id="profile-residenceAddress" type="text"
+              [value]="getField('residenceAddress')"
+              (input)="updateField('residenceAddress', $any($event.target).value)"
               [placeholder]="'profile.field.adresaPlaceholder' | translate" />
           </div>
         </div>

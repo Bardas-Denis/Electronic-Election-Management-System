@@ -3,9 +3,9 @@ export interface PersonalDetailsDto {
   // --- Politic ---
   cnp?: string | null;
   fullName?: string | null;
-  domiciliuJudet?: string | null;
-  domiciliuAdresa?: string | null;
-  domiciliuLocalitate?: string | null;
+  residenceCounty?: string | null;
+  residenceAddress?: string | null;
+  residenceCity?: string | null;
   citizenship?: string | null;
 
   // --- Comercial ---

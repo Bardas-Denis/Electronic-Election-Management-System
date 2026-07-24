@@ -9,9 +9,9 @@ namespace Electronic_Election_Management_System.DTOs
         // --- Politic ---
         public string? Cnp { get; set; }
         public string? FullName { get; set; }
-        public string? DomiciliuJudet { get; set; }
-        public string? DomiciliuAdresa { get; set; }
-        public string? DomiciliuLocalitate { get; set; }
+        public string? ResidenceCounty { get; set; }
+        public string? ResidenceAddress { get; set; }
+        public string? ResidenceCity { get; set; }
         public string? Citizenship { get; set; }
 
         // --- Comercial ---
