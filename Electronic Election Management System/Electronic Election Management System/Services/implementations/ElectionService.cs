@@ -350,7 +350,12 @@ namespace Electronic_Election_Management_System.Services
         }
 
         private static bool TryParseType(string raw, out ElectionType type)
-            => Enum.TryParse(raw, ignoreCase: true, out type);
+        {
+            type = default;
+            return Enum.GetNames<ElectionType>().Any(
+                       name => string.Equals(name, raw.Trim(), StringComparison.OrdinalIgnoreCase)) &&
+                   Enum.TryParse(raw, ignoreCase: true, out type);
+        }
 
         private static List<CreateElectionQuestionDto> NormalizeQuestions(CreateElectionRequest request)
         {
@@ -377,12 +382,29 @@ namespace Electronic_Election_Management_System.Services
                 q.Options.All(o => IsValidImage(o.ImageDataUrl)));
 
         private static bool IsValidImage(string? image)
-            => string.IsNullOrWhiteSpace(image) ||
-               (image.Length <= 3_000_000 &&
-                (image.StartsWith("data:image/png;base64,", StringComparison.OrdinalIgnoreCase) ||
-                 image.StartsWith("data:image/jpeg;base64,", StringComparison.OrdinalIgnoreCase) ||
-                 image.StartsWith("data:image/webp;base64,", StringComparison.OrdinalIgnoreCase) ||
-                 image.StartsWith("data:image/gif;base64,", StringComparison.OrdinalIgnoreCase)));
+        {
+            if (string.IsNullOrWhiteSpace(image))
+                return true;
+
+            if (image.Length > ValidationRules.ImageDataUrlMaxLength ||
+                !(image.StartsWith("data:image/png;base64,", StringComparison.OrdinalIgnoreCase) ||
+                  image.StartsWith("data:image/jpeg;base64,", StringComparison.OrdinalIgnoreCase) ||
+                  image.StartsWith("data:image/webp;base64,", StringComparison.OrdinalIgnoreCase) ||
+                  image.StartsWith("data:image/gif;base64,", StringComparison.OrdinalIgnoreCase)))
+            {
+                return false;
+            }
+
+            var separatorIndex = image.IndexOf(',');
+            try
+            {
+                return Convert.FromBase64String(image[(separatorIndex + 1)..]).Length <= 2_000_000;
+            }
+            catch (FormatException)
+            {
+                return false;
+            }
+        }
 
         private static List<ElectionQuestion> BuildQuestions(
             IEnumerable<CreateElectionQuestionDto> questions,

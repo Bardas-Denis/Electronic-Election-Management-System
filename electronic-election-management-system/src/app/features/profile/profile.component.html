@@ -62,6 +62,7 @@
           <div class="form-group">
             <label for="profile-fullName">{{ 'profile.field.fullName' | translate }}</label>
             <input id="profile-fullName" type="text"
+              maxlength="100"
               [value]="getField('fullName')"
               (input)="updateField('fullName', $any($event.target).value)"
               [placeholder]="'profile.field.fullNamePlaceholder' | translate" />
@@ -70,6 +71,7 @@
           <div class="form-group">
             <label for="profile-cnp">{{ 'profile.field.cnp' | translate }}</label>
             <input id="profile-cnp" type="text"
+              inputmode="numeric" maxlength="13" pattern="\d{13}"
               [value]="getField('cnp')"
               (input)="updateField('cnp', $any($event.target).value)"
               [placeholder]="'profile.field.cnpPlaceholder' | translate" />
@@ -78,6 +80,7 @@
           <div class="form-group">
             <label for="profile-citizenship">{{ 'profile.field.citizenship' | translate }}</label>
             <input id="profile-citizenship" type="text"
+              maxlength="100"
               [value]="getField('citizenship')"
               (input)="updateField('citizenship', $any($event.target).value)"
               [placeholder]="'profile.field.citizenshipPlaceholder' | translate" />
@@ -111,6 +114,7 @@
           <div class="form-group">
             <label for="profile-residenceCounty">{{ 'profile.field.judet' | translate }}</label>
             <input id="profile-residenceCounty" type="text"
+              maxlength="100"
               [value]="getField('residenceCounty')"
               (input)="updateField('residenceCounty', $any($event.target).value)"
               [placeholder]="'profile.field.judetPlaceholder' | translate" />
@@ -119,6 +123,7 @@
           <div class="form-group">
             <label for="profile-residenceCity">{{ 'profile.field.localitate' | translate }}</label>
             <input id="profile-residenceCity" type="text"
+              maxlength="100"
               [value]="getField('residenceCity')"
               (input)="updateField('residenceCity', $any($event.target).value)"
               [placeholder]="'profile.field.localitatesPlaceholder' | translate" />
@@ -127,6 +132,7 @@
           <div class="form-group profile-grid--full">
             <label for="profile-residenceAddress">{{ 'profile.field.adresa' | translate }}</label>
             <input id="profile-residenceAddress" type="text"
+              maxlength="500"
               [value]="getField('residenceAddress')"
               (input)="updateField('residenceAddress', $any($event.target).value)"
               [placeholder]="'profile.field.adresaPlaceholder' | translate" />
@@ -150,6 +156,7 @@
           <div class="form-group">
             <label for="profile-company">{{ 'profile.field.company' | translate }}</label>
             <input id="profile-company" type="text"
+              maxlength="100"
               [value]="getField('company')"
               (input)="updateField('company', $any($event.target).value)"
               [placeholder]="'profile.field.companyPlaceholder' | translate" />
@@ -158,6 +165,7 @@
           <div class="form-group">
             <label for="profile-jobTitle">{{ 'profile.field.jobTitle' | translate }}</label>
             <input id="profile-jobTitle" type="text"
+              maxlength="100"
               [value]="getField('jobTitle')"
               (input)="updateField('jobTitle', $any($event.target).value)"
               [placeholder]="'profile.field.jobTitlePlaceholder' | translate" />
@@ -166,6 +174,7 @@
           <div class="form-group">
             <label for="profile-department">{{ 'profile.field.department' | translate }}</label>
             <input id="profile-department" type="text"
+              maxlength="100"
               [value]="getField('department')"
               (input)="updateField('department', $any($event.target).value)"
               [placeholder]="'profile.field.departmentPlaceholder' | translate" />
@@ -174,6 +183,7 @@
           <div class="form-group">
             <label for="profile-employeeId">{{ 'profile.field.employeeId' | translate }}</label>
             <input id="profile-employeeId" type="text"
+              maxlength="100"
               [value]="getField('employeeId')"
               (input)="updateField('employeeId', $any($event.target).value)"
               [placeholder]="'profile.field.employeeIdPlaceholder' | translate" />
@@ -182,6 +192,7 @@
           <div class="form-group profile-grid--full">
             <label for="profile-workEmail">{{ 'profile.field.workEmail' | translate }}</label>
             <input id="profile-workEmail" type="email"
+              maxlength="254"
               [value]="getField('workEmail')"
               (input)="updateField('workEmail', $any($event.target).value)"
               [placeholder]="'profile.field.workEmailPlaceholder' | translate" />

@@ -161,6 +161,7 @@
     "createFailed": "Could not create the election.",
     "deleteFailed": "Could not delete the election.",
     "lockedByVotes": "You cannot modify the election because it has already been voted on.",
+    "validationError": "Check the required fields and length limits before saving.",
     "filterTitle": "Filters",
     "searchLabel": "Search",
     "searchPlaceholder": "Search title...",
@@ -402,6 +403,11 @@
     "save": "Save changes",
     "saveFailed": "Could not save your details. Please try again.",
     "saveSuccess": "Your details have been saved.",
+    "validation": {
+      "invalidCnp": "Enter a valid 13-digit Romanian CNP.",
+      "invalidEmail": "Enter a valid work email address.",
+      "tooLong": "One or more fields exceed the allowed length."
+    },
     "section": {
       "personal": "Personal information",
       "domicile": "Domicile",

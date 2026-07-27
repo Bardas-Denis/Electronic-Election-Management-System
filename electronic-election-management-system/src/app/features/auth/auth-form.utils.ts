@@ -1,14 +1,17 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { AbstractControl, ValidationErrors, ValidatorFn, Validators } from '@angular/forms';
+import { INPUT_LIMITS } from '../../core/validators/input.validators';
 
 export const EMAIL_VALIDATORS: ValidatorFn[] = [
   Validators.required,
-  Validators.email
+  Validators.email,
+  Validators.maxLength(INPUT_LIMITS.email)
 ];
 
 export const PASSWORD_VALIDATORS: ValidatorFn[] = [
   Validators.required,
-  Validators.minLength(6)
+  Validators.minLength(6),
+  Validators.maxLength(INPUT_LIMITS.password)
 ];
 
 export function passwordsMatch(control: AbstractControl): ValidationErrors | null {

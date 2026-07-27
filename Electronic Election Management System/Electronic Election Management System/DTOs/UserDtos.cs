@@ -15,8 +15,8 @@ namespace Electronic_Election_Management_System.DTOs
     // SYNC: user.model.ts -> UpdateUserRoleRequest
     public class UpdateUserRoleRequest
     {
-        [Required]
         /// <summary>The role to assign to the user. Valid values: <c>"Admin"</c>, <c>"ElectionManager"</c> or <c>"Voter"</c>.</summary>
+        [Required, NotWhitespace, StringLength(30)]
         public string Role { get; set; } = string.Empty;
     }
 

@@ -6,6 +6,7 @@ import { ElectionType, VoterDeclarationDto } from '../../core/models/voting.mode
 import { PersonalDetailsDto } from '../../core/models/user-details.model';
 import { parseCnp } from '../../core/utils/cnp.util';
 import { UserDetailsService } from '../../core/services/user-details.service';
+import { INPUT_LIMITS, trimmedRequired } from '../../core/validators/input.validators';
 
 // Validates that the CNP typed in actually decodes to a real CNP (checksum + calendar date).
 function validCnp(control: AbstractControl): ValidationErrors | null {
@@ -40,21 +41,21 @@ export class VoterDeclarationModalComponent implements OnInit {
 
   politicForm = this.fb.group({
     cnp: ['', [Validators.required, Validators.pattern(/^\d{13}$/), validCnp]],
-    fullName: ['', [Validators.required, Validators.minLength(3)]],
-    residenceCounty: ['', [Validators.required]],
-    residenceAddress: ['', [Validators.required, Validators.minLength(3)]],
-    residenceCity: [''],
-    citizenship: ['']
+    fullName: ['', [trimmedRequired, Validators.minLength(3), Validators.maxLength(INPUT_LIMITS.shortText)]],
+    residenceCounty: ['', [trimmedRequired, Validators.maxLength(INPUT_LIMITS.shortText)]],
+    residenceAddress: ['', [trimmedRequired, Validators.minLength(3), Validators.maxLength(INPUT_LIMITS.address)]],
+    residenceCity: ['', Validators.maxLength(INPUT_LIMITS.shortText)],
+    citizenship: ['', Validators.maxLength(INPUT_LIMITS.shortText)]
   });
 
   comercialForm = this.fb.group({
-    gender: [''],
-    fullName: [''],
-    workEmail: ['', [Validators.email]],
-    department: [''],
-    jobTitle: [''],
-    company: [''],
-    employeeId: ['']
+    gender: ['', Validators.pattern(/^(M|F|Male|Female|Other)$/)],
+    fullName: ['', Validators.maxLength(INPUT_LIMITS.shortText)],
+    workEmail: ['', [Validators.email, Validators.maxLength(INPUT_LIMITS.email)]],
+    department: ['', Validators.maxLength(INPUT_LIMITS.shortText)],
+    jobTitle: ['', Validators.maxLength(INPUT_LIMITS.shortText)],
+    company: ['', Validators.maxLength(INPUT_LIMITS.shortText)],
+    employeeId: ['', Validators.maxLength(INPUT_LIMITS.shortText)]
   });
 
   cnpValue = signal('');
@@ -185,6 +186,10 @@ export class VoterDeclarationModalComponent implements OnInit {
 
   onSaveToProfile(): void {
     if (this.isSavingProfile()) return;
+    const activeForm = this.isPolitic() ? this.politicForm : this.comercialForm;
+    activeForm.markAllAsTouched();
+    if (activeForm.invalid) return;
+
     this.isSavingProfile.set(true);
     this.saveProfileSuccess.set(false);
 

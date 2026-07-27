@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using Electronic_Election_Management_System.Constants;
 
 namespace Electronic_Election_Management_System.DTOs
 {
@@ -14,9 +15,11 @@ namespace Electronic_Election_Management_System.DTOs
     // SYNC: voting.model.ts -> OptionCreateDto
     public class CreateOptionDto
     {
-        [Required]
+        [Required, NotWhitespace, StringLength(ValidationRules.ShortTextMaxLength)]
         public string Label { get; set; } = string.Empty;
+        [StringLength(ValidationRules.DescriptionMaxLength)]
         public string? Description { get; set; }
+        [StringLength(ValidationRules.ImageDataUrlMaxLength)]
         public string? ImageDataUrl { get; set; }
     }
 
@@ -28,12 +31,22 @@ namespace Electronic_Election_Management_System.DTOs
         public List<OptionDto> Options { get; set; } = new();
     }
 
-    public class CreateElectionQuestionDto
+    public class CreateElectionQuestionDto : IValidatableObject
     {
-        [Required]
+        [Required, NotWhitespace, StringLength(ValidationRules.QuestionMaxLength)]
         public string Text { get; set; } = string.Empty;
-        [Required, MinLength(2)]
+        [Required, MinLength(2), MaxLength(ValidationRules.MaxOptionsPerQuestion)]
         public List<CreateOptionDto> Options { get; set; } = new();
+
+        public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+        {
+            var labels = Options
+                .Where(option => !string.IsNullOrWhiteSpace(option.Label))
+                .Select(option => option.Label.Trim())
+                .ToList();
+            if (labels.Count != labels.Distinct(StringComparer.OrdinalIgnoreCase).Count())
+                yield return new ValidationResult(ValidationMessages.DuplicateOptionLabels, new[] { nameof(Options) });
+        }
     }
 
     // SYNC: voting.model.ts -> ElectionDto
@@ -73,19 +86,20 @@ namespace Electronic_Election_Management_System.DTOs
     }
 
     // SYNC: voting.model.ts -> CreateElectionRequest
-    public class CreateElectionRequest
+    public class CreateElectionRequest : IValidatableObject
     {
-        [Required]
+        [Required, NotWhitespace, StringLength(ValidationRules.TitleMaxLength)]
         public string Title { get; set; } = string.Empty;
 
+        [StringLength(ValidationRules.DescriptionMaxLength)]
         public string? Description { get; set; }
 
-        [Required]
         /// <summary>The actual question presented to voters, shown above the options.</summary>
+        [Required, NotWhitespace, StringLength(ValidationRules.QuestionMaxLength)]
         public string Question { get; set; } = string.Empty;
 
-        [Required]
         /// <summary>The election category. Valid values: <c>"Politic"</c> or <c>"Comercial"</c>.</summary>
+        [Required, NotWhitespace, StringLength(20)]
         public string Type { get; set; } = string.Empty;
 
         public bool IsAnonymous { get; set; } = true;
@@ -94,22 +108,57 @@ namespace Electronic_Election_Management_System.DTOs
         public bool IsClosed { get; set; }
 
         /// <summary>Existing accounts to invite directly when the closed election is created.</summary>
+        [Required, MaxLength(ValidationRules.MaxInvitations)]
         public List<Guid> InvitedUserIds { get; set; } = new();
 
         /// <summary>Email addresses to invite, including addresses that have not registered yet.</summary>
+        [Required, MaxLength(ValidationRules.MaxInvitations)]
         public List<string> InvitedEmails { get; set; } = new();
 
-        [Required]
         public DateTime StartsAt { get; set; }
 
-        [Required]
         /// <summary>The date and time when the election closes. Must be strictly after <see cref="StartsAt"/>.</summary>
         public DateTime EndsAt { get; set; }
 
-        [Required, MinLength(2)]
         /// <summary>The options for this election. Must contain at least 2 items.</summary>
+        [Required, MinLength(2), MaxLength(ValidationRules.MaxOptionsPerQuestion)]
         public List<CreateOptionDto> Options { get; set; } = new();
+        [Required, MaxLength(ValidationRules.MaxQuestions)]
         public List<CreateElectionQuestionDto> Questions { get; set; } = new();
+
+        public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+        {
+            if (StartsAt == default)
+                yield return new ValidationResult(ValidationMessages.StartDateRequired, new[] { nameof(StartsAt) });
+            if (EndsAt == default)
+                yield return new ValidationResult(ValidationMessages.EndDateRequired, new[] { nameof(EndsAt) });
+            if (StartsAt != default && EndsAt != default && EndsAt <= StartsAt)
+                yield return new ValidationResult(ValidationMessages.InvalidDateRange, new[] { nameof(EndsAt) });
+
+            if (string.Equals(Type?.Trim(), "Politic", StringComparison.OrdinalIgnoreCase) &&
+                IsAnonymous)
+            {
+                yield return new ValidationResult(
+                    ValidationMessages.PoliticalElectionCannotBeAnonymous,
+                    new[] { nameof(IsAnonymous) });
+            }
+
+            if (InvitedUserIds.Any(id => id == Guid.Empty))
+                yield return new ValidationResult(
+                    ValidationMessages.InvalidInvitedUserIds,
+                    new[] { nameof(InvitedUserIds) });
+
+            var emailValidator = new EmailAddressAttribute();
+            if (InvitedEmails.Any(email =>
+                    string.IsNullOrWhiteSpace(email) ||
+                    email.Length > ValidationRules.EmailMaxLength ||
+                    !emailValidator.IsValid(email)))
+            {
+                yield return new ValidationResult(
+                    ValidationMessages.InvalidInvitationEmails,
+                    new[] { nameof(InvitedEmails) });
+            }
+        }
     }
 
     // SYNC: voting.model.ts -> CreateElectionRequest (reused for PUT).
@@ -119,10 +168,32 @@ namespace Electronic_Election_Management_System.DTOs
     {
     }
 
-    public class InviteToElectionRequest
+    public class InviteToElectionRequest : IValidatableObject
     {
+        [Required, MaxLength(ValidationRules.MaxInvitations)]
         public List<Guid> UserIds { get; set; } = new();
+        [Required, MaxLength(ValidationRules.MaxInvitations)]
         public List<string> Emails { get; set; } = new();
+
+        public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+        {
+            if (UserIds.Any(id => id == Guid.Empty))
+                yield return new ValidationResult(ValidationMessages.InvalidUserIds, new[] { nameof(UserIds) });
+
+            var emailValidator = new EmailAddressAttribute();
+            if (Emails.Any(email =>
+                    string.IsNullOrWhiteSpace(email) ||
+                    email.Length > ValidationRules.EmailMaxLength ||
+                    !emailValidator.IsValid(email)))
+            {
+                yield return new ValidationResult(
+                    ValidationMessages.InvalidInvitationEmails,
+                    new[] { nameof(Emails) });
+            }
+
+            if (UserIds.Count == 0 && Emails.Count == 0)
+                yield return new ValidationResult(ValidationMessages.InvitationRecipientRequired);
+        }
     }
 
     public class ElectionInvitationDto
