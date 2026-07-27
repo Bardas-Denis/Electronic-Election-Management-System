@@ -8,6 +8,9 @@
     "login": "Login",
     "newAccount": "Cont nou",
     "logout": "Delogare",
+    "profile": "Profilul meu",
+    "language": "Limbă",
+    "theme": "Temă",
     "adminBadge": "Admin",
     "managerBadge": "Manager"
   },
