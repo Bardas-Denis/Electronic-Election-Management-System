@@ -45,7 +45,15 @@
         {{ 'users.bulkSelected' | translate: { count: selectedUserIds().size } }}
       </span>
       <div class="bulk-actions-controls">
-        <select class="role-select" (change)="bulkChangeRole($any($event.target).value)" [disabled]="isBulkActionSaving()">
+        @if (availableLabels().length > 0) {
+          <select class="role-select" (change)="bulkAssignLabel($any($event.target).value); $any($event.target).value = ''" [disabled]="isBulkActionSaving()">
+            <option value="" disabled selected>{{ 'users.bulkAssignLabelTo' | translate }}</option>
+            @for (label of availableLabels(); track label.id) {
+              <option [value]="label.id">{{ label.name }}</option>
+            }
+          </select>
+        }
+        <select class="role-select" (change)="bulkChangeRole($any($event.target).value); $any($event.target).value = ''" [disabled]="isBulkActionSaving()">
           <option value="" disabled selected>{{ 'users.bulkStageTo' | translate }}</option>
           <option value="Admin">Admin</option>
           <option value="ElectionManager">ElectionManager</option>
@@ -143,12 +151,27 @@
               </td>
               <td>{{ user.createdAt | date: 'dd.MM.yyyy HH:mm' }}</td>
               <td>
-                <button type="button" class="btn-danger btn-sm" [disabled]="isCurrentUser(user) || isSaving()"
-                  (click)="deleteUser(user)">
-                  {{ 'users.deleteBtn' | translate }}
-                </button>
+                <div class="row-actions">
+                  <button type="button" class="btn-ghost btn-sm" [class.btn-ghost--active]="expandedUserId() === user.id"
+                    (click)="toggleLabels(user.id)">
+                    {{ 'labels.panelTitle' | translate }}
+                  </button>
+                  <button type="button" class="btn-danger btn-sm" [disabled]="isCurrentUser(user) || isSaving()"
+                    (click)="deleteUser(user)">
+
+                    {{ 'users.deleteBtn' | translate }}
+                  </button>
+                </div>
               </td>
             </tr>
+            <!-- Labels panel row — only rendered for the expanded user -->
+            @if (expandedUserId() === user.id) {
+              <tr class="labels-row">
+                <td colspan="5" style="padding: 0;">
+                  <app-user-labels-panel [userId]="user.id" />
+                </td>
+              </tr>
+            }
           } @empty {
             <tr>
               <td colspan="5" style="text-align: center; padding: 24px; color: #6b7280;">

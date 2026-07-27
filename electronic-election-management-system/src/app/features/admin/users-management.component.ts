@@ -6,12 +6,15 @@ import { from, concatMap, tap } from 'rxjs';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { UsersService } from '../../core/services/users.service';
 import { AuthService } from '../../core/services/auth.service';
+import { LabelService } from '../../core/services/label.service';
 import { UserDto, UserRole } from '../../core/models/user.model';
+import { Label } from '../../core/models/label.model';
+import { UserLabelsPanelComponent } from './user-labels-panel.component';
 
 @Component({
   selector: 'app-users-management',
   standalone: true,
-  imports: [CommonModule, FormsModule, TranslatePipe],
+  imports: [CommonModule, FormsModule, TranslatePipe, UserLabelsPanelComponent],
   templateUrl: './users-management.component.html',
   styleUrl: './users-management.component.scss'
 })
@@ -21,9 +24,11 @@ export class UsersManagementComponent implements OnInit {
   readonly authService = inject(AuthService);
   private router = inject(Router);
   private translateService = inject(TranslateService);
+  private labelService = inject(LabelService);
 
   // Users and UI state signals
   users = signal<UserDto[]>([]);
+  availableLabels = signal<Label[]>([]);
   isLoading = signal(true);
   /** Translation key for inline errors — resolved via | translate in the template. */
   errorMessageKey = signal<string | null>(null);
@@ -73,6 +78,9 @@ export class UsersManagementComponent implements OnInit {
     return paged.every(u => this.selectedUserIds().has(u.id));
   });
 
+  // Tracks which user row has the labels panel expanded (null = none)
+  expandedUserId = signal<string | null>(null);
+
   // Map to store pending/staged role changes
   private pendingRoles = signal<Map<string, UserRole>>(new Map());
 
@@ -91,6 +99,14 @@ export class UsersManagementComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadUsers();
+    this.loadLabels();
+  }
+
+  loadLabels(): void {
+    this.labelService.getAllLabels().subscribe({
+      next: (labels) => this.availableLabels.set(labels),
+      error: () => console.error('Could not load labels for bulk actions')
+    });
   }
 
   // Load users list from the server
@@ -209,6 +225,33 @@ export class UsersManagementComponent implements OnInit {
           this.isBulkActionSaving.set(false);
           alert(this.translateService.instant('users.bulkDeleteError'));
           this.loadUsers();
+        }
+      });
+  }
+
+  // Bulk assign label immediately to all selected users
+  bulkAssignLabel(labelId: string): void {
+    if (!labelId) return;
+    const idsToUpdate = Array.from(this.selectedUserIds());
+    if (idsToUpdate.length === 0) return;
+
+    this.isBulkActionSaving.set(true);
+
+    from(idsToUpdate)
+      .pipe(
+        concatMap(id => this.labelService.assignLabelsToUser(id, { labelIds: [labelId] }))
+      )
+      .subscribe({
+        complete: () => {
+          this.selectedUserIds.set(new Set());
+          this.isBulkActionSaving.set(false);
+          // If the labels panel is open for any of these users, it might be out of date.
+          // Since it's a minor detail and we don't have a global state for user labels,
+          // simply clearing the selection is enough.
+        },
+        error: (err) => {
+          this.isBulkActionSaving.set(false);
+          alert(this.translateService.instant('users.bulkLabelError'));
         }
       });
   }
@@ -332,5 +375,10 @@ export class UsersManagementComponent implements OnInit {
   // Check if user is currently authenticated user
   isCurrentUser(user: UserDto): boolean {
     return this.authService.currentUser()?.userId === user.id;
+  }
+
+  // Toggle the labels panel for a user row
+  toggleLabels(userId: string): void {
+    this.expandedUserId.update(current => current === userId ? null : userId);
   }
 }

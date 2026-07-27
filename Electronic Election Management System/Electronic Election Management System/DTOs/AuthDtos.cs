@@ -5,20 +5,20 @@ namespace Electronic_Election_Management_System.DTOs
     // SYNC: auth.model.ts -> LoginRequest
     public class LoginRequest
     {
-        [Required, EmailAddress]
+        [Required, EmailAddress, StringLength(ValidationRules.EmailMaxLength)]
         public string Email { get; set; } = string.Empty;
 
-        [Required]
+        [Required, StringLength(ValidationRules.PasswordMaxLength)]
         public string Password { get; set; } = string.Empty;
     }
 
     // SYNC: auth.model.ts -> RegisterRequest
     public class RegisterRequest
     {
-        [Required, EmailAddress]
+        [Required, EmailAddress, StringLength(ValidationRules.EmailMaxLength)]
         public string Email { get; set; } = string.Empty;
 
-        [Required, MinLength(6)]
+        [Required, MinLength(6), StringLength(ValidationRules.PasswordMaxLength)]
         public string Password { get; set; } = string.Empty;
     }
 

@@ -222,3 +222,48 @@ tr.has-pending {
     transform: translateY(0);
   }
 }
+
+// ── Row actions cell (labels toggle + delete) ────────────────────────────
+
+.row-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.35rem;
+}
+
+.btn-ghost.btn-sm {
+  height: 32px;
+  padding: 0 0.55rem;
+  font-size: 0.875rem;
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  color: var(--text-secondary);
+  transition: background 0.15s, border-color 0.15s;
+
+  &:hover {
+    background: var(--bg-subtle, #f3f4f6);
+    border-color: var(--border-color, #d1d5db);
+  }
+
+  &.btn-ghost--active {
+    background: var(--info-bg, #eff6ff);
+    border-color: var(--info-border, #bfdbfe);
+    color: var(--info-color, #1e40af);
+  }
+}
+
+// Labels expansion row — no extra border, no hover highlight
+tr.labels-row {
+  background: var(--bg-subtle, #f9fafb);
+
+  &:hover {
+    background: var(--bg-subtle, #f9fafb);
+  }
+
+  td {
+    border-top: none;
+  }
+}

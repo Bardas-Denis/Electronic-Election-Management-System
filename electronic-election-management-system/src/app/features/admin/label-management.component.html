@@ -1,0 +1,119 @@
+<div class="page">
+  <div class="page-header">
+    <div>
+      <h2>{{ 'labels.heading' | translate }}</h2>
+      <p>{{ 'labels.subtitle' | translate }}</p>
+    </div>
+    <button type="button" class="btn-primary" (click)="openCreateForm()" [disabled]="showCreateForm()">
+      + {{ 'labels.createBtn' | translate }}
+    </button>
+  </div>
+
+  <!-- Success banner -->
+  @if (successKey()) {
+    <div class="profile-banner profile-banner--success">
+      {{ successKey()! | translate }}
+    </div>
+  }
+
+  <!-- Error banner -->
+  @if (errorKey()) {
+    <p class="error-text">{{ errorKey()! | translate }}</p>
+  }
+
+  <!-- Inline create form -->
+  @if (showCreateForm()) {
+    <div class="create-form-card">
+      <h3 class="create-form-title">{{ 'labels.createTitle' | translate }}</h3>
+      <div class="create-form-fields">
+        <div class="form-group">
+          <label for="labelName">{{ 'labels.fieldName' | translate }} *</label>
+          <input
+            id="labelName"
+            type="text"
+            class="form-control"
+            [placeholder]="'labels.fieldNamePlaceholder' | translate"
+            [ngModel]="newName()"
+            (ngModelChange)="newName.set($event)"
+            [disabled]="isSaving()"
+            autofocus
+          />
+        </div>
+        <div class="form-group">
+          <label for="labelCategory">{{ 'labels.fieldCategory' | translate }}</label>
+          <input
+            id="labelCategory"
+            type="text"
+            class="form-control"
+            [placeholder]="'labels.fieldCategoryPlaceholder' | translate"
+            [ngModel]="newCategory()"
+            (ngModelChange)="newCategory.set($event)"
+            [disabled]="isSaving()"
+          />
+        </div>
+      </div>
+      <div class="create-form-actions">
+        <button type="button" class="btn-ghost btn-sm" [disabled]="isSaving()" (click)="cancelCreate()">
+          {{ 'labels.cancel' | translate }}
+        </button>
+        <button type="button" class="btn-primary btn-sm" [disabled]="isSaving() || !newName().trim()" (click)="createLabel()">
+          @if (isSaving()) {
+            <span class="spinner spinner--sm"></span>
+          }
+          {{ 'labels.saveBtn' | translate }}
+        </button>
+      </div>
+    </div>
+  }
+
+  <!-- Loading state -->
+  @if (isLoading()) {
+    <div class="state-block">
+      <span class="spinner"></span>
+      <p>{{ 'labels.loading' | translate }}</p>
+    </div>
+  } @else if (labels().length === 0) {
+    <div class="state-block">
+      <p class="state-title">{{ 'labels.noLabels' | translate }}</p>
+    </div>
+  } @else {
+    <div class="table-card">
+      <table class="labels-table">
+        <thead>
+          <tr>
+            <th>{{ 'labels.colName' | translate }}</th>
+            <th>{{ 'labels.colCategory' | translate }}</th>
+            <th>{{ 'labels.colCreatedAt' | translate }}</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (label of labels(); track label.id) {
+            <tr>
+              <td>
+                <span class="label-name">{{ label.name }}</span>
+              </td>
+              <td>
+                @if (label.category) {
+                  <span class="badge badge--neutral">{{ label.category }}</span>
+                } @else {
+                  <span class="text-muted">—</span>
+                }
+              </td>
+              <td class="col-date">{{ label.createdAt | date: 'dd.MM.yyyy' }}</td>
+              <td>
+                <button
+                  type="button"
+                  class="btn-danger btn-sm"
+                  (click)="deleteLabel(label)"
+                >
+                  {{ 'labels.deleteBtn' | translate }}
+                </button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</div>

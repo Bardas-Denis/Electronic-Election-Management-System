@@ -4,10 +4,20 @@ import { FormBuilder, FormArray, ReactiveFormsModule, Validators } from '@angula
 import { ActivatedRoute, Router } from '@angular/router';
 import { TranslatePipe } from '@ngx-translate/core';
 import { VotingService } from '../../core/services/voting.service';
-import { InvitationCandidateDto } from '../../core/models/voting.model';
+import {
+  CreateElectionQuestionDto,
+  ElectionDto,
+  InvitationCandidateDto
+} from '../../core/models/voting.model';
+import {
+  dateRangeValidator,
+  INPUT_LIMITS,
+  trimmedRequired,
+  uniqueOptionLabels
+} from '../../core/validators/input.validators';
 
-// Componenta e folosita atat pentru creare (ruta /elections/new)
-// cat si pentru editare (ruta /elections/:id/edit) - CRUD complet cerut in Etapa 2.
+// This component handles both creation (/elections/new) and editing
+// (/elections/:id/edit).
 @Component({
   selector: 'app-create-election',
   standalone: true,
@@ -25,24 +35,27 @@ export class CreateElectionComponent implements OnInit {
   isLoading = signal(false);
   /** Translation key for inline errors — resolved via | translate in the template. */
   errorMessageKey = signal<string | null>(null);
-  // true cand alegerea are deja cel putin un vot inregistrat - editarea e blocata
+  // Editing is blocked after the election receives its first vote.
   isLocked = signal(false);
   invitationCandidates = signal<InvitationCandidateDto[]>([]);
   invitationCandidatesLoading = signal(false);
   invitationCandidatesErrorKey = signal<string | null>(null);
   invitedEmails = signal<string[]>([]);
-  inviteEmailControl = this.fb.control('', Validators.email);
+  inviteEmailControl = this.fb.control('', [
+    Validators.email,
+    Validators.maxLength(INPUT_LIMITS.email)
+  ]);
   candidateSearchControl = this.fb.control('');
   candidatePickerOpen = signal(false);
   private invitationCandidatesLoaded = false;
 
-  // daca exista, suntem in mod editare
+  // A route ID indicates edit mode.
   private editingElectionId: string | null = null;
   isEditMode = signal(false);
 
   form = this.fb.group({
-    title: ['', Validators.required],
-    description: [''],
+    title: ['', [trimmedRequired, Validators.maxLength(INPUT_LIMITS.title)]],
+    description: ['', Validators.maxLength(INPUT_LIMITS.description)],
     type: ['Politic', Validators.required],
     isAnonymous: [true],
     // Kept in the form payload even before the invitation UI is added, so editing
@@ -52,8 +65,8 @@ export class CreateElectionComponent implements OnInit {
     invitedEmails: this.fb.control<string[]>([]),
     startsAt: ['', Validators.required],
     endsAt: ['', Validators.required],
-    questions: this.fb.array([this.createQuestionGroup()])
-  });
+    questions: this.createQuestionsArray()
+  }, { validators: dateRangeValidator });
 
   get isPoliticalElection(): boolean {
     return this.form.get('type')?.value === 'Politic';
@@ -87,20 +100,13 @@ export class CreateElectionComponent implements OnInit {
 
     this.votingService.getElectionById(this.editingElectionId).subscribe({
       next: (election) => {
-        // reconstruim FormArray-ul de optiuni cu numarul exact de optiuni existente primite de la server
-        this.questions.clear();
-        const fetchedQuestions = election.questions?.length
-          ? election.questions
-          : [{ id: '', text: election.question ?? '', displayOrder: 0, options: election.options ?? [] }];
-        fetchedQuestions.forEach(question => {
-          const group = this.createQuestionGroup();
-          group.patchValue({ text: question.text });
-          const options = group.get('options') as FormArray;
-          options.clear();
-          question.options.forEach(option => options.push(this.createOptionGroup(option)));
-          while (options.length < 2) options.push(this.createOptionGroup());
-          this.questions.push(group);
-        });
+        // Replace the complete array with controls initialized from the response.
+        // Patching blank groups and then clearing/pushing their nested arrays could leave
+        // the rendered form directives attached to the old empty controls.
+        this.form.setControl(
+          'questions',
+          this.createQuestionsArray(normalizeEditableQuestions(election))
+        );
 
         this.form.patchValue({
           title: election.title,
@@ -114,8 +120,8 @@ export class CreateElectionComponent implements OnInit {
 
         this.syncAnonymousState(this.form.get('type')?.value);
 
-        // Odata ce a fost inregistrat cel putin un vot, alegerea devine needitabila
-        // (backend-ul respinge oricum PUT-ul; aici blocam si UI-ul din start).
+        // Once a vote has been recorded, the election can no longer be edited.
+        // The backend also rejects the request; this disables the UI immediately.
         if (election.hasVotes) {
           this.form.disable({ emitEvent: false });
           this.isLocked.set(true);
@@ -142,17 +148,39 @@ export class CreateElectionComponent implements OnInit {
 
   private createOptionGroup(option?: { label?: string; description?: string; imageDataUrl?: string }) {
     return this.fb.group({
-      label: [option?.label ?? '', Validators.required],
-      description: [option?.description ?? ''],
+      label: [option?.label ?? '', [trimmedRequired, Validators.maxLength(INPUT_LIMITS.shortText)]],
+      description: [option?.description ?? '', Validators.maxLength(INPUT_LIMITS.description)],
       imageDataUrl: [option?.imageDataUrl ?? '']
     });
   }
 
-  private createQuestionGroup() {
+  private createQuestionGroup(question?: CreateElectionQuestionDto) {
+    const suppliedOptions = question?.options ?? [];
+    const optionGroups = suppliedOptions.map(option => this.createOptionGroup(option));
+    while (optionGroups.length < 2) optionGroups.push(this.createOptionGroup());
+
     return this.fb.group({
-      text: ['', Validators.required],
-      options: this.fb.array([this.createOptionGroup(), this.createOptionGroup()])
+      text: [question?.text ?? '', [trimmedRequired, Validators.maxLength(INPUT_LIMITS.question)]],
+      options: this.fb.array(
+        optionGroups,
+        [
+          Validators.minLength(2),
+          Validators.maxLength(INPUT_LIMITS.maxOptionsPerQuestion),
+          uniqueOptionLabels
+        ]
+      )
     });
+  }
+
+  private createQuestionsArray(questions: CreateElectionQuestionDto[] = []): FormArray {
+    const groups = questions.length
+      ? questions.map(question => this.createQuestionGroup(question))
+      : [this.createQuestionGroup()];
+
+    return this.fb.array(
+      groups,
+      [Validators.minLength(1), Validators.maxLength(INPUT_LIMITS.maxQuestions)]
+    );
   }
 
   private syncAnonymousState(type: string | null | undefined): void {
@@ -171,6 +199,7 @@ export class CreateElectionComponent implements OnInit {
   }
 
   addQuestion(): void {
+    if (this.questions.length >= INPUT_LIMITS.maxQuestions) return;
     this.questions.push(this.createQuestionGroup());
   }
 
@@ -179,10 +208,12 @@ export class CreateElectionComponent implements OnInit {
   }
 
   addOption(questionIndex: number): void {
-    this.questionOptions(questionIndex).push(this.createOptionGroup());
+    const options = this.questionOptions(questionIndex);
+    if (options.length >= INPUT_LIMITS.maxOptionsPerQuestion) return;
+    options.push(this.createOptionGroup());
   }
 
-  // minim 2 optiuni obligatorii
+  // Every question must retain at least two options.
   removeOption(questionIndex: number, optionIndex: number): void {
     const options = this.questionOptions(questionIndex);
     if (options.length > 2) {
@@ -193,7 +224,8 @@ export class CreateElectionComponent implements OnInit {
   onOptionImageSelected(event: Event, questionIndex: number, optionIndex: number): void {
     const file = (event.target as HTMLInputElement).files?.[0];
     if (!file) return;
-    if (!file.type.startsWith('image/') || file.size > 2_000_000) {
+    const allowedTypes = new Set(['image/png', 'image/jpeg', 'image/webp', 'image/gif']);
+    if (!allowedTypes.has(file.type) || file.size > 2_000_000) {
       this.errorMessageKey.set('elections.optionImageInvalid');
       return;
     }
@@ -320,6 +352,12 @@ export class CreateElectionComponent implements OnInit {
   }
 
   onSubmit(): void {
+    this.form.markAllAsTouched();
+    if (this.form.hasError('invalidDateRange')) {
+      this.errorMessageKey.set('errors.invalidDateRange');
+      return;
+    }
+
     if (this.isClosedElection && !this.editingElectionId && this.inviteEmailControl.value?.trim()) {
       if (this.inviteEmailControl.invalid) {
         this.inviteEmailControl.markAsTouched();
@@ -328,7 +366,10 @@ export class CreateElectionComponent implements OnInit {
       this.addInviteEmail();
     }
 
-    if (this.form.invalid || this.isLocked()) return;
+    if (this.form.invalid || this.isLocked()) {
+      this.errorMessageKey.set('elections.validationError');
+      return;
+    }
 
     this.isSubmitting.set(true);
     this.errorMessageKey.set(null);
@@ -368,9 +409,43 @@ export class CreateElectionComponent implements OnInit {
   }
 }
 
-// Convertoare intre formatul ISO al backend-ului si formatul asteptat de <input type="datetime-local">
+// Converts the backend ISO date into the format expected by <input type="datetime-local">.
 function toDatetimeLocal(isoDate: string): string {
   const date = new Date(isoDate);
   const pad = (n: number) => n.toString().padStart(2, '0');
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
+/**
+ * Converts both current multi-question responses and legacy single-question
+ * responses into the exact shape used by the edit form.
+ */
+export function normalizeEditableQuestions(election: ElectionDto): CreateElectionQuestionDto[] {
+  if (Array.isArray(election.questions) && election.questions.length > 0) {
+    return election.questions.map((question, index) => ({
+      text: question.text || (index === 0 ? election.question : '') || '',
+      options: Array.isArray(question.options) && question.options.length > 0
+        ? question.options.map(option => ({
+            label: option.label ?? '',
+            description: option.description ?? '',
+            imageDataUrl: option.imageDataUrl ?? ''
+          }))
+        : index === 0
+          ? (election.options ?? []).map(option => ({
+              label: option.label ?? '',
+              description: option.description ?? '',
+              imageDataUrl: option.imageDataUrl ?? ''
+            }))
+          : []
+    }));
+  }
+
+  return [{
+    text: election.question || election.title || '',
+    options: (election.options ?? []).map(option => ({
+      label: option.label ?? '',
+      description: option.description ?? '',
+      imageDataUrl: option.imageDataUrl ?? ''
+    }))
+  }];
 }

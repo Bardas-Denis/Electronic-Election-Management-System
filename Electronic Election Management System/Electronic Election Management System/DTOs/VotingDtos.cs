@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using Electronic_Election_Management_System.Constants;
 
 namespace Electronic_Election_Management_System.DTOs
 {
@@ -7,34 +8,65 @@ namespace Electronic_Election_Management_System.DTOs
     public class PersonalDetailsDto
     {
         // --- Politic ---
+        [RegularExpression(@"^\d{13}$")]
         public string? Cnp { get; set; }
+        [StringLength(ValidationRules.ShortTextMaxLength)]
         public string? FullName { get; set; }
+        [StringLength(ValidationRules.ShortTextMaxLength)]
         public string? ResidenceCounty { get; set; }
+        [StringLength(ValidationRules.AddressMaxLength)]
         public string? ResidenceAddress { get; set; }
+        [StringLength(ValidationRules.ShortTextMaxLength)]
         public string? ResidenceCity { get; set; }
+        [StringLength(ValidationRules.ShortTextMaxLength)]
         public string? Citizenship { get; set; }
 
         // --- Comercial ---
+        [RegularExpression(
+            @"^(M|F|Male|Female|Other)$",
+            ErrorMessage = ValidationMessages.InvalidGender)]
         public string? Gender { get; set; }
+        [EmailAddress, StringLength(ValidationRules.EmailMaxLength)]
         public string? WorkEmail { get; set; }
+        [StringLength(ValidationRules.ShortTextMaxLength)]
         public string? EmployeeId { get; set; }
+        [StringLength(ValidationRules.ShortTextMaxLength)]
         public string? Department { get; set; }
+        [StringLength(ValidationRules.ShortTextMaxLength)]
         public string? JobTitle { get; set; }
+        [StringLength(ValidationRules.ShortTextMaxLength)]
         public string? Company { get; set; }
     }
 
     // SYNC: voting.model.ts -> CastVoteRequest
-    public class CastVoteRequest
+    public class CastVoteRequest : IValidatableObject
     {
-        [Required]
         public Guid ElectionId { get; set; }
 
-        [Required]
         public Guid OptionId { get; set; }
+        [Required, MaxLength(ValidationRules.MaxQuestions)]
         public List<Guid> OptionIds { get; set; } = new();
 
         /// <summary>Required for non-anonymous elections.</summary>
         public PersonalDetailsDto? VoterDeclaration { get; set; }
+
+        public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+        {
+            if (ElectionId == Guid.Empty)
+                yield return new ValidationResult(
+                    ValidationMessages.ElectionIdRequired,
+                    new[] { nameof(ElectionId) });
+
+            if (OptionId == Guid.Empty && OptionIds.Count == 0)
+                yield return new ValidationResult(
+                    ValidationMessages.OptionSelectionRequired,
+                    new[] { nameof(OptionId), nameof(OptionIds) });
+
+            if (OptionIds.Any(id => id == Guid.Empty) || OptionIds.Count != OptionIds.Distinct().Count())
+                yield return new ValidationResult(
+                    ValidationMessages.InvalidOptionIds,
+                    new[] { nameof(OptionIds) });
+        }
     }
 
     // SYNC: voting.model.ts -> UserVoteDto

@@ -135,5 +135,15 @@ namespace Electronic_Election_Management_System.Constants
         /// <summary>This user cannot be deleted because other records still reference them.</summary>
         [JsonStringEnumMemberName("userHasDependentRecords")]
         UserHasDependentRecords,
+
+        // Label Errors
+
+        /// <summary>A label with this name already exists.</summary>
+        [JsonStringEnumMemberName("labelNameAlreadyExists")]
+        LabelNameAlreadyExists,
+
+        /// <summary>One or more of the supplied label IDs do not exist.</summary>
+        [JsonStringEnumMemberName("labelNotFound")]
+        LabelNotFound,
     }
 }

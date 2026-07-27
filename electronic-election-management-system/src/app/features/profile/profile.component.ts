@@ -1,11 +1,15 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { TranslatePipe } from '@ngx-translate/core';
 import { AuthService } from '../../core/services/auth.service';
 import { UserDetailsService } from '../../core/services/user-details.service';
+import { LabelService } from '../../core/services/label.service';
 import { PersonalDetailsDto } from '../../core/models/user-details.model';
+import { UserLabel } from '../../core/models/label.model';
+import { parseCnp } from '../../core/utils/cnp.util';
+import { INPUT_LIMITS } from '../../core/validators/input.validators';
 
 @Component({
   selector: 'app-profile',
@@ -17,12 +21,16 @@ import { PersonalDetailsDto } from '../../core/models/user-details.model';
 export class ProfileComponent implements OnInit {
   readonly authService = inject(AuthService);
   private userDetailsService = inject(UserDetailsService);
+  private labelService = inject(LabelService);
   private router = inject(Router);
 
   isLoading = signal(true);
+  isLoadingLabels = signal(true);
   isSaving = signal(false);
   saveSuccess = signal(false);
   errorKey = signal<string | null>(null);
+
+  myLabels = signal<UserLabel[]>([]);
 
   form = signal<PersonalDetailsDto>({
     cnp: '',
@@ -39,6 +47,29 @@ export class ProfileComponent implements OnInit {
     company: ''
   });
 
+  readonly validationErrorKey = computed<string | null>(() => {
+    const value = this.form();
+    const cnp = value.cnp?.trim() ?? '';
+    const workEmail = value.workEmail?.trim() ?? '';
+
+    if (cnp && !parseCnp(cnp)) return 'profile.validation.invalidCnp';
+    if (workEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(workEmail)) {
+      return 'profile.validation.invalidEmail';
+    }
+
+    const shortFields: (keyof PersonalDetailsDto)[] = [
+      'fullName', 'residenceCounty', 'residenceCity', 'citizenship',
+      'employeeId', 'department', 'jobTitle', 'company'
+    ];
+    if (shortFields.some(field => this.getField(field).length > INPUT_LIMITS.shortText) ||
+        this.getField('residenceAddress').length > INPUT_LIMITS.address ||
+        workEmail.length > INPUT_LIMITS.email) {
+      return 'profile.validation.tooLong';
+    }
+
+    return null;
+  });
+
   ngOnInit(): void {
     this.userDetailsService.getMyDetails().subscribe({
       next: (dto) => {
@@ -52,11 +83,22 @@ export class ProfileComponent implements OnInit {
         this.isLoading.set(false);
       }
     });
+
+    this.labelService.getMyLabels().subscribe({
+      next: (labels) => {
+        this.myLabels.set(labels);
+        this.isLoadingLabels.set(false);
+      },
+      error: () => {
+        this.isLoadingLabels.set(false);
+      }
+    });
   }
 
   updateField(field: keyof PersonalDetailsDto, value: string): void {
     this.form.update(f => ({ ...f, [field]: value || null }));
     this.saveSuccess.set(false);
+    this.errorKey.set(null);
   }
 
   getField(field: keyof PersonalDetailsDto): string {
@@ -65,6 +107,11 @@ export class ProfileComponent implements OnInit {
 
   save(): void {
     if (this.isSaving()) return;
+    const validationError = this.validationErrorKey();
+    if (validationError) {
+      this.errorKey.set(validationError);
+      return;
+    }
     this.isSaving.set(true);
     this.errorKey.set(null);
     this.saveSuccess.set(false);
