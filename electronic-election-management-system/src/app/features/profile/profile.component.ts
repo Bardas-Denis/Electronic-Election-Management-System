@@ -93,6 +93,7 @@ export class ProfileComponent implements OnInit {
   }
 
   get userRole(): string {
-    return this.authService.currentUser()?.role ?? '';
+    const role = this.authService.currentUser()?.role ?? '';
+    return role.replace(/([a-z])([A-Z])/g, '$1 $2');
   }
 }

@@ -255,7 +255,10 @@
     "genderOther": "Altul / prefer să nu spun",
     "cancel": "Anulează",
     "confirm": "Confirmă și votează",
-    "optional": "(opțional)"
+    "optional": "(opțional)",
+    "saveToProfile": "Salvează în profil",
+    "savingToProfile": "Se salvează...",
+    "savedToProfile": "Salvat în profil ✓"
   },
   "users": {
     "heading": "Gestionare utilizatori și roluri",

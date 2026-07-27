@@ -255,7 +255,10 @@
     "genderOther": "Other / prefer not to say",
     "cancel": "Cancel",
     "confirm": "Confirm and vote",
-    "optional": "(optional)"
+    "optional": "(optional)",
+    "saveToProfile": "Save to profile",
+    "savingToProfile": "Saving...",
+    "savedToProfile": "Saved to profile ✓"
   },
   "users": {
     "heading": "User & role management",
