@@ -43,5 +43,6 @@ namespace Electronic_Election_Management_System.Services
             Guid userId);
         Task<ServiceResult<bool>> RemoveInvitationAsync(Guid electionId, Guid invitationId, Guid userId);
         Task<List<InvitationCandidateDto>> GetInvitationCandidatesAsync(Guid userId);
+        Task<List<InvitationLabelDto>> GetInvitationLabelsAsync(Guid userId);
     }
 }

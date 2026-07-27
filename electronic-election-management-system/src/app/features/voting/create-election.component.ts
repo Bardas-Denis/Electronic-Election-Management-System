@@ -7,7 +7,8 @@ import { VotingService } from '../../core/services/voting.service';
 import {
   CreateElectionQuestionDto,
   ElectionDto,
-  InvitationCandidateDto
+  InvitationCandidateDto,
+  InvitationLabelDto
 } from '../../core/models/voting.model';
 import {
   dateRangeValidator,
@@ -40,14 +41,20 @@ export class CreateElectionComponent implements OnInit {
   invitationCandidates = signal<InvitationCandidateDto[]>([]);
   invitationCandidatesLoading = signal(false);
   invitationCandidatesErrorKey = signal<string | null>(null);
+  invitationLabels = signal<InvitationLabelDto[]>([]);
+  invitationLabelsLoading = signal(false);
+  invitationLabelsErrorKey = signal<string | null>(null);
   invitedEmails = signal<string[]>([]);
   inviteEmailControl = this.fb.control('', [
     Validators.email,
     Validators.maxLength(INPUT_LIMITS.email)
   ]);
+  labelSearchControl = this.fb.control('');
   candidateSearchControl = this.fb.control('');
+  labelPickerOpen = signal(false);
   candidatePickerOpen = signal(false);
   private invitationCandidatesLoaded = false;
+  private invitationLabelsLoaded = false;
 
   // A route ID indicates edit mode.
   private editingElectionId: string | null = null;
@@ -63,6 +70,7 @@ export class CreateElectionComponent implements OnInit {
     isClosed: [false],
     invitedUserIds: this.fb.control<string[]>([]),
     invitedEmails: this.fb.control<string[]>([]),
+    invitedLabelIds: this.fb.control<string[]>([]),
     startsAt: ['', Validators.required],
     endsAt: ['', Validators.required],
     questions: this.createQuestionsArray()
@@ -83,6 +91,7 @@ export class CreateElectionComponent implements OnInit {
     this.form.get('isClosed')?.valueChanges.subscribe((isClosed) => {
       if (isClosed && !this.isEditMode()) {
         this.loadInvitationCandidates();
+        this.loadInvitationLabels();
       } else if (!isClosed) {
         this.clearInvitations();
       }
@@ -322,6 +331,72 @@ export class CreateElectionComponent implements OnInit {
     this.loadInvitationCandidates();
   }
 
+  retryInvitationLabels(): void {
+    this.invitationLabelsErrorKey.set(null);
+    this.invitationLabelsLoaded = false;
+    this.loadInvitationLabels();
+  }
+
+  isInvitationLabelSelected(labelId: string): boolean {
+    return (this.form.controls.invitedLabelIds.value ?? []).includes(labelId);
+  }
+
+  filteredInvitationLabels(): InvitationLabelDto[] {
+    const query = this.labelSearchControl.value?.trim().toLowerCase() ?? '';
+    if (!query) {
+      return this.invitationLabels();
+    }
+    return this.invitationLabels().filter(label =>
+      label.name.toLowerCase().includes(query) ||
+      label.category?.toLowerCase().includes(query)
+    );
+  }
+
+  selectedInvitationLabels(): InvitationLabelDto[] {
+    const selectedIds = new Set(this.form.controls.invitedLabelIds.value ?? []);
+    return this.invitationLabels().filter(label => selectedIds.has(label.id));
+  }
+
+  toggleLabelPicker(): void {
+    this.labelPickerOpen.update(open => !open);
+    if (!this.labelPickerOpen()) {
+      this.labelSearchControl.reset('');
+    }
+  }
+
+  toggleInvitationLabel(labelId: string, selected: boolean): void {
+    const currentIds = this.form.controls.invitedLabelIds.value ?? [];
+    const nextIds = selected
+      ? [...new Set([...currentIds, labelId])]
+      : currentIds.filter(id => id !== labelId);
+    this.form.controls.invitedLabelIds.setValue(nextIds);
+  }
+
+  removeInvitationLabel(labelId: string): void {
+    this.toggleInvitationLabel(labelId, false);
+  }
+
+  allVisibleInvitationLabelsSelected(): boolean {
+    const availableLabels = this.filteredInvitationLabels()
+      .filter(label => label.userCount > 0);
+    const selectedIds = new Set(this.form.controls.invitedLabelIds.value ?? []);
+    return availableLabels.length > 0 &&
+      availableLabels.every(label => selectedIds.has(label.id));
+  }
+
+  toggleAllInvitationLabels(): void {
+    const visibleIds = new Set(
+      this.filteredInvitationLabels()
+        .filter(label => label.userCount > 0)
+        .map(label => label.id)
+    );
+    const currentIds = this.form.controls.invitedLabelIds.value ?? [];
+    const nextIds = this.allVisibleInvitationLabelsSelected()
+      ? currentIds.filter(id => !visibleIds.has(id))
+      : [...new Set([...currentIds, ...visibleIds])];
+    this.form.controls.invitedLabelIds.setValue(nextIds);
+  }
+
   private loadInvitationCandidates(): void {
     if (this.invitationCandidatesLoaded || this.invitationCandidatesLoading()) {
       return;
@@ -342,12 +417,35 @@ export class CreateElectionComponent implements OnInit {
     });
   }
 
+  private loadInvitationLabels(): void {
+    if (this.invitationLabelsLoaded || this.invitationLabelsLoading()) {
+      return;
+    }
+
+    this.invitationLabelsLoading.set(true);
+    this.invitationLabelsErrorKey.set(null);
+    this.votingService.getInvitationLabels().subscribe({
+      next: (labels) => {
+        this.invitationLabels.set(labels);
+        this.invitationLabelsLoaded = true;
+        this.invitationLabelsLoading.set(false);
+      },
+      error: () => {
+        this.invitationLabelsErrorKey.set('elections.inviteLabelsLoadFailed');
+        this.invitationLabelsLoading.set(false);
+      }
+    });
+  }
+
   private clearInvitations(): void {
     this.form.controls.invitedUserIds.setValue([]);
     this.form.controls.invitedEmails.setValue([]);
+    this.form.controls.invitedLabelIds.setValue([]);
     this.invitedEmails.set([]);
     this.inviteEmailControl.reset('');
+    this.labelSearchControl.reset('');
     this.candidateSearchControl.reset('');
+    this.labelPickerOpen.set(false);
     this.candidatePickerOpen.set(false);
   }
 
@@ -381,6 +479,7 @@ export class CreateElectionComponent implements OnInit {
       // Existing invitation membership is managed by the invitation endpoints.
       payload.invitedUserIds = [];
       payload.invitedEmails = [];
+      payload.invitedLabelIds = [];
     }
     // Ensure the datetime-local values are sent as UTC ISO strings so server comparisons use UTC correctly
     try {

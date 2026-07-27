@@ -13,19 +13,22 @@ namespace Electronic_Election_Management_System.Services
         private readonly IVoteRepository _votes;
         private readonly IUserRepository _users;
         private readonly IElectionInvitationRepository _invitations;
+        private readonly ILabelRepository _labels;
 
         public ElectionService(
             IElectionRepository elections,
             IAuditLogRepository auditLogs,
             IVoteRepository votes,
             IUserRepository users,
-            IElectionInvitationRepository invitations)
+            IElectionInvitationRepository invitations,
+            ILabelRepository labels)
         {
             _elections = elections;
             _auditLogs = auditLogs;
             _votes = votes;
             _users = users;
             _invitations = invitations;
+            _labels = labels;
         }
 
         public async Task<List<ElectionDto>> GetAllAsync(Guid userId)
@@ -79,18 +82,33 @@ namespace Electronic_Election_Management_System.Services
                 return ServiceResult<ElectionDto>.Fail(ErrorCode.InvalidDateRange);
 
             if (!request.IsClosed &&
-                (request.InvitedUserIds.Count > 0 || request.InvitedEmails.Count > 0))
+                (request.InvitedUserIds.Count > 0 ||
+                 request.InvitedEmails.Count > 0 ||
+                 request.InvitedLabelIds.Count > 0))
             {
                 return ServiceResult<ElectionDto>.Fail(ErrorCode.InvitationsRequireClosedElection);
             }
 
-            var invitationResult = request.IsClosed
-                ? await BuildInvitationsAsync(
-                    Guid.Empty,
+            ServiceResult<List<ElectionInvitation>> invitationResult;
+            if (request.IsClosed)
+            {
+                var audienceResult = await ExpandLabelAudienceAsync(
                     request.InvitedUserIds,
+                    request.InvitedLabelIds);
+                if (!audienceResult.Success)
+                    return ServiceResult<ElectionDto>.Fail(audienceResult.ErrorCode!.Value);
+
+                invitationResult = await BuildInvitationsAsync(
+                    Guid.Empty,
+                    audienceResult.Data!,
                     request.InvitedEmails,
-                    userId)
-                : ServiceResult<List<ElectionInvitation>>.Ok(new List<ElectionInvitation>());
+                    userId);
+            }
+            else
+            {
+                invitationResult = ServiceResult<List<ElectionInvitation>>.Ok(
+                    new List<ElectionInvitation>());
+            }
             if (!invitationResult.Success)
                 return ServiceResult<ElectionDto>.Fail(invitationResult.ErrorCode!.Value);
 
@@ -226,6 +244,30 @@ namespace Electronic_Election_Management_System.Services
                 .ToList();
         }
 
+        public async Task<List<InvitationLabelDto>> GetInvitationLabelsAsync(Guid userId)
+        {
+            var labels = await _labels.GetAllAsync();
+            var result = new List<InvitationLabelDto>();
+
+            foreach (var label in labels)
+            {
+                var assignments = await _labels.GetUsersWithLabelAsync(label.Id);
+                result.Add(new InvitationLabelDto
+                {
+                    Id = label.Id,
+                    Name = label.Name,
+                    Category = label.Category,
+                    UserCount = assignments
+                        .Select(assignment => assignment.UserId)
+                        .Where(id => id != userId)
+                        .Distinct()
+                        .Count()
+                });
+            }
+
+            return result;
+        }
+
         public async Task<ServiceResult<List<ElectionInvitationDto>>> InviteAsync(
             Guid electionId,
             InviteToElectionRequest request,
@@ -347,6 +389,29 @@ namespace Electronic_Election_Management_System.Services
             }
 
             return ServiceResult<List<ElectionInvitation>>.Ok(candidates);
+        }
+
+        private async Task<ServiceResult<List<Guid>>> ExpandLabelAudienceAsync(
+            IEnumerable<Guid> manuallyInvitedUserIds,
+            IEnumerable<Guid> invitedLabelIds)
+        {
+            var labelIds = invitedLabelIds.Distinct().ToList();
+            if (labelIds.Count == 0)
+                return ServiceResult<List<Guid>>.Ok(manuallyInvitedUserIds.Distinct().ToList());
+
+            var existingLabels = await _labels.GetByIdsAsync(labelIds);
+            if (existingLabels.Count != labelIds.Count)
+                return ServiceResult<List<Guid>>.Fail(ErrorCode.LabelNotFound);
+
+            var userIds = manuallyInvitedUserIds.ToHashSet();
+            foreach (var labelId in labelIds)
+            {
+                var assignments = await _labels.GetUsersWithLabelAsync(labelId);
+                foreach (var assignment in assignments)
+                    userIds.Add(assignment.UserId);
+            }
+
+            return ServiceResult<List<Guid>>.Ok(userIds.ToList());
         }
 
         private static bool TryParseType(string raw, out ElectionType type)
