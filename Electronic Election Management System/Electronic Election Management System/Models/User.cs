@@ -36,5 +36,8 @@ namespace Electronic_Election_Management_System.Models
 
         /// <summary>User-editable profile details. Null until the user saves their details for the first time.</summary>
         public UserDetails? UserDetails { get; set; }
+
+        /// <summary>Labels assigned to this user by an admin.</summary>
+        public ICollection<UserLabel> UserLabels { get; set; } = new List<UserLabel>();
     }
 }

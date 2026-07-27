@@ -91,6 +91,14 @@ export const routes: Routes = [
         (m) => m.UsersManagementComponent
       )
   },
+  {
+    path: 'admin/labels',
+    canActivate: [adminGuard],
+    loadComponent: () =>
+      import('./features/admin/label-management.component').then(
+        (m) => m.LabelManagementComponent
+      )
+  },
 
   // Any logged-in user — personal profile / details
   {

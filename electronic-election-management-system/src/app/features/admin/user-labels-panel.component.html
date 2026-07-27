@@ -1,0 +1,68 @@
+<div class="labels-panel">
+  <div class="labels-panel-header">
+    <span class="labels-panel-title">{{ 'labels.panelTitle' | translate }}</span>
+  </div>
+
+  @if (isLoading()) {
+    <div class="labels-panel-loading">
+      <span class="spinner spinner--sm"></span>
+      <span>{{ 'labels.loading' | translate }}</span>
+    </div>
+  } @else {
+    @if (errorKey()) {
+      <p class="error-text error-text--sm">{{ errorKey()! | translate }}</p>
+    }
+
+    <!-- Assigned chips -->
+    <div class="chip-list">
+      @if (userLabels().length === 0) {
+        <span class="chip-empty">{{ 'labels.noAssigned' | translate }}</span>
+      }
+      @for (ul of userLabels(); track ul.labelId) {
+        <span class="chip" [title]="('labels.assignedOn' | translate) + ' ' + formatDate(ul.assignedAt)">
+          <span class="chip-label">{{ ul.name }}</span>
+          @if (ul.category) {
+            <span class="chip-category">{{ ul.category }}</span>
+          }
+          <button
+            type="button"
+            class="chip-remove"
+            [title]="'labels.removeLabel' | translate"
+            (click)="removeLabel(ul)"
+            aria-label="Remove label"
+          >×</button>
+        </span>
+      }
+    </div>
+
+    <!-- Add label row -->
+    @if (availableLabels().length > 0) {
+      <div class="labels-add-row">
+        <select
+          class="labels-select"
+          [ngModel]="selectedLabelId()"
+          (ngModelChange)="selectedLabelId.set($event)"
+          [disabled]="isAdding()"
+        >
+          <option value="">{{ 'labels.selectPlaceholder' | translate }}</option>
+          @for (label of availableLabels(); track label.id) {
+            <option [value]="label.id">
+              {{ label.name }}{{ label.category ? ' (' + label.category + ')' : '' }}
+            </option>
+          }
+        </select>
+        <button
+          type="button"
+          class="btn-primary btn-sm"
+          [disabled]="!selectedLabelId() || isAdding()"
+          (click)="addLabel()"
+        >
+          @if (isAdding()) {
+            <span class="spinner spinner--sm"></span>
+          }
+          {{ 'labels.addBtn' | translate }}
+        </button>
+      </div>
+    }
+  }
+</div>

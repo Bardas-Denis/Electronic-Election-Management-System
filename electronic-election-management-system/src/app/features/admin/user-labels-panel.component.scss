@@ -1,0 +1,139 @@
+.labels-panel {
+  padding: 0.75rem 1rem 0.85rem;
+  border-top: 1px solid var(--border-color, #e5e7eb);
+  background: var(--bg-subtle, #f9fafb);
+}
+
+.labels-panel-header {
+  margin-bottom: 0.6rem;
+}
+
+.labels-panel-title {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted, #6b7280);
+}
+
+.labels-panel-loading {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+}
+
+// ── Chips ─────────────────────────────────────────────────────────────────
+
+.chip-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 0.75rem;
+  min-height: 30px;
+}
+
+.chip-empty {
+  font-size: 0.8125rem;
+  color: var(--text-muted, #9ca3af);
+  align-self: center;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 3px 8px 3px 10px;
+  border-radius: 999px;
+  background: var(--info-bg, #eff6ff);
+  border: 1px solid var(--info-border, #bfdbfe);
+  color: var(--info-color, #1e40af);
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: default;
+  transition: background 0.15s;
+
+  &:hover {
+    background: color-mix(in srgb, var(--info-bg, #eff6ff) 80%, var(--info-border, #bfdbfe));
+  }
+}
+
+.chip-label {
+  font-weight: 600;
+}
+
+.chip-category {
+  font-size: 0.68rem;
+  color: var(--info-color, #1e40af);
+  opacity: 0.7;
+  font-weight: 400;
+}
+
+.chip-remove {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--info-color, #1e40af);
+  font-size: 0.95rem;
+  line-height: 1;
+  padding: 0 0 0 2px;
+  opacity: 0.6;
+  transition: opacity 0.15s;
+  font-family: inherit;
+
+  &:hover {
+    opacity: 1;
+  }
+}
+
+// ── Add label row ─────────────────────────────────────────────────────────
+
+.labels-add-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.labels-select {
+  height: 32px;
+  font-size: 0.8125rem;
+  padding: 0 8px;
+  border-radius: 6px;
+  border: 1px solid var(--border-color, #d1d5db);
+  background: var(--bg-card, #ffffff);
+  color: var(--text-primary);
+  min-width: 180px;
+  outline: none;
+  cursor: pointer;
+
+  &:focus {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+.error-text--sm {
+  font-size: 0.8125rem;
+  margin-bottom: 0.5rem;
+}
+
+.spinner--sm {
+  width: 12px;
+  height: 12px;
+  border-width: 2px;
+  display: inline-block;
+  vertical-align: middle;
+  margin-right: 4px;
+}
+
+.btn-primary.btn-sm {
+  height: 32px;
+  padding: 0 0.75rem;
+  font-size: 0.8125rem;
+}
