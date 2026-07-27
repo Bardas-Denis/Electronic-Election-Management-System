@@ -4,7 +4,11 @@ import { FormBuilder, FormArray, ReactiveFormsModule, Validators } from '@angula
 import { ActivatedRoute, Router } from '@angular/router';
 import { TranslatePipe } from '@ngx-translate/core';
 import { VotingService } from '../../core/services/voting.service';
-import { InvitationCandidateDto } from '../../core/models/voting.model';
+import {
+  CreateElectionQuestionDto,
+  ElectionDto,
+  InvitationCandidateDto
+} from '../../core/models/voting.model';
 import {
   dateRangeValidator,
   INPUT_LIMITS,
@@ -61,10 +65,7 @@ export class CreateElectionComponent implements OnInit {
     invitedEmails: this.fb.control<string[]>([]),
     startsAt: ['', Validators.required],
     endsAt: ['', Validators.required],
-    questions: this.fb.array(
-      [this.createQuestionGroup()],
-      [Validators.minLength(1), Validators.maxLength(INPUT_LIMITS.maxQuestions)]
-    )
+    questions: this.createQuestionsArray()
   }, { validators: dateRangeValidator });
 
   get isPoliticalElection(): boolean {
@@ -99,20 +100,13 @@ export class CreateElectionComponent implements OnInit {
 
     this.votingService.getElectionById(this.editingElectionId).subscribe({
       next: (election) => {
-        // reconstruim FormArray-ul de optiuni cu numarul exact de optiuni existente primite de la server
-        this.questions.clear();
-        const fetchedQuestions = election.questions?.length
-          ? election.questions
-          : [{ id: '', text: election.question ?? '', displayOrder: 0, options: election.options ?? [] }];
-        fetchedQuestions.forEach(question => {
-          const group = this.createQuestionGroup();
-          group.patchValue({ text: question.text });
-          const options = group.get('options') as FormArray;
-          options.clear();
-          question.options.forEach(option => options.push(this.createOptionGroup(option)));
-          while (options.length < 2) options.push(this.createOptionGroup());
-          this.questions.push(group);
-        });
+        // Replace the complete array with controls initialized from the response.
+        // Patching blank groups and then clearing/pushing their nested arrays could leave
+        // the rendered form directives attached to the old empty controls.
+        this.form.setControl(
+          'questions',
+          this.createQuestionsArray(normalizeEditableQuestions(election))
+        );
 
         this.form.patchValue({
           title: election.title,
@@ -160,11 +154,15 @@ export class CreateElectionComponent implements OnInit {
     });
   }
 
-  private createQuestionGroup() {
+  private createQuestionGroup(question?: CreateElectionQuestionDto) {
+    const suppliedOptions = question?.options ?? [];
+    const optionGroups = suppliedOptions.map(option => this.createOptionGroup(option));
+    while (optionGroups.length < 2) optionGroups.push(this.createOptionGroup());
+
     return this.fb.group({
-      text: ['', [trimmedRequired, Validators.maxLength(INPUT_LIMITS.question)]],
+      text: [question?.text ?? '', [trimmedRequired, Validators.maxLength(INPUT_LIMITS.question)]],
       options: this.fb.array(
-        [this.createOptionGroup(), this.createOptionGroup()],
+        optionGroups,
         [
           Validators.minLength(2),
           Validators.maxLength(INPUT_LIMITS.maxOptionsPerQuestion),
@@ -172,6 +170,17 @@ export class CreateElectionComponent implements OnInit {
         ]
       )
     });
+  }
+
+  private createQuestionsArray(questions: CreateElectionQuestionDto[] = []): FormArray {
+    const groups = questions.length
+      ? questions.map(question => this.createQuestionGroup(question))
+      : [this.createQuestionGroup()];
+
+    return this.fb.array(
+      groups,
+      [Validators.minLength(1), Validators.maxLength(INPUT_LIMITS.maxQuestions)]
+    );
   }
 
   private syncAnonymousState(type: string | null | undefined): void {
@@ -405,4 +414,38 @@ function toDatetimeLocal(isoDate: string): string {
   const date = new Date(isoDate);
   const pad = (n: number) => n.toString().padStart(2, '0');
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
+/**
+ * Converts both current multi-question responses and legacy single-question
+ * responses into the exact shape used by the edit form.
+ */
+export function normalizeEditableQuestions(election: ElectionDto): CreateElectionQuestionDto[] {
+  if (Array.isArray(election.questions) && election.questions.length > 0) {
+    return election.questions.map((question, index) => ({
+      text: question.text || (index === 0 ? election.question : '') || '',
+      options: Array.isArray(question.options) && question.options.length > 0
+        ? question.options.map(option => ({
+            label: option.label ?? '',
+            description: option.description ?? '',
+            imageDataUrl: option.imageDataUrl ?? ''
+          }))
+        : index === 0
+          ? (election.options ?? []).map(option => ({
+              label: option.label ?? '',
+              description: option.description ?? '',
+              imageDataUrl: option.imageDataUrl ?? ''
+            }))
+          : []
+    }));
+  }
+
+  return [{
+    text: election.question || election.title || '',
+    options: (election.options ?? []).map(option => ({
+      label: option.label ?? '',
+      description: option.description ?? '',
+      imageDataUrl: option.imageDataUrl ?? ''
+    }))
+  }];
 }
