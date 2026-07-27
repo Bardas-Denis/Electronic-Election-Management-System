@@ -65,6 +65,32 @@ describe('VotingService', () => {
     expect(request.request.method).toBe('DELETE');
     request.flush(null);
   });
+
+  it('loads label audiences for a closed election', () => {
+    service.getInvitationLabels().subscribe(labels => {
+      expect(labels).toEqual([
+        {
+          id: 'label-id',
+          name: 'Engineering',
+          category: 'Department',
+          userCount: 4
+        }
+      ]);
+    });
+
+    const request = http.expectOne(
+      `${environment.apiUrl}/voting/elections/invitation-labels`
+    );
+    expect(request.request.method).toBe('GET');
+    request.flush([
+      {
+        id: 'label-id',
+        name: 'Engineering',
+        category: 'Department',
+        userCount: 4
+      }
+    ]);
+  });
 });
 
 function electionRequest(): CreateElectionRequest {

@@ -55,6 +55,18 @@ namespace Electronic_Election_Management_System.Controllers
         }
 
         /// <summary>
+        /// Returns labels that can be used to invite their currently assigned users
+        /// to a new closed election.
+        /// </summary>
+        [HttpGet("invitation-labels")]
+        [Authorize(Roles = "Admin,ElectionManager")]
+        public async Task<ActionResult<List<InvitationLabelDto>>> GetInvitationLabels()
+        {
+            var labels = await _electionService.GetInvitationLabelsAsync(GetCurrentUserId());
+            return Ok(labels);
+        }
+
+        /// <summary>
         /// Retrieve election based on id.
         /// </summary>
         /// <param name="id">The id of the election to retrieve.</param>

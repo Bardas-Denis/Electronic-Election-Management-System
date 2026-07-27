@@ -60,6 +60,7 @@ export interface CreateElectionRequest {
   isClosed: boolean;
   invitedUserIds?: string[];
   invitedEmails?: string[];
+  invitedLabelIds?: string[];
   startsAt: string;
   endsAt: string;
   options: CreateOptionDto[];
@@ -117,4 +118,11 @@ export interface ElectionInvitationDto {
 export interface InvitationCandidateDto {
   id: string;
   email: string;
+}
+
+export interface InvitationLabelDto {
+  id: string;
+  name: string;
+  category?: string | null;
+  userCount: number;
 }

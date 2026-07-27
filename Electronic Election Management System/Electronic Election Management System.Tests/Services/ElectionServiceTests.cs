@@ -16,12 +16,20 @@ public class ElectionServiceTests
     private readonly IUserRepository _users = Substitute.For<IUserRepository>();
     private readonly IElectionInvitationRepository _invitations =
         Substitute.For<IElectionInvitationRepository>();
+    private readonly ILabelRepository _labels = Substitute.For<ILabelRepository>();
     private readonly ElectionService _service;
     private readonly Guid _creatorId = Guid.NewGuid();
 
     public ElectionServiceTests()
     {
-        _service = new ElectionService(_elections, _auditLogs, _votes, _users, _invitations);
+        _users.GetByEmailsAsync(Arg.Any<IEnumerable<string>>()).Returns([]);
+        _service = new ElectionService(
+            _elections,
+            _auditLogs,
+            _votes,
+            _users,
+            _invitations,
+            _labels);
     }
 
     [Fact]
@@ -70,6 +78,90 @@ public class ElectionServiceTests
 
         result.ErrorCode.Should().Be(ErrorCode.InvitationsRequireClosedElection);
         await _elections.DidNotReceive().AddAsync(Arg.Any<Election>());
+    }
+
+    [Fact]
+    public async Task CreateAsync_WithLabelAudienceOnPublicElection_IsRejected()
+    {
+        var request = ValidCreateRequest();
+        request.InvitedLabelIds = [Guid.NewGuid()];
+
+        var result = await _service.CreateAsync(request, _creatorId);
+
+        result.ErrorCode.Should().Be(ErrorCode.InvitationsRequireClosedElection);
+        await _labels.DidNotReceive().GetByIdsAsync(Arg.Any<IEnumerable<Guid>>());
+        await _elections.DidNotReceive().AddAsync(Arg.Any<Election>());
+    }
+
+    [Fact]
+    public async Task CreateAsync_WithMissingAudienceLabel_IsRejected()
+    {
+        var request = ValidCreateRequest();
+        request.IsClosed = true;
+        request.InvitedLabelIds = [Guid.NewGuid()];
+        _labels.GetByIdsAsync(Arg.Any<IEnumerable<Guid>>()).Returns([]);
+
+        var result = await _service.CreateAsync(request, _creatorId);
+
+        result.ErrorCode.Should().Be(ErrorCode.LabelNotFound);
+        await _elections.DidNotReceive().AddAsync(Arg.Any<Election>());
+    }
+
+    [Fact]
+    public async Task CreateAsync_WithOverlappingLabels_InvitesEachUserOnceAndExcludesCreator()
+    {
+        var firstLabel = new Label { Name = "Engineering" };
+        var secondLabel = new Label { Name = "Bucharest" };
+        var firstUser = new User { Email = "first@example.com" };
+        var secondUser = new User { Email = "second@example.com" };
+        var request = ValidCreateRequest();
+        request.IsClosed = true;
+        request.InvitedLabelIds = [firstLabel.Id, secondLabel.Id];
+
+        _labels.GetByIdsAsync(Arg.Any<IEnumerable<Guid>>())
+            .Returns([firstLabel, secondLabel]);
+        _labels.GetUsersWithLabelAsync(firstLabel.Id).Returns(
+        [
+            CreateUserLabel(firstUser, firstLabel),
+            CreateUserLabel(secondUser, firstLabel)
+        ]);
+        _labels.GetUsersWithLabelAsync(secondLabel.Id).Returns(
+        [
+            CreateUserLabel(secondUser, secondLabel),
+            CreateUserLabel(new User { Id = _creatorId, Email = "creator@example.com" }, secondLabel)
+        ]);
+        _users.GetByIdsAsync(Arg.Any<IEnumerable<Guid>>()).Returns([firstUser, secondUser]);
+
+        Election? persisted = null;
+        _elections.AddAsync(Arg.Do<Election>(election => persisted = election))
+            .Returns(Task.CompletedTask);
+
+        var result = await _service.CreateAsync(request, _creatorId);
+
+        result.Success.Should().BeTrue();
+        persisted.Should().NotBeNull();
+        persisted!.Invitations.Select(invitation => invitation.UserId)
+            .Should().BeEquivalentTo([firstUser.Id, secondUser.Id]);
+        persisted.Invitations.Should().OnlyHaveUniqueItems(invitation => invitation.Email);
+    }
+
+    [Fact]
+    public async Task GetInvitationLabelsAsync_ReturnsCountsWithoutCurrentUser()
+    {
+        var label = new Label { Name = "Engineering", Category = "Department" };
+        var otherUser = new User { Email = "other@example.com" };
+        _labels.GetAllAsync().Returns([label]);
+        _labels.GetUsersWithLabelAsync(label.Id).Returns(
+        [
+            CreateUserLabel(otherUser, label),
+            CreateUserLabel(new User { Id = _creatorId, Email = "creator@example.com" }, label)
+        ]);
+
+        var result = await _service.GetInvitationLabelsAsync(_creatorId);
+
+        result.Should().ContainSingle();
+        result[0].Id.Should().Be(label.Id);
+        result[0].UserCount.Should().Be(1);
     }
 
     [Fact]
@@ -199,5 +291,13 @@ public class ElectionServiceTests
             new Option { Label = "Alice" },
             new Option { Label = "Bob" }
         ]
+    };
+
+    private static UserLabel CreateUserLabel(User user, Label label) => new()
+    {
+        UserId = user.Id,
+        User = user,
+        LabelId = label.Id,
+        Label = label
     };
 }

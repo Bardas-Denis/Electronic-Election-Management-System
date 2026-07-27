@@ -115,6 +115,13 @@ namespace Electronic_Election_Management_System.DTOs
         [Required, MaxLength(ValidationRules.MaxInvitations)]
         public List<string> InvitedEmails { get; set; } = new();
 
+        /// <summary>
+        /// Labels whose currently assigned users should be invited when the closed election is created.
+        /// Label membership is expanded into individual invitations at creation time.
+        /// </summary>
+        [Required, MaxLength(ValidationRules.MaxInvitations)]
+        public List<Guid> InvitedLabelIds { get; set; } = new();
+
         public DateTime StartsAt { get; set; }
 
         /// <summary>The date and time when the election closes. Must be strictly after <see cref="StartsAt"/>.</summary>
@@ -210,5 +217,14 @@ namespace Electronic_Election_Management_System.DTOs
     {
         public Guid Id { get; set; }
         public string Email { get; set; } = string.Empty;
+    }
+
+    /// <summary>A label available as an audience source for a closed election.</summary>
+    public class InvitationLabelDto
+    {
+        public Guid Id { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public string? Category { get; set; }
+        public int UserCount { get; set; }
     }
 }

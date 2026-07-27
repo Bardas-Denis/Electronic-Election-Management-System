@@ -9,7 +9,8 @@ import {
   UserVoteDto,
   InviteToElectionRequest,
   ElectionInvitationDto,
-  InvitationCandidateDto
+  InvitationCandidateDto,
+  InvitationLabelDto
 } from '../models/voting.model';
 
 // Thin HTTP wrapper - no business logic, just calls the backend
@@ -45,6 +46,10 @@ export class VotingService {
 
   getInvitationCandidates(): Observable<InvitationCandidateDto[]> {
     return this.http.get<InvitationCandidateDto[]>(`${this.baseUrl}/elections/invitation-candidates`);
+  }
+
+  getInvitationLabels(): Observable<InvitationLabelDto[]> {
+    return this.http.get<InvitationLabelDto[]>(`${this.baseUrl}/elections/invitation-labels`);
   }
 
   getElectionInvitations(id: string): Observable<ElectionInvitationDto[]> {
