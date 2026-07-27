@@ -56,15 +56,11 @@
 }
 
 .results-list {
+  flex: 1;
+  min-width: 220px;
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
-}
-
-.result-row {
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
+  gap: 0.35rem;
 }
 
 .result-row.is-leading .result-label span:first-child {
@@ -90,27 +86,70 @@
   }
 }
 
-.result-bar-track {
-  height: 10px;
-  background: var(--bg-subtle);
-  border-radius: 999px;
-  overflow: hidden;
-}
-
-.result-bar-fill {
-  height: 100%;
-  background: var(--accent);
-  border-radius: 999px;
-  transition: width 0.4s ease;
-}
-
-.is-leading .result-bar-fill {
-  background: var(--success-color);
-}
 .result-questions { display: grid; gap: 1.5rem; }
-.result-question { padding: 1rem; border: 1px solid #e4e9ee; border-radius: 14px; }
+.result-question { padding: 1rem; border: 1px solid var(--border-color); border-radius: 14px; }
 .result-question h3 { margin: 0; }
-.question-votes { margin: .25rem 0 1rem; color: #667587; font-size: .875rem; }
-.result-row { display: flex; align-items: center; gap: .8rem; }
+.question-votes { margin: .25rem 0 1rem; color: var(--text-secondary); font-size: .875rem; }
+
+.result-body {
+  display: flex;
+  align-items: center;
+  gap: 1.75rem;
+  flex-wrap: wrap;
+}
+
+/* ─── Pie chart ───────────────────────────────────────────────────────── */
+.pie-wrap {
+  position: relative;
+  width: 148px;
+  height: 148px;
+  flex-shrink: 0;
+}
+
+.pie {
+  width: 100%;
+  height: 100%;
+}
+
+.pie-track {
+  fill: var(--bg-subtle);
+}
+
+.pie-segment {
+  cursor: pointer;
+  transition: opacity 0.15s ease, filter 0.15s ease;
+}
+
+.pie-segment.is-dimmed {
+  opacity: 0.35;
+}
+
+.pie-segment.is-hovered {
+  filter: brightness(1.1);
+}
+
+/* ─── Legend rows ─────────────────────────────────────────────────────── */
+.result-row {
+  display: flex;
+  align-items: center;
+  gap: .8rem;
+  padding: 0.3rem 0.4rem;
+  margin: 0 -0.4rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.result-row.is-hovered {
+  background: var(--bg-subtle);
+}
+
+.result-swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
 .result-content { flex: 1; min-width: 0; }
 .result-option-image { width: 68px; height: 54px; object-fit: cover; border-radius: 9px; }
