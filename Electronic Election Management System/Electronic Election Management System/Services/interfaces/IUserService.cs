@@ -23,5 +23,18 @@ namespace Electronic_Election_Management_System.Services
         /// <param name="targetId">The ID of the user to delete.</param>
         /// <param name="currentUserId">The ID of the current user (admin) performing the delete.</param>
         Task<ServiceResult<bool>> DeleteAsync(Guid targetId, Guid currentUserId);
+
+        // --- UserDetails (editable profile) ---
+
+        /// <summary>
+        /// Returns the current user's saved personal details, or <c>null</c> if they have
+        /// not yet saved any details.
+        /// </summary>
+        Task<PersonalDetailsDto?> GetMyDetailsAsync(Guid userId);
+
+        /// <summary>
+        /// Creates or fully replaces the current user's personal details and returns the saved DTO.
+        /// </summary>
+        Task<ServiceResult<PersonalDetailsDto>> SaveMyDetailsAsync(Guid userId, PersonalDetailsDto dto);
     }
 }

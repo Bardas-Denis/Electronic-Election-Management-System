@@ -121,11 +121,48 @@ form {
 
 .modal-actions {
   display: flex;
+  flex-wrap: wrap;
   gap: 0.6rem;
   margin-top: 0.5rem;
 
   .btn-secondary,
   .btn-primary {
     flex: 1;
+  }
+}
+
+.btn-save-profile {
+  width: 100%;
+  height: 36px;
+  padding: 0 1rem;
+  font-size: 0.8125rem;
+  font-family: inherit;
+  font-weight: 500;
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  border: 1.5px solid var(--accent, #6366f1);
+  background: transparent;
+  color: var(--accent, #6366f1);
+  transition: background var(--transition), color var(--transition), opacity var(--transition);
+  animation: fade-in-down 0.2s ease;
+
+  &:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--accent, #6366f1) 12%, transparent);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+@keyframes fade-in-down {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }

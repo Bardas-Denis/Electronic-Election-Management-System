@@ -1,132 +1,129 @@
 <div class="page">
   @if (election(); as e) {
-    <div class="vote-card">
-      <div class="vote-header">
-        <h2>{{ e.title }}</h2>
-        <p>{{ e.description }}</p>
-        <div class="election-meta">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-          {{ (e.isAnonymous ? 'vote.anonymousLabel' : 'vote.nonAnonymousLabel') | translate }}
-        </div>
-        @if (e.isExpired) {
-          <span class="badge badge--expired">{{ 'elections.expired' | translate }}</span>
-        }
+  <div class="vote-card">
+    <div class="vote-header">
+      <h2>{{ e.title }}</h2>
+      <p>{{ e.description }}</p>
+      <div class="election-meta">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+          <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+        </svg>
+        {{ (e.isAnonymous ? 'vote.anonymousLabel' : 'vote.nonAnonymousLabel') | translate }}
       </div>
-
-      <!-- Already-voted banner + edit-used note -->
-      @if (e.hasUserVoted && !isEditingVote()) {
-        <div class="already-voted-banner">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-          {{ 'vote.alreadyVotedBanner' | translate }}
-          @if (!canEditVote()) {
-            <span class="edit-used-note">{{ 'vote.editUsed' | translate }}</span>
-          }
-        </div>
-      }
-
-      <!-- Edit / Delete action row (only while edit budget remains and election is open) -->
-      @if (!e.isExpired && canEditVote() && e.hasUserVoted && !isEditingVote()) {
-        <div class="vote-actions">
-          <button type="button" class="btn-secondary" (click)="startEditVote()">
-            {{ 'vote.editVote' | translate }}
-          </button>
-          <button type="button" class="btn-danger" [disabled]="isDeletingVote()" (click)="deleteVote()">
-            {{ (isDeletingVote() ? 'vote.deleting' : 'vote.deleteVote') | translate }}
-          </button>
-        </div>
-      }
-
-      <!-- Editing-mode banner -->
-      @if (isEditingVote()) {
-        <div class="already-voted-banner">
-          {{ 'vote.editingBanner' | translate }}
-        </div>
-      }
-
-      <!-- Expired banner -->
       @if (e.isExpired) {
-        <div class="error-text">
-          {{ 'vote.expiredBanner' | translate }}
-        </div>
-      }
-
-      <div class="vote-questions">
-        @for (question of questions(e); track question.id; let questionIndex = $index) {
-          <section class="vote-question-block">
-            <p class="vote-question">
-              @if (questions(e).length > 1) {
-                <span>{{ questionIndex + 1 }}.</span>
-              }
-              {{ question.text }}
-            </p>
-            <div class="options-list" [class.locked]="!canSelectOptions()">
-              @for (option of question.options; track option.id) {
-                <button
-                  class="option-item"
-                  [class.selected]="isOptionSelected(question.id, option.id)"
-                  [disabled]="!canSelectOptions()"
-                  (click)="selectOption(question.id, option.id)"
-                >
-                  @if (option.imageDataUrl) {
-                    <img class="option-image" [src]="option.imageDataUrl" [alt]="option.label" />
-                  }
-                  <span class="option-radio"><span class="option-radio-dot"></span></span>
-                  <span class="option-body">
-                    <span class="option-title">{{ option.label }}</span>
-                    @if (option.description) {
-                      <span class="option-description">{{ option.description }}</span>
-                    }
-                  </span>
-                </button>
-              }
-            </div>
-          </section>
-        }
-      </div>
-
-      <!-- Error / success feedback -->
-      @if (errorMessageKey()) {
-        <p class="error-text">{{ errorMessageKey() | translate }}</p>
-      }
-      @if (successMessageKey()) {
-        <p class="success-text">{{ successMessageKey() | translate }}</p>
-      }
-
-      <!-- Submit / Update button -->
-      @if (!e.isExpired && (!e.hasUserVoted || isEditingVote())) {
-        <button
-          class="btn-primary vote-submit"
-          [disabled]="!hasAllAnswers() || isSubmitting() || isDeletingVote()"
-          (click)="submitVote()"
-        >
-          @if (isSubmitting()) {
-            <span class="spinner"></span>
-          }
-          {{ (isSubmitting() ? 'vote.submitting' : (isEditingVote() ? 'vote.updateVote' : 'vote.submit')) | translate }}
-        </button>
-        @if (isEditingVote()) {
-          <button type="button" class="btn-ghost vote-cancel-edit" (click)="cancelEditVote()">
-            {{ 'vote.cancelEdit' | translate }}
-          </button>
-        }
-      }
-
-      @if (e.isExpired) {
-        <button (click)="goToResults()" class="btn-secondary vote-submit">{{ 'vote.seeResults' | translate }}</button>
+      <span class="badge badge--expired">{{ 'elections.expired' | translate }}</span>
       }
     </div>
-  } @else {
-    <div class="state-block">
+
+    <!-- Already-voted banner + edit-used note -->
+    @if (e.hasUserVoted && !isEditingVote()) {
+    <div class="already-voted-banner">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+        stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="20 6 9 17 4 12"></polyline>
+      </svg>
+      {{ 'vote.alreadyVotedBanner' | translate }}
+      @if (!canEditVote()) {
+      <span class="edit-used-note">{{ 'vote.editUsed' | translate }}</span>
+      }
+    </div>
+    }
+
+    <!-- Edit / Delete action row (only while edit budget remains and election is open) -->
+    @if (!e.isExpired && canEditVote() && e.hasUserVoted && !isEditingVote()) {
+    <div class="vote-actions">
+      <button type="button" class="btn-secondary" (click)="startEditVote()">
+        {{ 'vote.editVote' | translate }}
+      </button>
+      <button type="button" class="btn-danger" [disabled]="isDeletingVote()" (click)="deleteVote()">
+        {{ (isDeletingVote() ? 'vote.deleting' : 'vote.deleteVote') | translate }}
+      </button>
+    </div>
+    }
+
+    <!-- Editing-mode banner -->
+    @if (isEditingVote()) {
+    <div class="already-voted-banner">
+      {{ 'vote.editingBanner' | translate }}
+    </div>
+    }
+
+    <!-- Expired banner -->
+    @if (e.isExpired) {
+    <div class="error-text">
+      {{ 'vote.expiredBanner' | translate }}
+    </div>
+    }
+
+    <div class="vote-questions">
+      @for (question of questions(e); track question.id; let questionIndex = $index) {
+      <section class="vote-question-block">
+        <p class="vote-question">
+          @if (questions(e).length > 1) {
+          <span>{{ questionIndex + 1 }}.</span>
+          }
+          {{ question.text }}
+        </p>
+        <div class="options-list" [class.locked]="!canSelectOptions()">
+          @for (option of question.options; track option.id) {
+          <button class="option-item" [class.selected]="isOptionSelected(question.id, option.id)"
+            [disabled]="!canSelectOptions()" (click)="selectOption(question.id, option.id)">
+            @if (option.imageDataUrl) {
+            <img class="option-image" [src]="option.imageDataUrl" [alt]="option.label" />
+            }
+            <span class="option-radio"><span class="option-radio-dot"></span></span>
+            <span class="option-body">
+              <span class="option-title">{{ option.label }}</span>
+              @if (option.description) {
+              <span class="option-description">{{ option.description }}</span>
+              }
+            </span>
+          </button>
+          }
+        </div>
+      </section>
+      }
+    </div>
+
+    <!-- Error / success feedback -->
+    @if (errorMessageKey()) {
+    <p class="error-text">{{ errorMessageKey() | translate }}</p>
+    }
+    @if (successMessageKey()) {
+    <p class="success-text">{{ successMessageKey() | translate }}</p>
+    }
+
+    <!-- Submit / Update button -->
+    @if (!e.isExpired && (!e.hasUserVoted || isEditingVote())) {
+    <button class="btn-primary vote-submit" [disabled]="!hasAllAnswers() || isSubmitting() || isDeletingVote()"
+      (click)="submitVote()">
+      @if (isSubmitting()) {
       <span class="spinner"></span>
-      <p>{{ 'vote.loading' | translate }}</p>
-    </div>
+      }
+      {{ (isSubmitting() ? 'vote.submitting' : (isEditingVote() ? 'vote.updateVote' : 'vote.submit')) | translate }}
+    </button>
+    @if (isEditingVote()) {
+    <button type="button" class="btn-ghost vote-cancel-edit" (click)="cancelEditVote()">
+      {{ 'vote.cancelEdit' | translate }}
+    </button>
+    }
+    }
+
+    @if (e.isExpired) {
+    <button (click)="goToResults()" class="btn-secondary vote-submit">{{ 'vote.seeResults' | translate }}</button>
+    }
+  </div>
+  } @else {
+  <div class="state-block">
+    <span class="spinner"></span>
+    <p>{{ 'vote.loading' | translate }}</p>
+  </div>
   }
 
   @if (showDeclarationModal() && election(); as e) {
-    <app-voter-declaration-modal
-      [electionType]="e.type"
-      (confirmed)="onDeclarationConfirmed($event)"
-      (cancelled)="onDeclarationCancelled()"
-    ></app-voter-declaration-modal>
+  <app-voter-declaration-modal [electionType]="e.type" (confirmed)="onDeclarationConfirmed($event)"
+    (cancelled)="onDeclarationCancelled()"></app-voter-declaration-modal>
   }
 </div>

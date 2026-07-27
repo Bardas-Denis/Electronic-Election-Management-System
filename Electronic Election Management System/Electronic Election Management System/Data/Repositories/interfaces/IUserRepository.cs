@@ -1,3 +1,4 @@
+using Electronic_Election_Management_System.DTOs;
 using Electronic_Election_Management_System.Models;
 
 namespace Electronic_Election_Management_System.Data.Repositories
@@ -22,5 +23,13 @@ namespace Electronic_Election_Management_System.Data.Repositories
         Task AddAsync(User user);
         void Remove(User user);
         Task SaveChangesAsync();
+
+        // --- UserDetails (editable profile) ---
+
+        /// <summary>Returns the user-details profile.</summary>
+        Task<UserDetails?> GetUserDetailsAsync(Guid userId);
+
+        /// <summary>Saves the user-details profile.</summary>
+        Task<UserDetails> SaveUserDetailsAsync(Guid userId, PersonalDetailsDto dto);
     }
 }

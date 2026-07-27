@@ -201,6 +201,18 @@
   gap: 0.5rem;
 }
 
+.navbar .nav-user--link {
+  text-decoration: none;
+  border-radius: var(--radius-sm);
+  padding: 0.2rem 0.45rem;
+  transition: background var(--transition);
+  cursor: pointer;
+
+  &:hover {
+    background: var(--bg-subtle);
+  }
+}
+
 .navbar .nav-avatar {
   display: flex;
   align-items: center;

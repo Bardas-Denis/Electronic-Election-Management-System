@@ -33,5 +33,8 @@ namespace Electronic_Election_Management_System.Models
         public ICollection<VoteToken> VoteTokens { get; set; } = new List<VoteToken>();
         public ICollection<AuditLog> AuditLogs { get; set; } = new List<AuditLog>();
         public ICollection<ElectionInvitation> ElectionInvitations { get; set; } = new List<ElectionInvitation>();
+
+        /// <summary>User-editable profile details. Null until the user saves their details for the first time.</summary>
+        public UserDetails? UserDetails { get; set; }
     }
 }
