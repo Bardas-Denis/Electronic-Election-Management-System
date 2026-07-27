@@ -58,7 +58,7 @@
       "login": "Autentifică-te"
     }
   },
-  "elections": {
+"elections": {
     "listHeading": "Alegeri disponibile",
     "listSubtitle": "Consultă alegerile active și votează, sau urmărește rezultatele live.",
     "newButton": "Alegere nouă",
@@ -193,8 +193,12 @@
     "filterActive": "Active",
     "filterExpirate": "Expirate",
     "saptamanaAceasta": "Săptămâna aceasta",
-    "maiMultDeOLuna": "In mai mult de o lună"
-
+    "maiMultDeOLuna": "In mai mult de o lună",
+    "upcoming": "Începe în curând",
+    "changeVoteHint": "Apasă pentru a schimba votul",
+    "begins": "Începe",
+    "ends": "Se termină"
+    
   },
   "vote": {
     "confirmed": "Votul tău a fost înregistrat",

@@ -1,3 +1,76 @@
+<style>
+  .election-card {
+    background: var(--bg-card, #ffffff);
+    border: 1px solid var(--border-color, #e5e7eb);
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  .election-card:hover {
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  }
+
+  .date-container {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 12px;
+    background: var(--bg-sub, #f8fafc);
+    border: 1px solid var(--border-color, #e2e8f0);
+    border-radius: 8px;
+    margin: 8px 0 0 0;
+    width: fit-content;
+  }
+
+  .date-time-badge {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--text-sub, #475569);
+    background: var(--bg-card, #ffffff);
+    padding: 2px 5px;
+    border-radius: 4px;
+    border: 1px solid var(--border-color, #e2e8f0);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .action-voted {
+    display: inline-flex; align-items: center; gap: 4px; padding: 5px 10px; 
+    background: var(--voted-bg, #f0fdf4); color: var(--voted-color, #16a34a); border: 1px solid var(--voted-border, #bbf7d0); 
+    border-radius: 6px; font-size: 0.82rem; font-weight: 600; 
+    text-decoration: none; cursor: pointer; transition: all 0.2s ease;
+  }
+  .action-voted:hover {
+    opacity: 0.9; filter: brightness(0.95);
+  }
+
+  .action-vote {
+    display: inline-flex; align-items: center; justify-content: center; 
+    padding: 6px 14px; background: var(--btn-bg, #ffffff); color: var(--btn-color, #111827); 
+    border: 1px solid var(--border-color, #d1d5db); border-radius: 6px; font-size: 0.82rem; 
+    font-weight: 600; text-decoration: none; box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    cursor: pointer; transition: all 0.2s ease;
+  }
+  .action-vote:hover {
+    background: var(--btn-hover-bg, #f9fafb);
+  }
+
+  .action-results {
+    display: inline-flex; align-items: center; gap: 4px; font-size: 0.82rem; 
+    color: var(--link-color, #3b82f6); font-weight: 600; text-decoration: none; 
+    cursor: pointer; transition: all 0.2s ease;
+  }
+  .action-results:hover {
+    text-decoration: underline;
+  }
+
+  .action-closed {
+    display: inline-flex; padding: 5px 10px; background: var(--closed-bg, #fef2f2); 
+    color: var(--closed-color, #dc2626); border: 1px solid var(--closed-border, #fecaca); border-radius: 6px; 
+    font-size: 0.82rem; font-weight: 600; cursor: default;
+  }
+</style>
+
 <div class="page">
   <!-- Top header section -->
   <div class="page-header">
@@ -13,18 +86,16 @@
     }
   </div>
 
-  <!-- Main layout: Sidebar Filters (left) & Content Grid (right) -->
+  <!-- Main layout -->
   <div class="elections-main-layout" style="display: flex; gap: 40px; align-items: flex-start; margin-top: 32px;">
 
-    <!-- Sidebar Filters (Left Column) -->
+    <!-- Sidebar Filters -->
     <aside class="filters-sidebar" style="width: 230px; flex-shrink: 0; background: var(--bg-card, #ffffff); padding: 20px; border-radius: 12px; border: 1px solid var(--border-color, #e5e7eb); box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);">
       
-      <!-- Filter Header -->
       <div style="margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--border-color, #f3f4f6);">
         <h3 style="font-size: 0.95rem; font-weight: 600; color: inherit; margin: 0;">{{ 'elections.filterTitle' | translate }}</h3>
       </div>
 
-      <!-- Search input filter -->
       <div style="margin-bottom: 20px;">
         <label for="electionSearch" style="display: block; font-size: 0.8rem; font-weight: 500; margin-bottom: 6px; opacity: 0.8;">{{ 'elections.searchLabel' | translate }}</label>
         <input 
@@ -37,7 +108,6 @@
         />
       </div>
 
-      <!-- Multi-select Checkboxes for Filters -->
       <div>
         <span style="display: block; font-size: 0.8rem; font-weight: 600; margin-top: 20px; margin-bottom: 14px; opacity: 0.85;">{{ 'elections.categoriesStatus' | translate }}</span>
         <div style="display: flex; flex-direction: column; gap: 12px;">
@@ -45,39 +115,30 @@
           <label style="display: flex; align-items: center; gap: 10px; font-size: 0.85rem; cursor: pointer; color: inherit; opacity: 0.85;">
             <input type="checkbox" [checked]="selectedFilters().politic" (change)="toggleFilter('politic')" style="width: 16px; height: 16px; margin: 0; cursor: pointer;" /> {{ 'elections.filterPolitic' | translate }}
           </label>
-
           <label style="display: flex; align-items: center; gap: 10px; font-size: 0.85rem; cursor: pointer; color: inherit; opacity: 0.85;">
             <input type="checkbox" [checked]="selectedFilters().comercial" (change)="toggleFilter('comercial')" style="width: 16px; height: 16px; margin: 0; cursor: pointer;" /> {{ 'elections.filterComercial' | translate }}
           </label>
-
           <label style="display: flex; align-items: center; gap: 10px; font-size: 0.85rem; cursor: pointer; color: inherit; opacity: 0.85;">
             <input type="checkbox" [checked]="selectedFilters().anonim" (change)="toggleFilter('anonim')" style="width: 16px; height: 16px; margin: 0; cursor: pointer;" /> {{ 'elections.filterAnonim' | translate }}
           </label>
-
           <label style="display: flex; align-items: center; gap: 10px; font-size: 0.85rem; cursor: pointer; color: inherit; opacity: 0.85;">
             <input type="checkbox" [checked]="selectedFilters().neanonim" (change)="toggleFilter('neanonim')" style="width: 16px; height: 16px; margin: 0; cursor: pointer;" /> {{ 'elections.filterNeanonim' | translate }}
           </label>
-
           <label style="display: flex; align-items: center; gap: 10px; font-size: 0.85rem; cursor: pointer; color: inherit; opacity: 0.85;">
             <input type="checkbox" [checked]="selectedFilters().votate" (change)="toggleFilter('votate')" style="width: 16px; height: 16px; margin: 0; cursor: pointer;" /> {{ 'elections.filterVotate' | translate }}
           </label>
-
           <label style="display: flex; align-items: center; gap: 10px; font-size: 0.85rem; cursor: pointer; color: inherit; opacity: 0.85;">
             <input type="checkbox" [checked]="selectedFilters().nevotate" (change)="toggleFilter('nevotate')" style="width: 16px; height: 16px; margin: 0; cursor: pointer;" /> {{ 'elections.filterNevotate' | translate }}
           </label>
-          
           <label style="display: flex; align-items: center; gap: 10px; font-size: 0.85rem; cursor: pointer; color: inherit; opacity: 0.85;">
             <input type="checkbox" [checked]="selectedFilters().active" (change)="toggleFilter('active')" style="width: 16px; height: 16px; margin: 0; cursor: pointer;" /> {{ 'elections.filterActive' | translate }}
           </label>
-
           <label style="display: flex; align-items: center; gap: 10px; font-size: 0.85rem; cursor: pointer; color: inherit; opacity: 0.85;">
             <input type="checkbox" [checked]="selectedFilters().expirate" (change)="toggleFilter('expirate')" style="width: 16px; height: 16px; margin: 0; cursor: pointer;" /> {{ 'elections.filterExpirate' | translate }}
           </label>
-
           <label style="display: flex; align-items: center; gap: 10px; font-size: 0.85rem; cursor: pointer; color: inherit; opacity: 0.85;">
             <input type="checkbox" [checked]="selectedFilters().saptamanaAceasta" (change)="toggleFilter('saptamanaAceasta')" style="width: 16px; height: 16px; margin: 0; cursor: pointer;" /> {{ 'elections.saptamanaAceasta' | translate }}
           </label>
-
           <label style="display: flex; align-items: center; gap: 10px; font-size: 0.85rem; cursor: pointer; color: inherit; opacity: 0.85;">
             <input type="checkbox" [checked]="selectedFilters().maiMultDeOLuna" (change)="toggleFilter('maiMultDeOLuna')" style="width: 16px; height: 16px; margin: 0; cursor: pointer;" /> {{ 'elections.maiMultDeOLuna' | translate }}
           </label>
@@ -86,7 +147,7 @@
       </div>
     </aside>
 
-    <!-- Content Area (Right Column - Election Grid) -->
+    <!-- Content Area (Grid) -->
     <div class="elections-content-area" style="flex: 1; min-width: 0;">
       @if (isLoading()) {
         <div class="state-block">
@@ -112,40 +173,94 @@
 </div>
 
 <ng-template #electionCard let-election="election">
-  <div class="election-card">
-    <div class="election-badges">
-      <span class="badge badge--neutral">{{ election.type }}</span>
-      <span class="badge badge--neutral">{{ (election.isAnonymous ? 'elections.anonymous' : 'elections.nonAnonymous') | translate }}</span>
-      @if (election.isClosed) {
-        <span class="badge badge--neutral">🔒 {{ 'elections.closed' | translate }}</span>
+  <div class="election-card" style="display: flex; flex-direction: column; height: 100%;">
+    
+    <div style="flex: 1; display: flex; flex-direction: column;">
+      
+      <div class="election-badges" style="margin-bottom: 10px;">
+        <span class="badge badge--neutral">{{ election.type }}</span>
+        <span class="badge badge--neutral">{{ (election.isAnonymous ? 'elections.anonymous' : 'elections.nonAnonymous') | translate }}</span>
+        @if (election.isClosed) {
+          <span class="badge badge--neutral">🔒 {{ 'elections.closed' | translate }}</span>
+        }
+        @if (election.isExpired) {
+          <span class="badge badge--expired">{{ 'elections.expired' | translate }}</span>
+        }
+      </div>
+
+      <h3 style="margin: 0 0 4px 0; font-size: 1.1rem; line-height: 1.3; color: inherit;">{{ election.title }}</h3>
+      
+      @if (election.description) {
+        <p style="margin: 0 0 8px 0; font-size: 0.9rem; line-height: 1.4; opacity: 0.85;">{{ election.description }}</p>
       }
-      @if (election.isExpired) {
-        <span class="badge badge--expired">{{ 'elections.expired' | translate }}</span>
+
+      @if ($any(election).startDate || $any(election).endDate || $any(election).startsAt || $any(election).endsAt) {
+        <div class="date-container">
+
+          @if (isUpcoming(election)) {
+            <!-- Not started yet: show only the start date -->
+            <span style="font-size: 0.7rem; font-weight: 700; opacity: 0.7; text-transform: uppercase; letter-spacing: 0.05em;">{{ 'elections.begins' | translate }}:</span>
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <span style="font-size: 0.85rem; font-weight: 600; font-variant-numeric: tabular-nums;">
+                {{ ($any(election).startDate || $any(election).startsAt) | date:'dd/MM/yyyy' }}
+              </span>
+              <span style="opacity: 0.4; font-size: 0.85rem;">•</span>
+              <span class="date-time-badge">
+                {{ ($any(election).startDate || $any(election).startsAt) | date:'HH:mm' }}
+              </span>
+            </div>
+          } @else {
+            <!-- Active (or expired): show only the end date -->
+            <span style="font-size: 0.7rem; font-weight: 700; opacity: 0.7; text-transform: uppercase; letter-spacing: 0.05em;">{{ 'elections.ends' | translate }}:</span>
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <span style="font-size: 0.85rem; font-weight: 600; font-variant-numeric: tabular-nums;">
+                {{ ($any(election).endDate || $any(election).endsAt) | date:'dd/MM/yyyy' }}
+              </span>
+              <span style="opacity: 0.4; font-size: 0.85rem;">•</span>
+              <span class="date-time-badge">
+                {{ ($any(election).endDate || $any(election).endsAt) | date:'HH:mm' }}
+              </span>
+            </div>
+          }
+
+        </div>
       }
     </div>
 
-    <h3>{{ election.title }}</h3>
-    <p>{{ election.description }}</p>
-
-    <div class="election-actions">
-      @if (election.hasUserVoted) {
-        <a [routerLink]="['/elections', election.id]" class="badge-voted badge-voted--link">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-          {{ 'elections.alreadyVoted' | translate }}
-        </a>
-        @if (votedOptionLabel(election); as votedOption) {
-          <span class="voted-answer">{{ 'elections.votedAnswer' | translate: { answer: votedOption } }}</span>
+    <!-- Secțiunea de acțiuni -->
+    <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border-color, #f1f5f9);">
+      
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+        
+        @if (election.hasUserVoted) {
+          <a [routerLink]="['/elections', election.id]" class="action-voted" [title]="'elections.changeVoteHint' | translate">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            {{ 'elections.alreadyVoted' | translate }}
+          </a>
+        } @else if (election.isExpired) {
+          <span class="action-closed">
+            {{ 'elections.votingClosed' | translate }}
+          </span>
+        } @else {
+          <a [routerLink]="['/elections', election.id]" class="action-vote">
+            {{ 'elections.vote' | translate }}
+          </a>
         }
-      } @else if (election.isExpired) {
-        <span class="badge badge--expired">{{ 'elections.votingClosed' | translate }}</span>
-      } @else {
-        <a [routerLink]="['/elections', election.id]" class="btn-secondary btn-vote">{{ 'elections.vote' | translate }}</a>
+
+        <a [routerLink]="['/elections', election.id, 'results']" class="action-results">
+          {{ 'elections.liveResults' | translate }}
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="7" y1="17" x2="17" y2="7"></line><polyline points="7 7 17 7 17 17"></polyline></svg>
+        </a>
+      </div>
+
+      @if (election.hasUserVoted) {
+        @if (votedOptionLabel(election); as votedOption) {
+          <div style="margin-top: 12px; font-size: 0.85rem; opacity: 0.75; font-weight: 500;">
+            {{ 'elections.votedAnswer' | translate: { answer: votedOption } }}
+          </div>
+        }
       }
 
-      <a [routerLink]="['/elections', election.id, 'results']" class="link-results">
-        {{ 'elections.liveResults' | translate }}
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="7" y1="17" x2="17" y2="7"></line><polyline points="7 7 17 7 17 17"></polyline></svg>
-      </a>
     </div>
   </div>
 </ng-template>
