@@ -19,23 +19,66 @@
           <section class="result-question">
             <h3>{{ question.text }}</h3>
             <p class="question-votes">{{ question.totalVotes }} {{ 'results.votes' | translate }}</p>
-            <div class="results-list">
-              @for (option of question.results; track option.optionId) {
-                <div class="result-row" [class.is-leading]="isLeading(option.voteCount, question)">
-                  @if (option.imageDataUrl) {
-                    <img class="result-option-image" [src]="option.imageDataUrl" [alt]="option.label" />
+
+            <div class="result-body">
+              <div class="pie-wrap">
+                <svg class="pie" viewBox="0 0 100 100" [attr.aria-label]="question.text">
+                  <circle class="pie-track" [attr.cx]="pieCenter" [attr.cy]="pieCenter" [attr.r]="pieRadius" />
+                  @for (segment of pieSegments(question); track segment.optionId) {
+                    @if (segment.isFullCircle) {
+                      <circle
+                        class="pie-segment"
+                        [class.is-hovered]="hoveredSlice() === sliceKey(question.questionId, segment.optionId)"
+                        [class.is-dimmed]="hoveredSlice() !== null && hoveredSlice() !== sliceKey(question.questionId, segment.optionId)"
+                        [attr.cx]="pieCenter" [attr.cy]="pieCenter" [attr.r]="pieRadius"
+                        [style.fill]="segment.colorVar"
+                        (pointerenter)="hoveredSlice.set(sliceKey(question.questionId, segment.optionId))"
+                        (pointerleave)="hoveredSlice.set(null)"
+                      >
+                        <title>{{ segment.label }}: {{ segment.voteCount }} {{ 'results.votes' | translate }} ({{ segment.percent }}%)</title>
+                      </circle>
+                    } @else if (segment.path) {
+                      <path
+                        class="pie-segment"
+                        [class.is-hovered]="hoveredSlice() === sliceKey(question.questionId, segment.optionId)"
+                        [class.is-dimmed]="hoveredSlice() !== null && hoveredSlice() !== sliceKey(question.questionId, segment.optionId)"
+                        [attr.d]="segment.path"
+                        [style.fill]="segment.colorVar"
+                        (pointerenter)="hoveredSlice.set(sliceKey(question.questionId, segment.optionId))"
+                        (pointerleave)="hoveredSlice.set(null)"
+                      >
+                        <title>{{ segment.label }}: {{ segment.voteCount }} {{ 'results.votes' | translate }} ({{ segment.percent }}%)</title>
+                      </path>
+                    }
                   }
-                  <div class="result-content">
-                    <div class="result-label">
-                      <span>{{ option.label }}</span>
-                      <span>{{ option.voteCount }} {{ 'results.votes' | translate }} · {{ percentFor(option.voteCount, question.totalVotes) }}%</span>
-                    </div>
-                    <div class="result-bar-track">
-                      <div class="result-bar-fill" [style.width.%]="percentFor(option.voteCount, question.totalVotes)"></div>
+                </svg>
+              </div>
+
+              <div class="results-list">
+                @for (option of question.results; track option.optionId; let i = $index) {
+                  <div
+                    class="result-row"
+                    [class.is-leading]="isLeading(option.voteCount, question)"
+                    [class.is-hovered]="hoveredSlice() === sliceKey(question.questionId, option.optionId)"
+                    tabindex="0"
+                    (pointerenter)="hoveredSlice.set(sliceKey(question.questionId, option.optionId))"
+                    (pointerleave)="hoveredSlice.set(null)"
+                    (focus)="hoveredSlice.set(sliceKey(question.questionId, option.optionId))"
+                    (blur)="hoveredSlice.set(null)"
+                  >
+                    <span class="result-swatch" [style.background]="'var(--series-' + ((i % 8) + 1) + ')'"></span>
+                    @if (option.imageDataUrl) {
+                      <img class="result-option-image" [src]="option.imageDataUrl" [alt]="option.label" />
+                    }
+                    <div class="result-content">
+                      <div class="result-label">
+                        <span>{{ option.label }}</span>
+                        <span>{{ option.voteCount }} {{ 'results.votes' | translate }} · {{ percentFor(option.voteCount, question.totalVotes) }}%</span>
+                      </div>
                     </div>
                   </div>
-                </div>
-              }
+                }
+              </div>
             </div>
           </section>
         }
