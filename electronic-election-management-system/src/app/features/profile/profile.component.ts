@@ -5,7 +5,9 @@ import { Router } from '@angular/router';
 import { TranslatePipe } from '@ngx-translate/core';
 import { AuthService } from '../../core/services/auth.service';
 import { UserDetailsService } from '../../core/services/user-details.service';
+import { LabelService } from '../../core/services/label.service';
 import { PersonalDetailsDto } from '../../core/models/user-details.model';
+import { UserLabel } from '../../core/models/label.model';
 import { parseCnp } from '../../core/utils/cnp.util';
 import { INPUT_LIMITS } from '../../core/validators/input.validators';
 
@@ -19,12 +21,16 @@ import { INPUT_LIMITS } from '../../core/validators/input.validators';
 export class ProfileComponent implements OnInit {
   readonly authService = inject(AuthService);
   private userDetailsService = inject(UserDetailsService);
+  private labelService = inject(LabelService);
   private router = inject(Router);
 
   isLoading = signal(true);
+  isLoadingLabels = signal(true);
   isSaving = signal(false);
   saveSuccess = signal(false);
   errorKey = signal<string | null>(null);
+
+  myLabels = signal<UserLabel[]>([]);
 
   form = signal<PersonalDetailsDto>({
     cnp: '',
@@ -75,6 +81,16 @@ export class ProfileComponent implements OnInit {
       error: () => {
         // 204 No Content still counts as "no saved details"
         this.isLoading.set(false);
+      }
+    });
+
+    this.labelService.getMyLabels().subscribe({
+      next: (labels) => {
+        this.myLabels.set(labels);
+        this.isLoadingLabels.set(false);
+      },
+      error: () => {
+        this.isLoadingLabels.set(false);
       }
     });
   }
