@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using Electronic_Election_Management_System.Constants;
 
 namespace Electronic_Election_Management_System.DTOs
 {
@@ -21,7 +22,9 @@ namespace Electronic_Election_Management_System.DTOs
         public string? Citizenship { get; set; }
 
         // --- Comercial ---
-        [RegularExpression(@"^(M|F|Male|Female|Other)$", ErrorMessage = "Gender is invalid.")]
+        [RegularExpression(
+            @"^(M|F|Male|Female|Other)$",
+            ErrorMessage = ValidationMessages.InvalidGender)]
         public string? Gender { get; set; }
         [EmailAddress, StringLength(ValidationRules.EmailMaxLength)]
         public string? WorkEmail { get; set; }
@@ -50,13 +53,19 @@ namespace Electronic_Election_Management_System.DTOs
         public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
         {
             if (ElectionId == Guid.Empty)
-                yield return new ValidationResult("Election ID is required.", new[] { nameof(ElectionId) });
+                yield return new ValidationResult(
+                    ValidationMessages.ElectionIdRequired,
+                    new[] { nameof(ElectionId) });
 
             if (OptionId == Guid.Empty && OptionIds.Count == 0)
-                yield return new ValidationResult("At least one option is required.", new[] { nameof(OptionId), nameof(OptionIds) });
+                yield return new ValidationResult(
+                    ValidationMessages.OptionSelectionRequired,
+                    new[] { nameof(OptionId), nameof(OptionIds) });
 
             if (OptionIds.Any(id => id == Guid.Empty) || OptionIds.Count != OptionIds.Distinct().Count())
-                yield return new ValidationResult("Option IDs must be non-empty and unique.", new[] { nameof(OptionIds) });
+                yield return new ValidationResult(
+                    ValidationMessages.InvalidOptionIds,
+                    new[] { nameof(OptionIds) });
         }
     }
 

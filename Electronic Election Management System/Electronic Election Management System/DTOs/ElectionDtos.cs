@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using Electronic_Election_Management_System.Constants;
 
 namespace Electronic_Election_Management_System.DTOs
 {
@@ -44,7 +45,7 @@ namespace Electronic_Election_Management_System.DTOs
                 .Select(option => option.Label.Trim())
                 .ToList();
             if (labels.Count != labels.Distinct(StringComparer.OrdinalIgnoreCase).Count())
-                yield return new ValidationResult("Option labels must be unique within a question.", new[] { nameof(Options) });
+                yield return new ValidationResult(ValidationMessages.DuplicateOptionLabels, new[] { nameof(Options) });
         }
     }
 
@@ -128,20 +129,24 @@ namespace Electronic_Election_Management_System.DTOs
         public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
         {
             if (StartsAt == default)
-                yield return new ValidationResult("Start date is required.", new[] { nameof(StartsAt) });
+                yield return new ValidationResult(ValidationMessages.StartDateRequired, new[] { nameof(StartsAt) });
             if (EndsAt == default)
-                yield return new ValidationResult("End date is required.", new[] { nameof(EndsAt) });
+                yield return new ValidationResult(ValidationMessages.EndDateRequired, new[] { nameof(EndsAt) });
             if (StartsAt != default && EndsAt != default && EndsAt <= StartsAt)
-                yield return new ValidationResult("End date must be after start date.", new[] { nameof(EndsAt) });
+                yield return new ValidationResult(ValidationMessages.InvalidDateRange, new[] { nameof(EndsAt) });
 
             if (string.Equals(Type?.Trim(), "Politic", StringComparison.OrdinalIgnoreCase) &&
                 IsAnonymous)
             {
-                yield return new ValidationResult("Political elections cannot be anonymous.", new[] { nameof(IsAnonymous) });
+                yield return new ValidationResult(
+                    ValidationMessages.PoliticalElectionCannotBeAnonymous,
+                    new[] { nameof(IsAnonymous) });
             }
 
             if (InvitedUserIds.Any(id => id == Guid.Empty))
-                yield return new ValidationResult("Invited user IDs cannot be empty.", new[] { nameof(InvitedUserIds) });
+                yield return new ValidationResult(
+                    ValidationMessages.InvalidInvitedUserIds,
+                    new[] { nameof(InvitedUserIds) });
 
             var emailValidator = new EmailAddressAttribute();
             if (InvitedEmails.Any(email =>
@@ -149,7 +154,9 @@ namespace Electronic_Election_Management_System.DTOs
                     email.Length > ValidationRules.EmailMaxLength ||
                     !emailValidator.IsValid(email)))
             {
-                yield return new ValidationResult("One or more invitation emails are invalid.", new[] { nameof(InvitedEmails) });
+                yield return new ValidationResult(
+                    ValidationMessages.InvalidInvitationEmails,
+                    new[] { nameof(InvitedEmails) });
             }
         }
     }
@@ -171,7 +178,7 @@ namespace Electronic_Election_Management_System.DTOs
         public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
         {
             if (UserIds.Any(id => id == Guid.Empty))
-                yield return new ValidationResult("User IDs cannot be empty.", new[] { nameof(UserIds) });
+                yield return new ValidationResult(ValidationMessages.InvalidUserIds, new[] { nameof(UserIds) });
 
             var emailValidator = new EmailAddressAttribute();
             if (Emails.Any(email =>
@@ -179,11 +186,13 @@ namespace Electronic_Election_Management_System.DTOs
                     email.Length > ValidationRules.EmailMaxLength ||
                     !emailValidator.IsValid(email)))
             {
-                yield return new ValidationResult("One or more invitation emails are invalid.", new[] { nameof(Emails) });
+                yield return new ValidationResult(
+                    ValidationMessages.InvalidInvitationEmails,
+                    new[] { nameof(Emails) });
             }
 
             if (UserIds.Count == 0 && Emails.Count == 0)
-                yield return new ValidationResult("At least one invitation recipient is required.");
+                yield return new ValidationResult(ValidationMessages.InvitationRecipientRequired);
         }
     }
 
