@@ -1,4 +1,4 @@
-import { Component, inject, signal, effect } from '@angular/core';
+import { Component, inject, signal, effect, HostListener} from '@angular/core';
 import { RouterOutlet, RouterLink, Router } from '@angular/router';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { AuthService } from './core/services/auth.service';
@@ -24,6 +24,8 @@ export class App {
 
   // Current theme for UI (light | dark). Kept as a simple property so templates can read it.
   public currentTheme: 'light' | 'dark' = 'light';
+  
+  isUserMenuOpen = signal(false);
 
   get isHomePage(): boolean {
     return this.router.url === '/' || this.router.url.startsWith('/?');
@@ -82,9 +84,28 @@ export class App {
     this.router.navigate(['/']);
   }
 
-   /** Switch UI language and persist the choice across page reloads. */
+  /** Switch UI language and persist the choice across page reloads. */
   switchLanguage(lang: Lang): void {
     this.translate.use(lang);
     localStorage.setItem('preferredLang', lang);
+  }
+
+  toggleUserMenu(event?: Event): void {
+    if (event) {
+      event.stopPropagation();
+    }
+    this.isUserMenuOpen.update(v => !v);
+  }
+
+  closeUserMenu(): void {
+    this.isUserMenuOpen.set(false);
+  }
+
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent): void {
+    const target = event.target as HTMLElement;
+    if (this.isUserMenuOpen() && !target.closest('.user-menu-container')) {
+      this.closeUserMenu();
+    }
   }
 }

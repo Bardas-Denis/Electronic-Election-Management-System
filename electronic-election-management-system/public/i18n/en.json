@@ -7,6 +7,9 @@
     "login": "Login",
     "newAccount": "New account",
     "logout": "Log out",
+    "profile": "My Profile",
+    "language": "Language",
+    "theme": "Theme",
     "adminBadge": "Admin",
     "managerBadge": "Manager"
   },
