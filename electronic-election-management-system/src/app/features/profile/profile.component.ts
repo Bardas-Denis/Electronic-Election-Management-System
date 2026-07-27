@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -6,6 +6,8 @@ import { TranslatePipe } from '@ngx-translate/core';
 import { AuthService } from '../../core/services/auth.service';
 import { UserDetailsService } from '../../core/services/user-details.service';
 import { PersonalDetailsDto } from '../../core/models/user-details.model';
+import { parseCnp } from '../../core/utils/cnp.util';
+import { INPUT_LIMITS } from '../../core/validators/input.validators';
 
 @Component({
   selector: 'app-profile',
@@ -39,6 +41,29 @@ export class ProfileComponent implements OnInit {
     company: ''
   });
 
+  readonly validationErrorKey = computed<string | null>(() => {
+    const value = this.form();
+    const cnp = value.cnp?.trim() ?? '';
+    const workEmail = value.workEmail?.trim() ?? '';
+
+    if (cnp && !parseCnp(cnp)) return 'profile.validation.invalidCnp';
+    if (workEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(workEmail)) {
+      return 'profile.validation.invalidEmail';
+    }
+
+    const shortFields: (keyof PersonalDetailsDto)[] = [
+      'fullName', 'residenceCounty', 'residenceCity', 'citizenship',
+      'employeeId', 'department', 'jobTitle', 'company'
+    ];
+    if (shortFields.some(field => this.getField(field).length > INPUT_LIMITS.shortText) ||
+        this.getField('residenceAddress').length > INPUT_LIMITS.address ||
+        workEmail.length > INPUT_LIMITS.email) {
+      return 'profile.validation.tooLong';
+    }
+
+    return null;
+  });
+
   ngOnInit(): void {
     this.userDetailsService.getMyDetails().subscribe({
       next: (dto) => {
@@ -57,6 +82,7 @@ export class ProfileComponent implements OnInit {
   updateField(field: keyof PersonalDetailsDto, value: string): void {
     this.form.update(f => ({ ...f, [field]: value || null }));
     this.saveSuccess.set(false);
+    this.errorKey.set(null);
   }
 
   getField(field: keyof PersonalDetailsDto): string {
@@ -65,6 +91,11 @@ export class ProfileComponent implements OnInit {
 
   save(): void {
     if (this.isSaving()) return;
+    const validationError = this.validationErrorKey();
+    if (validationError) {
+      this.errorKey.set(validationError);
+      return;
+    }
     this.isSaving.set(true);
     this.errorKey.set(null);
     this.saveSuccess.set(false);

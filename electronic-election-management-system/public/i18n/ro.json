@@ -160,6 +160,7 @@
     "createFailed": "Nu am putut crea alegerea.",
     "deleteFailed": "Nu am putut șterge alegerea.",
     "lockedByVotes": "Nu poți modifica alegerea deoarece deja s-a răspuns la ea.",
+    "validationError": "Verifică câmpurile obligatorii și limitele de lungime înainte de salvare.",
     "filterTitle": "Filtrare",
     "searchLabel": "Căutare",
     "searchPlaceholder": "Caută titlu...",
@@ -402,6 +403,11 @@
     "save": "Salvează modificările",
     "saveFailed": "Nu am putut salva detaliile. Încercă din nou.",
     "saveSuccess": "Detaliile tale au fost salvate.",
+    "validation": {
+      "invalidCnp": "Introdu un CNP românesc valid din 13 cifre.",
+      "invalidEmail": "Introdu o adresă de email de serviciu validă.",
+      "tooLong": "Unul sau mai multe câmpuri depășesc lungimea permisă."
+    },
     "section": {
       "personal": "Informații personale",
       "domicile": "Domiciliu",

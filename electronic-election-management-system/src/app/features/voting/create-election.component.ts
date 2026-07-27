@@ -5,6 +5,12 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { TranslatePipe } from '@ngx-translate/core';
 import { VotingService } from '../../core/services/voting.service';
 import { InvitationCandidateDto } from '../../core/models/voting.model';
+import {
+  dateRangeValidator,
+  INPUT_LIMITS,
+  trimmedRequired,
+  uniqueOptionLabels
+} from '../../core/validators/input.validators';
 
 // Componenta e folosita atat pentru creare (ruta /elections/new)
 // cat si pentru editare (ruta /elections/:id/edit) - CRUD complet cerut in Etapa 2.
@@ -31,7 +37,10 @@ export class CreateElectionComponent implements OnInit {
   invitationCandidatesLoading = signal(false);
   invitationCandidatesErrorKey = signal<string | null>(null);
   invitedEmails = signal<string[]>([]);
-  inviteEmailControl = this.fb.control('', Validators.email);
+  inviteEmailControl = this.fb.control('', [
+    Validators.email,
+    Validators.maxLength(INPUT_LIMITS.email)
+  ]);
   candidateSearchControl = this.fb.control('');
   candidatePickerOpen = signal(false);
   private invitationCandidatesLoaded = false;
@@ -41,8 +50,8 @@ export class CreateElectionComponent implements OnInit {
   isEditMode = signal(false);
 
   form = this.fb.group({
-    title: ['', Validators.required],
-    description: [''],
+    title: ['', [trimmedRequired, Validators.maxLength(INPUT_LIMITS.title)]],
+    description: ['', Validators.maxLength(INPUT_LIMITS.description)],
     type: ['Politic', Validators.required],
     isAnonymous: [true],
     // Kept in the form payload even before the invitation UI is added, so editing
@@ -52,8 +61,11 @@ export class CreateElectionComponent implements OnInit {
     invitedEmails: this.fb.control<string[]>([]),
     startsAt: ['', Validators.required],
     endsAt: ['', Validators.required],
-    questions: this.fb.array([this.createQuestionGroup()])
-  });
+    questions: this.fb.array(
+      [this.createQuestionGroup()],
+      [Validators.minLength(1), Validators.maxLength(INPUT_LIMITS.maxQuestions)]
+    )
+  }, { validators: dateRangeValidator });
 
   get isPoliticalElection(): boolean {
     return this.form.get('type')?.value === 'Politic';
@@ -142,16 +154,23 @@ export class CreateElectionComponent implements OnInit {
 
   private createOptionGroup(option?: { label?: string; description?: string; imageDataUrl?: string }) {
     return this.fb.group({
-      label: [option?.label ?? '', Validators.required],
-      description: [option?.description ?? ''],
+      label: [option?.label ?? '', [trimmedRequired, Validators.maxLength(INPUT_LIMITS.shortText)]],
+      description: [option?.description ?? '', Validators.maxLength(INPUT_LIMITS.description)],
       imageDataUrl: [option?.imageDataUrl ?? '']
     });
   }
 
   private createQuestionGroup() {
     return this.fb.group({
-      text: ['', Validators.required],
-      options: this.fb.array([this.createOptionGroup(), this.createOptionGroup()])
+      text: ['', [trimmedRequired, Validators.maxLength(INPUT_LIMITS.question)]],
+      options: this.fb.array(
+        [this.createOptionGroup(), this.createOptionGroup()],
+        [
+          Validators.minLength(2),
+          Validators.maxLength(INPUT_LIMITS.maxOptionsPerQuestion),
+          uniqueOptionLabels
+        ]
+      )
     });
   }
 
@@ -171,6 +190,7 @@ export class CreateElectionComponent implements OnInit {
   }
 
   addQuestion(): void {
+    if (this.questions.length >= INPUT_LIMITS.maxQuestions) return;
     this.questions.push(this.createQuestionGroup());
   }
 
@@ -179,7 +199,9 @@ export class CreateElectionComponent implements OnInit {
   }
 
   addOption(questionIndex: number): void {
-    this.questionOptions(questionIndex).push(this.createOptionGroup());
+    const options = this.questionOptions(questionIndex);
+    if (options.length >= INPUT_LIMITS.maxOptionsPerQuestion) return;
+    options.push(this.createOptionGroup());
   }
 
   // minim 2 optiuni obligatorii
@@ -193,7 +215,8 @@ export class CreateElectionComponent implements OnInit {
   onOptionImageSelected(event: Event, questionIndex: number, optionIndex: number): void {
     const file = (event.target as HTMLInputElement).files?.[0];
     if (!file) return;
-    if (!file.type.startsWith('image/') || file.size > 2_000_000) {
+    const allowedTypes = new Set(['image/png', 'image/jpeg', 'image/webp', 'image/gif']);
+    if (!allowedTypes.has(file.type) || file.size > 2_000_000) {
       this.errorMessageKey.set('elections.optionImageInvalid');
       return;
     }
@@ -320,6 +343,12 @@ export class CreateElectionComponent implements OnInit {
   }
 
   onSubmit(): void {
+    this.form.markAllAsTouched();
+    if (this.form.hasError('invalidDateRange')) {
+      this.errorMessageKey.set('errors.invalidDateRange');
+      return;
+    }
+
     if (this.isClosedElection && !this.editingElectionId && this.inviteEmailControl.value?.trim()) {
       if (this.inviteEmailControl.invalid) {
         this.inviteEmailControl.markAsTouched();
@@ -328,7 +357,10 @@ export class CreateElectionComponent implements OnInit {
       this.addInviteEmail();
     }
 
-    if (this.form.invalid || this.isLocked()) return;
+    if (this.form.invalid || this.isLocked()) {
+      this.errorMessageKey.set('elections.validationError');
+      return;
+    }
 
     this.isSubmitting.set(true);
     this.errorMessageKey.set(null);

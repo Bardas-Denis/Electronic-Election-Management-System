@@ -45,7 +45,7 @@
 
         <div class="field" [class.field--error]="fullNameCtrl.invalid && fullNameCtrl.touched">
           <label for="fullName">{{ 'declaration.fullNameLabel' | translate }}</label>
-          <input id="fullName" type="text" formControlName="fullName" [placeholder]="'declaration.fullNamePlaceholder' | translate" autocomplete="name" />
+          <input id="fullName" type="text" formControlName="fullName" minlength="3" maxlength="100" [placeholder]="'declaration.fullNamePlaceholder' | translate" autocomplete="name" />
           @if (fullNameCtrl.touched && fullNameCtrl.invalid) {
             <span class="field-error">{{ 'declaration.fullNameRequired' | translate }}</span>
           }
@@ -64,7 +64,7 @@
 
         <div class="field" [class.field--error]="residenceCountyCtrl.invalid && residenceCountyCtrl.touched">
           <label for="residenceCounty">{{ 'declaration.domiciliiJudetLabel' | translate }}</label>
-          <input id="residenceCounty" type="text" formControlName="residenceCounty" [placeholder]="'declaration.domiciliiJudetPlaceholder' | translate" autocomplete="address-level1" />
+          <input id="residenceCounty" type="text" formControlName="residenceCounty" maxlength="100" [placeholder]="'declaration.domiciliiJudetPlaceholder' | translate" autocomplete="address-level1" />
           @if (residenceCountyCtrl.touched && residenceCountyCtrl.invalid) {
             <span class="field-error">{{ 'declaration.domiciliiJudetRequired' | translate }}</span>
           }
@@ -72,17 +72,17 @@
 
         <div class="field">
           <label for="residenceCity">{{ 'declaration.localitateOptLabel' | translate }}</label>
-          <input id="residenceCity" type="text" formControlName="residenceCity" [placeholder]="'declaration.localiatePlaceholder' | translate" autocomplete="address-level2" />
+          <input id="residenceCity" type="text" formControlName="residenceCity" maxlength="100" [placeholder]="'declaration.localiatePlaceholder' | translate" autocomplete="address-level2" />
         </div>
 
         <div class="field">
           <label for="citizenship">{{ 'declaration.cetatenieOptLabel' | translate }}</label>
-          <input id="citizenship" type="text" formControlName="citizenship" [placeholder]="'declaration.cetateeniePlaceholder' | translate" />
+          <input id="citizenship" type="text" formControlName="citizenship" maxlength="100" [placeholder]="'declaration.cetateeniePlaceholder' | translate" />
         </div>
 
         <div class="field" [class.field--error]="residenceAddressCtrl.invalid && residenceAddressCtrl.touched">
           <label for="residenceAddress">{{ 'declaration.adresaLabel' | translate }}</label>
-          <input id="residenceAddress" type="text" formControlName="residenceAddress" [placeholder]="'declaration.adresaPlaceholder' | translate" autocomplete="street-address" />
+          <input id="residenceAddress" type="text" formControlName="residenceAddress" minlength="3" maxlength="500" [placeholder]="'declaration.adresaPlaceholder' | translate" autocomplete="street-address" />
           @if (residenceAddressCtrl.touched && residenceAddressCtrl.invalid) {
             <span class="field-error">{{ 'declaration.adresaRequired' | translate }}</span>
           }
@@ -128,12 +128,12 @@
 
         <div class="field">
           <label for="fullName">{{ 'declaration.comercialFullName' | translate }}</label>
-          <input id="fullName" type="text" formControlName="fullName" [placeholder]="'declaration.comercialFullNamePlaceholder' | translate" autocomplete="name" />
+          <input id="fullName" type="text" formControlName="fullName" maxlength="100" [placeholder]="'declaration.comercialFullNamePlaceholder' | translate" autocomplete="name" />
         </div>
 
         <div class="field" [class.field--error]="workEmailCtrl.invalid && workEmailCtrl.touched">
           <label for="workEmail">{{ 'declaration.emailMuncaLabel' | translate }}</label>
-          <input id="workEmail" type="email" formControlName="workEmail" [placeholder]="'declaration.emailMuncaPlaceholder' | translate" autocomplete="email" />
+          <input id="workEmail" type="email" formControlName="workEmail" maxlength="254" [placeholder]="'declaration.emailMuncaPlaceholder' | translate" autocomplete="email" />
           @if (workEmailCtrl.touched && workEmailCtrl.invalid) {
             <span class="field-error">{{ 'declaration.emailMuncaInvalid' | translate }}</span>
           }
@@ -141,22 +141,22 @@
 
         <div class="field">
           <label for="department">{{ 'declaration.departmentLabel' | translate }}</label>
-          <input id="department" type="text" formControlName="department" [placeholder]="'declaration.departmentPlaceholder' | translate" />
+          <input id="department" type="text" formControlName="department" maxlength="100" [placeholder]="'declaration.departmentPlaceholder' | translate" />
         </div>
 
         <div class="field">
           <label for="jobTitle">{{ 'declaration.jobTitleLabel' | translate }}</label>
-          <input id="jobTitle" type="text" formControlName="jobTitle" [placeholder]="'declaration.jobTitlePlaceholder' | translate" />
+          <input id="jobTitle" type="text" formControlName="jobTitle" maxlength="100" [placeholder]="'declaration.jobTitlePlaceholder' | translate" />
         </div>
 
         <div class="field">
           <label for="company">{{ 'declaration.companyLabel' | translate }}</label>
-          <input id="company" type="text" formControlName="company" [placeholder]="'declaration.companyPlaceholder' | translate" />
+          <input id="company" type="text" formControlName="company" maxlength="100" [placeholder]="'declaration.companyPlaceholder' | translate" />
         </div>
 
         <div class="field">
           <label for="employeeId">{{ 'declaration.employeeIdLabel' | translate }}</label>
-          <input id="employeeId" type="text" formControlName="employeeId" [placeholder]="'declaration.employeeIdPlaceholder' | translate" />
+          <input id="employeeId" type="text" formControlName="employeeId" maxlength="100" [placeholder]="'declaration.employeeIdPlaceholder' | translate" />
         </div>
 
         <div class="modal-actions">

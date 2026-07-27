@@ -11,12 +11,18 @@ namespace Electronic_Election_Management_System.Services
         private readonly IUserRepository _users;
         private readonly IAuditLogRepository _auditLogs;
         private readonly IUserNotifier _notifier;
+        private readonly ICnpService _cnp;
 
-        public UserService(IUserRepository users, IAuditLogRepository auditLogs, IUserNotifier notifier)
+        public UserService(
+            IUserRepository users,
+            IAuditLogRepository auditLogs,
+            IUserNotifier notifier,
+            ICnpService cnp)
         {
             _users = users;
             _auditLogs = auditLogs;
             _notifier = notifier;
+            _cnp = cnp;
         }
 
         public async Task<List<UserDto>> GetAllAsync()
@@ -34,7 +40,9 @@ namespace Electronic_Election_Management_System.Services
         public async Task<ServiceResult<UserDto>> UpdateRoleAsync(
             Guid targetId, UpdateUserRoleRequest request, Guid currentUserId)
         {
-            if (!Enum.TryParse<UserRole>(request.Role, ignoreCase: true, out var newRole))
+            if (!Enum.GetNames<UserRole>().Any(
+                    role => string.Equals(role, request.Role.Trim(), StringComparison.OrdinalIgnoreCase)) ||
+                !Enum.TryParse<UserRole>(request.Role, ignoreCase: true, out var newRole))
                 return ServiceResult<UserDto>.Fail(ErrorCode.InvalidRole);
 
             var user = await _users.GetByIdAsync(targetId);
@@ -100,6 +108,9 @@ namespace Electronic_Election_Management_System.Services
 
         public async Task<ServiceResult<PersonalDetailsDto>> SaveMyDetailsAsync(Guid userId, PersonalDetailsDto dto)
         {
+            if (!string.IsNullOrWhiteSpace(dto.Cnp) && _cnp.Parse(dto.Cnp.Trim()) is null)
+                return ServiceResult<PersonalDetailsDto>.Fail(ErrorCode.InvalidCnp);
+
             var entity = await _users.SaveUserDetailsAsync(userId, dto);
 
             return ServiceResult<PersonalDetailsDto>.Ok(new PersonalDetailsDto
