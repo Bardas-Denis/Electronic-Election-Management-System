@@ -19,6 +19,8 @@ namespace Electronic_Election_Management_System.Data
         public DbSet<VoterChangeRecord> VoterChangeRecords => Set<VoterChangeRecord>();
         public DbSet<ElectionInvitation> ElectionInvitations => Set<ElectionInvitation>();
         public DbSet<ElectionQuestion> ElectionQuestions => Set<ElectionQuestion>();
+        public DbSet<Label> Labels => Set<Label>();
+        public DbSet<UserLabel> UserLabels => Set<UserLabel>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -183,6 +185,36 @@ namespace Electronic_Election_Management_System.Data
             modelBuilder.Entity<UserDetails>()
                 .HasIndex(ud => ud.UserId)
                 .IsUnique();
+
+            // Label: unique name
+            modelBuilder.Entity<Label>()
+                .HasIndex(l => l.Name)
+                .IsUnique();
+
+            // UserLabel: composite PK (UserId, LabelId) — also serves as the unique constraint
+            modelBuilder.Entity<UserLabel>()
+                .HasKey(ul => new { ul.UserId, ul.LabelId });
+
+            // UserLabel → User (the labelled user): cascade so assignments are removed when a user is deleted
+            modelBuilder.Entity<UserLabel>()
+                .HasOne(ul => ul.User)
+                .WithMany(u => u.UserLabels)
+                .HasForeignKey(ul => ul.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // UserLabel → Label: cascade so assignments are removed when a label is deleted
+            modelBuilder.Entity<UserLabel>()
+                .HasOne(ul => ul.Label)
+                .WithMany(l => l.UserLabels)
+                .HasForeignKey(ul => ul.LabelId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // UserLabel → User (admin who assigned): restrict so admin records are not lost
+            modelBuilder.Entity<UserLabel>()
+                .HasOne(ul => ul.Admin)
+                .WithMany()
+                .HasForeignKey(ul => ul.AssignedBy)
+                .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

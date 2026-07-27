@@ -37,12 +37,14 @@ builder.Services.AddScoped<IElectionRepository, ElectionRepository>();
 builder.Services.AddScoped<IElectionInvitationRepository, ElectionInvitationRepository>();
 builder.Services.AddScoped<IAuditLogRepository, AuditLogRepository>();
 builder.Services.AddScoped<IVoteRepository, VoteRepository>();
+builder.Services.AddScoped<ILabelRepository, LabelRepository>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IElectionService, ElectionService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IAuditService, AuditService>();
 builder.Services.AddScoped<IVoteService, VoteService>();
 builder.Services.AddScoped<IResultsService, ResultsService>();
+builder.Services.AddScoped<ILabelService, LabelService>();
 builder.Services.AddSingleton<ICnpService, CnpService>();
 builder.Services.AddScoped<IUserNotifier, SignalRUserNotifier>();
 

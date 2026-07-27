@@ -3,6 +3,7 @@ using System;
 using Electronic_Election_Management_System.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Electronic_Election_Management_System.Migrations
 {
     [DbContext(typeof(ElectionDbContext))]
-    partial class ElectionDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260727120000_AddLabels")]
+    partial class AddLabels
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.9");
@@ -43,30 +46,6 @@ namespace Electronic_Election_Management_System.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("AuditLogs");
-                });
-
-            modelBuilder.Entity("Electronic_Election_Management_System.Models.Label", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Category")
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Name")
-                        .IsUnique();
-
-                    b.ToTable("Labels");
                 });
 
             modelBuilder.Entity("Electronic_Election_Management_System.Models.Election", b =>
@@ -170,6 +149,30 @@ namespace Electronic_Election_Management_System.Migrations
                     b.ToTable("ElectionQuestions");
                 });
 
+            modelBuilder.Entity("Electronic_Election_Management_System.Models.Label", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Category")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
+
+                    b.ToTable("Labels");
+                });
+
             modelBuilder.Entity("Electronic_Election_Management_System.Models.Option", b =>
                 {
                     b.Property<Guid>("Id")
@@ -240,9 +243,6 @@ namespace Electronic_Election_Management_System.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
 
-                    b.Property<DateOnly?>("BirthDate")
-                        .HasColumnType("TEXT");
-
                     b.Property<string>("Citizenship")
                         .HasColumnType("TEXT");
 
@@ -291,6 +291,29 @@ namespace Electronic_Election_Management_System.Migrations
                         .IsUnique();
 
                     b.ToTable("UserDetails");
+                });
+
+            modelBuilder.Entity("Electronic_Election_Management_System.Models.UserLabel", b =>
+                {
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("LabelId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("AssignedBy")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("AssignedAt")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("UserId", "LabelId");
+
+                    b.HasIndex("AssignedBy");
+
+                    b.HasIndex("LabelId");
+
+                    b.ToTable("UserLabels");
                 });
 
             modelBuilder.Entity("Electronic_Election_Management_System.Models.Vote", b =>
@@ -455,56 +478,6 @@ namespace Electronic_Election_Management_System.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("Electronic_Election_Management_System.Models.UserLabel", b =>
-                {
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("TEXT");
-
-                    b.Property<Guid>("LabelId")
-                        .HasColumnType("TEXT");
-
-                    b.Property<Guid>("AssignedBy")
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateTime>("AssignedAt")
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("UserId", "LabelId");
-
-                    b.HasIndex("AssignedBy");
-
-                    b.HasIndex("LabelId");
-
-                    b.ToTable("UserLabels");
-                });
-
-            modelBuilder.Entity("Electronic_Election_Management_System.Models.UserLabel", b =>
-                {
-                    b.HasOne("Electronic_Election_Management_System.Models.User", "Admin")
-                        .WithMany()
-                        .HasForeignKey("AssignedBy")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("Electronic_Election_Management_System.Models.Label", "Label")
-                        .WithMany("UserLabels")
-                        .HasForeignKey("LabelId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Electronic_Election_Management_System.Models.User", "User")
-                        .WithMany("UserLabels")
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Admin");
-
-                    b.Navigation("Label");
-
-                    b.Navigation("User");
-                });
-
             modelBuilder.Entity("Electronic_Election_Management_System.Models.Election", b =>
                 {
                     b.HasOne("Electronic_Election_Management_System.Models.User", "CreatedByUser")
@@ -570,6 +543,33 @@ namespace Electronic_Election_Management_System.Migrations
                         .HasForeignKey("Electronic_Election_Management_System.Models.UserDetails", "UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Electronic_Election_Management_System.Models.UserLabel", b =>
+                {
+                    b.HasOne("Electronic_Election_Management_System.Models.User", "Admin")
+                        .WithMany()
+                        .HasForeignKey("AssignedBy")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Electronic_Election_Management_System.Models.Label", "Label")
+                        .WithMany("UserLabels")
+                        .HasForeignKey("LabelId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Electronic_Election_Management_System.Models.User", "User")
+                        .WithMany("UserLabels")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Admin");
+
+                    b.Navigation("Label");
 
                     b.Navigation("User");
                 });
@@ -666,6 +666,11 @@ namespace Electronic_Election_Management_System.Migrations
                     b.Navigation("Options");
                 });
 
+            modelBuilder.Entity("Electronic_Election_Management_System.Models.Label", b =>
+                {
+                    b.Navigation("UserLabels");
+                });
+
             modelBuilder.Entity("Electronic_Election_Management_System.Models.Option", b =>
                 {
                     b.Navigation("Votes");
@@ -695,11 +700,6 @@ namespace Electronic_Election_Management_System.Migrations
                 {
                     b.Navigation("Votes");
                 });
-            modelBuilder.Entity("Electronic_Election_Management_System.Models.Label", b =>
-                {
-                    b.Navigation("UserLabels");
-                });
-
 #pragma warning restore 612, 618
         }
     }
