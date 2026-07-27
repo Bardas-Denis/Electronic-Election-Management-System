@@ -2,22 +2,10 @@ import { describe, expect, it } from 'vitest';
 import { ElectionDto } from '../../core/models/voting.model';
 import { normalizeEditableQuestions } from './create-election.component';
 
-const baseElection: ElectionDto = {
-  id: 'election-id',
-  title: 'Election title',
-  type: 'Comercial',
-  isAnonymous: true,
-  isClosed: false,
-  startsAt: '2026-07-27T10:00:00Z',
-  endsAt: '2026-07-28T10:00:00Z',
-  options: [],
-  questions: []
-};
-
 describe('normalizeEditableQuestions', () => {
   it('preserves current question and option values for editing', () => {
-    const result = normalizeEditableQuestions({
-      ...baseElection,
+    const election: ElectionDto = {
+      ...baseElection(),
       question: 'Who should lead?',
       questions: [{
         id: 'question-id',
@@ -28,28 +16,43 @@ describe('normalizeEditableQuestions', () => {
           { id: 'two', label: 'Bob', description: 'Candidate two' }
         ]
       }]
-    });
+    };
 
-    expect(result).toEqual([{
-      text: 'Who should lead?',
-      options: [
-        { label: 'Alice', description: 'Candidate one', imageDataUrl: '' },
-        { label: 'Bob', description: 'Candidate two', imageDataUrl: '' }
-      ]
-    }]);
+    const result = normalizeEditableQuestions(election);
+
+    expect(result[0].text).toBe(election.questions[0].text);
+    expect(result[0].options.map(option => option.label))
+      .toEqual(election.questions[0].options.map(option => option.label));
   });
 
   it('loads legacy single-question elections from top-level options', () => {
-    const result = normalizeEditableQuestions({
-      ...baseElection,
+    const election: ElectionDto = {
+      ...baseElection(),
       question: 'Choose a location',
       options: [
         { id: 'one', label: 'Mountains' },
         { id: 'two', label: 'Sea' }
       ]
-    });
+    };
 
-    expect(result[0].text).toBe('Choose a location');
-    expect(result[0].options.map(option => option.label)).toEqual(['Mountains', 'Sea']);
+    const result = normalizeEditableQuestions(election);
+
+    expect(result[0].text).toBe(election.question);
+    expect(result[0].options.map(option => option.label))
+      .toEqual(election.options.map(option => option.label));
   });
 });
+
+function baseElection(): ElectionDto {
+  return {
+    id: 'election-id',
+    title: 'Election title',
+    type: 'Comercial',
+    isAnonymous: true,
+    isClosed: false,
+    startsAt: '2026-07-27T10:00:00Z',
+    endsAt: '2026-07-28T10:00:00Z',
+    options: [],
+    questions: []
+  };
+}

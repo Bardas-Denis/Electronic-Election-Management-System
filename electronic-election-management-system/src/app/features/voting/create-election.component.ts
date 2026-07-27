@@ -16,8 +16,8 @@ import {
   uniqueOptionLabels
 } from '../../core/validators/input.validators';
 
-// Componenta e folosita atat pentru creare (ruta /elections/new)
-// cat si pentru editare (ruta /elections/:id/edit) - CRUD complet cerut in Etapa 2.
+// This component handles both creation (/elections/new) and editing
+// (/elections/:id/edit).
 @Component({
   selector: 'app-create-election',
   standalone: true,
@@ -35,7 +35,7 @@ export class CreateElectionComponent implements OnInit {
   isLoading = signal(false);
   /** Translation key for inline errors — resolved via | translate in the template. */
   errorMessageKey = signal<string | null>(null);
-  // true cand alegerea are deja cel putin un vot inregistrat - editarea e blocata
+  // Editing is blocked after the election receives its first vote.
   isLocked = signal(false);
   invitationCandidates = signal<InvitationCandidateDto[]>([]);
   invitationCandidatesLoading = signal(false);
@@ -49,7 +49,7 @@ export class CreateElectionComponent implements OnInit {
   candidatePickerOpen = signal(false);
   private invitationCandidatesLoaded = false;
 
-  // daca exista, suntem in mod editare
+  // A route ID indicates edit mode.
   private editingElectionId: string | null = null;
   isEditMode = signal(false);
 
@@ -120,8 +120,8 @@ export class CreateElectionComponent implements OnInit {
 
         this.syncAnonymousState(this.form.get('type')?.value);
 
-        // Odata ce a fost inregistrat cel putin un vot, alegerea devine needitabila
-        // (backend-ul respinge oricum PUT-ul; aici blocam si UI-ul din start).
+        // Once a vote has been recorded, the election can no longer be edited.
+        // The backend also rejects the request; this disables the UI immediately.
         if (election.hasVotes) {
           this.form.disable({ emitEvent: false });
           this.isLocked.set(true);
@@ -213,7 +213,7 @@ export class CreateElectionComponent implements OnInit {
     options.push(this.createOptionGroup());
   }
 
-  // minim 2 optiuni obligatorii
+  // Every question must retain at least two options.
   removeOption(questionIndex: number, optionIndex: number): void {
     const options = this.questionOptions(questionIndex);
     if (options.length > 2) {
@@ -409,7 +409,7 @@ export class CreateElectionComponent implements OnInit {
   }
 }
 
-// Convertoare intre formatul ISO al backend-ului si formatul asteptat de <input type="datetime-local">
+// Converts the backend ISO date into the format expected by <input type="datetime-local">.
 function toDatetimeLocal(isoDate: string): string {
   const date = new Date(isoDate);
   const pad = (n: number) => n.toString().padStart(2, '0');
