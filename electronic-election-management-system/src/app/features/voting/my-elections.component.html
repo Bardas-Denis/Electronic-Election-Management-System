@@ -64,7 +64,7 @@
       <span class="badge badge--neutral">{{ election.type }}</span>
       <span class="badge badge--neutral">{{ (election.isAnonymous ? 'elections.anonymous' : 'elections.nonAnonymous') | translate }}</span>
       @if (election.isClosed) {
-        <span class="badge badge--neutral">🔒 {{ 'elections.closed' | translate }}</span>
+        <span class="badge badge--neutral">{{ 'elections.closed' | translate }}</span>
       }
       @if (election.isExpired) {
         <span class="badge badge--expired">{{ 'elections.expired' | translate }}</span>
