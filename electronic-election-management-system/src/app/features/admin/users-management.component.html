@@ -55,26 +55,26 @@
 
   <!-- Bulk actions bar (appears only when rows are selected) -->
   @if (selectedUserIds().size > 0) {
-    <div style="background: var(--bg-card, #ffffff); padding: 16px 20px; border-radius: 12px; border: 1px solid var(--border-color, #e5e7eb); box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); margin-bottom: 20px;">
-      <span style="display: block; font-weight: 600; font-size: 0.9rem; margin-bottom: 12px; color: inherit;">
+    <div class="bulk-actions-bar">
+      <span class="bulk-actions-bar__title">
         {{ 'users.bulkSelected' | translate: { count: selectedUserIds().size } }}
       </span>
-      <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+      <div class="bulk-actions-bar__controls">
         @if (availableLabels().length > 0) {
-          <select class="role-select" (change)="bulkAssignLabel($any($event.target).value); $any($event.target).value = ''" [disabled]="isBulkActionSaving()" style="width: auto; min-width: 180px; padding: 8px 12px; font-size: 0.85rem;">
+          <select class="role-select bulk-actions-bar__select" (change)="bulkAssignLabel($any($event.target).value); $any($event.target).value = ''" [disabled]="isBulkActionSaving()">
             <option value="" disabled selected>{{ 'users.bulkAssignLabelTo' | translate }}</option>
             @for (label of availableLabels(); track label.id) {
               <option [value]="label.id">{{ label.name }}</option>
             }
           </select>
         }
-        <select class="role-select" (change)="bulkChangeRole($any($event.target).value); $any($event.target).value = ''" [disabled]="isBulkActionSaving()" style="width: auto; min-width: 180px; padding: 8px 12px; font-size: 0.85rem;">
+        <select class="role-select bulk-actions-bar__select" (change)="bulkChangeRole($any($event.target).value); $any($event.target).value = ''" [disabled]="isBulkActionSaving()">
           <option value="" disabled selected>{{ 'users.bulkStageTo' | translate }}</option>
           <option value="Admin">Admin</option>
           <option value="ElectionManager">ElectionManager</option>
           <option value="Voter">Voter</option>
         </select>
-        <button type="button" class="btn-danger btn-sm" [disabled]="isBulkActionSaving()" (click)="deleteSelectedUsers()" style="padding: 8px 16px; font-size: 0.85rem;">
+        <button type="button" class="btn-danger btn-sm bulk-actions-bar__button" [disabled]="isBulkActionSaving()" (click)="deleteSelectedUsers()">
           {{ 'users.bulkDelete' | translate }}
         </button>
       </div>
