@@ -32,6 +32,21 @@
         <option value="Voter">Voter</option>
       </select>
     </div>
+
+    <!-- Label Filter -->
+    <div class="role-filter-container">
+      <label for="labelFilter" class="role-filter-label">{{ 'users.labelFilterLabel' | translate }}</label>
+      <select
+        id="labelFilter"
+        class="role-filter-select"
+        [ngModel]="selectedLabelFilter()"
+        (ngModelChange)="setLabelFilter($event)">
+        <option value="ALL">{{ 'users.labelFilterAll' | translate }}</option>
+        @for (label of availableLabels(); track label.id) {
+          <option [value]="label.name">{{ label.name }}</option>
+        }
+      </select>
+    </div>
   </div>
 
   @if (errorMessageKey()) {
@@ -158,7 +173,6 @@
                   </button>
                   <button type="button" class="btn-danger btn-sm" [disabled]="isCurrentUser(user) || isSaving()"
                     (click)="deleteUser(user)">
-
                     {{ 'users.deleteBtn' | translate }}
                   </button>
                 </div>

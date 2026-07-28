@@ -24,27 +24,27 @@ export class ElectionListComponent implements OnInit {
   searchQuery = signal<string>('');
 
   selectedFilters = signal<{
-    politic: boolean;
-    comercial: boolean;
-    anonim: boolean;
-    neanonim: boolean;
-    votate: boolean;
-    nevotate: boolean;
-    expirate: boolean;
+    political: boolean;
+    commercial: boolean;
+    anonymous: boolean;
+    nonAnonymous: boolean;
+    voted: boolean;
+    unvoted: boolean;
+    expired: boolean;
     active: boolean;
-    saptamanaAceasta: boolean;
-    maiMultDeOLuna: boolean;
+    thisWeek: boolean;
+    moreThanAMonth: boolean;
   }>({
-    politic: false,
-    comercial: false,
-    anonim: false,
-    neanonim: false,
-    votate: false,
-    nevotate: false,
-    expirate: false,
+    political: false,
+    commercial: false,
+    anonymous: false,
+    nonAnonymous: false,
+    voted: false,
+    unvoted: false,
+    expired: false,
     active: false,
-    saptamanaAceasta: false,
-    maiMultDeOLuna: false
+    thisWeek: false,
+    moreThanAMonth: false
   });
 
   filteredElections = computed(() => {
@@ -54,71 +54,75 @@ export class ElectionListComponent implements OnInit {
     const now = new Date();
 
     return list.filter((election) => {
-      // 1. Căutare după titlu
+      // 1. Search by title
       if (query && !election.title.toLowerCase().includes(query)) {
         return false;
       }
 
-      // 2. Filtru Categorie (Politic / Comercial)
-      // Dacă ambele sunt bifate, le lăsăm să treacă pe ambele (reuniune), dacă niciuna, ignorăm filtrul de tip
-      const typeSelected = filters.politic || filters.comercial;
+      // 2. Category Filter (Political / Commercial)
+      const typeSelected = filters.political || filters.commercial;
       if (typeSelected) {
         const isPolitic = election.type?.toLowerCase() === 'politic' || election.type?.toLowerCase() === 'political';
         const isComercial = election.type?.toLowerCase() === 'comercial' || election.type?.toLowerCase() === 'commercial';
-        
+
         let matchesType = false;
-        if (filters.politic && isPolitic) matchesType = true;
-        if (filters.comercial && isComercial) matchesType = true;
-        
+        if (filters.political && isPolitic) matchesType = true;
+        if (filters.commercial && isComercial) matchesType = true;
+
         if (!matchesType) return false;
       }
 
-      // 3. Filtru Anonimat (Anonim / Neanonim)
-      const anonSelected = filters.anonim || filters.neanonim;
+      // 3. Anonymity Filter (Anonymous / Non-Anonymous)
+      const anonSelected = filters.anonymous || filters.nonAnonymous;
       if (anonSelected) {
         let matchesAnon = false;
-        if (filters.anonim && election.isAnonymous) matchesAnon = true;
-        if (filters.neanonim && !election.isAnonymous) matchesAnon = true;
+        if (filters.anonymous && election.isAnonymous) matchesAnon = true;
+        if (filters.nonAnonymous && !election.isAnonymous) matchesAnon = true;
         if (!matchesAnon) return false;
       }
 
-      // 4. Filtru Vot / Participare (Votate de tine / Nevotate active)
-      const voteSelected = filters.votate || filters.nevotate;
+      // 4. Vote / Participation Filter
+      const voteSelected = filters.voted || filters.unvoted;
       if (voteSelected) {
         let matchesVote = false;
-        if (filters.votate && election.hasUserVoted) matchesVote = true;
-        if (filters.nevotate && !election.hasUserVoted && !election.isExpired) matchesVote = true;
+        if (filters.voted && election.hasUserVoted) matchesVote = true;
+        if (filters.unvoted && !election.hasUserVoted && !election.isExpired) matchesVote = true;
         if (!matchesVote) return false;
       }
 
-      // 5. Filtru Stare Temporală (Active / Expirate)
-      const statusSelected = filters.active || filters.expirate;
+      // 5. Time Status Filter (Active / Expired)
+      const statusSelected = filters.active || filters.expired;
       if (statusSelected) {
         let matchesStatus = false;
         if (filters.active && !election.isExpired) matchesStatus = true;
-        if (filters.expirate && election.isExpired) matchesStatus = true;
+        if (filters.expired && election.isExpired) matchesStatus = true;
         if (!matchesStatus) return false;
       } else {
-        // Implicit: dacă nu e bifat nimic de activ/expirat, ascundem expiratele de pe prima pagină
+        // Default: hide expired elections from the front page
         if (election.isExpired) return false;
       }
 
-      // 6. Filtru Timp (Săptămâna aceasta / Mai mult de o lună)
-      const timeSelected = filters.saptamanaAceasta || filters.maiMultDeOLuna;
+      // 6. Time Filter (This week / More than a month)
+      const timeSelected = filters.thisWeek || filters.moreThanAMonth;
       if (timeSelected) {
-        const electionDateStr = (election as any).startDate || (election as any).endsAt || (election as any).date || (election as any).createdAt;
+        const electionDateStr = (election as any).startDate || (election as any).startsAt || (election as any).date || (election as any).createdAt;
         if (electionDateStr) {
           const eDate = new Date(electionDateStr);
           const diffTime = eDate.getTime() - now.getTime();
           const diffDays = diffTime / (1000 * 3600 * 24);
 
           let timeMatched = false;
-          if (filters.saptamanaAceasta && diffDays >= -7 && diffDays <= 7) {
+
+          // This week (between -7 and 7 days)
+          if (filters.thisWeek && diffDays >= -7 && diffDays <= 7) {
             timeMatched = true;
           }
-          if (filters.maiMultDeOLuna && diffDays > 30) {
+
+          // More than a month (estimated >= 28 days)
+          if (filters.moreThanAMonth && diffDays >= 28) {
             timeMatched = true;
           }
+
           if (!timeMatched) return false;
         } else {
           return false;
@@ -131,11 +135,7 @@ export class ElectionListComponent implements OnInit {
 
   toggleFilter(key: keyof ReturnType<typeof this.selectedFilters>): void {
     this.selectedFilters.update(current => {
-      const updated = { ...current, [key]: !current[key] };
-
-      // Opțional: Prevenim coliziunile stricte la nivel de UI dacă se bifează opțiuni direct opuse din aceeași clasă
-      // (de ex: dacă bifează 'active', îl putem debloca pe 'expirate' sau lăsăm logica de reuniune de mai sus să le combine).
-      return updated;
+      return { ...current, [key]: !current[key] };
     });
   }
 
@@ -170,6 +170,11 @@ export class ElectionListComponent implements OnInit {
     });
   }
 
+  isUpcoming(election: any): boolean {
+    const startDate = new Date(election.startDate || election.startsAt);
+    return startDate > new Date();
+  }
+
   private loadUserVoteDetails(elections: ElectionDto[]): void {
     const votedElections = elections.filter((e) => e.hasUserVoted);
     for (const election of votedElections) {
@@ -189,9 +194,7 @@ export class ElectionListComponent implements OnInit {
             )
           );
         },
-        error: () => {
-          // Keep existing list data; details are optional.
-        }
+        error: () => {}
       });
     }
   }
