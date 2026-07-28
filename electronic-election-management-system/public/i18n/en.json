@@ -317,7 +317,10 @@
     "bulkLabelError": "An error occurred while assigning the label to some users.",
     "loadFailed": "Could not load the user list.",
     "saveFailed": "Could not save role changes.",
-    "deleteFailed": "Could not delete this user."
+    "deleteFailed": "Could not delete this user.",
+    "labelFilterLabel": "Label:",
+    "labelFilterAll": "All Labels"
+
   },
   "labels": {
     "heading": "Label Management",

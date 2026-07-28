@@ -33,15 +33,15 @@
       </select>
     </div>
 
-    <!-- Noul filtru după Label -->
+    <!-- Label Filter -->
     <div class="role-filter-container">
-      <label for="labelFilter" class="role-filter-label">Label:</label>
+      <label for="labelFilter" class="role-filter-label">{{ 'users.labelFilterLabel' | translate }}</label>
       <select
         id="labelFilter"
         class="role-filter-select"
         [ngModel]="selectedLabelFilter()"
         (ngModelChange)="setLabelFilter($event)">
-        <option value="ALL">All Labels</option>
+        <option value="ALL">{{ 'users.labelFilterAll' | translate }}</option>
         @for (label of availableLabels(); track label.id) {
           <option [value]="label.name">{{ label.name }}</option>
         }

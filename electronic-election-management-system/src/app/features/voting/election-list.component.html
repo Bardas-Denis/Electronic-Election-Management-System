@@ -1,76 +1,3 @@
-<style>
-  .election-card {
-    background: var(--bg-card, #ffffff);
-    border: 1px solid var(--border-color, #e5e7eb);
-    border-radius: 12px;
-    padding: 20px;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-  }
-  .election-card:hover {
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-  }
-
-  .date-container {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 8px 12px;
-    background: var(--bg-sub, var(--bg-input, rgba(255, 255, 255, 0.03)));
-    border: 1px solid var(--border-color, #e2e8f0);
-    border-radius: 8px;
-    margin: 8px 0 0 0;
-    width: fit-content;
-  }
-
-  .date-time-badge {
-    font-size: 0.78rem;
-    font-weight: 600;
-    color: var(--text-sub, #475569);
-    background: var(--bg-card, var(--bg-sub, #ffffff));
-    padding: 2px 5px;
-    border-radius: 4px;
-    border: 1px solid var(--border-color, #e2e8f0);
-    font-variant-numeric: tabular-nums;
-  }
-
-  .action-voted {
-    display: inline-flex; align-items: center; gap: 4px; padding: 5px 10px; 
-    background: var(--voted-bg, #f0fdf4); color: var(--voted-color, #16a34a); border: 1px solid var(--voted-border, #bbf7d0); 
-    border-radius: 6px; font-size: 0.82rem; font-weight: 600; 
-    text-decoration: none; cursor: pointer; transition: all 0.2s ease;
-  }
-  .action-voted:hover {
-    opacity: 0.9; filter: brightness(0.95);
-  }
-
-  .action-vote {
-    display: inline-flex; align-items: center; justify-content: center; 
-    padding: 6px 14px; background: var(--btn-bg, #ffffff); color: var(--btn-color, #111827); 
-    border: 1px solid var(--border-color, #d1d5db); border-radius: 6px; font-size: 0.82rem; 
-    font-weight: 600; text-decoration: none; box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-    cursor: pointer; transition: all 0.2s ease;
-  }
-  .action-vote:hover {
-    background: var(--btn-hover-bg, #f9fafb);
-  }
-
-  .action-results {
-    display: inline-flex; align-items: center; gap: 4px; font-size: 0.82rem; 
-    color: var(--link-color, #3b82f6); font-weight: 600; text-decoration: none; 
-    cursor: pointer; transition: all 0.2s ease;
-  }
-  .action-results:hover {
-    text-decoration: underline;
-  }
-
-  .action-closed {
-    display: inline-flex; padding: 5px 10px; background: var(--closed-bg, #fef2f2); 
-    color: var(--closed-color, #dc2626); border: 1px solid var(--closed-border, #fecaca); border-radius: 6px; 
-    font-size: 0.82rem; font-weight: 600; cursor: default;
-  }
-</style>
-
 <div class="page">
   <!-- Top header section -->
   <div class="page-header">
@@ -227,7 +154,7 @@
       }
     </div>
 
-    <!-- Secțiunea de acțiuni corectată pentru starea upcoming -->
+    <!-- Actions section corrected for upcoming state -->
     <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border-color, #f1f5f9);">
       
       <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
@@ -242,7 +169,7 @@
             {{ 'elections.votingClosed' | translate }}
           </span>
         } @else if (isUpcoming(election)) {
-          <!-- Afișăm statusul de upcoming și ascundem butonul de vot până când începe -->
+          <!-- Display upcoming status and hide vote button until it starts -->
           <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 0.82rem; font-weight: 600; color: var(--text-sub, #64748b);">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
             {{ 'elections.upcoming' | translate }}
@@ -253,7 +180,7 @@
           </a>
         }
 
-        <!-- Ascundem rezultatele live pentru cele care nu au început încă -->
+        <!-- Hide live results for elections that haven't started yet -->
         @if (!isUpcoming(election)) {
           <a [routerLink]="['/elections', election.id, 'results']" class="action-results">
             {{ 'elections.liveResults' | translate }}
