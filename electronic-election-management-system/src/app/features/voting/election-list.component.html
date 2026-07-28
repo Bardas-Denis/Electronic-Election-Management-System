@@ -40,34 +40,34 @@
         <div style="display: flex; flex-direction: column; gap: 12px;">
           
           <label style="display: flex; align-items: center; gap: 10px; font-size: 0.85rem; cursor: pointer; color: inherit; opacity: 0.85;">
-            <input type="checkbox" [checked]="selectedFilters().politic" (change)="toggleFilter('politic')" style="width: 16px; height: 16px; margin: 0; cursor: pointer;" /> {{ 'elections.filterPolitic' | translate }}
+            <input type="checkbox" [checked]="selectedFilters().political" (change)="toggleFilter('political')" style="width: 16px; height: 16px; margin: 0; cursor: pointer;" /> {{ 'elections.filterPolitical' | translate }}
           </label>
           <label style="display: flex; align-items: center; gap: 10px; font-size: 0.85rem; cursor: pointer; color: inherit; opacity: 0.85;">
-            <input type="checkbox" [checked]="selectedFilters().comercial" (change)="toggleFilter('comercial')" style="width: 16px; height: 16px; margin: 0; cursor: pointer;" /> {{ 'elections.filterComercial' | translate }}
+            <input type="checkbox" [checked]="selectedFilters().commercial" (change)="toggleFilter('commercial')" style="width: 16px; height: 16px; margin: 0; cursor: pointer;" /> {{ 'elections.filterCommercial' | translate }}
           </label>
           <label style="display: flex; align-items: center; gap: 10px; font-size: 0.85rem; cursor: pointer; color: inherit; opacity: 0.85;">
-            <input type="checkbox" [checked]="selectedFilters().anonim" (change)="toggleFilter('anonim')" style="width: 16px; height: 16px; margin: 0; cursor: pointer;" /> {{ 'elections.filterAnonim' | translate }}
+            <input type="checkbox" [checked]="selectedFilters().anonymous" (change)="toggleFilter('anonymous')" style="width: 16px; height: 16px; margin: 0; cursor: pointer;" /> {{ 'elections.filterAnonymous' | translate }}
           </label>
           <label style="display: flex; align-items: center; gap: 10px; font-size: 0.85rem; cursor: pointer; color: inherit; opacity: 0.85;">
-            <input type="checkbox" [checked]="selectedFilters().neanonim" (change)="toggleFilter('neanonim')" style="width: 16px; height: 16px; margin: 0; cursor: pointer;" /> {{ 'elections.filterNeanonim' | translate }}
+            <input type="checkbox" [checked]="selectedFilters().nonAnonymous" (change)="toggleFilter('nonAnonymous')" style="width: 16px; height: 16px; margin: 0; cursor: pointer;" /> {{ 'elections.filterNonAnonymous' | translate }}
           </label>
           <label style="display: flex; align-items: center; gap: 10px; font-size: 0.85rem; cursor: pointer; color: inherit; opacity: 0.85;">
-            <input type="checkbox" [checked]="selectedFilters().votate" (change)="toggleFilter('votate')" style="width: 16px; height: 16px; margin: 0; cursor: pointer;" /> {{ 'elections.filterVotate' | translate }}
+            <input type="checkbox" [checked]="selectedFilters().voted" (change)="toggleFilter('voted')" style="width: 16px; height: 16px; margin: 0; cursor: pointer;" /> {{ 'elections.filterVoted' | translate }}
           </label>
           <label style="display: flex; align-items: center; gap: 10px; font-size: 0.85rem; cursor: pointer; color: inherit; opacity: 0.85;">
-            <input type="checkbox" [checked]="selectedFilters().nevotate" (change)="toggleFilter('nevotate')" style="width: 16px; height: 16px; margin: 0; cursor: pointer;" /> {{ 'elections.filterNevotate' | translate }}
+            <input type="checkbox" [checked]="selectedFilters().unvoted" (change)="toggleFilter('unvoted')" style="width: 16px; height: 16px; margin: 0; cursor: pointer;" /> {{ 'elections.filterUnvoted' | translate }}
           </label>
           <label style="display: flex; align-items: center; gap: 10px; font-size: 0.85rem; cursor: pointer; color: inherit; opacity: 0.85;">
             <input type="checkbox" [checked]="selectedFilters().active" (change)="toggleFilter('active')" style="width: 16px; height: 16px; margin: 0; cursor: pointer;" /> {{ 'elections.filterActive' | translate }}
           </label>
           <label style="display: flex; align-items: center; gap: 10px; font-size: 0.85rem; cursor: pointer; color: inherit; opacity: 0.85;">
-            <input type="checkbox" [checked]="selectedFilters().expirate" (change)="toggleFilter('expirate')" style="width: 16px; height: 16px; margin: 0; cursor: pointer;" /> {{ 'elections.filterExpirate' | translate }}
+            <input type="checkbox" [checked]="selectedFilters().expired" (change)="toggleFilter('expired')" style="width: 16px; height: 16px; margin: 0; cursor: pointer;" /> {{ 'elections.filterExpired' | translate }}
           </label>
           <label style="display: flex; align-items: center; gap: 10px; font-size: 0.85rem; cursor: pointer; color: inherit; opacity: 0.85;">
-            <input type="checkbox" [checked]="selectedFilters().saptamanaAceasta" (change)="toggleFilter('saptamanaAceasta')" style="width: 16px; height: 16px; margin: 0; cursor: pointer;" /> {{ 'elections.saptamanaAceasta' | translate }}
+            <input type="checkbox" [checked]="selectedFilters().thisWeek" (change)="toggleFilter('thisWeek')" style="width: 16px; height: 16px; margin: 0; cursor: pointer;" /> {{ 'elections.filterThisWeek' | translate }}
           </label>
           <label style="display: flex; align-items: center; gap: 10px; font-size: 0.85rem; cursor: pointer; color: inherit; opacity: 0.85;">
-            <input type="checkbox" [checked]="selectedFilters().maiMultDeOLuna" (change)="toggleFilter('maiMultDeOLuna')" style="width: 16px; height: 16px; margin: 0; cursor: pointer;" /> {{ 'elections.maiMultDeOLuna' | translate }}
+            <input type="checkbox" [checked]="selectedFilters().moreThanAMonth" (change)="toggleFilter('moreThanAMonth')" style="width: 16px; height: 16px; margin: 0; cursor: pointer;" /> {{ 'elections.filterMoreThanAMonth' | translate }}
           </label>
 
         </div>
@@ -108,7 +108,7 @@
         <span class="badge badge--neutral">{{ election.type }}</span>
         <span class="badge badge--neutral">{{ (election.isAnonymous ? 'elections.anonymous' : 'elections.nonAnonymous') | translate }}</span>
         @if (election.isClosed) {
-          <span class="badge badge--neutral">🔒 {{ 'elections.closed' | translate }}</span>
+          <span class="badge badge--neutral">{{ 'elections.closed' | translate }}</span>
         }
         @if (election.isExpired) {
           <span class="badge badge--expired">{{ 'elections.expired' | translate }}</span>

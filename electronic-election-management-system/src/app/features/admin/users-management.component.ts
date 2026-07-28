@@ -64,7 +64,7 @@ export class UsersManagementComponent implements OnInit {
       if (labelFilter !== 'ALL') {
         const userAssignedLabels = labelsMap.get(user.id) || [];
         matchesLabel = userAssignedLabels.some((ul: any) => {
-          // Verificăm atât ID-ul, cât și numele direct sau proprietățile asociate
+          // We check both the ID and the direct name or associated properties
           const labelId = ul.labelId || ul.id;
           const labelName = ul.name;
           

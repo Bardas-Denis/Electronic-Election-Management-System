@@ -24,27 +24,27 @@ export class ElectionListComponent implements OnInit {
   searchQuery = signal<string>('');
 
   selectedFilters = signal<{
-    politic: boolean;
-    comercial: boolean;
-    anonim: boolean;
-    neanonim: boolean;
-    votate: boolean;
-    nevotate: boolean;
-    expirate: boolean;
+    political: boolean;
+    commercial: boolean;
+    anonymous: boolean;
+    nonAnonymous: boolean;
+    voted: boolean;
+    unvoted: boolean;
+    expired: boolean;
     active: boolean;
-    saptamanaAceasta: boolean;
-    maiMultDeOLuna: boolean;
+    thisWeek: boolean;
+    moreThanAMonth: boolean;
   }>({
-    politic: false,
-    comercial: false,
-    anonim: false,
-    neanonim: false,
-    votate: false,
-    nevotate: false,
-    expirate: false,
+    political: false,
+    commercial: false,
+    anonymous: false,
+    nonAnonymous: false,
+    voted: false,
+    unvoted: false,
+    expired: false,
     active: false,
-    saptamanaAceasta: false,
-    maiMultDeOLuna: false
+    thisWeek: false,
+    moreThanAMonth: false
   });
 
   filteredElections = computed(() => {
@@ -60,50 +60,50 @@ export class ElectionListComponent implements OnInit {
       }
 
       // 2. Category Filter (Political / Commercial)
-      const typeSelected = filters.politic || filters.comercial;
+      const typeSelected = filters.political || filters.commercial;
       if (typeSelected) {
         const isPolitic = election.type?.toLowerCase() === 'politic' || election.type?.toLowerCase() === 'political';
         const isComercial = election.type?.toLowerCase() === 'comercial' || election.type?.toLowerCase() === 'commercial';
 
         let matchesType = false;
-        if (filters.politic && isPolitic) matchesType = true;
-        if (filters.comercial && isComercial) matchesType = true;
+        if (filters.political && isPolitic) matchesType = true;
+        if (filters.commercial && isComercial) matchesType = true;
 
         if (!matchesType) return false;
       }
 
       // 3. Anonymity Filter (Anonymous / Non-Anonymous)
-      const anonSelected = filters.anonim || filters.neanonim;
+      const anonSelected = filters.anonymous || filters.nonAnonymous;
       if (anonSelected) {
         let matchesAnon = false;
-        if (filters.anonim && election.isAnonymous) matchesAnon = true;
-        if (filters.neanonim && !election.isAnonymous) matchesAnon = true;
+        if (filters.anonymous && election.isAnonymous) matchesAnon = true;
+        if (filters.nonAnonymous && !election.isAnonymous) matchesAnon = true;
         if (!matchesAnon) return false;
       }
 
       // 4. Vote / Participation Filter
-      const voteSelected = filters.votate || filters.nevotate;
+      const voteSelected = filters.voted || filters.unvoted;
       if (voteSelected) {
         let matchesVote = false;
-        if (filters.votate && election.hasUserVoted) matchesVote = true;
-        if (filters.nevotate && !election.hasUserVoted && !election.isExpired) matchesVote = true;
+        if (filters.voted && election.hasUserVoted) matchesVote = true;
+        if (filters.unvoted && !election.hasUserVoted && !election.isExpired) matchesVote = true;
         if (!matchesVote) return false;
       }
 
       // 5. Time Status Filter (Active / Expired)
-      const statusSelected = filters.active || filters.expirate;
+      const statusSelected = filters.active || filters.expired;
       if (statusSelected) {
         let matchesStatus = false;
         if (filters.active && !election.isExpired) matchesStatus = true;
-        if (filters.expirate && election.isExpired) matchesStatus = true;
+        if (filters.expired && election.isExpired) matchesStatus = true;
         if (!matchesStatus) return false;
       } else {
         // Default: hide expired elections from the front page
         if (election.isExpired) return false;
       }
 
-      // 6. Time Filter (This week / In more than a month)
-      const timeSelected = filters.saptamanaAceasta || filters.maiMultDeOLuna;
+      // 6. Time Filter (This week / More than a month)
+      const timeSelected = filters.thisWeek || filters.moreThanAMonth;
       if (timeSelected) {
         const electionDateStr = (election as any).startDate || (election as any).startsAt || (election as any).date || (election as any).createdAt;
         if (electionDateStr) {
@@ -114,12 +114,12 @@ export class ElectionListComponent implements OnInit {
           let timeMatched = false;
 
           // This week (between -7 and 7 days)
-          if (filters.saptamanaAceasta && diffDays >= -7 && diffDays <= 7) {
+          if (filters.thisWeek && diffDays >= -7 && diffDays <= 7) {
             timeMatched = true;
           }
 
-          // In more than a month (estimated >= 28 days)
-          if (filters.maiMultDeOLuna && diffDays >= 28) {
+          // More than a month (estimated >= 28 days)
+          if (filters.moreThanAMonth && diffDays >= 28) {
             timeMatched = true;
           }
 
