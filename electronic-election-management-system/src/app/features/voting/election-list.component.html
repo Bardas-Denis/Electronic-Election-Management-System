@@ -16,7 +16,7 @@
     align-items: center;
     gap: 12px;
     padding: 8px 12px;
-    background: var(--bg-sub, #f8fafc);
+    background: var(--bg-sub, var(--bg-input, rgba(255, 255, 255, 0.03)));
     border: 1px solid var(--border-color, #e2e8f0);
     border-radius: 8px;
     margin: 8px 0 0 0;
@@ -27,7 +27,7 @@
     font-size: 0.78rem;
     font-weight: 600;
     color: var(--text-sub, #475569);
-    background: var(--bg-card, #ffffff);
+    background: var(--bg-card, var(--bg-sub, #ffffff));
     padding: 2px 5px;
     border-radius: 4px;
     border: 1px solid var(--border-color, #e2e8f0);
@@ -104,7 +104,7 @@
           [placeholder]="'elections.searchPlaceholder' | translate" 
           [ngModel]="searchQuery()" 
           (ngModelChange)="onSearchChange($event)"
-          style="width: 100%; padding: 8px 12px; background: var(--input-bg, #f9fafb); border: 1px solid var(--border-color, #d1d5db); color: inherit; border-radius: 6px; font-size: 0.85rem;"
+          style="width: 100%; padding: 8px 12px; background: var(--input-bg, var(--bg-sub, #f9fafb)); border: 1px solid var(--border-color, #d1d5db); color: inherit; border-radius: 6px; font-size: 0.85rem;"
         />
       </div>
 
@@ -227,7 +227,7 @@
       }
     </div>
 
-    <!-- Secțiunea de acțiuni -->
+    <!-- Secțiunea de acțiuni corectată pentru starea upcoming -->
     <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border-color, #f1f5f9);">
       
       <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
@@ -241,16 +241,25 @@
           <span class="action-closed">
             {{ 'elections.votingClosed' | translate }}
           </span>
+        } @else if (isUpcoming(election)) {
+          <!-- Afișăm statusul de upcoming și ascundem butonul de vot până când începe -->
+          <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 0.82rem; font-weight: 600; color: var(--text-sub, #64748b);">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+            {{ 'elections.upcoming' | translate }}
+          </span>
         } @else {
           <a [routerLink]="['/elections', election.id]" class="action-vote">
             {{ 'elections.vote' | translate }}
           </a>
         }
 
-        <a [routerLink]="['/elections', election.id, 'results']" class="action-results">
-          {{ 'elections.liveResults' | translate }}
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="7" y1="17" x2="17" y2="7"></line><polyline points="7 7 17 7 17 17"></polyline></svg>
-        </a>
+        <!-- Ascundem rezultatele live pentru cele care nu au început încă -->
+        @if (!isUpcoming(election)) {
+          <a [routerLink]="['/elections', election.id, 'results']" class="action-results">
+            {{ 'elections.liveResults' | translate }}
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="7" y1="17" x2="17" y2="7"></line><polyline points="7 7 17 7 17 17"></polyline></svg>
+          </a>
+        }
       </div>
 
       @if (election.hasUserVoted) {

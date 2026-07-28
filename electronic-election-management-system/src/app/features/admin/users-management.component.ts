@@ -35,8 +35,12 @@ export class UsersManagementComponent implements OnInit {
   isSaving = signal(false);
   isBulkActionSaving = signal(false);
 
+  // Map to store labels assigned to each user for filtering purposes
+  userLabelsMap = signal<Map<string, any[]>>(new Map());
+
   // Signals for filtering and pagination
   selectedRoleFilter = signal<string>('ALL');
+  selectedLabelFilter = signal<string>('ALL');
   searchQuery = signal<string>('');
   currentPage = signal<number>(1);
   pageSize = 50;
@@ -44,16 +48,38 @@ export class UsersManagementComponent implements OnInit {
   // Signal for multi-selection (stores selected user IDs across views)
   selectedUserIds = signal<Set<string>>(new Set());
 
-  // Computed property: filters users by role and search query
+  // Computed property: filters users by role, label and search query
   filteredUsers = computed(() => {
     const roleFilter = this.selectedRoleFilter();
+    const labelFilter = this.selectedLabelFilter();
     const query = this.searchQuery().toLowerCase().trim();
     const allUsers = this.users();
+    const labelsMap = this.userLabelsMap();
 
     return allUsers.filter((user) => {
       const matchesRole = roleFilter === 'ALL' || user.role === roleFilter;
       const matchesEmail = !query || user.email.toLowerCase().includes(query);
-      return matchesRole && matchesEmail;
+      
+      let matchesLabel = true;
+      if (labelFilter !== 'ALL') {
+        const userAssignedLabels = labelsMap.get(user.id) || [];
+        matchesLabel = userAssignedLabels.some((ul: any) => {
+          // Verificăm atât ID-ul, cât și numele direct sau proprietățile asociate
+          const labelId = ul.labelId || ul.id;
+          const labelName = ul.name;
+          
+          const foundLabel = this.availableLabels().find(al => 
+            al.id === labelId || al.name.toLowerCase() === labelName?.toLowerCase()
+          );
+          
+          if (foundLabel) {
+            return foundLabel.name.toLowerCase() === labelFilter.toLowerCase();
+          }
+          return labelName?.toLowerCase() === labelFilter.toLowerCase();
+        });
+      }
+
+      return matchesRole && matchesEmail && matchesLabel;
     });
   });
 
@@ -118,6 +144,20 @@ export class UsersManagementComponent implements OnInit {
       next: (data) => {
         this.users.set(data);
         this.isLoading.set(false);
+
+        // Load labels for each user in the background to support label filtering
+        data.forEach(user => {
+          this.labelService.getUserLabels(user.id).subscribe({
+            next: (labels) => {
+              this.userLabelsMap.update(map => {
+                const nextMap = new Map(map);
+                nextMap.set(user.id, labels);
+                return nextMap;
+              });
+            },
+            error: () => {}
+          });
+        });
       },
       error: () => {
         this.errorMessageKey.set('users.loadFailed');
@@ -129,6 +169,13 @@ export class UsersManagementComponent implements OnInit {
   // Set role filter and reset page back to 1
   setRoleFilter(role: string): void {
     this.selectedRoleFilter.set(role);
+    this.currentPage.set(1);
+    this.selectedUserIds.set(new Set());
+  }
+
+  // Set label filter and reset page back to 1
+  setLabelFilter(label: string): void {
+    this.selectedLabelFilter.set(label);
     this.currentPage.set(1);
     this.selectedUserIds.set(new Set());
   }
@@ -245,9 +292,8 @@ export class UsersManagementComponent implements OnInit {
         complete: () => {
           this.selectedUserIds.set(new Set());
           this.isBulkActionSaving.set(false);
-          // If the labels panel is open for any of these users, it might be out of date.
-          // Since it's a minor detail and we don't have a global state for user labels,
-          // simply clearing the selection is enough.
+          // Re-load users to refresh label map
+          this.loadUsers();
         },
         error: (err) => {
           this.isBulkActionSaving.set(false);
@@ -364,7 +410,6 @@ export class UsersManagementComponent implements OnInit {
     this.usersService.deleteUser(user.id).subscribe({
       next: () => this.users.update((list) => list.filter((u) => u.id !== user.id)),
       error: (err) => {
-        // window.alert is a non-display context — use instant() here
         const code: string | undefined = err?.error?.errorCode;
         const key = code ? `errors.${code}` : 'users.deleteFailed';
         alert(this.translateService.instant(key));
