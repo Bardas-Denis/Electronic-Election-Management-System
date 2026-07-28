@@ -168,7 +168,7 @@
               <td>
                 <div class="row-actions">
                   <button type="button" class="btn-ghost btn-sm" [class.btn-ghost--active]="expandedUserId() === user.id"
-                    (click)="toggleLabels(user.id)">
+                    (click)="toggleLabels(user.id, $event)">
                     {{ 'labels.panelTitle' | translate }}
                   </button>
                   <button type="button" class="btn-danger btn-sm" [disabled]="isCurrentUser(user) || isSaving()"
@@ -180,7 +180,7 @@
             </tr>
             <!-- Labels panel row — only rendered for the expanded user -->
             @if (expandedUserId() === user.id) {
-              <tr class="labels-row">
+              <tr class="labels-row" (click)="$event.stopPropagation()">
                 <td colspan="5" style="padding: 0;">
                   <app-user-labels-panel [userId]="user.id" />
                 </td>

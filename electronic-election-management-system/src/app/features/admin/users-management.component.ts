@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal, computed } from '@angular/core';
+import { Component, OnInit, inject, signal, computed, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -423,7 +423,13 @@ export class UsersManagementComponent implements OnInit {
   }
 
   // Toggle the labels panel for a user row
-  toggleLabels(userId: string): void {
+  toggleLabels(userId: string, event: Event): void {
+    event.stopPropagation();
     this.expandedUserId.update(current => current === userId ? null : userId);
+  }
+
+  @HostListener('document:click')
+  onDocumentClick(): void {
+    this.expandedUserId.set(null);
   }
 }
