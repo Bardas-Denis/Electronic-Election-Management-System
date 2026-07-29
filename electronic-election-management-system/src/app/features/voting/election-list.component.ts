@@ -5,6 +5,7 @@ import { RouterLink } from '@angular/router';
 import { TranslateService, TranslatePipe } from '@ngx-translate/core';
 import { VotingService } from '../../core/services/voting.service';
 import { AuthService } from '../../core/services/auth.service';
+import { ElectionListFiltersService } from '../../core/services/election-list-filters.service';
 import { ElectionDto } from '../../core/models/voting.model';
 
 @Component({
@@ -18,34 +19,15 @@ export class ElectionListComponent implements OnInit {
   private votingService = inject(VotingService);
   readonly authService = inject(AuthService);
   public translateService = inject(TranslateService);
+  private filtersService = inject(ElectionListFiltersService);
 
   elections = signal<ElectionDto[]>([]);
   isLoading = signal(true);
-  searchQuery = signal<string>('');
 
-  selectedFilters = signal<{
-    political: boolean;
-    commercial: boolean;
-    anonymous: boolean;
-    nonAnonymous: boolean;
-    voted: boolean;
-    unvoted: boolean;
-    expired: boolean;
-    active: boolean;
-    thisWeek: boolean;
-    moreThanAMonth: boolean;
-  }>({
-    political: false,
-    commercial: false,
-    anonymous: false,
-    nonAnonymous: false,
-    voted: false,
-    unvoted: false,
-    expired: false,
-    active: false,
-    thisWeek: false,
-    moreThanAMonth: false
-  });
+  // Backed by a root-provided service (not local state) so the selection
+  // survives leaving this page (vote/results) and coming back.
+  searchQuery = this.filtersService.searchQuery;
+  selectedFilters = this.filtersService.selectedFilters;
 
   filteredElections = computed(() => {
     const filters = this.selectedFilters();
