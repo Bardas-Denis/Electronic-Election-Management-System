@@ -17,6 +17,15 @@ export class UserDetailsService {
 
   /** Creates or fully replaces the current user's personal details. */
   saveMyDetails(dto: PersonalDetailsDto): Observable<PersonalDetailsDto> {
-    return this.http.put<PersonalDetailsDto>(this.baseUrl, dto);
+    return this.http.put<PersonalDetailsDto>(this.baseUrl, this.normalizeDetails(dto));
+  }
+
+  private normalizeDetails(dto: PersonalDetailsDto): PersonalDetailsDto {
+    return Object.fromEntries(
+      Object.entries(dto).map(([key, value]) => [
+        key,
+        typeof value === 'string' ? value.trim() || null : value
+      ])
+    ) as PersonalDetailsDto;
   }
 }
