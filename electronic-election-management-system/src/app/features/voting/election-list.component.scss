@@ -1,6 +1,33 @@
+.elections-page {
+  max-width: 1380px;
+}
+
+.elections-main-layout {
+  display: grid;
+  grid-template-columns: 230px minmax(0, 1fr);
+  align-items: start;
+  gap: clamp(1.5rem, 2.5vw, 2.5rem);
+  margin-top: 2rem;
+}
+
+.filters-sidebar {
+  position: sticky;
+  top: calc(56px + 1.5rem);
+  width: 100%;
+  padding: 20px;
+  background: var(--bg-card, #ffffff);
+  border: 1px solid var(--border-color, #e5e7eb);
+  border-radius: 12px;
+  box-shadow: var(--shadow-sm);
+}
+
+.elections-content-area {
+  min-width: 0;
+}
+
 .election-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 290px), 1fr));
   gap: 1.25rem;
 }
 
@@ -215,4 +242,14 @@
   font-size: 0.82rem; 
   font-weight: 600; 
   cursor: default;
+}
+
+@media (max-width: 820px) {
+  .elections-main-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .filters-sidebar {
+    position: static;
+  }
 }

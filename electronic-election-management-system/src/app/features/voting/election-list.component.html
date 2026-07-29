@@ -1,4 +1,4 @@
-<div class="page">
+<div class="page elections-page">
   <!-- Top header section -->
   <div class="page-header">
     <div>
@@ -14,10 +14,10 @@
   </div>
 
   <!-- Main layout -->
-  <div class="elections-main-layout" style="display: flex; gap: 40px; align-items: flex-start; margin-top: 32px;">
+  <div class="elections-main-layout">
 
     <!-- Sidebar Filters -->
-    <aside class="filters-sidebar" style="width: 230px; flex-shrink: 0; background: var(--bg-card, #ffffff); padding: 20px; border-radius: 12px; border: 1px solid var(--border-color, #e5e7eb); box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);">
+    <aside class="filters-sidebar">
       
       <div style="margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--border-color, #f3f4f6);">
         <h3 style="font-size: 0.95rem; font-weight: 600; color: inherit; margin: 0;">{{ 'elections.filterTitle' | translate }}</h3>
@@ -75,7 +75,7 @@
     </aside>
 
     <!-- Content Area (Grid) -->
-    <div class="elections-content-area" style="flex: 1; min-width: 0;">
+    <div class="elections-content-area">
       @if (isLoading()) {
         <div class="state-block">
           <span class="spinner"></span>
