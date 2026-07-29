@@ -502,7 +502,12 @@ namespace Electronic_Election_Management_System.Data
                 CreatedByUserId = admin.Id,
                 StartsAt = now.AddDays(-9),
                 EndsAt = now.AddDays(60),
-                Options = new List<Option>()
+                Options = new List<Option>
+                {
+                    new Option { Label = "Foarte multumit" },
+                    new Option { Label = "Multumit" },
+                    new Option { Label = "Nemultumit" }
+                }
             });
 
             // Multi-question survey (uses ElectionQuestion instead of direct Options).
