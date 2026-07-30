@@ -3,10 +3,13 @@ import { CommonModule } from '@angular/common';
 import { FormBuilder, FormArray, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { TranslatePipe } from '@ngx-translate/core';
+import { forkJoin, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 import { VotingService } from '../../core/services/voting.service';
 import {
   CreateElectionQuestionDto,
   ElectionDto,
+  ElectionInvitationDto,
   InvitationCandidateDto,
   InvitationLabelDto
 } from '../../core/models/voting.model';
@@ -60,6 +63,9 @@ export class CreateElectionComponent implements OnInit {
   private invitationLabelsLoaded = false;
   private elRef = inject(ElementRef);
 
+  /** Existing invitations loaded when entering edit mode for a closed election. */
+  existingInvitations = signal<ElectionInvitationDto[]>([]);
+
   @ViewChild('labelPickerRef') labelPickerRef?: ElementRef;
   @ViewChild('candidatePickerRef') candidatePickerRef?: ElementRef;
 
@@ -96,10 +102,11 @@ export class CreateElectionComponent implements OnInit {
       this.syncAnonymousState(type);
     });
     this.form.get('isClosed')?.valueChanges.subscribe((isClosed) => {
-      if (isClosed && !this.isEditMode()) {
+      if (isClosed) {
+        // Load candidates/labels in both create and edit mode when closed is toggled on
         this.loadInvitationCandidates();
         this.loadInvitationLabels();
-      } else if (!isClosed) {
+      } else {
         this.clearInvitations();
       }
     });
@@ -114,11 +121,15 @@ export class CreateElectionComponent implements OnInit {
     this.isEditMode.set(true);
     this.isLoading.set(true);
 
-    this.votingService.getElectionById(this.editingElectionId).subscribe({
-      next: (election) => {
+    // Load the election details and its existing invitations in parallel
+    forkJoin({
+      election: this.votingService.getElectionById(this.editingElectionId),
+      invitations: this.votingService.getElectionInvitations(this.editingElectionId).pipe(
+        catchError(() => of([] as ElectionInvitationDto[]))
+      )
+    }).subscribe({
+      next: ({ election, invitations }) => {
         // Replace the complete array with controls initialized from the response.
-        // Patching blank groups and then clearing/pushing their nested arrays could leave
-        // the rendered form directives attached to the old empty controls.
         this.form.setControl(
           'questions',
           this.createQuestionsArray(normalizeEditableQuestions(election))
@@ -142,6 +153,24 @@ export class CreateElectionComponent implements OnInit {
           this.form.disable({ emitEvent: false });
           this.isLocked.set(true);
           this.errorMessageKey.set('elections.lockedByVotes');
+        }
+
+        // Pre-populate invitation pickers from existing invitations
+        if (election.isClosed && invitations.length > 0) {
+          this.existingInvitations.set(invitations);
+
+          // Users with a registered account → pre-fill the user picker
+          const existingUserIds = invitations
+            .filter(inv => !!inv.userId)
+            .map(inv => inv.userId!);
+          this.form.controls.invitedUserIds.setValue(existingUserIds);
+
+          // Email-only invitations → pre-fill the email chips
+          const existingEmails = invitations
+            .filter(inv => !inv.userId)
+            .map(inv => inv.email);
+          this.invitedEmails.set(existingEmails);
+          this.form.controls.invitedEmails.setValue(existingEmails);
         }
 
         this.isLoading.set(false);
@@ -528,7 +557,7 @@ export class CreateElectionComponent implements OnInit {
       return;
     }
 
-    if (this.isClosedElection && !this.editingElectionId && this.inviteEmailControl.value?.trim()) {
+    if (this.isClosedElection && this.inviteEmailControl.value?.trim()) {
       if (this.inviteEmailControl.invalid) {
         this.inviteEmailControl.markAsTouched();
         return;
@@ -547,36 +576,124 @@ export class CreateElectionComponent implements OnInit {
     const payload = this.form.getRawValue() as any;
     payload.question = payload.questions[0].text;
     payload.options = payload.questions[0].options;
-    if (!payload.isClosed || this.editingElectionId) {
-      // Existing invitation membership is managed by the invitation endpoints.
+
+    // In edit mode, invitations are managed via dedicated endpoints — clear from PUT body
+    if (this.editingElectionId) {
       payload.invitedUserIds = [];
       payload.invitedEmails = [];
       payload.invitedLabelIds = [];
     }
+
     // Ensure the datetime-local values are sent as UTC ISO strings so server comparisons use UTC correctly
     try {
       payload.startsAt = new Date(payload.startsAt).toISOString();
       payload.endsAt = new Date(payload.endsAt).toISOString();
     } catch { /* fall back to raw values if parsing fails */ }
-    const request$ = this.editingElectionId
-      ? this.votingService.updateElection(this.editingElectionId, payload)
-      : this.votingService.createElection(payload);
 
-    request$.subscribe({
-      next: () => {
-        this.isSubmitting.set(false);
-        this.router.navigate(['/elections']);
-      },
-      error: (err) => {
-        this.isSubmitting.set(false);
-        const code: string | undefined = err?.error?.errorCode;
-        this.errorMessageKey.set(
-          code
-            ? `errors.${code}`
-            : (this.editingElectionId ? 'elections.saveFailed' : 'elections.createFailed')
-        );
-      }
-    });
+    if (this.editingElectionId && this.isClosedElection) {
+      // Edit mode for a closed election: PUT the details, then diff invitations
+      this.votingService.updateElection(this.editingElectionId, payload).subscribe({
+        next: () => {
+          this.syncInvitationsOnEdit().then(() => {
+            this.isSubmitting.set(false);
+            this.router.navigate(['/elections']);
+          }).catch(() => {
+            this.isSubmitting.set(false);
+            this.errorMessageKey.set('elections.invitationSyncFailed');
+          });
+        },
+        error: (err) => {
+          this.isSubmitting.set(false);
+          const code: string | undefined = err?.error?.errorCode;
+          this.errorMessageKey.set(code ? `errors.${code}` : 'elections.saveFailed');
+        }
+      });
+    } else {
+      // Create mode or editing a public election
+      const request$ = this.editingElectionId
+        ? this.votingService.updateElection(this.editingElectionId, payload)
+        : this.votingService.createElection(payload);
+
+      request$.subscribe({
+        next: () => {
+          this.isSubmitting.set(false);
+          this.router.navigate(['/elections']);
+        },
+        error: (err) => {
+          this.isSubmitting.set(false);
+          const code: string | undefined = err?.error?.errorCode;
+          this.errorMessageKey.set(
+            code
+              ? `errors.${code}`
+              : (this.editingElectionId ? 'elections.saveFailed' : 'elections.createFailed')
+          );
+        }
+      });
+    }
+  }
+
+  /**
+   * In edit mode, computes the diff between current invitation state and the
+   * pre-loaded existing invitations, then calls add/remove endpoints as needed.
+   */
+  private async syncInvitationsOnEdit(): Promise<void> {
+    const electionId = this.editingElectionId!;
+    const existing = this.existingInvitations();
+
+    // --- Compute the desired audience ---
+    // Expand label members client-side (same snapshot approach as create)
+    const desiredUserIds = new Set([
+      ...(this.form.controls.invitedUserIds.value ?? []),
+      ...this.labelMemberIds()
+    ]);
+    const desiredEmails = new Set(this.invitedEmails().map(e => e.toLowerCase()));
+
+    // --- Compute existing sets ---
+    const existingByUserId = new Map<string, ElectionInvitationDto>();
+    const existingByEmail = new Map<string, ElectionInvitationDto>();
+    for (const inv of existing) {
+      if (inv.userId) existingByUserId.set(inv.userId, inv);
+      else existingByEmail.set(inv.email.toLowerCase(), inv);
+    }
+
+    // --- To add ---
+    const newUserIds = [...desiredUserIds].filter(id => !existingByUserId.has(id));
+    const newEmails = [...desiredEmails].filter(email => !existingByEmail.has(email));
+
+    // --- To remove ---
+    const removedInvitationIds: string[] = [];
+    for (const [userId, inv] of existingByUserId) {
+      if (!desiredUserIds.has(userId)) removedInvitationIds.push(inv.id);
+    }
+    for (const [email, inv] of existingByEmail) {
+      if (!desiredEmails.has(email)) removedInvitationIds.push(inv.id);
+    }
+
+    const promises: Promise<void>[] = [];
+
+    // Add new invitations (userIds + emails in one call if anything changed)
+    if (newUserIds.length > 0 || newEmails.length > 0) {
+      promises.push(
+        new Promise<void>((resolve, reject) => {
+          this.votingService.inviteToElection(electionId, {
+            userIds: newUserIds,
+            emails: newEmails
+          }).subscribe({ next: () => resolve(), error: reject });
+        })
+      );
+    }
+
+    // Remove stale invitations one by one
+    for (const invitationId of removedInvitationIds) {
+      promises.push(
+        new Promise<void>((resolve, reject) => {
+          this.votingService.removeElectionInvitation(electionId, invitationId)
+            .subscribe({ next: () => resolve(), error: reject });
+        })
+      );
+    }
+
+    await Promise.all(promises);
   }
 }
 
@@ -597,16 +714,16 @@ export function normalizeEditableQuestions(election: ElectionDto): CreateElectio
       text: question.text || (index === 0 ? election.question : '') || '',
       options: Array.isArray(question.options) && question.options.length > 0
         ? question.options.map(option => ({
+          label: option.label ?? '',
+          description: option.description ?? '',
+          imageDataUrl: option.imageDataUrl ?? ''
+        }))
+        : index === 0
+          ? (election.options ?? []).map(option => ({
             label: option.label ?? '',
             description: option.description ?? '',
             imageDataUrl: option.imageDataUrl ?? ''
           }))
-        : index === 0
-          ? (election.options ?? []).map(option => ({
-              label: option.label ?? '',
-              description: option.description ?? '',
-              imageDataUrl: option.imageDataUrl ?? ''
-            }))
           : []
     }));
   }

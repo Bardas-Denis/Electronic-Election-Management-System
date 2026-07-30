@@ -100,6 +100,9 @@ namespace Electronic_Election_Management_System.Data.Repositories
         public async Task AddAsync(Election election)
             => await _db.Elections.AddAsync(election);
 
+        public async Task AddQuestionsAsync(IEnumerable<ElectionQuestion> questions)
+            => await _db.ElectionQuestions.AddRangeAsync(questions);
+
         public void RemoveOptions(IEnumerable<Option> options)
             => _db.Options.RemoveRange(options);
 
