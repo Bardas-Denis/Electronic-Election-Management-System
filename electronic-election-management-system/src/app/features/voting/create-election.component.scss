@@ -376,7 +376,7 @@
 
 .user-picker-item {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
   align-items: center;
   gap: 0.65rem;
   padding: 0.6rem;
@@ -390,6 +390,15 @@
 
   &--selected {
     background: color-mix(in srgb, var(--accent) 10%, transparent);
+  }
+
+  &--from-label {
+    cursor: default;
+    opacity: 0.85;
+
+    &:hover {
+      background: color-mix(in srgb, var(--accent) 10%, transparent);
+    }
   }
 
   input {
@@ -473,6 +482,7 @@
 .selected-user-chips {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   gap: 0.45rem;
   margin-top: 0.65rem;
 }
@@ -518,6 +528,13 @@
       background: var(--border-color);
       color: var(--text-primary);
     }
+  }
+
+  // Chip for a user covered by a label — no remove button, slightly tinted
+  &--from-label {
+    border-color: color-mix(in srgb, var(--accent) 40%, var(--border-color));
+    background: color-mix(in srgb, var(--accent) 8%, var(--bg-card));
+    padding-right: 0.55rem;
   }
 }
 
@@ -659,3 +676,63 @@
   }
 }
 @media (max-width: 640px) { .option-fields { grid-template-columns: 1fr; } }
+
+// ── Invitation counter & label-covered styles ─────────────────────────────
+
+.invitation-heading-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.25rem;
+
+  h3 { margin: 0; }
+}
+
+.invitees-counter {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem 0.65rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 15%, var(--bg-card));
+  border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
+  color: var(--accent);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  animation: pop-in 0.18s ease;
+}
+
+@keyframes pop-in {
+  from { transform: scale(0.8); opacity: 0; }
+  to   { transform: scale(1);   opacity: 1; }
+}
+
+.label-tag-badge {
+  font-size: 0.8rem;
+  line-height: 1;
+  opacity: 0.75;
+}
+
+.chips-toggle {
+  display: inline-flex;
+  align-items: center;
+  height: 28px;
+  padding: 0 0.65rem;
+  border: 1px dashed var(--border-color);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: border-color var(--transition), color var(--transition);
+
+  &:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+}

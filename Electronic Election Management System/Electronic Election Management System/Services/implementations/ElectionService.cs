@@ -1,4 +1,4 @@
-using Electronic_Election_Management_System.Constants;
+﻿using Electronic_Election_Management_System.Constants;
 using Electronic_Election_Management_System.Data.Repositories;
 using Electronic_Election_Management_System.DTOs;
 using Electronic_Election_Management_System.Models;
@@ -179,8 +179,14 @@ namespace Electronic_Election_Management_System.Services
             _elections.RemoveQuestions(existingQuestions);
             election.Options.Clear();
             election.Questions.Clear();
-            foreach (var question in BuildQuestions(questions, election.Id))
-                election.Questions.Add(question);
+
+            // Must use DbSet.AddRangeAsync instead of election.Questions.Add().
+            // ElectionQuestion.Id = Guid.NewGuid() means new entities already have a
+            // real GUID at construction. Adding via the navigation collection made EF
+            // treat them as Modified (UPDATE) rather than Added (INSERT), causing a
+            // DbUpdateConcurrencyException when the UPDATE hit the now-deleted rows.
+            var newQuestions = BuildQuestions(questions, election.Id);
+            await _elections.AddQuestionsAsync(newQuestions);
 
             await _auditLogs.AddAsync(new AuditLog
             {
@@ -252,16 +258,19 @@ namespace Electronic_Election_Management_System.Services
             foreach (var label in labels)
             {
                 var assignments = await _labels.GetUsersWithLabelAsync(label.Id);
+                var memberIds = assignments
+                    .Select(assignment => assignment.UserId)
+                    .Where(id => id != userId)
+                    .Distinct()
+                    .ToList();
+
                 result.Add(new InvitationLabelDto
                 {
                     Id = label.Id,
                     Name = label.Name,
                     Category = label.Category,
-                    UserCount = assignments
-                        .Select(assignment => assignment.UserId)
-                        .Where(id => id != userId)
-                        .Distinct()
-                        .Count()
+                    UserCount = memberIds.Count,
+                    UserIds = memberIds
                 });
             }
 

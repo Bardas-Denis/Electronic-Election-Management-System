@@ -125,4 +125,6 @@ export interface InvitationLabelDto {
   name: string;
   category?: string | null;
   userCount: number;
+  /** IDs of users assigned to this label (excluding the requesting user). */
+  userIds: string[];
 }
