@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal, ElementRef, HostListener, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormArray, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -53,8 +53,15 @@ export class CreateElectionComponent implements OnInit {
   candidateSearchControl = this.fb.control('');
   labelPickerOpen = signal(false);
   candidatePickerOpen = signal(false);
+  /** When false, only the first CHIP_PREVIEW chips are rendered; toggled by the user. */
+  showAllCandidateChips = signal(false);
+  readonly CHIP_PREVIEW = 5;
   private invitationCandidatesLoaded = false;
   private invitationLabelsLoaded = false;
+  private elRef = inject(ElementRef);
+
+  @ViewChild('labelPickerRef') labelPickerRef?: ElementRef;
+  @ViewChild('candidatePickerRef') candidatePickerRef?: ElementRef;
 
   // A route ID indicates edit mode.
   private editingElectionId: string | null = null;
@@ -329,6 +336,34 @@ export class CreateElectionComponent implements OnInit {
     if (!this.candidatePickerOpen()) {
       this.candidateSearchControl.reset('');
     }
+  }
+
+  /** Close either picker when the user clicks anywhere outside the respective picker element. */
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent): void {
+    if (this.labelPickerOpen() && this.labelPickerRef && !this.labelPickerRef.nativeElement.contains(event.target)) {
+      this.labelPickerOpen.set(false);
+      this.labelSearchControl.reset('');
+    }
+    if (this.candidatePickerOpen() && this.candidatePickerRef && !this.candidatePickerRef.nativeElement.contains(event.target)) {
+      this.candidatePickerOpen.set(false);
+      this.candidateSearchControl.reset('');
+    }
+  }
+
+  toggleShowAllCandidateChips(): void {
+    this.showAllCandidateChips.update(v => !v);
+  }
+
+  /** The slice of selected candidates actually rendered as chips. */
+  visibleCandidateChips(): InvitationCandidateDto[] {
+    const all = this.selectedInvitationCandidates();
+    return this.showAllCandidateChips() ? all : all.slice(0, this.CHIP_PREVIEW);
+  }
+
+  hiddenCandidateChipCount(): number {
+    const total = this.selectedInvitationCandidates().length;
+    return this.showAllCandidateChips() ? 0 : Math.max(0, total - this.CHIP_PREVIEW);
   }
 
   toggleInvitationCandidate(candidateId: string, selected: boolean): void {

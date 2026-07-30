@@ -101,7 +101,7 @@
         } @else if (invitationLabels().length === 0) {
         <p class="field-help">{{ 'elections.noInvitationLabels' | translate }}</p>
         } @else {
-        <div class="user-picker label-picker">
+        <div class="user-picker label-picker" #labelPickerRef>
           <button id="invitedLabelIds" type="button" class="user-picker-trigger" (click)="toggleLabelPicker()"
             [attr.aria-expanded]="labelPickerOpen()" aria-controls="invitation-label-panel">
             <span>
@@ -199,7 +199,7 @@
         } @else if (invitationCandidates().length === 0) {
         <p class="field-help">{{ 'elections.noRegisteredUsers' | translate }}</p>
         } @else {
-        <div class="user-picker">
+        <div class="user-picker" #candidatePickerRef>
           <button id="invitedUserIds" type="button" class="user-picker-trigger" (click)="toggleCandidatePicker()"
             [attr.aria-expanded]="candidatePickerOpen()" aria-controls="invitation-candidate-panel">
             <span>
@@ -265,7 +265,7 @@
 
         @if (selectedInvitationCandidates().length > 0) {
         <div class="selected-user-chips" [attr.aria-label]="'elections.invitedUsersLabel' | translate">
-          @for (candidate of selectedInvitationCandidates(); track candidate.id) {
+          @for (candidate of visibleCandidateChips(); track candidate.id) {
           <span class="selected-user-chip" [class.selected-user-chip--from-label]="isCandidateFromLabel(candidate.id)">
             <span class="user-avatar">{{ candidate.email.charAt(0).toUpperCase() }}</span>
             <span>{{ candidate.email }}</span>
@@ -275,6 +275,15 @@
             }
           </span>
           }
+          @if (hiddenCandidateChipCount() > 0 || showAllCandidateChips()) {
+          <button type="button" class="chips-toggle" (click)="toggleShowAllCandidateChips()">
+            @if (showAllCandidateChips()) {
+            {{ 'elections.showLessChips' | translate }}
+            } @else {
+            +{{ hiddenCandidateChipCount() }} {{ 'elections.moreChips' | translate }}
+            }
+          </button>
+          }
         </div>
         }
         }
@@ -282,6 +291,7 @@
 
       <div class="field-group">
         <label for="inviteEmail">{{ 'elections.emailInviteLabel' | translate }}</label>
+        <p class="field-help">{{ 'elections.emailInviteHelp' | translate }}</p>
         <div class="email-invite-row">
           <input id="inviteEmail" type="email" [formControl]="inviteEmailControl"
             [placeholder]="'elections.emailInvitePlaceholder' | translate"
