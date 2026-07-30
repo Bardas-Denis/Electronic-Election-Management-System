@@ -29,6 +29,63 @@ export class ElectionListComponent implements OnInit {
   searchQuery = this.filtersService.searchQuery;
   selectedFilters = this.filtersService.selectedFilters;
 
+  // Which accordion sections are open. Local to this component on purpose:
+  // collapse state is a view preference, not something that should follow
+  // the user across navigation the way the filter selections do.
+  expandedGroups = signal<Record<string, boolean>>({
+    status: true,
+    timing: true,
+    participation: true,
+    type: true,
+    visibility: true
+  });
+
+  // Count of currently active (checked) filters, used in the sidebar
+  // heading and to decide whether to show "Clear all".
+  activeFilterCount = computed(() => {
+    const filters = this.selectedFilters();
+    return Object.values(filters).filter(Boolean).length;
+  });
+
+  // Elections narrowed only by the search box, ignoring checkbox filters.
+  // This is the base list the per-option counts are computed from, so a
+  // count answers "how many results if I also check this box".
+  private searchFilteredElections = computed(() => {
+    const query = this.searchQuery().toLowerCase().trim();
+    const list = this.elections();
+    if (!query) return list;
+    return list.filter((e) => e.title.toLowerCase().includes(query));
+  });
+
+  filterCounts = computed(() => {
+    const list = this.searchFilteredElections();
+    const now = new Date();
+
+    const matchesTiming = (election: any, kind: 'week' | 'month') => {
+      const dateStr = election.startDate || election.startsAt || election.date || election.createdAt;
+      if (!dateStr) return false;
+      const diffDays = (new Date(dateStr).getTime() - now.getTime()) / (1000 * 3600 * 24);
+      return kind === 'week' ? diffDays >= -7 && diffDays <= 7 : diffDays >= 28;
+    };
+
+    return {
+      active: list.filter((e) => !e.isExpired).length,
+      expired: list.filter((e) => e.isExpired).length,
+      thisWeek: list.filter((e) => matchesTiming(e, 'week')).length,
+      moreThanAMonth: list.filter((e) => matchesTiming(e, 'month')).length,
+      voted: list.filter((e) => e.hasUserVoted).length,
+      unvoted: list.filter((e) => !e.hasUserVoted && !e.isExpired).length,
+      political: list.filter(
+        (e) => e.type?.toLowerCase() === 'politic' || e.type?.toLowerCase() === 'political'
+      ).length,
+      commercial: list.filter(
+        (e) => e.type?.toLowerCase() === 'comercial' || e.type?.toLowerCase() === 'commercial'
+      ).length,
+      anonymous: list.filter((e) => e.isAnonymous).length,
+      nonAnonymous: list.filter((e) => !e.isAnonymous).length
+    };
+  });
+
   filteredElections = computed(() => {
     const filters = this.selectedFilters();
     const query = this.searchQuery().toLowerCase().trim();
@@ -119,6 +176,26 @@ export class ElectionListComponent implements OnInit {
     this.selectedFilters.update(current => {
       return { ...current, [key]: !current[key] };
     });
+  }
+
+  // Resets every filter checkbox to unchecked without touching the search
+  // query, so the grid falls back to the default "active only" view.
+  clearAllFilters(): void {
+    this.selectedFilters.update(current => {
+      const cleared = { ...current };
+      for (const key of Object.keys(cleared) as (keyof typeof cleared)[]) {
+        cleared[key] = false;
+      }
+      return cleared;
+    });
+  }
+
+  toggleGroup(key: string): void {
+    this.expandedGroups.update((current) => ({ ...current, [key]: !current[key] }));
+  }
+
+  isGroupExpanded(key: string): boolean {
+    return this.expandedGroups()[key] ?? true;
   }
 
   onSearchChange(value: string): void {
