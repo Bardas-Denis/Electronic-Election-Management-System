@@ -197,7 +197,13 @@
     "upcoming": "Începe în curând",
     "changeVoteHint": "Apasă pentru a schimba votul",
     "begins": "Începe",
-    "ends": "Se termină"
+    "ends": "Se termină",
+    "groupStatus": "Stare",
+    "groupParticipation": "Votul meu",
+    "groupTiming": "Perioadă",
+    "groupType": "Tip",
+    "groupVisibility": "Vizibilitate",
+    "clearFilters": "Șterge filtrele"
     
   },
   "vote": {
