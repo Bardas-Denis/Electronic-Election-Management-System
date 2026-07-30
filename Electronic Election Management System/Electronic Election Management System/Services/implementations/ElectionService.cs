@@ -252,16 +252,19 @@ namespace Electronic_Election_Management_System.Services
             foreach (var label in labels)
             {
                 var assignments = await _labels.GetUsersWithLabelAsync(label.Id);
+                var memberIds = assignments
+                    .Select(assignment => assignment.UserId)
+                    .Where(id => id != userId)
+                    .Distinct()
+                    .ToList();
+
                 result.Add(new InvitationLabelDto
                 {
                     Id = label.Id,
                     Name = label.Name,
                     Category = label.Category,
-                    UserCount = assignments
-                        .Select(assignment => assignment.UserId)
-                        .Where(id => id != userId)
-                        .Distinct()
-                        .Count()
+                    UserCount = memberIds.Count,
+                    UserIds = memberIds
                 });
             }
 

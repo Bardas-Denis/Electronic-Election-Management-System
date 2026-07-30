@@ -110,6 +110,8 @@
   "closedElectionHelp": "Only the creator and invited people can find and access this election.",
   "invitationsTitle": "Invitations",
   "invitationsHelp": "Build the audience from labels, individual accounts, or email addresses.",
+  "totalInviteesCount": "{{count}} people selected",
+  "coveredByLabel": "Included via label",
   "labelInviteLabel": "Invite by label",
   "labelInviteHelp": "Everyone currently assigned to a selected label will receive an individual invitation. Users in multiple labels are included only once.",
   "loadingInviteLabels": "Loading labels...",

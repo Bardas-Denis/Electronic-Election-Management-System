@@ -109,6 +109,8 @@
     "closedElectionHelp": "Doar creatorul și persoanele invitate pot găsi și accesa această alegere.",
     "invitationsTitle": "Invitații",
     "invitationsHelp": "Construiește audiența folosind etichete, conturi individuale sau adrese de email.",
+    "totalInviteesCount": "{{count}} persoane selectate",
+    "coveredByLabel": "Inclus prin etichetă",
     "labelInviteLabel": "Invită după etichetă",
     "labelInviteHelp": "Toți utilizatorii atribuiți în prezent unei etichete selectate vor primi o invitație individuală. Utilizatorii din mai multe etichete sunt incluși o singură dată.",
     "loadingInviteLabels": "Se încarcă etichetele...",

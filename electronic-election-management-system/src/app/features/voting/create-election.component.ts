@@ -280,13 +280,48 @@ export class CreateElectionComponent implements OnInit {
     );
   }
 
+  /** IDs of users that are already covered by at least one selected label. */
+  labelMemberIds(): string[] {
+    const selectedLabelIds = new Set(this.form.controls.invitedLabelIds.value ?? []);
+    const ids = new Set<string>();
+    this.invitationLabels()
+      .filter(label => selectedLabelIds.has(label.id))
+      .forEach(label => (label.userIds ?? []).forEach(id => ids.add(id)));
+    return [...ids];
+  }
+
+  /** True when the candidate is already covered by a selected label. */
+  isCandidateFromLabel(candidateId: string): boolean {
+    const selectedLabelIds = new Set(this.form.controls.invitedLabelIds.value ?? []);
+    return this.invitationLabels()
+      .filter(label => selectedLabelIds.has(label.id))
+      .some(label => (label.userIds ?? []).includes(candidateId));
+  }
+
+  /**
+   * Total number of unique people that will be invited:
+   * union of manually selected registered users + label members + free-text emails.
+   */
+  totalUniqueInvitees(): number {
+    const userIds = new Set([
+      ...(this.form.controls.invitedUserIds.value ?? []),
+      ...this.labelMemberIds()
+    ]);
+    const emailCount = (this.form.controls.invitedEmails.value ?? []).length;
+    return userIds.size + emailCount;
+  }
+
   selectedInvitationCandidates(): InvitationCandidateDto[] {
     const selectedIds = new Set(this.form.controls.invitedUserIds.value ?? []);
-    return this.invitationCandidates().filter(candidate => selectedIds.has(candidate.id));
+    const labelIds = new Set(this.labelMemberIds());
+    return this.invitationCandidates().filter(
+      candidate => selectedIds.has(candidate.id) || labelIds.has(candidate.id)
+    );
   }
 
   isInvitationCandidateSelected(candidateId: string): boolean {
-    return (this.form.controls.invitedUserIds.value ?? []).includes(candidateId);
+    return (this.form.controls.invitedUserIds.value ?? []).includes(candidateId)
+      || this.isCandidateFromLabel(candidateId);
   }
 
   toggleCandidatePicker(): void {
@@ -297,6 +332,8 @@ export class CreateElectionComponent implements OnInit {
   }
 
   toggleInvitationCandidate(candidateId: string, selected: boolean): void {
+    // Prevent un-checking a user that is already covered by a selected label.
+    if (!selected && this.isCandidateFromLabel(candidateId)) return;
     const currentIds = this.form.controls.invitedUserIds.value ?? [];
     const nextIds = selected
       ? [...new Set([...currentIds, candidateId])]

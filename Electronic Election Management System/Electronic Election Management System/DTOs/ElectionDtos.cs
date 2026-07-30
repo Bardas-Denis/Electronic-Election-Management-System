@@ -226,5 +226,7 @@ namespace Electronic_Election_Management_System.DTOs
         public string Name { get; set; } = string.Empty;
         public string? Category { get; set; }
         public int UserCount { get; set; }
+        /// <summary>IDs of users assigned to this label (excluding the requesting user).</summary>
+        public List<Guid> UserIds { get; set; } = [];
     }
 }
