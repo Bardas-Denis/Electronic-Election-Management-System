@@ -638,53 +638,30 @@ export class CreateElectionComponent implements OnInit {
    */
   private async syncInvitationsOnEdit(): Promise<void> {
     const electionId = this.editingElectionId!;
-    const existing = this.existingInvitations();
-
-    // --- Compute the desired audience ---
-    // Expand label members client-side (same snapshot approach as create)
-    const desiredUserIds = new Set([
+    const desiredUserIds = [
       ...(this.form.controls.invitedUserIds.value ?? []),
       ...this.labelMemberIds()
-    ]);
-    const desiredEmails = new Set(this.invitedEmails().map(e => e.toLowerCase()));
-
-    // --- Compute existing sets ---
-    const existingByUserId = new Map<string, ElectionInvitationDto>();
-    const existingByEmail = new Map<string, ElectionInvitationDto>();
-    for (const inv of existing) {
-      if (inv.userId) existingByUserId.set(inv.userId, inv);
-      else existingByEmail.set(inv.email.toLowerCase(), inv);
-    }
-
-    // --- To add ---
-    const newUserIds = [...desiredUserIds].filter(id => !existingByUserId.has(id));
-    const newEmails = [...desiredEmails].filter(email => !existingByEmail.has(email));
-
-    // --- To remove ---
-    const removedInvitationIds: string[] = [];
-    for (const [userId, inv] of existingByUserId) {
-      if (!desiredUserIds.has(userId)) removedInvitationIds.push(inv.id);
-    }
-    for (const [email, inv] of existingByEmail) {
-      if (!desiredEmails.has(email)) removedInvitationIds.push(inv.id);
-    }
+    ];
+    const { toAdd, toRemove } = computeInvitationDiff(
+      this.existingInvitations(),
+      desiredUserIds,
+      this.invitedEmails()
+    );
 
     const promises: Promise<void>[] = [];
 
-    // Add new invitations (userIds + emails in one call if anything changed)
-    if (newUserIds.length > 0 || newEmails.length > 0) {
+    if (toAdd.userIds.length > 0 || toAdd.emails.length > 0) {
       promises.push(
         new Promise<void>((resolve, reject) => {
           this.votingService.inviteToElection(electionId, {
-            userIds: newUserIds,
-            emails: newEmails
+            userIds: toAdd.userIds,
+            emails: toAdd.emails
           }).subscribe({ next: () => resolve(), error: reject });
         })
       );
     }
 
-    // Remove stale invitations one by one
-    for (const invitationId of removedInvitationIds) {
+    for (const invitationId of toRemove) {
       promises.push(
         new Promise<void>((resolve, reject) => {
           this.votingService.removeElectionInvitation(electionId, invitationId)
@@ -695,6 +672,43 @@ export class CreateElectionComponent implements OnInit {
 
     await Promise.all(promises);
   }
+}
+
+/**
+ * Pure function: computes which invitations need to be added/removed when
+ * saving a closed election in edit mode. Exported for unit-testing.
+ *
+ * @param existing   Invitations currently stored on the backend.
+ * @param desiredUserIds  Combined list of manually selected users + label members.
+ * @param desiredEmails  Free-text email chips (may be mixed-case).
+ */
+export function computeInvitationDiff(
+  existing: ElectionInvitationDto[],
+  desiredUserIds: string[],
+  desiredEmails: string[]
+): { toAdd: { userIds: string[]; emails: string[] }; toRemove: string[] } {
+  const wantedUsers = new Set(desiredUserIds);
+  const wantedEmails = new Set(desiredEmails.map(e => e.toLowerCase()));
+
+  const existingByUserId = new Map<string, ElectionInvitationDto>();
+  const existingByEmail = new Map<string, ElectionInvitationDto>();
+  for (const inv of existing) {
+    if (inv.userId) existingByUserId.set(inv.userId, inv);
+    else existingByEmail.set(inv.email.toLowerCase(), inv);
+  }
+
+  const newUserIds = [...wantedUsers].filter(id => !existingByUserId.has(id));
+  const newEmails = [...wantedEmails].filter(email => !existingByEmail.has(email));
+
+  const toRemove: string[] = [];
+  for (const [userId, inv] of existingByUserId) {
+    if (!wantedUsers.has(userId)) toRemove.push(inv.id);
+  }
+  for (const [email, inv] of existingByEmail) {
+    if (!wantedEmails.has(email)) toRemove.push(inv.id);
+  }
+
+  return { toAdd: { userIds: newUserIds, emails: newEmails }, toRemove };
 }
 
 // Converts the backend ISO date into the format expected by <input type="datetime-local">.
