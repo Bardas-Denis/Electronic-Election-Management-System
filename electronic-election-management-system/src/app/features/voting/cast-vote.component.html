@@ -65,6 +65,9 @@
           <span>{{ questionIndex + 1 }}.</span>
           }
           {{ question.text }}
+          @if (question.isRequired === false) {
+          <span class="question-optional-badge">{{ 'vote.questionOptional' | translate }}</span>
+          }
         </p>
         <div class="options-list" [class.locked]="!canSelectOptions()">
           @for (option of question.options; track option.id) {

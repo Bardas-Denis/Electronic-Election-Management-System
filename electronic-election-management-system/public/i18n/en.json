@@ -173,6 +173,7 @@
   "questionsSectionTitle": "Election questions",
   "questionsSectionSubtitle": "Add one or more questions. Each question needs at least two options.",
   "questionNumber": "Question {{number}}",
+  "questionRequiredLabel": "Required",
   "addQuestion": "Add another question",
   "removeQuestion": "Remove question",
   "optionImageInvalid": "Choose a PNG, JPEG, WEBP or GIF image smaller than 2 MB.",
@@ -213,6 +214,7 @@
   "clearFilters": "Clear all"
 },
   "vote": {
+    "questionOptional": "(optional)",
     "confirmed": "Your vote has been recorded",
     "confirmedMessage": "Thank you for participating! Results update in real time.",
     "seeResults": "See live results",

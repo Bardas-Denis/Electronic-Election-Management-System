@@ -649,8 +649,14 @@
   border-radius: var(--radius-md);
   background: var(--bg-subtle);
 }
-.question-card__header { display: flex; justify-content: space-between; align-items: center; margin-bottom: .75rem; }
+.question-card__header { display: flex; align-items: center; gap: .75rem; margin-bottom: .75rem; }
+.question-card__header .btn-danger { margin-left: auto; }
 .question-number { font-weight: 700; color: var(--text-primary); }
+.question-required-toggle {
+  display: flex; align-items: center; gap: .4rem;
+  font-size: .85rem; color: var(--text-secondary); cursor: pointer;
+}
+.question-required-toggle input[type="checkbox"] { width: 16px; height: 16px; margin: 0; cursor: pointer; }
 .question-options { display: grid; gap: .7rem; margin-top: .9rem; }
 .option-row--image { position: relative; align-items: center; }
 .option-fields { display: grid; grid-template-columns: 1fr 1fr; gap: .6rem; flex: 1; }

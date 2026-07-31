@@ -45,6 +45,13 @@
   margin: 1.25rem 0 0;
 }
 
+.question-optional-badge {
+  font-size: .75rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  margin-left: .4rem;
+}
+
 .options-list {
   display: flex;
   flex-direction: column;

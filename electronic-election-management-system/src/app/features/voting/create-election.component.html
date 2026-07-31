@@ -565,6 +565,10 @@
         <div class="question-card__header">
           <span class="question-number">{{ 'elections.questionNumber' | translate: { number: questionIndex + 1 }
             }}</span>
+          <label class="question-required-toggle">
+            <input type="checkbox" formControlName="isRequired" />
+            {{ 'elections.questionRequiredLabel' | translate }}
+          </label>
           @if (questions.length > 1) {
           <button type="button" class="btn-danger" (click)="removeQuestion(questionIndex)"
             [attr.aria-label]="'elections.removeQuestion' | translate">×</button>

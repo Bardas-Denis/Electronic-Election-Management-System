@@ -61,7 +61,7 @@ export class CastVoteComponent implements OnInit {
   questions(election: ElectionDto) {
     return election.questions?.length
       ? election.questions
-      : [{ id: '', text: election.question ?? election.title, displayOrder: 0, options: election.options }];
+      : [{ id: '', text: election.question ?? election.title, displayOrder: 0, isRequired: true, options: election.options }];
   }
 
   selectOption(questionId: string, optionId: string): void {
@@ -75,7 +75,7 @@ export class CastVoteComponent implements OnInit {
 
   hasAllAnswers(): boolean {
     const election = this.election();
-    return !!election && this.questions(election).every(q => !!this.selectedOptionIds()[q.id]);
+    return !!election && this.questions(election).every(q => q.isRequired === false || !!this.selectedOptionIds()[q.id]);
   }
 
   // "Trimite votul" - anonymous elections vote immediately, non-anonymous ones
