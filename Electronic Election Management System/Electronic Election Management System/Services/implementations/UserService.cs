@@ -12,17 +12,20 @@ namespace Electronic_Election_Management_System.Services
         private readonly IAuditLogRepository _auditLogs;
         private readonly IUserNotifier _notifier;
         private readonly ICnpService _cnp;
+        private readonly ILogger<UserService> _logger;
 
         public UserService(
             IUserRepository users,
             IAuditLogRepository auditLogs,
             IUserNotifier notifier,
-            ICnpService cnp)
+            ICnpService cnp,
+            ILogger<UserService> logger)
         {
             _users = users;
             _auditLogs = auditLogs;
             _notifier = notifier;
             _cnp = cnp;
+            _logger = logger;
         }
 
         public async Task<List<UserDto>> GetAllAsync()
@@ -55,7 +58,10 @@ namespace Electronic_Election_Management_System.Services
             {
                 int adminCount = await _users.AdminCountAsync();
                 if (adminCount <= 1)
+                {
+                    _logger.LogWarning(LogMessages.LastAdminDemoteBlocked, targetId, currentUserId);
                     return ServiceResult<UserDto>.Fail(ErrorCode.LastAdminRoleProtected);
+                }
             }
 
             user.Role = newRole;
@@ -69,6 +75,7 @@ namespace Electronic_Election_Management_System.Services
             });
 
             await _users.SaveChangesAsync();
+            _logger.LogInformation(LogMessages.UserRoleChanged, targetId, newRole, currentUserId);
 
             // Best-effort push: notifies the affected user that their role has changed.
             // If the hub connection is absent the call is a no-op — SecurityStamp revocation remains the primary enforcement mechanism.
@@ -168,11 +175,14 @@ namespace Electronic_Election_Management_System.Services
             {
                 await _users.SaveChangesAsync();
             }
-            catch (DbUpdateException)
+            catch (DbUpdateException ex)
             {
+                _logger.LogError(ex, LogMessages.UserDeleteConstraintFail, targetId);
                 // Generic safety net just in case some other constraint is violated.
                 return ServiceResult<bool>.Fail(ErrorCode.UserHasDependentRecords);
             }
+
+            _logger.LogInformation(LogMessages.UserDeleted, targetId, currentUserId);
 
             return ServiceResult<bool>.Ok(true);
         }

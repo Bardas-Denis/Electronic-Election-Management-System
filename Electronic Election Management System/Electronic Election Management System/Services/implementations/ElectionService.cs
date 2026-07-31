@@ -1,4 +1,4 @@
-﻿using Electronic_Election_Management_System.Constants;
+using Electronic_Election_Management_System.Constants;
 using Electronic_Election_Management_System.Data.Repositories;
 using Electronic_Election_Management_System.DTOs;
 using Electronic_Election_Management_System.Models;
@@ -14,6 +14,7 @@ namespace Electronic_Election_Management_System.Services
         private readonly IUserRepository _users;
         private readonly IElectionInvitationRepository _invitations;
         private readonly ILabelRepository _labels;
+        private readonly ILogger<ElectionService> _logger;
 
         public ElectionService(
             IElectionRepository elections,
@@ -21,7 +22,8 @@ namespace Electronic_Election_Management_System.Services
             IVoteRepository votes,
             IUserRepository users,
             IElectionInvitationRepository invitations,
-            ILabelRepository labels)
+            ILabelRepository labels,
+            ILogger<ElectionService> logger)
         {
             _elections = elections;
             _auditLogs = auditLogs;
@@ -29,6 +31,7 @@ namespace Electronic_Election_Management_System.Services
             _users = users;
             _invitations = invitations;
             _labels = labels;
+            _logger = logger;
         }
 
         public async Task<List<ElectionDto>> GetAllAsync(Guid userId)
@@ -139,6 +142,8 @@ namespace Electronic_Election_Management_System.Services
             });
             await _elections.SaveChangesAsync();
 
+            _logger.LogInformation(LogMessages.ElectionCreated, election.Title, election.Id, userId);
+
             return ServiceResult<ElectionDto>.Ok(MapToDto(election));
         }
 
@@ -159,7 +164,10 @@ namespace Electronic_Election_Management_System.Services
                 return ServiceResult<ElectionDto>.NotFound(ErrorCode.ResourceNotFound);
 
             if (election.CreatedByUserId != userId)
+            {
+                _logger.LogWarning(LogMessages.ElectionUpdateUnauthorized, id, userId);
                 return ServiceResult<ElectionDto>.Fail(ErrorCode.NotAuthorizedToEdit);
+            }
 
             if (await _votes.HasAnyVotesInElectionAsync(election.Id))
                 return ServiceResult<ElectionDto>.Fail(ErrorCode.ElectionHasVotes);
@@ -196,6 +204,8 @@ namespace Electronic_Election_Management_System.Services
             });
             await _elections.SaveChangesAsync();
 
+            _logger.LogInformation(LogMessages.ElectionUpdated, election.Id, userId);
+
             return ServiceResult<ElectionDto>.Ok(MapToDto(election));
         }
 
@@ -206,7 +216,10 @@ namespace Electronic_Election_Management_System.Services
                 return ServiceResult<bool>.NotFound(ErrorCode.ResourceNotFound);
 
             if (election.CreatedByUserId != userId)
+            {
+                _logger.LogWarning(LogMessages.ElectionDeleteUnauthorized, id, userId);
                 return ServiceResult<bool>.Fail(ErrorCode.NotAuthorizedToDelete);
+            }
 
             // Audit log written before delete so we still have the title.
             await _auditLogs.AddAsync(new AuditLog
@@ -218,6 +231,8 @@ namespace Electronic_Election_Management_System.Services
 
             _elections.Remove(election);
             await _elections.SaveChangesAsync();
+
+            _logger.LogInformation(LogMessages.ElectionDeleted, election.Title, election.Id, userId);
 
             return ServiceResult<bool>.Ok(true);
         }
@@ -310,6 +325,8 @@ namespace Electronic_Election_Management_System.Services
                     Action = AuditAction.ElectionInvitationsAdded.ToDbValue()
                 });
                 await _invitations.SaveChangesAsync();
+                
+                _logger.LogInformation(LogMessages.InvitationsAdded, invitationResult.Data.Count, electionId, userId);
             }
 
             var invitations = await _invitations.GetByElectionAsync(electionId);
@@ -340,6 +357,7 @@ namespace Electronic_Election_Management_System.Services
                 Action = AuditAction.ElectionInvitationRemoved.ToDbValue()
             });
             await _invitations.SaveChangesAsync();
+            _logger.LogInformation(LogMessages.InvitationRemoved, invitationId, electionId, userId);
             return ServiceResult<bool>.Ok(true);
         }
 

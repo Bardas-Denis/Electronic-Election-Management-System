@@ -4,6 +4,7 @@ using Electronic_Election_Management_System.DTOs;
 using Electronic_Election_Management_System.Models;
 using Electronic_Election_Management_System.Services;
 using FluentAssertions;
+using Microsoft.Extensions.Logging;
 using NSubstitute;
 
 namespace Electronic_Election_Management_System.Tests.Services;
@@ -17,6 +18,7 @@ public class ElectionServiceTests
     private readonly IElectionInvitationRepository _invitations =
         Substitute.For<IElectionInvitationRepository>();
     private readonly ILabelRepository _labels = Substitute.For<ILabelRepository>();
+    private readonly ILogger<ElectionService> _logger = Substitute.For<ILogger<ElectionService>>();
     private readonly ElectionService _service;
     private readonly Guid _creatorId = Guid.NewGuid();
 
@@ -31,7 +33,8 @@ public class ElectionServiceTests
             _votes,
             _users,
             _invitations,
-            _labels);
+            _labels,
+            _logger);
     }
 
     [Fact]

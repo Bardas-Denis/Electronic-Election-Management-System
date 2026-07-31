@@ -12,8 +12,26 @@ using Microsoft.OpenApi;
 using System.Reflection;
 using System.Security.Claims;
 using System.Text;
+using Electronic_Election_Management_System.Constants;
 
-var builder = WebApplication.CreateBuilder(args);
+using Serilog;
+using Serilog.Events;
+
+Log.Logger = new LoggerConfiguration()
+    .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
+    .Enrich.FromLogContext()
+    .WriteTo.Console()
+    .CreateBootstrapLogger();
+
+try
+{
+    Log.Information("Starting web application");
+    var builder = WebApplication.CreateBuilder(args);
+    builder.Host.UseSerilog((context, services, configuration) => configuration
+        .ReadFrom.Configuration(context.Configuration)
+        .ReadFrom.Services(services)
+        .Enrich.FromLogContext());
+
 
 // SQLite connection string with busy_timeout=5000ms.
 // "Default Timeout" (seconds) is mapped by Microsoft.Data.Sqlite todo
@@ -103,6 +121,8 @@ builder.Services
 
                 if (user is null || user.SecurityStamp != tokenStamp)
                 {
+                    var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
+                    logger.LogWarning(LogMessages.RevokedTokenRejected, userId);
                     context.Fail("revoked");
                 }
             },
@@ -128,6 +148,8 @@ builder.Services
 
 builder.Services.AddAuthorization();
 builder.Services.AddControllers();
+builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
+builder.Services.AddProblemDetails();
 const string AngularDevCorsPolicy = "AngularDevCorsPolicy";
 builder.Services.AddCors(options =>
 {
@@ -202,6 +224,7 @@ using (var scope = app.Services.CreateScope())
 app.UseSwagger();
 app.UseSwaggerUI();
 app.UseHttpsRedirection();
+app.UseExceptionHandler();
 app.UseCors(AngularDevCorsPolicy);
 app.UseAuthentication();
 app.UseAuthorization();
@@ -209,3 +232,12 @@ app.MapControllers();
 app.MapHub<ResultsHub>("/hubs/results");
 app.MapHub<NotificationsHub>("/hubs/notifications");
 app.Run();
+}
+catch (Exception ex)
+{
+    Log.Fatal(ex, "Application terminated unexpectedly");
+}
+finally
+{
+    Log.CloseAndFlush();
+}

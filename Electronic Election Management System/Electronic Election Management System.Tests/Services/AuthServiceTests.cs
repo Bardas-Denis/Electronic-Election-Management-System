@@ -4,6 +4,7 @@ using Electronic_Election_Management_System.DTOs;
 using Electronic_Election_Management_System.Models;
 using Electronic_Election_Management_System.Services;
 using FluentAssertions;
+using Microsoft.Extensions.Logging;
 using NSubstitute;
 
 namespace Electronic_Election_Management_System.Tests.Services;
@@ -13,11 +14,12 @@ public class AuthServiceTests
     private readonly IUserRepository _users = Substitute.For<IUserRepository>();
     private readonly IAuditLogRepository _auditLogs = Substitute.For<IAuditLogRepository>();
     private readonly ITokenService _tokens = Substitute.For<ITokenService>();
+    private readonly ILogger<AuthService> _logger = Substitute.For<ILogger<AuthService>>();
     private readonly AuthService _service;
 
     public AuthServiceTests()
     {
-        _service = new AuthService(_users, _auditLogs, _tokens);
+        _service = new AuthService(_users, _auditLogs, _tokens, _logger);
         _tokens.GenerateToken(Arg.Any<User>())
             .Returns(("signed-token", DateTime.UtcNow.AddHours(1)));
     }
