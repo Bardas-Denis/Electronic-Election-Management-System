@@ -4,6 +4,8 @@ using Electronic_Election_Management_System.Data.Repositories;
 using Electronic_Election_Management_System.Hubs;
 using Electronic_Election_Management_System.Models;
 using Electronic_Election_Management_System.Services;
+using Electronic_Election_Management_System.Services.interfaces;
+using Electronic_Election_Management_System.Services.implementations;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
@@ -65,6 +67,7 @@ builder.Services.AddScoped<IResultsService, ResultsService>();
 builder.Services.AddScoped<ILabelService, LabelService>();
 builder.Services.AddSingleton<ICnpService, CnpService>();
 builder.Services.AddScoped<IUserNotifier, SignalRUserNotifier>();
+builder.Services.AddScoped<IEmailService, EmailService>();
 
 builder.Services.AddSignalR();
 
