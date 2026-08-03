@@ -489,6 +489,7 @@ namespace Electronic_Election_Management_System.Services
                 Text = question.Text.Trim(),
                 DisplayOrder = questionIndex,
                 IsRequired = question.IsRequired,
+                AllowMultipleAnswers = question.AllowMultipleAnswers,
                 Options = question.Options
                     .Where(option => !string.IsNullOrWhiteSpace(option.Label))
                     .Select(option => new Option
@@ -511,6 +512,7 @@ namespace Electronic_Election_Management_System.Services
                     Text = q.Text,
                     DisplayOrder = q.DisplayOrder,
                     IsRequired = q.IsRequired,
+                    AllowMultipleAnswers = q.AllowMultipleAnswers,
                     Options = q.Options.Select(MapOptionToDto).ToList()
                 })
                 .ToList();

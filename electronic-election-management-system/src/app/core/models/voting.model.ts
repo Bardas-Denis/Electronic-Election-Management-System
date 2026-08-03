@@ -12,6 +12,7 @@ export interface ElectionQuestionDto {
   text: string;
   displayOrder: number;
   isRequired: boolean;
+  allowMultipleAnswers: boolean;
   options: OptionDto[];
 }
 
@@ -49,6 +50,7 @@ export interface CreateOptionDto {
 export interface CreateElectionQuestionDto {
   text: string;
   isRequired: boolean;
+  allowMultipleAnswers: boolean;
   options: CreateOptionDto[];
 }
 

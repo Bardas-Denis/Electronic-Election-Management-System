@@ -173,6 +173,7 @@
     "questionsSectionSubtitle": "Adaugă una sau mai multe întrebări. Fiecare întrebare trebuie să aibă cel puțin două opțiuni.",
     "questionNumber": "Întrebarea {{number}}",
     "questionRequiredLabel": "Obligatorie",
+    "questionMultipleAnswersLabel": "Răspuns multiplu",
     "addQuestion": "Adaugă încă o întrebare",
     "removeQuestion": "Șterge întrebarea",
     "optionImageInvalid": "Alege o imagine PNG, JPEG, WEBP sau GIF mai mică de 2 MB.",
@@ -215,6 +216,7 @@
   },
   "vote": {
     "questionOptional": "(opțional)",
+    "questionMultipleAnswers": "(alegi una sau mai multe)",
     "confirmed": "Votul tău a fost înregistrat",
     "confirmedMessage": "Mulțumim pentru participare! Rezultatele se actualizează live.",
     "seeResults": "Vezi rezultate live",

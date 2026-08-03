@@ -8,6 +8,7 @@ namespace Electronic_Election_Management_System.Models
         public string Text { get; set; } = string.Empty;
         public int DisplayOrder { get; set; }
         public bool IsRequired { get; set; } = true;
+        public bool AllowMultipleAnswers { get; set; } = false;
         public ICollection<Option> Options { get; set; } = new List<Option>();
     }
 }

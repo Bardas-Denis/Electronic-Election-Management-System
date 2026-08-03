@@ -174,6 +174,7 @@
   "questionsSectionSubtitle": "Add one or more questions. Each question needs at least two options.",
   "questionNumber": "Question {{number}}",
   "questionRequiredLabel": "Required",
+  "questionMultipleAnswersLabel": "Multiple answers",
   "addQuestion": "Add another question",
   "removeQuestion": "Remove question",
   "optionImageInvalid": "Choose a PNG, JPEG, WEBP or GIF image smaller than 2 MB.",
@@ -215,6 +216,7 @@
 },
   "vote": {
     "questionOptional": "(optional)",
+    "questionMultipleAnswers": "(choose one or more)",
     "confirmed": "Your vote has been recorded",
     "confirmedMessage": "Thank you for participating! Results update in real time.",
     "seeResults": "See live results",

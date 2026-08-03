@@ -19,8 +19,11 @@ export class CastVoteComponent implements OnInit {
   private votingService = inject(VotingService);
 
   election = signal<ElectionDto | null>(null);
-  selectedOptionIds = signal<Record<string, string>>({});
-  userVoteAnswers = signal<Record<string, string>>({});
+  // One or more selected option ids per question - a single-answer question
+  // never holds more than one entry, but the shape stays an array either way
+  // so multi-answer questions don't need a separate code path here.
+  selectedOptionIds = signal<Record<string, string[]>>({});
+  userVoteAnswers = signal<Record<string, string[]>>({});
   userVoteOptionId = signal<string | null>(null);
   userVoteOptionLabel = signal<string | null>(null);
   isEditingVote = signal(false);
@@ -61,21 +64,45 @@ export class CastVoteComponent implements OnInit {
   questions(election: ElectionDto) {
     return election.questions?.length
       ? election.questions
-      : [{ id: '', text: election.question ?? election.title, displayOrder: 0, isRequired: true, options: election.options }];
+      : [{ id: '', text: election.question ?? election.title, displayOrder: 0, isRequired: true, allowMultipleAnswers: false, options: election.options }];
   }
 
-  selectOption(questionId: string, optionId: string): void {
+  // Single-answer question: picking an option replaces whatever was selected before.
+  // For an optional question, clicking the already-selected option again clears it back
+  // to "no answer" - a required question always keeps exactly one selected once touched,
+  // since it can never legitimately end up with zero.
+  selectOption(questionId: string, optionId: string, isRequired: boolean = true): void {
     if (!this.canSelectOptions()) return;
-    this.selectedOptionIds.update(selected => ({ ...selected, [questionId]: optionId }));
+    this.selectedOptionIds.update(selected => {
+      const current = selected[questionId] ?? [];
+      if (!isRequired && current.includes(optionId)) {
+        return { ...selected, [questionId]: [] };
+      }
+      return { ...selected, [questionId]: [optionId] };
+    });
+  }
+
+  // Multiple-answer question: picking an option adds/removes it from the set.
+  toggleOption(questionId: string, optionId: string): void {
+    if (!this.canSelectOptions()) return;
+    this.selectedOptionIds.update(selected => {
+      const current = selected[questionId] ?? [];
+      const next = current.includes(optionId)
+        ? current.filter(id => id !== optionId)
+        : [...current, optionId];
+      return { ...selected, [questionId]: next };
+    });
   }
 
   isOptionSelected(questionId: string, optionId: string): boolean {
-    return this.selectedOptionIds()[questionId] === optionId;
+    return (this.selectedOptionIds()[questionId] ?? []).includes(optionId);
   }
 
   hasAllAnswers(): boolean {
     const election = this.election();
-    return !!election && this.questions(election).every(q => q.isRequired === false || !!this.selectedOptionIds()[q.id]);
+    return !!election && this.questions(election).every(
+      q => q.isRequired === false || (this.selectedOptionIds()[q.id]?.length ?? 0) > 0
+    );
   }
 
   // "Trimite votul" - anonymous elections vote immediately, non-anonymous ones
@@ -166,7 +193,7 @@ export class CastVoteComponent implements OnInit {
     if (!election.hasUserVoted) return;
     if (election.userVoteOptionId) {
       this.userVoteOptionId.set(election.userVoteOptionId);
-      const answers = { [this.questions(election)[0]?.id ?? '']: election.userVoteOptionId };
+      const answers = { [this.questions(election)[0]?.id ?? '']: [election.userVoteOptionId] };
       this.selectedOptionIds.set(answers);
       this.userVoteAnswers.set(answers);
     }
@@ -180,12 +207,17 @@ export class CastVoteComponent implements OnInit {
       next: (vote) => {
         this.userVoteOptionId.set(vote.optionId);
         if (vote.answers?.length) {
-          const answers = Object.fromEntries(vote.answers.map(answer => [answer.questionId, answer.optionId]));
+          // A multiple-answer question can contribute more than one answer row
+          // with the same questionId - group them instead of overwriting.
+          const answers: Record<string, string[]> = {};
+          for (const answer of vote.answers) {
+            (answers[answer.questionId] ??= []).push(answer.optionId);
+          }
           this.selectedOptionIds.set(answers);
           this.userVoteAnswers.set(answers);
         } else {
           const election = this.election();
-          const answers = { [election ? this.questions(election)[0]?.id ?? '' : '']: vote.optionId };
+          const answers = { [election ? this.questions(election)[0]?.id ?? '' : '']: [vote.optionId] };
           this.selectedOptionIds.set(answers);
           this.userVoteAnswers.set(answers);
         }
@@ -201,7 +233,7 @@ export class CastVoteComponent implements OnInit {
   }
 
   private castOrUpdateVote(voterDeclaration?: VoterDeclarationDto): void {
-    const optionIds = Object.values(this.selectedOptionIds());
+    const optionIds = Object.values(this.selectedOptionIds()).flat();
     if (!this.hasAllAnswers()) return;
     const optionId = optionIds[0];
 

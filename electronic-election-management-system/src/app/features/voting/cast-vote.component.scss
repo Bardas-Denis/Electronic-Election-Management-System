@@ -162,6 +162,15 @@
   }
 }
 
+// Multiple-answer questions use a checkbox affordance (square, not round)
+// instead of the radio-button look, since more than one can be checked.
+.option-item--checkbox .option-radio {
+  border-radius: 5px;
+}
+.option-item--checkbox .option-radio-dot {
+  border-radius: 2px;
+}
+
 .option-body {
   display: flex;
   flex-direction: column;

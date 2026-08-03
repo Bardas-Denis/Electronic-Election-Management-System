@@ -29,6 +29,7 @@ namespace Electronic_Election_Management_System.DTOs
         public string Text { get; set; } = string.Empty;
         public int DisplayOrder { get; set; }
         public bool IsRequired { get; set; } = true;
+        public bool AllowMultipleAnswers { get; set; } = false;
         public List<OptionDto> Options { get; set; } = new();
     }
 
@@ -37,6 +38,7 @@ namespace Electronic_Election_Management_System.DTOs
         [Required, NotWhitespace, StringLength(ValidationRules.QuestionMaxLength)]
         public string Text { get; set; } = string.Empty;
         public bool IsRequired { get; set; } = true;
+        public bool AllowMultipleAnswers { get; set; } = false;
         [Required, MinLength(2), MaxLength(ValidationRules.MaxOptionsPerQuestion)]
         public List<CreateOptionDto> Options { get; set; } = new();
 

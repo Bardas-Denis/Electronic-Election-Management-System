@@ -257,11 +257,14 @@ namespace Electronic_Election_Management_System.Services
                 return selected.Count == 1 && selected[0].QuestionId is null ? selected : null;
             }
 
-            // Required questions need exactly one answer; optional questions accept zero or one.
+            // Single-answer questions: required needs exactly one, optional accepts zero or one.
+            // Multiple-answer questions: required needs at least one, optional accepts any count.
             var countsValid = questions.All(question =>
             {
                 var count = selected.Count(option => option.QuestionId == question.Id);
-                return question.IsRequired ? count == 1 : count <= 1;
+                return question.AllowMultipleAnswers
+                    ? !question.IsRequired || count >= 1
+                    : question.IsRequired ? count == 1 : count <= 1;
             });
             if (!countsValid)
                 return null;

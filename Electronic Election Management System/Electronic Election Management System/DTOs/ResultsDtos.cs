@@ -16,6 +16,12 @@ namespace Electronic_Election_Management_System.DTOs
     {
         public Guid QuestionId { get; set; }
         public string Text { get; set; } = string.Empty;
+        public bool AllowMultipleAnswers { get; set; }
+        // For a single-answer question this is the sum of option vote counts (every respondent
+        // picked exactly one). For a multiple-answer question it's the distinct respondent count
+        // instead, since a respondent's several picks would otherwise inflate this beyond the
+        // number of people who actually answered - each option's own VoteCount can then exceed
+        // this total, and that's expected.
         public int TotalVotes { get; set; }
         public List<OptionResultDto> Results { get; set; } = new();
     }

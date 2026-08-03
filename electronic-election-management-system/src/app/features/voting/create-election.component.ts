@@ -207,6 +207,7 @@ export class CreateElectionComponent implements OnInit {
     return this.fb.group({
       text: [question?.text ?? '', [trimmedRequired, Validators.maxLength(INPUT_LIMITS.question)]],
       isRequired: [question?.isRequired ?? true],
+      allowMultipleAnswers: [question?.allowMultipleAnswers ?? false],
       options: this.fb.array(
         optionGroups,
         [
@@ -728,6 +729,7 @@ export function normalizeEditableQuestions(election: ElectionDto): CreateElectio
     return election.questions.map((question, index) => ({
       text: question.text || (index === 0 ? election.question : '') || '',
       isRequired: question.isRequired ?? true,
+      allowMultipleAnswers: question.allowMultipleAnswers ?? false,
       options: Array.isArray(question.options) && question.options.length > 0
         ? question.options.map(option => ({
           label: option.label ?? '',
@@ -747,6 +749,7 @@ export function normalizeEditableQuestions(election: ElectionDto): CreateElectio
   return [{
     text: election.question || election.title || '',
     isRequired: true,
+    allowMultipleAnswers: false,
     options: (election.options ?? []).map(option => ({
       label: option.label ?? '',
       description: option.description ?? '',

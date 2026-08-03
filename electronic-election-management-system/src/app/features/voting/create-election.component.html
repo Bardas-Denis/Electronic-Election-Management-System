@@ -569,6 +569,10 @@
             <input type="checkbox" formControlName="isRequired" />
             {{ 'elections.questionRequiredLabel' | translate }}
           </label>
+          <label class="question-required-toggle">
+            <input type="checkbox" formControlName="allowMultipleAnswers" />
+            {{ 'elections.questionMultipleAnswersLabel' | translate }}
+          </label>
           @if (questions.length > 1) {
           <button type="button" class="btn-danger" (click)="removeQuestion(questionIndex)"
             [attr.aria-label]="'elections.removeQuestion' | translate">×</button>
