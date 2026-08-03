@@ -4,6 +4,7 @@ using Electronic_Election_Management_System.DTOs;
 using Electronic_Election_Management_System.Models;
 using Electronic_Election_Management_System.Services;
 using FluentAssertions;
+using Microsoft.Extensions.Logging;
 using NSubstitute;
 
 namespace Electronic_Election_Management_System.Tests.Services;
@@ -12,11 +13,12 @@ public class LabelServiceTests
 {
     private readonly ILabelRepository _labels = Substitute.For<ILabelRepository>();
     private readonly IUserRepository _users = Substitute.For<IUserRepository>();
+    private readonly ILogger<LabelService> _logger = Substitute.For<ILogger<LabelService>>();
     private readonly LabelService _service;
 
     public LabelServiceTests()
     {
-        _service = new LabelService(_labels, _users);
+        _service = new LabelService(_labels, _users, _logger);
     }
 
     [Fact]

@@ -10,12 +10,18 @@ namespace Electronic_Election_Management_System.Services
         private readonly IUserRepository _users;
         private readonly IAuditLogRepository _auditLogs;
         private readonly ITokenService _tokenService;
+        private readonly ILogger<AuthService> _logger;
 
-        public AuthService(IUserRepository users, IAuditLogRepository auditLogs, ITokenService tokenService)
+        public AuthService(
+            IUserRepository users, 
+            IAuditLogRepository auditLogs, 
+            ITokenService tokenService,
+            ILogger<AuthService> logger)
         {
             _users = users;
             _auditLogs = auditLogs;
             _tokenService = tokenService;
+            _logger = logger;
         }
 
         public async Task<ServiceResult<AuthResponse>> RegisterAsync(RegisterRequest request)
@@ -37,6 +43,8 @@ namespace Electronic_Election_Management_System.Services
             await _auditLogs.AddAsync(new AuditLog { UserId = user.Id, Action = AuditAction.AccountCreated.ToDbValue() });
             await _users.SaveChangesAsync();
 
+            _logger.LogInformation(LogMessages.UserRegistered, user.Email, user.Id);
+
             return ServiceResult<AuthResponse>.Ok(BuildAuthResponse(user));
         }
 
@@ -46,10 +54,15 @@ namespace Electronic_Election_Management_System.Services
 
             var user = await _users.GetByEmailAsync(normalizedEmail);
             if (user is null || !PasswordHasher.Verify(request.Password, user.PasswordHash))
+            {
+                _logger.LogWarning(LogMessages.FailedLoginAttempt, normalizedEmail);
                 return ServiceResult<AuthResponse>.Fail(ErrorCode.InvalidCredentials);
+            }
 
             await _auditLogs.AddAsync(new AuditLog { UserId = user.Id, Action = AuditAction.Login.ToDbValue() });
             await _auditLogs.SaveChangesAsync();
+
+            _logger.LogInformation(LogMessages.UserLoggedIn, user.Email, user.Id);
 
             return ServiceResult<AuthResponse>.Ok(BuildAuthResponse(user));
         }

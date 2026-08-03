@@ -6,6 +6,7 @@ using Electronic_Election_Management_System.Models;
 using Electronic_Election_Management_System.Services;
 using FluentAssertions;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.Extensions.Logging;
 using NSubstitute;
 
 namespace Electronic_Election_Management_System.Tests.Services;
@@ -17,12 +18,13 @@ public class VoteServiceTests
     private readonly ICnpService _cnp = Substitute.For<ICnpService>();
     private readonly IResultsService _results = Substitute.For<IResultsService>();
     private readonly IHubContext<ResultsHub> _hub = Substitute.For<IHubContext<ResultsHub>>();
+    private readonly ILogger<VoteService> _logger = Substitute.For<ILogger<VoteService>>();
     private readonly VoteService _service;
     private readonly Guid _userId = Guid.NewGuid();
 
     public VoteServiceTests()
     {
-        _service = new VoteService(_elections, _votes, _cnp, _results, _hub);
+        _service = new VoteService(_elections, _votes, _cnp, _results, _hub, _logger);
     }
 
     [Fact]

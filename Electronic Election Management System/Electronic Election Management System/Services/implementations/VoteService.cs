@@ -14,19 +14,22 @@ namespace Electronic_Election_Management_System.Services
         private readonly ICnpService _cnp;
         private readonly IResultsService _results;
         private readonly IHubContext<ResultsHub> _resultsHub;
+        private readonly ILogger<VoteService> _logger;
 
         public VoteService(
             IElectionRepository elections,
             IVoteRepository votes,
             ICnpService cnp,
             IResultsService results,
-            IHubContext<ResultsHub> resultsHub)
+            IHubContext<ResultsHub> resultsHub,
+            ILogger<VoteService> logger)
         {
             _elections = elections;
             _votes = votes;
             _cnp = cnp;
             _results = results;
             _resultsHub = resultsHub;
+            _logger = logger;
         }
 
         public async Task<ServiceResult<bool>> CastVoteAsync(CastVoteRequest request, Guid userId)
@@ -50,12 +53,14 @@ namespace Electronic_Election_Management_System.Services
             // election's live results dashboard.
             if (result.Success)
             {
+                _logger.LogInformation(LogMessages.VoteCast, userId, election.Id);
                 try
                 {
                     await BroadcastResultsAsync(election.Id);
                 }
-                catch
+                catch (Exception ex)
                 {
+                    _logger.LogWarning(ex, LogMessages.SignalRBroadcastFailed, election.Id);
                     // Broadcasting live results should not affect the vote-casting outcome.
                 }
             }
@@ -82,12 +87,14 @@ namespace Electronic_Election_Management_System.Services
 
             if (result.Success)
             {
+                _logger.LogInformation(LogMessages.VoteUpdated, userId, request.ElectionId);
                 try
                 {
                     await BroadcastResultsAsync(election.Id);
                 }
-                catch
+                catch (Exception ex)
                 {
+                    _logger.LogWarning(ex, LogMessages.SignalRBroadcastFailed, election.Id);
                     // Broadcasting live results should not affect the vote-editing outcome.
                 }
             }
@@ -136,10 +143,13 @@ namespace Electronic_Election_Management_System.Services
             {
                 await BroadcastResultsAsync(electionId);
             }
-            catch
+            catch (Exception ex)
             {
+                _logger.LogWarning(ex, LogMessages.SignalRBroadcastFailed, electionId);
                 // Broadcasting live results should not affect the vote-deletion outcome.
             }
+
+            _logger.LogInformation(LogMessages.VoteDeleted, userId, electionId);
 
             return ServiceResult<bool>.Ok(true);
         }
