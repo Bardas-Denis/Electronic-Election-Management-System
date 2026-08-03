@@ -46,7 +46,7 @@
         />
       </div>
 
-      <!-- Status: is it open right now -->
+      <!-- Status -->
       <button type="button" class="filter-group-header" (click)="toggleGroup('status')" [attr.aria-expanded]="isGroupExpanded('status')">
         <span>{{ 'elections.groupStatus' | translate }}</span>
         <svg class="chevron" [class.is-collapsed]="!isGroupExpanded('status')" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>
@@ -66,7 +66,7 @@
         </div>
       }
 
-      <!-- Timing: how soon it closes -->
+      <!-- Timing -->
       <button type="button" class="filter-group-header" (click)="toggleGroup('timing')" [attr.aria-expanded]="isGroupExpanded('timing')">
         <span>{{ 'elections.groupTiming' | translate }}</span>
         <svg class="chevron" [class.is-collapsed]="!isGroupExpanded('timing')" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>
@@ -86,12 +86,12 @@
         </div>
       }
 
-      <!-- My Vote: have you already voted -->
-      <button type="button" class="filter-group-header" (click)="toggleGroup('myVote')" [attr.aria-expanded]="isGroupExpanded('myVote')">
+      <!-- My Vote -->
+      <button type="button" class="filter-group-header" (click)="toggleGroup('participation')" [attr.aria-expanded]="isGroupExpanded('participation')">
         <span>{{ 'elections.groupParticipation' | translate }}</span>
-        <svg class="chevron" [class.is-collapsed]="!isGroupExpanded('myVote')" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>
+        <svg class="chevron" [class.is-collapsed]="!isGroupExpanded('participation')" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>
       </button>
-      @if (isGroupExpanded('myVote')) {
+      @if (isGroupExpanded('participation')) {
         <div class="filter-group">
           <label class="filter-option" [class.is-zero]="filterCounts().voted === 0">
             <input type="checkbox" [checked]="selectedFilters().voted" (change)="toggleFilter('voted')" [disabled]="filterCounts().voted === 0" />
@@ -106,7 +106,7 @@
         </div>
       }
 
-      <!-- Type: what kind of election -->
+      <!-- Type -->
       <button type="button" class="filter-group-header" (click)="toggleGroup('type')" [attr.aria-expanded]="isGroupExpanded('type')">
         <span>{{ 'elections.groupType' | translate }}</span>
         <svg class="chevron" [class.is-collapsed]="!isGroupExpanded('type')" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>
@@ -126,7 +126,7 @@
         </div>
       }
 
-      <!-- Visibility: how votes are recorded -->
+      <!-- Visibility -->
       <button type="button" class="filter-group-header" (click)="toggleGroup('visibility')" [attr.aria-expanded]="isGroupExpanded('visibility')">
         <span>{{ 'elections.groupVisibility' | translate }}</span>
         <svg class="chevron" [class.is-collapsed]="!isGroupExpanded('visibility')" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>
@@ -175,9 +175,7 @@
 
 <ng-template #electionCard let-election="election">
   <div class="election-card" style="display: flex; flex-direction: column; height: 100%;">
-
     <div style="flex: 1; display: flex; flex-direction: column;">
-
       <div class="election-badges" style="margin-bottom: 10px;">
         <span class="badge badge--neutral">{{ election.type }}</span>
         <span class="badge badge--neutral">{{ (election.isAnonymous ? 'elections.anonymous' : 'elections.nonAnonymous') | translate }}</span>
@@ -197,7 +195,6 @@
 
       @if ($any(election).startDate || $any(election).endDate || $any(election).startsAt || $any(election).endsAt) {
         <div class="date-container">
-
           @if (isUpcoming(election)) {
             <span style="font-size: 0.7rem; font-weight: 700; opacity: 0.7; text-transform: uppercase; letter-spacing: 0.05em;">{{ 'elections.begins' | translate }}:</span>
             <div style="display: flex; align-items: center; gap: 6px;">
@@ -221,15 +218,12 @@
               </span>
             </div>
           }
-
         </div>
       }
     </div>
 
     <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border-color, #f1f5f9);">
-
       <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
-
         @if (election.hasUserVoted) {
           <a [routerLink]="['/elections', election.id]" class="action-voted" [title]="'elections.changeVoteHint' | translate">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
@@ -265,7 +259,6 @@
           </div>
         }
       }
-
     </div>
   </div>
 </ng-template>
