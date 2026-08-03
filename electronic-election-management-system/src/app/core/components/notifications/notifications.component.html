@@ -20,7 +20,14 @@
           <p>{{ notification.message }}</p>
           <span class="notification-time">{{ notification.createdAt | date:'short' }}</span>
         </div>
-        <div class="unread-dot" *ngIf="!notification.isRead"></div>
+        <div class="notification-actions" *ngIf="!notification.isRead">
+          <button class="mark-read-btn" (click)="markAsRead(notification, $event)" title="Mark as read">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M20 6L9 17l-5-5"/>
+            </svg>
+          </button>
+          <div class="unread-dot"></div>
+        </div>
       </div>
       
       <div class="empty-state" *ngIf="notifications.length === 0">
