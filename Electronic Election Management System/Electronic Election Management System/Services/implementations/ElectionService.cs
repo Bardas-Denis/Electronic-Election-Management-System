@@ -3,6 +3,7 @@ using Electronic_Election_Management_System.Data.Repositories;
 using Electronic_Election_Management_System.DTOs;
 using Electronic_Election_Management_System.Models;
 using System.ComponentModel.DataAnnotations;
+using Electronic_Election_Management_System.Services.interfaces;
 
 namespace Electronic_Election_Management_System.Services
 {
@@ -15,6 +16,8 @@ namespace Electronic_Election_Management_System.Services
         private readonly IElectionInvitationRepository _invitations;
         private readonly ILabelRepository _labels;
         private readonly ILogger<ElectionService> _logger;
+        private readonly INotificationRepository _notifications;
+        private readonly IEmailService _emailService;
 
         public ElectionService(
             IElectionRepository elections,
@@ -23,7 +26,9 @@ namespace Electronic_Election_Management_System.Services
             IUserRepository users,
             IElectionInvitationRepository invitations,
             ILabelRepository labels,
-            ILogger<ElectionService> logger)
+            ILogger<ElectionService> logger,
+            INotificationRepository notifications,
+            IEmailService emailService)
         {
             _elections = elections;
             _auditLogs = auditLogs;
@@ -32,6 +37,8 @@ namespace Electronic_Election_Management_System.Services
             _invitations = invitations;
             _labels = labels;
             _logger = logger;
+            _notifications = notifications;
+            _emailService = emailService;
         }
 
         public async Task<List<ElectionDto>> GetAllAsync(Guid userId)
@@ -206,6 +213,32 @@ namespace Electronic_Election_Management_System.Services
 
             _logger.LogInformation(LogMessages.ElectionUpdated, election.Id, userId);
 
+            // Notify invited users about the update
+            var invitationsForNotification = await _invitations.GetByElectionAsync(election.Id);
+            foreach (var invitation in invitationsForNotification)
+            {
+                if (invitation.UserId.HasValue)
+                {
+                    var notification = new Notification
+                    {
+                        UserId = invitation.UserId.Value,
+                        Message = $"The election '{election.Title}' has been updated (e.g., status or deadlines changed).",
+                        Type = "ElectionUpdated",
+                        ReferenceId = election.Id
+                    };
+                    await _notifications.AddAsync(notification);
+                }
+                
+                if (!string.IsNullOrEmpty(invitation.Email))
+                {
+                    await _emailService.SendEmailAsync(
+                        invitation.Email,
+                        "Election Updated",
+                        $"The election '{election.Title}' has been updated. Please check the platform for the latest details."
+                    );
+                }
+            }
+
             return ServiceResult<ElectionDto>.Ok(MapToDto(election));
         }
 
@@ -327,6 +360,31 @@ namespace Electronic_Election_Management_System.Services
                 await _invitations.SaveChangesAsync();
                 
                 _logger.LogInformation(LogMessages.InvitationsAdded, invitationResult.Data.Count, electionId, userId);
+
+                // Send notifications and emails
+                foreach (var invitation in invitationResult.Data)
+                {
+                    if (invitation.UserId.HasValue)
+                    {
+                        var notification = new Notification
+                        {
+                            UserId = invitation.UserId.Value,
+                            Message = $"You have been invited to participate in the election '{election.Title}'.",
+                            Type = "Invitation",
+                            ReferenceId = election.Id
+                        };
+                        await _notifications.AddAsync(notification);
+                    }
+                    
+                    if (!string.IsNullOrEmpty(invitation.Email))
+                    {
+                        await _emailService.SendEmailAsync(
+                            invitation.Email,
+                            "Election Invitation",
+                            $"You have been invited to participate in the election '{election.Title}'."
+                        );
+                    }
+                }
             }
 
             var invitations = await _invitations.GetByElectionAsync(electionId);
