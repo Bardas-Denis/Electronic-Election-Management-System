@@ -14,6 +14,7 @@ import {
   InvitationLabelDto
 } from '../../core/models/voting.model';
 import {
+  atLeastOneRequiredQuestion,
   dateRangeValidator,
   INPUT_LIMITS,
   trimmedRequired,
@@ -226,7 +227,11 @@ export class CreateElectionComponent implements OnInit {
 
     return this.fb.array(
       groups,
-      [Validators.minLength(1), Validators.maxLength(INPUT_LIMITS.maxQuestions)]
+      [
+        Validators.minLength(1),
+        Validators.maxLength(INPUT_LIMITS.maxQuestions),
+        atLeastOneRequiredQuestion
+      ]
     );
   }
 
@@ -556,6 +561,11 @@ export class CreateElectionComponent implements OnInit {
     this.form.markAllAsTouched();
     if (this.form.hasError('invalidDateRange')) {
       this.errorMessageKey.set('errors.invalidDateRange');
+      return;
+    }
+
+    if (this.questions.hasError('noRequiredQuestion')) {
+      this.errorMessageKey.set('elections.atLeastOneRequiredQuestionError');
       return;
     }
 

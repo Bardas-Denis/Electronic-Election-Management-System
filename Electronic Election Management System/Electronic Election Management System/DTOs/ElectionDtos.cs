@@ -154,6 +154,13 @@ namespace Electronic_Election_Management_System.DTOs
                     new[] { nameof(IsAnonymous) });
             }
 
+            // At least one question must be required, so an election can never end up with
+            // nothing mandatory to answer.
+            if (Questions.Count > 0 && Questions.All(question => !question.IsRequired))
+                yield return new ValidationResult(
+                    ValidationMessages.AtLeastOneRequiredQuestion,
+                    new[] { nameof(Questions) });
+
             if (InvitedUserIds.Any(id => id == Guid.Empty))
                 yield return new ValidationResult(
                     ValidationMessages.InvalidInvitedUserIds,

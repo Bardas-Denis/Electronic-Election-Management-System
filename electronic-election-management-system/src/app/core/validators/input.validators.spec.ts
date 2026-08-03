@@ -1,6 +1,11 @@
 import { FormControl, FormGroup } from '@angular/forms';
 import { describe, expect, it } from 'vitest';
-import { dateRangeValidator, trimmedRequired, uniqueOptionLabels } from './input.validators';
+import {
+  atLeastOneRequiredQuestion,
+  dateRangeValidator,
+  trimmedRequired,
+  uniqueOptionLabels
+} from './input.validators';
 
 describe('input validators', () => {
   it('rejects empty and whitespace-only required text', () => {
@@ -29,6 +34,18 @@ describe('input validators', () => {
     expect(uniqueOptionLabels(new FormControl([
       { label: 'Candidate A' },
       { label: 'Candidate B' }
+    ]))).toBeNull();
+  });
+
+  it('requires at least one question to be marked as required', () => {
+    expect(atLeastOneRequiredQuestion(new FormControl([
+      { text: 'Q1', isRequired: false },
+      { text: 'Q2', isRequired: false }
+    ]))).toEqual({ noRequiredQuestion: true });
+
+    expect(atLeastOneRequiredQuestion(new FormControl([
+      { text: 'Q1', isRequired: false },
+      { text: 'Q2', isRequired: true }
     ]))).toBeNull();
   });
 });

@@ -177,6 +177,7 @@
   "questionMultipleAnswersLabel": "Multiple answers",
   "addQuestion": "Add another question",
   "removeQuestion": "Remove question",
+  "atLeastOneRequiredQuestionError": "At least one question must be required, so voters always have something they must answer.",
   "optionImageInvalid": "Choose a PNG, JPEG, WEBP or GIF image smaller than 2 MB.",
   "submitCreate": "Create election",
   "submitEdit": "Save changes",

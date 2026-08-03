@@ -16,5 +16,6 @@ namespace Electronic_Election_Management_System.Constants
         public const string InvalidInvitationEmails = "One or more invitation emails are invalid.";
         public const string InvalidUserIds = "User IDs cannot be empty.";
         public const string InvitationRecipientRequired = "At least one invitation recipient is required.";
+        public const string AtLeastOneRequiredQuestion = "At least one question must be required.";
     }
 }
