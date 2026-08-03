@@ -39,5 +39,7 @@ namespace Electronic_Election_Management_System.Models
 
         /// <summary>Labels assigned to this user by an admin.</summary>
         public ICollection<UserLabel> UserLabels { get; set; } = new List<UserLabel>();
+    
+    public ICollection<Notification> Notifications { get; set; } = new List<Notification>();
     }
 }

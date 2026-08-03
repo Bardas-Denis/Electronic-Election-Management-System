@@ -1,8 +1,9 @@
 import { Component, inject, signal, effect, HostListener} from '@angular/core';
-import { RouterOutlet, RouterLink, Router } from '@angular/router';
+import { RouterOutlet, RouterLink, Router, RouterLinkActive } from '@angular/router';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { AuthService } from './core/services/auth.service';
 import { NotificationsService } from './core/services/notifications.service';
+import { NotificationsComponent } from './core/components/notifications/notifications.component';
 
 const VALID_LANGS = ['ro', 'en'] as const;
 type Lang = typeof VALID_LANGS[number];
@@ -10,7 +11,8 @@ type Lang = typeof VALID_LANGS[number];
 // Root component: navbar + router outlet
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, RouterLink, TranslatePipe],
+  standalone: true,
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, TranslatePipe, NotificationsComponent],
   templateUrl: './app.html',
   styleUrl: './app.scss'
 })

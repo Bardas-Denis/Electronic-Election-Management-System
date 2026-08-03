@@ -1,6 +1,7 @@
 using Electronic_Election_Management_System.Configuration;
 using Electronic_Election_Management_System.Data;
 using Electronic_Election_Management_System.Data.Repositories;
+using Electronic_Election_Management_System.Data.Repositories.implementations;
 using Electronic_Election_Management_System.Hubs;
 using Electronic_Election_Management_System.Models;
 using Electronic_Election_Management_System.Services;
@@ -58,6 +59,7 @@ builder.Services.AddScoped<IElectionInvitationRepository, ElectionInvitationRepo
 builder.Services.AddScoped<IAuditLogRepository, AuditLogRepository>();
 builder.Services.AddScoped<IVoteRepository, VoteRepository>();
 builder.Services.AddScoped<ILabelRepository, LabelRepository>();
+builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IElectionService, ElectionService>();
 builder.Services.AddScoped<IUserService, UserService>();

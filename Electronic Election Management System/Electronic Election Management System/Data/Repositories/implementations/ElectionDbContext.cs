@@ -21,6 +21,7 @@ namespace Electronic_Election_Management_System.Data
         public DbSet<ElectionQuestion> ElectionQuestions => Set<ElectionQuestion>();
         public DbSet<Label> Labels => Set<Label>();
         public DbSet<UserLabel> UserLabels => Set<UserLabel>();
+        public DbSet<Notification> Notifications => Set<Notification>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -215,6 +216,12 @@ namespace Electronic_Election_Management_System.Data
                 .WithMany()
                 .HasForeignKey(ul => ul.AssignedBy)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Notification>()
+                .HasOne(n => n.User)
+                .WithMany(u => u.Notifications)
+                .HasForeignKey(n => n.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }
