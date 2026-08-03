@@ -1,0 +1,33 @@
+Connected to smtp://smtp-relay.brevo.com:587/?starttls=always
+S: 220 smtp-relay.brevo.com ESMTP Service Ready
+C: EHLO luca
+S: 250-Hello luca
+S: 250-PIPELINING
+S: 250-8BITMIME
+S: 250-ENHANCEDSTATUSCODES
+S: 250-CHUNKING
+S: 250-STARTTLS
+S: 250-AUTH PLAIN LOGIN CRAM-MD5
+S: 250 SIZE 20971520
+C: STARTTLS
+S: 220 2.0.0 Ready to start TLS
+C: EHLO luca
+S: 250-Hello luca
+S: 250-PIPELINING
+S: 250-8BITMIME
+S: 250-ENHANCEDSTATUSCODES
+S: 250-CHUNKING
+S: 250-AUTH PLAIN LOGIN CRAM-MD5
+S: 250 SIZE 20971520
+C: AUTH CRAM-MD5
+S: 334 PDEuMzY4NzA3MTBAbHVjYT4=
+C: ********
+S: 535 5.7.8 Authentication failed
+C: AUTH PLAIN ********
+S: 535 5.7.8 Authentication failed
+C: AUTH LOGIN
+S: 334 VXNlcm5hbWU6
+C: ********
+S: 334 UGFzc3dvcmQ6
+C: ********
+S: 535 5.7.8 Authentication failed

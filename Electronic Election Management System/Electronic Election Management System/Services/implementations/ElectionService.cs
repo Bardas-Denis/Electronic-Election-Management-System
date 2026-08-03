@@ -151,6 +151,35 @@ namespace Electronic_Election_Management_System.Services
 
             _logger.LogInformation(LogMessages.ElectionCreated, election.Title, election.Id, userId);
 
+            // Send notifications and emails to invited users
+            foreach (var invitation in election.Invitations)
+            {
+                if (invitation.UserId.HasValue)
+                {
+                    var notification = new Notification
+                    {
+                        UserId = invitation.UserId.Value,
+                        Message = $"You have been invited to participate in the election '{election.Title}'.",
+                        Type = "Invitation",
+                        ReferenceId = election.Id
+                    };
+                    await _notifications.AddAsync(notification);
+                }
+
+                if (!string.IsNullOrEmpty(invitation.Email))
+                {
+                    string emailMessage = invitation.UserId.HasValue
+                        ? $"You have been invited to participate in the election '{election.Title}'."
+                        : $"You have been invited to participate in the election '{election.Title}' but you don't have an account yet. You can create one here: http://localhost:4200/auth/register";
+
+                    await _emailService.SendEmailAsync(
+                        invitation.Email,
+                        "Election Invitation",
+                        emailMessage
+                    );
+                }
+            }
+
             return ServiceResult<ElectionDto>.Ok(MapToDto(election));
         }
 
@@ -231,10 +260,14 @@ namespace Electronic_Election_Management_System.Services
                 
                 if (!string.IsNullOrEmpty(invitation.Email))
                 {
+                    string emailMessage = invitation.UserId.HasValue
+                        ? $"The election '{election.Title}' has been updated. Please check the platform for the latest details."
+                        : $"The election '{election.Title}' has been updated. You were invited to it, but you don't have an account yet. You can create one here: http://localhost:4200/auth/register";
+
                     await _emailService.SendEmailAsync(
                         invitation.Email,
                         "Election Updated",
-                        $"The election '{election.Title}' has been updated. Please check the platform for the latest details."
+                        emailMessage
                     );
                 }
             }
@@ -378,10 +411,14 @@ namespace Electronic_Election_Management_System.Services
                     
                     if (!string.IsNullOrEmpty(invitation.Email))
                     {
+                        string emailMessage = invitation.UserId.HasValue 
+                            ? $"You have been invited to participate in the election '{election.Title}'."
+                            : $"You have been invited to participate in the election '{election.Title}' but you don't have an account yet. You can create one here: http://localhost:4200/auth/register";
+                            
                         await _emailService.SendEmailAsync(
                             invitation.Email,
                             "Election Invitation",
-                            $"You have been invited to participate in the election '{election.Title}'."
+                            emailMessage
                         );
                     }
                 }

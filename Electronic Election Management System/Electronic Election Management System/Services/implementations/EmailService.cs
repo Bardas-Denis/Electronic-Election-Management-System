@@ -1,8 +1,9 @@
-using System.Net;
-using System.Net.Mail;
 using Electronic_Election_Management_System.Services.interfaces;
+using MailKit.Net.Smtp;
+using MailKit.Security;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using MimeKit;
 
 namespace Electronic_Election_Management_System.Services.implementations;
 
@@ -25,7 +26,6 @@ public class EmailService : IEmailService
         var portStr = emailSettings["Port"];
         var userName = emailSettings["UserName"];
         var password = emailSettings["Password"];
-        var enableSslStr = emailSettings["EnableSsl"];
         var fromEmail = emailSettings["FromEmail"];
 
         if (string.IsNullOrEmpty(host) || string.IsNullOrEmpty(userName) || string.IsNullOrEmpty(password) || string.IsNullOrEmpty(fromEmail))
@@ -35,29 +35,28 @@ public class EmailService : IEmailService
         }
 
         int port = int.TryParse(portStr, out int p) ? p : 587;
-        bool enableSsl = bool.TryParse(enableSslStr, out bool ssl) ? ssl : true;
 
         try
         {
-            var client = new SmtpClient(host, port)
-            {
-                UseDefaultCredentials = false,
-                Credentials = new NetworkCredential(userName, password),
-                EnableSsl = enableSsl,
-                DeliveryMethod = SmtpDeliveryMethod.Network
-            };
+            var mimeMessage = new MimeMessage();
+            mimeMessage.From.Add(new MailboxAddress("Electronic Election System", fromEmail));
+            mimeMessage.To.Add(new MailboxAddress("", toEmail));
+            mimeMessage.Subject = subject;
 
-            var mailMessage = new MailMessage
-            {
-                From = new MailAddress(fromEmail),
-                Subject = subject,
-                Body = message,
-                IsBodyHtml = true,
-            };
+            var bodyBuilder = new BodyBuilder { HtmlBody = message };
+            mimeMessage.Body = bodyBuilder.ToMessageBody();
+
+            using var client = new SmtpClient();
             
-            mailMessage.To.Add(toEmail);
-
-            await client.SendMailAsync(mailMessage);
+            // Connect using STARTTLS for port 587
+            await client.ConnectAsync(host, port, SecureSocketOptions.StartTls);
+            
+            // Authenticate with the correct Brevo credentials
+            await client.AuthenticateAsync(userName, password);
+            
+            await client.SendAsync(mimeMessage);
+            await client.DisconnectAsync(true);
+            
             _logger.LogInformation("Email sent successfully to {toEmail} with subject {subject}", toEmail, subject);
         }
         catch (Exception ex)

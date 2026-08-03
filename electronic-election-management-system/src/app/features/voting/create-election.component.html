@@ -289,6 +289,35 @@
         }
         }
       </div>
+
+      <div class="field-group">
+        <label for="inviteEmailEdit">{{ 'elections.emailInviteLabel' | translate }}</label>
+        <p class="field-help">{{ 'elections.emailInviteHelp' | translate }}</p>
+        <div class="email-invite-row">
+          <input id="inviteEmailEdit" type="email" [formControl]="inviteEmailControl"
+            [placeholder]="'elections.emailInvitePlaceholder' | translate"
+            (keydown.enter)="$event.preventDefault(); addInviteEmail()" />
+          <button type="button" class="btn-add-email" (click)="addInviteEmail()"
+            [disabled]="inviteEmailControl.invalid || !inviteEmailControl.value?.trim()">
+            {{ 'elections.addEmail' | translate }}
+          </button>
+        </div>
+        @if (inviteEmailControl.touched && inviteEmailControl.invalid) {
+        <p class="error-text">{{ 'elections.emailInviteInvalid' | translate }}</p>
+        }
+
+        @if (invitedEmails().length > 0) {
+        <div class="email-chips" [attr.aria-label]="'elections.invitedEmailsLabel' | translate">
+          @for (email of invitedEmails(); track email) {
+          <span class="email-chip">
+            {{ email }}
+            <button type="button" (click)="removeInviteEmail(email)"
+              [attr.aria-label]="('elections.removeInvitation' | translate) + ': ' + email">×</button>
+          </span>
+          }
+        </div>
+        }
+      </div>
     </div>
     } @else if (isClosedElection) {
     <!-- CREATE MODE for a closed election: full invitation panel including email invites -->
