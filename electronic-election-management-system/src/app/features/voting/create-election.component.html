@@ -565,6 +565,12 @@
         <div class="question-card__header">
           <span class="question-number">{{ 'elections.questionNumber' | translate: { number: questionIndex + 1 }
             }}</span>
+          @if (questions.length > 1) {
+          <button type="button" class="btn-danger" (click)="removeQuestion(questionIndex)"
+            [attr.aria-label]="'elections.removeQuestion' | translate">×</button>
+          }
+        </div>
+        <div class="question-type-toggles">
           <label class="question-required-toggle">
             <input type="checkbox" formControlName="isRequired" />
             {{ 'elections.questionRequiredLabel' | translate }}
@@ -573,10 +579,6 @@
             <input type="checkbox" formControlName="allowMultipleAnswers" />
             {{ 'elections.questionMultipleAnswersLabel' | translate }}
           </label>
-          @if (questions.length > 1) {
-          <button type="button" class="btn-danger" (click)="removeQuestion(questionIndex)"
-            [attr.aria-label]="'elections.removeQuestion' | translate">×</button>
-          }
         </div>
         <input type="text" formControlName="text" maxlength="500"
           [placeholder]="'elections.questionPlaceholder' | translate" />
