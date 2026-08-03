@@ -41,8 +41,10 @@ public class EmailService : IEmailService
         {
             var client = new SmtpClient(host, port)
             {
+                UseDefaultCredentials = false,
                 Credentials = new NetworkCredential(userName, password),
-                EnableSsl = enableSsl
+                EnableSsl = enableSsl,
+                DeliveryMethod = SmtpDeliveryMethod.Network
             };
 
             var mailMessage = new MailMessage

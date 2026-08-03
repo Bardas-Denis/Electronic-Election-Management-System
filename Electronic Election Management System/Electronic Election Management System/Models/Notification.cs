@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-
+using System.Text.Json.Serialization;
 namespace Electronic_Election_Management_System.Models;
 
 public class Notification
@@ -25,5 +25,6 @@ public class Notification
     public Guid? ReferenceId { get; set; }
 
     [ForeignKey("UserId")]
+    [JsonIgnore]
     public User User { get; set; } = null!;
 }
