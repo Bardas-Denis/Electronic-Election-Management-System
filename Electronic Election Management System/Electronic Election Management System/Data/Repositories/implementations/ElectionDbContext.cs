@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Electronic_Election_Management_System.Models;
 
 namespace Electronic_Election_Management_System.Data
@@ -174,6 +175,46 @@ namespace Electronic_Election_Management_System.Data
             modelBuilder.Entity<VoterChangeRecord>()
                 .HasIndex(r => new { r.UserId, r.ElectionId })
                 .IsUnique();
+
+            // ── Force every DateTime to round-trip as UTC ────────────────────────
+            // Postgres columns default to "timestamp without time zone", which
+            // silently drops DateTime.Kind on save. When EF reads a row back,
+            // Kind comes back as Unspecified even though the value (e.g. from
+            // DateTime.UtcNow) really is UTC. System.Text.Json only appends the
+            // "Z" suffix when Kind == Utc, so the API was emitting timestamps
+            // like "2026-09-12T07:27:00" with no timezone marker at all — and
+            // the browser's Date parser treats that as LOCAL time, not UTC.
+            // That's exactly why times were showing ~3 hours off (Romania's
+            // UTC+3 summer offset) instead of being converted correctly.
+            //
+            // This converter tags every DateTime as Kind=Utc on the way out of
+            // the database (and normalizes to UTC on the way in), so the JSON
+            // API always includes "Z" and the frontend converts to local time
+            // correctly.
+            var utcConverter = new ValueConverter<DateTime, DateTime>(
+                toDb => toDb.Kind == DateTimeKind.Utc ? toDb : toDb.ToUniversalTime(),
+                fromDb => DateTime.SpecifyKind(fromDb, DateTimeKind.Utc));
+
+            foreach (var entityType in modelBuilder.Model.GetEntityTypes())
+            {
+                foreach (var property in entityType.GetProperties())
+                {
+                    if (property.ClrType == typeof(DateTime))
+                    {
+                        property.SetValueConverter(utcConverter);
+                    }
+                    else if (property.ClrType == typeof(DateTime?))
+                    {
+                        property.SetValueConverter(new ValueConverter<DateTime?, DateTime?>(
+                            toDb => toDb.HasValue
+                                ? (toDb.Value.Kind == DateTimeKind.Utc ? toDb.Value : toDb.Value.ToUniversalTime())
+                                : toDb,
+                            fromDb => fromDb.HasValue
+                                ? DateTime.SpecifyKind(fromDb.Value, DateTimeKind.Utc)
+                                : fromDb));
+                    }
+                }
+            }
 
             // UserDetails: one editable profile row per user, null until first PUT.
             // Cascade: deleting a User removes their UserDetails row.

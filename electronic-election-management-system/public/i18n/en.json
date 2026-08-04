@@ -209,11 +209,11 @@
   "begins": "Starts",
   "ends": "Ends",
   "groupStatus": "Status",
-  "groupParticipation": "My Vote",
   "groupTiming": "Timing",
+  "groupParticipation": "My Vote",
   "groupType": "Type",
   "groupVisibility": "Visibility",
-  "clearFilters": "Clear all"
+  "clearFilters": "Clear filters"
 },
   "vote": {
     "questionOptional": "(optional)",
