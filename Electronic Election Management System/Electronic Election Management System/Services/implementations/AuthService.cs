@@ -43,7 +43,7 @@ namespace Electronic_Election_Management_System.Services
             await _auditLogs.AddAsync(new AuditLog { UserId = user.Id, Action = AuditAction.AccountCreated.ToDbValue() });
             await _users.SaveChangesAsync();
 
-            _logger.LogInformation(LogMessages.UserRegistered, user.Email, user.Id);
+            _logger.LogInformation("New user registered: {Email} (UserId: {UserId})", user.Email, user.Id);
 
             return ServiceResult<AuthResponse>.Ok(BuildAuthResponse(user));
         }
@@ -55,14 +55,14 @@ namespace Electronic_Election_Management_System.Services
             var user = await _users.GetByEmailAsync(normalizedEmail);
             if (user is null || !PasswordHasher.Verify(request.Password, user.PasswordHash))
             {
-                _logger.LogWarning(LogMessages.FailedLoginAttempt, normalizedEmail);
+                _logger.LogWarning("Failed login attempt for email: {Email}", normalizedEmail);
                 return ServiceResult<AuthResponse>.Fail(ErrorCode.InvalidCredentials);
             }
 
             await _auditLogs.AddAsync(new AuditLog { UserId = user.Id, Action = AuditAction.Login.ToDbValue() });
             await _auditLogs.SaveChangesAsync();
 
-            _logger.LogInformation(LogMessages.UserLoggedIn, user.Email, user.Id);
+            _logger.LogInformation("User logged in: {Email} (UserId: {UserId})", user.Email, user.Id);
 
             return ServiceResult<AuthResponse>.Ok(BuildAuthResponse(user));
         }

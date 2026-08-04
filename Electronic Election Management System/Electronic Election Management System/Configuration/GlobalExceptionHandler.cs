@@ -15,7 +15,7 @@ public sealed class GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logge
     {
         logger.LogError(
             exception,
-            LogMessages.UnhandledException,
+            "Unhandled exception on {Method} {Path}",
             httpContext.Request.Method,
             httpContext.Request.Path);
 

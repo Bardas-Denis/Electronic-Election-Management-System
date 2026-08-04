@@ -150,7 +150,7 @@ namespace Electronic_Election_Management_System.Services
             });
             await _elections.SaveChangesAsync();
 
-            _logger.LogInformation(LogMessages.ElectionCreated, election.Title, election.Id, userId);
+            _logger.LogInformation("Election created: {Title} (ElectionId: {ElectionId}, CreatedBy: {UserId})", election.Title, election.Id, userId);
 
             // Send notifications and emails to invited users
             foreach (var invitation in election.Invitations)
@@ -202,7 +202,7 @@ namespace Electronic_Election_Management_System.Services
 
             if (election.CreatedByUserId != userId)
             {
-                _logger.LogWarning(LogMessages.ElectionUpdateUnauthorized, id, userId);
+                _logger.LogWarning("Unauthorized update attempt on ElectionId {ElectionId} by UserId {UserId}", id, userId);
                 return ServiceResult<ElectionDto>.Fail(ErrorCode.NotAuthorizedToEdit);
             }
 
@@ -242,7 +242,7 @@ namespace Electronic_Election_Management_System.Services
             });
             await _elections.SaveChangesAsync();
 
-            _logger.LogInformation(LogMessages.ElectionUpdated, election.Id, userId);
+            _logger.LogInformation("Election updated: {ElectionId} by UserId {UserId}", election.Id, userId);
 
             // Notify invited users about the update
             var invitationsForNotification = await _invitations.GetByElectionAsync(election.Id);
@@ -285,7 +285,7 @@ namespace Electronic_Election_Management_System.Services
 
             if (election.CreatedByUserId != userId)
             {
-                _logger.LogWarning(LogMessages.ElectionDeleteUnauthorized, id, userId);
+                _logger.LogWarning("Unauthorized delete attempt on ElectionId {ElectionId} by UserId {UserId}", id, userId);
                 return ServiceResult<bool>.Fail(ErrorCode.NotAuthorizedToDelete);
             }
 
@@ -300,7 +300,7 @@ namespace Electronic_Election_Management_System.Services
             _elections.Remove(election);
             await _elections.SaveChangesAsync();
 
-            _logger.LogInformation(LogMessages.ElectionDeleted, election.Title, election.Id, userId);
+            _logger.LogInformation("Election deleted: '{Title}' (ElectionId: {ElectionId}) by UserId {UserId}", election.Title, election.Id, userId);
 
             return ServiceResult<bool>.Ok(true);
         }
@@ -313,7 +313,7 @@ namespace Electronic_Election_Management_System.Services
 
             if (election.CreatedByUserId != userId)
             {
-                _logger.LogWarning(LogMessages.ElectionPublishUnauthorized, electionId, userId);
+                _logger.LogWarning("Unauthorized publish attempt on ElectionId {ElectionId} by UserId {UserId}", electionId, userId);
                 return ServiceResult<ElectionDto>.Fail(ErrorCode.NotAuthorizedToPublish);
             }
 
@@ -330,7 +330,7 @@ namespace Electronic_Election_Management_System.Services
             });
             await _elections.SaveChangesAsync();
 
-            _logger.LogInformation(LogMessages.ElectionPublished, election.Id, userId);
+            _logger.LogInformation("Election published: {ElectionId} by UserId {UserId}", election.Id, userId);
 
             return ServiceResult<ElectionDto>.Ok(MapToDto(election));
         }
@@ -424,7 +424,7 @@ namespace Electronic_Election_Management_System.Services
                 });
                 await _invitations.SaveChangesAsync();
                 
-                _logger.LogInformation(LogMessages.InvitationsAdded, invitationResult.Data.Count, electionId, userId);
+                _logger.LogInformation("{Count} invitation(s) added to ElectionId {ElectionId} by UserId {UserId}", invitationResult.Data.Count, electionId, userId);
 
                 // Send notifications and emails
                 foreach (var invitation in invitationResult.Data)
@@ -484,7 +484,7 @@ namespace Electronic_Election_Management_System.Services
                 Action = AuditAction.ElectionInvitationRemoved.ToDbValue()
             });
             await _invitations.SaveChangesAsync();
-            _logger.LogInformation(LogMessages.InvitationRemoved, invitationId, electionId, userId);
+            _logger.LogInformation("Invitation {InvitationId} removed from ElectionId {ElectionId} by UserId {UserId}", invitationId, electionId, userId);
             return ServiceResult<bool>.Ok(true);
         }
 
