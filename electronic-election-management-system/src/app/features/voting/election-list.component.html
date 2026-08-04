@@ -197,7 +197,6 @@
 
       @if ($any(election).startDate || $any(election).endDate || $any(election).startsAt || $any(election).endsAt) {
         <div class="date-container">
-
           @if (isUpcoming(election)) {
             <!-- Not started yet: show only the start date -->
             <span class="date-label">{{ 'elections.begins' | translate }}:</span>
@@ -223,7 +222,6 @@
               </span>
             </div>
           }
-
         </div>
       }
     </div>
@@ -254,7 +252,6 @@
           </a>
         }
 
-        <!-- Hide live results for elections that haven't started yet -->
         @if (!isUpcoming(election)) {
           <a [routerLink]="['/elections', election.id, 'results']" class="action-results">
             {{ 'elections.liveResults' | translate }}
@@ -270,7 +267,6 @@
           </div>
         }
       }
-
     </div>
   </div>
 </ng-template>

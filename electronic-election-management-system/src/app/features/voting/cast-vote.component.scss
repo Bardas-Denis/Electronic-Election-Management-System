@@ -45,6 +45,13 @@
   margin: 1.25rem 0 0;
 }
 
+.question-optional-badge {
+  font-size: .75rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  margin-left: .4rem;
+}
+
 .options-list {
   display: flex;
   flex-direction: column;
@@ -153,6 +160,15 @@
   .selected & .option-radio-dot {
     transform: scale(1);
   }
+}
+
+// Multiple-answer questions use a checkbox affordance (square, not round)
+// instead of the radio-button look, since more than one can be checked.
+.option-item--checkbox .option-radio {
+  border-radius: 5px;
+}
+.option-item--checkbox .option-radio-dot {
+  border-radius: 2px;
 }
 
 .option-body {

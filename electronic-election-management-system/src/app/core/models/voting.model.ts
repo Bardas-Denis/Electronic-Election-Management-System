@@ -11,6 +11,8 @@ export interface ElectionQuestionDto {
   id: string;
   text: string;
   displayOrder: number;
+  isRequired: boolean;
+  allowMultipleAnswers: boolean;
   options: OptionDto[];
 }
 
@@ -47,6 +49,8 @@ export interface CreateOptionDto {
 
 export interface CreateElectionQuestionDto {
   text: string;
+  isRequired: boolean;
+  allowMultipleAnswers: boolean;
   options: CreateOptionDto[];
 }
 
@@ -125,4 +129,6 @@ export interface InvitationLabelDto {
   name: string;
   category?: string | null;
   userCount: number;
+  /** IDs of users assigned to this label (excluding the requesting user). */
+  userIds: string[];
 }

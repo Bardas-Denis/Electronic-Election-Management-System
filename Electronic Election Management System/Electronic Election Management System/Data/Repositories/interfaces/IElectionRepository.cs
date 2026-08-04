@@ -23,6 +23,7 @@ namespace Electronic_Election_Management_System.Data.Repositories
         Task<bool> CanUserAccessAsync(Guid electionId, Guid userId);
 
         Task AddAsync(Election election);
+        Task AddQuestionsAsync(IEnumerable<ElectionQuestion> questions);
         /// <summary>Removes a collection of options.</summary>
         void RemoveOptions(IEnumerable<Option> options);
         void RemoveQuestions(IEnumerable<ElectionQuestion> questions);

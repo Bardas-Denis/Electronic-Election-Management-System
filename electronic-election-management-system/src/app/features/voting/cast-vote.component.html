@@ -65,11 +65,19 @@
           <span>{{ questionIndex + 1 }}.</span>
           }
           {{ question.text }}
+          @if (question.isRequired === false) {
+          <span class="question-optional-badge">{{ 'vote.questionOptional' | translate }}</span>
+          }
+          @if (question.allowMultipleAnswers) {
+          <span class="question-optional-badge">{{ 'vote.questionMultipleAnswers' | translate }}</span>
+          }
         </p>
         <div class="options-list" [class.locked]="!canSelectOptions()">
           @for (option of question.options; track option.id) {
           <button class="option-item" [class.selected]="isOptionSelected(question.id, option.id)"
-            [disabled]="!canSelectOptions()" (click)="selectOption(question.id, option.id)">
+            [class.option-item--checkbox]="question.allowMultipleAnswers"
+            [disabled]="!canSelectOptions()"
+            (click)="question.allowMultipleAnswers ? toggleOption(question.id, option.id) : selectOption(question.id, option.id, question.isRequired)">
             @if (option.imageDataUrl) {
             <img class="option-image" [src]="option.imageDataUrl" [alt]="option.label" />
             }

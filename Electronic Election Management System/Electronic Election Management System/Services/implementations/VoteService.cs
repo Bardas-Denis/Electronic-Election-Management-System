@@ -14,19 +14,22 @@ namespace Electronic_Election_Management_System.Services
         private readonly ICnpService _cnp;
         private readonly IResultsService _results;
         private readonly IHubContext<ResultsHub> _resultsHub;
+        private readonly ILogger<VoteService> _logger;
 
         public VoteService(
             IElectionRepository elections,
             IVoteRepository votes,
             ICnpService cnp,
             IResultsService results,
-            IHubContext<ResultsHub> resultsHub)
+            IHubContext<ResultsHub> resultsHub,
+            ILogger<VoteService> logger)
         {
             _elections = elections;
             _votes = votes;
             _cnp = cnp;
             _results = results;
             _resultsHub = resultsHub;
+            _logger = logger;
         }
 
         public async Task<ServiceResult<bool>> CastVoteAsync(CastVoteRequest request, Guid userId)
@@ -50,12 +53,14 @@ namespace Electronic_Election_Management_System.Services
             // election's live results dashboard.
             if (result.Success)
             {
+                _logger.LogInformation(LogMessages.VoteCast, userId, election.Id);
                 try
                 {
                     await BroadcastResultsAsync(election.Id);
                 }
-                catch
+                catch (Exception ex)
                 {
+                    _logger.LogWarning(ex, LogMessages.SignalRBroadcastFailed, election.Id);
                     // Broadcasting live results should not affect the vote-casting outcome.
                 }
             }
@@ -82,12 +87,14 @@ namespace Electronic_Election_Management_System.Services
 
             if (result.Success)
             {
+                _logger.LogInformation(LogMessages.VoteUpdated, userId, request.ElectionId);
                 try
                 {
                     await BroadcastResultsAsync(election.Id);
                 }
-                catch
+                catch (Exception ex)
                 {
+                    _logger.LogWarning(ex, LogMessages.SignalRBroadcastFailed, election.Id);
                     // Broadcasting live results should not affect the vote-editing outcome.
                 }
             }
@@ -136,10 +143,13 @@ namespace Electronic_Election_Management_System.Services
             {
                 await BroadcastResultsAsync(electionId);
             }
-            catch
+            catch (Exception ex)
             {
+                _logger.LogWarning(ex, LogMessages.SignalRBroadcastFailed, electionId);
                 // Broadcasting live results should not affect the vote-deletion outcome.
             }
+
+            _logger.LogInformation(LogMessages.VoteDeleted, userId, electionId);
 
             return ServiceResult<bool>.Ok(true);
         }
@@ -250,13 +260,28 @@ namespace Electronic_Election_Management_System.Services
             if (selected.Count != requestedIds.Count)
                 return null;
 
-            var questionIds = election.Questions.Select(question => (Guid?)question.Id).ToList();
-            if (questionIds.Count == 0)
-                questionIds.Add(null);
+            var questions = election.Questions.ToList();
+            if (questions.Count == 0)
+            {
+                // Legacy single-question election (no ElectionQuestion rows) - always required.
+                return selected.Count == 1 && selected[0].QuestionId is null ? selected : null;
+            }
 
-            return questionIds.All(questionId =>
-                       selected.Count(option => option.QuestionId == questionId) == 1) &&
-                   selected.Count == questionIds.Count
+            // Single-answer questions: required needs exactly one, optional accepts zero or one.
+            // Multiple-answer questions: required needs at least one, optional accepts any count.
+            var countsValid = questions.All(question =>
+            {
+                var count = selected.Count(option => option.QuestionId == question.Id);
+                return question.AllowMultipleAnswers
+                    ? !question.IsRequired || count >= 1
+                    : question.IsRequired ? count == 1 : count <= 1;
+            });
+            if (!countsValid)
+                return null;
+
+            // Every selected option must belong to one of this election's questions.
+            var knownQuestionIds = questions.Select(question => question.Id).ToHashSet();
+            return selected.All(option => option.QuestionId.HasValue && knownQuestionIds.Contains(option.QuestionId.Value))
                 ? selected
                 : null;
         }

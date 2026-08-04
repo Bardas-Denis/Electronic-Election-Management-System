@@ -13,14 +13,16 @@ namespace Electronic_Election_Management_System.Services
     {
         private readonly ILabelRepository _labels;
         private readonly IUserRepository _users;
+        private readonly ILogger<LabelService> _logger;
 
-        public LabelService(ILabelRepository labels, IUserRepository users)
+        public LabelService(ILabelRepository labels, IUserRepository users, ILogger<LabelService> logger)
         {
             _labels = labels;
             _users = users;
+            _logger = logger;
         }
 
-        // ── Helpers ──────────────────────────────────────────────────────────
+        //Helpers
 
         private static LabelDto ToDto(Label l) => new()
         {
@@ -39,7 +41,7 @@ namespace Electronic_Election_Management_System.Services
             AssignedAt = ul.AssignedAt
         };
 
-        // ── Label management (admin) ──────────────────────────────────────────
+        //Label management (admin)
 
         public async Task<List<LabelDto>> GetAllLabelsAsync()
         {
@@ -63,6 +65,8 @@ namespace Electronic_Election_Management_System.Services
             await _labels.AddAsync(label);
             await _labels.SaveChangesAsync();
 
+            _logger.LogInformation(LogMessages.LabelCreated, label.Name, label.Id);
+
             return ServiceResult<LabelDto>.Ok(ToDto(label));
         }
 
@@ -75,10 +79,12 @@ namespace Electronic_Election_Management_System.Services
             _labels.Remove(label);
             await _labels.SaveChangesAsync();
 
+            _logger.LogInformation(LogMessages.LabelDeleted, label.Name, id);
+
             return ServiceResult<bool>.Ok(true);
         }
 
-        // ── User–label assignment (admin) ─────────────────────────────────────
+        //User–label assignment (admin)
 
         public async Task<ServiceResult<List<UserLabelDto>>> GetUserLabelsAsync(Guid userId)
         {
@@ -97,12 +103,13 @@ namespace Electronic_Election_Management_System.Services
             if (user is null)
                 return ServiceResult<List<UserLabelDto>>.NotFound(ErrorCode.ResourceNotFound);
 
-            // Validate that every requested label id actually exists
+            //Validate that every requested label id actually exists
             var foundLabels = await _labels.GetByIdsAsync(request.LabelIds);
             if (foundLabels.Count != request.LabelIds.Distinct().Count())
                 return ServiceResult<List<UserLabelDto>>.Fail(ErrorCode.LabelNotFound);
 
             var rows = await _labels.AssignLabelsAsync(userId, request.LabelIds, adminId);
+            _logger.LogInformation(LogMessages.LabelsAssigned, rows.Count, userId, adminId);
             return ServiceResult<List<UserLabelDto>>.Ok(rows.Select(ToUserLabelDto).ToList());
         }
 
@@ -113,6 +120,7 @@ namespace Electronic_Election_Management_System.Services
                 return ServiceResult<bool>.NotFound(ErrorCode.ResourceNotFound);
 
             await _labels.SaveChangesAsync();
+            _logger.LogInformation(LogMessages.LabelRemoved, labelId, userId);
             return ServiceResult<bool>.Ok(true);
         }
 
@@ -133,12 +141,12 @@ namespace Electronic_Election_Management_System.Services
             return ServiceResult<List<UserWithLabelDto>>.Ok(dtos);
         }
 
-        // ── User read-only view ───────────────────────────────────────────────
+        //User read-only view
 
         public async Task<ServiceResult<List<UserLabelDto>>> GetMyLabelsAsync(Guid userId)
         {
-            // No user-not-found guard needed here: the calling user authenticated,
-            // so they definitely exist. Just return their labels (may be empty list).
+            //No user-not-found guard needed here: the calling user authenticated,
+            //so they definitely exist. Just return their labels (may be empty list).
             var rows = await _labels.GetUserLabelsAsync(userId);
             return ServiceResult<List<UserLabelDto>>.Ok(rows.Select(ToUserLabelDto).ToList());
         }

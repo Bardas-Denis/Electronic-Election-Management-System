@@ -1,9 +1,9 @@
 <div class="page">
   @if (isLoading()) {
-    <div class="state-block">
-      <span class="spinner"></span>
-      <p>{{ 'elections.loadingOne' | translate }}</p>
-    </div>
+  <div class="state-block">
+    <span class="spinner"></span>
+    <p>{{ 'elections.loadingOne' | translate }}</p>
+  </div>
   }
 
   <form [formGroup]="form" (ngSubmit)="onSubmit()" class="form-card" [class.hidden]="isLoading()">
@@ -11,12 +11,14 @@
 
     <div class="field-group">
       <label for="title">{{ 'elections.titleLabel' | translate }}</label>
-      <input id="title" type="text" formControlName="title" maxlength="200" [placeholder]="'elections.titlePlaceholder' | translate" />
+      <input id="title" type="text" formControlName="title" maxlength="200"
+        [placeholder]="'elections.titlePlaceholder' | translate" />
     </div>
 
     <div class="field-group">
       <label for="description">{{ 'elections.descriptionLabel' | translate }}</label>
-      <textarea id="description" formControlName="description" maxlength="2000" [placeholder]="'elections.descriptionPlaceholder' | translate"></textarea>
+      <textarea id="description" formControlName="description" maxlength="2000"
+        [placeholder]="'elections.descriptionPlaceholder' | translate"></textarea>
     </div>
 
     <div class="field-row">
@@ -39,9 +41,9 @@
 
     <div class="info-box">
       @if (isPoliticalElection) {
-        <strong>{{ 'elections.infoPolitical' | translate }}</strong>
+      <strong>{{ 'elections.infoPolitical' | translate }}</strong>
       } @else {
-        <strong>{{ 'elections.infoCommercial' | translate }}</strong>
+      <strong>{{ 'elections.infoCommercial' | translate }}</strong>
       }
     </div>
 
@@ -67,280 +69,477 @@
       </label>
     </div>
 
-    @if (isClosedElection && !isEditMode()) {
-      <div class="invitation-panel">
-        <div class="invitation-heading">
+    @if (isClosedElection && isEditMode()) {
+    <!-- EDIT MODE for a closed election: full invitation management with label-expand diff on save -->
+    <div class="invitation-panel">
+      <div class="invitation-heading">
+        <div class="invitation-heading-row">
           <h3>{{ 'elections.invitationsTitle' | translate }}</h3>
-          <p>{{ 'elections.invitationsHelp' | translate }}</p>
+          @if (totalUniqueInvitees() > 0) {
+          <span class="invitees-counter">
+            {{ 'elections.totalInviteesCount' | translate: { count: totalUniqueInvitees() } }}
+          </span>
+          }
         </div>
+        <p>{{ 'elections.privateEditHelp' | translate }}</p>
+      </div>
 
-        <div class="field-group">
-          <label>{{ 'elections.labelInviteLabel' | translate }}</label>
-          <p class="field-help">{{ 'elections.labelInviteHelp' | translate }}</p>
-          @if (invitationLabelsLoading()) {
-            <div class="inline-state">
-              <span class="spinner"></span>
-              {{ 'elections.loadingInviteLabels' | translate }}
+      <div class="field-group">
+        <label>{{ 'elections.labelInviteLabel' | translate }}</label>
+        <p class="field-help">{{ 'elections.labelInviteHelp' | translate }}</p>
+        @if (invitationLabelsLoading()) {
+        <div class="inline-state">
+          <span class="spinner"></span>
+          {{ 'elections.loadingInviteLabels' | translate }}
+        </div>
+        } @else if (invitationLabelsErrorKey()) {
+        <div class="candidate-load-error">
+          <p class="error-text">{{ invitationLabelsErrorKey() | translate }}</p>
+          <button type="button" class="btn-secondary" (click)="retryInvitationLabels()">
+            {{ 'elections.tryAgain' | translate }}
+          </button>
+        </div>
+        } @else if (invitationLabels().length === 0) {
+        <p class="field-help">{{ 'elections.noInvitationLabels' | translate }}</p>
+        } @else {
+        <div class="user-picker label-picker" #labelPickerRef>
+          <button id="invitedLabelIds" type="button" class="user-picker-trigger" (click)="toggleLabelPicker()"
+            [attr.aria-expanded]="labelPickerOpen()" aria-controls="invitation-label-panel">
+            <span>
+              @if (selectedInvitationLabels().length === 0) {
+              {{ 'elections.chooseInvitationLabels' | translate }}
+              } @else {
+              {{ 'elections.selectedLabelsCount' | translate: { count: selectedInvitationLabels().length } }}
+              }
+            </span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              [class.rotated]="labelPickerOpen()" aria-hidden="true">
+              <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+          </button>
+
+          @if (labelPickerOpen()) {
+          <div id="invitation-label-panel" class="user-picker-panel">
+            <div class="user-picker-search">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                aria-hidden="true">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+              </svg>
+              <input type="search" [formControl]="labelSearchControl"
+                [placeholder]="'elections.searchInvitationLabels' | translate" autocomplete="off" />
             </div>
-          } @else if (invitationLabelsErrorKey()) {
-            <div class="candidate-load-error">
-              <p class="error-text">{{ invitationLabelsErrorKey() | translate }}</p>
-              <button type="button" class="btn-secondary" (click)="retryInvitationLabels()">
-                {{ 'elections.tryAgain' | translate }}
-              </button>
-            </div>
-          } @else if (invitationLabels().length === 0) {
-            <p class="field-help">{{ 'elections.noInvitationLabels' | translate }}</p>
-          } @else {
-            <div class="user-picker label-picker">
-              <button
-                id="invitedLabelIds"
-                type="button"
-                class="user-picker-trigger"
-                (click)="toggleLabelPicker()"
-                [attr.aria-expanded]="labelPickerOpen()"
-                aria-controls="invitation-label-panel"
-              >
-                <span>
-                  @if (selectedInvitationLabels().length === 0) {
-                    {{ 'elections.chooseInvitationLabels' | translate }}
-                  } @else {
-                    {{ 'elections.selectedLabelsCount' | translate: { count: selectedInvitationLabels().length } }}
+
+            <div class="user-picker-list">
+              @for (label of filteredInvitationLabels(); track label.id) {
+              <label class="label-picker-item" [class.label-picker-item--selected]="isInvitationLabelSelected(label.id)"
+                [class.label-picker-item--disabled]="label.userCount === 0">
+                <span class="label-audience-copy">
+                  <strong>{{ label.name }}</strong>
+                  @if (label.category) {
+                  <small>{{ label.category }}</small>
                   }
                 </span>
-                <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  [class.rotated]="labelPickerOpen()"
-                  aria-hidden="true"
-                ><polyline points="6 9 12 15 18 9"></polyline></svg>
-              </button>
-
-              @if (labelPickerOpen()) {
-                <div id="invitation-label-panel" class="user-picker-panel">
-                  <div class="user-picker-search">
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-                    <input
-                      type="search"
-                      [formControl]="labelSearchControl"
-                      [placeholder]="'elections.searchInvitationLabels' | translate"
-                      autocomplete="off"
-                    />
-                  </div>
-
-                  <div class="user-picker-list">
-                    @for (label of filteredInvitationLabels(); track label.id) {
-                      <label
-                        class="label-picker-item"
-                        [class.label-picker-item--selected]="isInvitationLabelSelected(label.id)"
-                        [class.label-picker-item--disabled]="label.userCount === 0"
-                      >
-                        <span class="label-audience-copy">
-                          <strong>{{ label.name }}</strong>
-                          @if (label.category) {
-                            <small>{{ label.category }}</small>
-                          }
-                        </span>
-                        <span class="label-audience-count">
-                          {{ 'elections.labelUsersCount' | translate: { count: label.userCount } }}
-                        </span>
-                        <input
-                          type="checkbox"
-                          [checked]="isInvitationLabelSelected(label.id)"
-                          [disabled]="label.userCount === 0"
-                          (change)="toggleInvitationLabel(label.id, $any($event.target).checked)"
-                        />
-                      </label>
-                    } @empty {
-                      <p class="user-picker-empty">{{ 'elections.noMatchingLabels' | translate }}</p>
-                    }
-                  </div>
-
-                  <div class="user-picker-footer">
-                    <span>{{ 'elections.selectedLabelsCount' | translate: { count: selectedInvitationLabels().length } }}</span>
-                    <div class="user-picker-footer-actions">
-                      <button type="button" class="user-picker-select-all" (click)="toggleAllInvitationLabels()">
-                        {{ (allVisibleInvitationLabelsSelected() ? 'elections.clearLabelSelection' : 'elections.selectAllLabels') | translate }}
-                      </button>
-                      <button type="button" class="user-picker-confirm" (click)="toggleLabelPicker()">
-                        {{ 'elections.selectLabels' | translate }}
-                      </button>
-                    </div>
-                  </div>
-                </div>
+                <span class="label-audience-count">
+                  {{ 'elections.labelUsersCount' | translate: { count: label.userCount } }}
+                </span>
+                <input type="checkbox" [checked]="isInvitationLabelSelected(label.id)"
+                  [disabled]="label.userCount === 0"
+                  (change)="toggleInvitationLabel(label.id, $any($event.target).checked)" />
+              </label>
+              } @empty {
+              <p class="user-picker-empty">{{ 'elections.noMatchingLabels' | translate }}</p>
               }
             </div>
 
-            @if (selectedInvitationLabels().length > 0) {
-              <div class="selected-label-chips" [attr.aria-label]="'elections.selectedInvitationLabels' | translate">
-                @for (label of selectedInvitationLabels(); track label.id) {
-                  <span class="selected-label-chip">
-                    <span>{{ label.name }}</span>
-                    <button
-                      type="button"
-                      (click)="removeInvitationLabel(label.id)"
-                      [attr.aria-label]="('elections.removeInvitationLabel' | translate) + ': ' + label.name"
-                    >×</button>
-                  </span>
-                }
+            <div class="user-picker-footer">
+              <span>{{ 'elections.selectedLabelsCount' | translate: { count: selectedInvitationLabels().length }
+                }}</span>
+              <div class="user-picker-footer-actions">
+                <button type="button" class="user-picker-select-all" (click)="toggleAllInvitationLabels()">
+                  {{ (allVisibleInvitationLabelsSelected() ? 'elections.clearLabelSelection' :
+                  'elections.selectAllLabels') | translate }}
+                </button>
+                <button type="button" class="user-picker-confirm" (click)="toggleLabelPicker()">
+                  {{ 'elections.selectLabels' | translate }}
+                </button>
               </div>
-            }
-          }
-        </div>
-
-        <div class="field-group">
-          <label for="invitedUserIds">{{ 'elections.manualInviteLabel' | translate }}</label>
-          @if (invitationCandidatesLoading()) {
-            <div class="inline-state">
-              <span class="spinner"></span>
-              {{ 'elections.loadingInviteCandidates' | translate }}
             </div>
-          } @else if (invitationCandidatesErrorKey()) {
-            <div class="candidate-load-error">
-              <p class="error-text">{{ invitationCandidatesErrorKey() | translate }}</p>
-              <button type="button" class="btn-secondary" (click)="retryInvitationCandidates()">
-                {{ 'elections.tryAgain' | translate }}
-              </button>
-            </div>
-          } @else if (invitationCandidates().length === 0) {
-            <p class="field-help">{{ 'elections.noRegisteredUsers' | translate }}</p>
-          } @else {
-            <div class="user-picker">
-              <button
-                id="invitedUserIds"
-                type="button"
-                class="user-picker-trigger"
-                (click)="toggleCandidatePicker()"
-                [attr.aria-expanded]="candidatePickerOpen()"
-                aria-controls="invitation-candidate-panel"
-              >
-                <span>
-                  @if (selectedInvitationCandidates().length === 0) {
-                    {{ 'elections.chooseRegisteredUsers' | translate }}
-                  } @else {
-                    {{ 'elections.selectedUsersCount' | translate: { count: selectedInvitationCandidates().length } }}
-                  }
-                </span>
-                <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  [class.rotated]="candidatePickerOpen()"
-                  aria-hidden="true"
-                ><polyline points="6 9 12 15 18 9"></polyline></svg>
-              </button>
-
-              @if (candidatePickerOpen()) {
-                <div id="invitation-candidate-panel" class="user-picker-panel">
-                  <div class="user-picker-search">
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-                    <input
-                      type="search"
-                      [formControl]="candidateSearchControl"
-                      [placeholder]="'elections.searchRegisteredUsers' | translate"
-                      autocomplete="off"
-                    />
-                  </div>
-
-                  <div class="user-picker-list">
-                    @for (candidate of filteredInvitationCandidates(); track candidate.id) {
-                      <label class="user-picker-item" [class.user-picker-item--selected]="isInvitationCandidateSelected(candidate.id)">
-                        <span class="user-avatar">{{ candidate.email.charAt(0).toUpperCase() }}</span>
-                        <span class="user-email">{{ candidate.email }}</span>
-                        <input
-                          type="checkbox"
-                          [checked]="isInvitationCandidateSelected(candidate.id)"
-                          (change)="toggleInvitationCandidate(candidate.id, $any($event.target).checked)"
-                        />
-                      </label>
-                    } @empty {
-                      <p class="user-picker-empty">{{ 'elections.noMatchingUsers' | translate }}</p>
-                    }
-                  </div>
-
-                  <div class="user-picker-footer">
-                    <span>{{ 'elections.selectedUsersCount' | translate: { count: selectedInvitationCandidates().length } }}</span>
-                    <div class="user-picker-footer-actions">
-                      <button type="button" class="user-picker-select-all" (click)="toggleAllInvitationCandidates()">
-                        {{ (allInvitationCandidatesSelected() ? 'elections.clearSelection' : 'elections.selectAllUsers') | translate }}
-                      </button>
-                      <button type="button" class="user-picker-confirm" (click)="toggleCandidatePicker()">
-                        {{ 'elections.selectUsers' | translate }}
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              }
-            </div>
-
-            @if (selectedInvitationCandidates().length > 0) {
-              <div class="selected-user-chips" [attr.aria-label]="'elections.invitedUsersLabel' | translate">
-                @for (candidate of selectedInvitationCandidates(); track candidate.id) {
-                  <span class="selected-user-chip">
-                    <span class="user-avatar">{{ candidate.email.charAt(0).toUpperCase() }}</span>
-                    <span>{{ candidate.email }}</span>
-                    <button
-                      type="button"
-                      (click)="removeInvitationCandidate(candidate.id)"
-                      [attr.aria-label]="('elections.removeInvitation' | translate) + ': ' + candidate.email"
-                    >×</button>
-                  </span>
-                }
-              </div>
-            }
-          }
-        </div>
-
-        <div class="field-group">
-          <label for="inviteEmail">{{ 'elections.emailInviteLabel' | translate }}</label>
-          <div class="email-invite-row">
-            <input
-              id="inviteEmail"
-              type="email"
-              [formControl]="inviteEmailControl"
-              [placeholder]="'elections.emailInvitePlaceholder' | translate"
-              (keydown.enter)="$event.preventDefault(); addInviteEmail()"
-            />
-            <button
-              type="button"
-              class="btn-add-email"
-              (click)="addInviteEmail()"
-              [disabled]="inviteEmailControl.invalid || !inviteEmailControl.value?.trim()"
-            >
-              {{ 'elections.addEmail' | translate }}
-            </button>
           </div>
-          @if (inviteEmailControl.touched && inviteEmailControl.invalid) {
-            <p class="error-text">{{ 'elections.emailInviteInvalid' | translate }}</p>
-          }
-
-          @if (invitedEmails().length > 0) {
-            <div class="email-chips" [attr.aria-label]="'elections.invitedEmailsLabel' | translate">
-              @for (email of invitedEmails(); track email) {
-                <span class="email-chip">
-                  {{ email }}
-                  <button
-                    type="button"
-                    (click)="removeInviteEmail(email)"
-                    [attr.aria-label]="('elections.removeInvitation' | translate) + ': ' + email"
-                  >×</button>
-                </span>
-              }
-            </div>
           }
         </div>
+
+        @if (selectedInvitationLabels().length > 0) {
+        <div class="selected-label-chips" [attr.aria-label]="'elections.selectedInvitationLabels' | translate">
+          @for (label of selectedInvitationLabels(); track label.id) {
+          <span class="selected-label-chip">
+            <span>{{ label.name }}</span>
+            <button type="button" (click)="removeInvitationLabel(label.id)"
+              [attr.aria-label]="('elections.removeInvitationLabel' | translate) + ': ' + label.name">×</button>
+          </span>
+          }
+        </div>
+        }
+        }
       </div>
-    } @else if (isClosedElection && isEditMode()) {
-      <div class="info-box">
-        {{ 'elections.privateEditHelp' | translate }}
+
+      <div class="field-group">
+        <label for="invitedUserIds">{{ 'elections.manualInviteLabel' | translate }}</label>
+        @if (invitationCandidatesLoading()) {
+        <div class="inline-state">
+          <span class="spinner"></span>
+          {{ 'elections.loadingInviteCandidates' | translate }}
+        </div>
+        } @else if (invitationCandidatesErrorKey()) {
+        <div class="candidate-load-error">
+          <p class="error-text">{{ invitationCandidatesErrorKey() | translate }}</p>
+          <button type="button" class="btn-secondary" (click)="retryInvitationCandidates()">
+            {{ 'elections.tryAgain' | translate }}
+          </button>
+        </div>
+        } @else if (invitationCandidates().length === 0) {
+        <p class="field-help">{{ 'elections.noRegisteredUsers' | translate }}</p>
+        } @else {
+        <div class="user-picker" #candidatePickerRef>
+          <button id="invitedUserIds" type="button" class="user-picker-trigger" (click)="toggleCandidatePicker()"
+            [attr.aria-expanded]="candidatePickerOpen()" aria-controls="invitation-candidate-panel">
+            <span>
+              @if (selectedInvitationCandidates().length === 0) {
+              {{ 'elections.chooseRegisteredUsers' | translate }}
+              } @else {
+              {{ 'elections.selectedUsersCount' | translate: { count: selectedInvitationCandidates().length } }}
+              }
+            </span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              [class.rotated]="candidatePickerOpen()" aria-hidden="true">
+              <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+          </button>
+
+          @if (candidatePickerOpen()) {
+          <div id="invitation-candidate-panel" class="user-picker-panel">
+            <div class="user-picker-search">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                aria-hidden="true">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+              </svg>
+              <input type="search" [formControl]="candidateSearchControl"
+                [placeholder]="'elections.searchRegisteredUsers' | translate" autocomplete="off" />
+            </div>
+
+            <div class="user-picker-list">
+              @for (candidate of filteredInvitationCandidates(); track candidate.id) {
+              <label class="user-picker-item"
+                [class.user-picker-item--selected]="isInvitationCandidateSelected(candidate.id)"
+                [class.user-picker-item--from-label]="isCandidateFromLabel(candidate.id)">
+                <span class="user-avatar">{{ candidate.email.charAt(0).toUpperCase() }}</span>
+                <span class="user-email">{{ candidate.email }}</span>
+                @if (isCandidateFromLabel(candidate.id)) {
+                <span class="label-tag-badge" title="{{ 'elections.coveredByLabel' | translate }}">🏷</span>
+                }
+                <input type="checkbox" [checked]="isInvitationCandidateSelected(candidate.id)"
+                  [disabled]="isCandidateFromLabel(candidate.id)"
+                  (change)="toggleInvitationCandidate(candidate.id, $any($event.target).checked)" />
+              </label>
+              } @empty {
+              <p class="user-picker-empty">{{ 'elections.noMatchingUsers' | translate }}</p>
+              }
+            </div>
+
+            <div class="user-picker-footer">
+              <span>{{ 'elections.selectedUsersCount' | translate: { count: selectedInvitationCandidates().length }
+                }}</span>
+              <div class="user-picker-footer-actions">
+                <button type="button" class="user-picker-select-all" (click)="toggleAllInvitationCandidates()">
+                  {{ (allInvitationCandidatesSelected() ? 'elections.clearSelection' : 'elections.selectAllUsers') |
+                  translate }}
+                </button>
+                <button type="button" class="user-picker-confirm" (click)="toggleCandidatePicker()">
+                  {{ 'elections.selectUsers' | translate }}
+                </button>
+              </div>
+            </div>
+          </div>
+          }
+        </div>
+
+        @if (selectedInvitationCandidates().length > 0) {
+        <div class="selected-user-chips" [attr.aria-label]="'elections.invitedUsersLabel' | translate">
+          @for (candidate of visibleCandidateChips(); track candidate.id) {
+          <span class="selected-user-chip" [class.selected-user-chip--from-label]="isCandidateFromLabel(candidate.id)">
+            <span class="user-avatar">{{ candidate.email.charAt(0).toUpperCase() }}</span>
+            <span>{{ candidate.email }}</span>
+            @if (!isCandidateFromLabel(candidate.id)) {
+            <button type="button" (click)="removeInvitationCandidate(candidate.id)"
+              [attr.aria-label]="('elections.removeInvitation' | translate) + ': ' + candidate.email">×</button>
+            }
+          </span>
+          }
+          @if (hiddenCandidateChipCount() > 0 || showAllCandidateChips()) {
+          <button type="button" class="chips-toggle" (click)="toggleShowAllCandidateChips()">
+            @if (showAllCandidateChips()) {
+            {{ 'elections.showLessChips' | translate }}
+            } @else {
+            +{{ hiddenCandidateChipCount() }} {{ 'elections.moreChips' | translate }}
+            }
+          </button>
+          }
+        </div>
+        }
+        }
       </div>
+    </div>
+    } @else if (isClosedElection) {
+    <!-- CREATE MODE for a closed election: full invitation panel including email invites -->
+    <div class="invitation-panel">
+      <div class="invitation-heading">
+        <div class="invitation-heading-row">
+          <h3>{{ 'elections.invitationsTitle' | translate }}</h3>
+          @if (totalUniqueInvitees() > 0) {
+          <span class="invitees-counter">
+            {{ 'elections.totalInviteesCount' | translate: { count: totalUniqueInvitees() } }}
+          </span>
+          }
+        </div>
+        <p>{{ 'elections.invitationsHelp' | translate }}</p>
+      </div>
+
+      <div class="field-group">
+        <label>{{ 'elections.labelInviteLabel' | translate }}</label>
+        <p class="field-help">{{ 'elections.labelInviteHelp' | translate }}</p>
+        @if (invitationLabelsLoading()) {
+        <div class="inline-state">
+          <span class="spinner"></span>
+          {{ 'elections.loadingInviteLabels' | translate }}
+        </div>
+        } @else if (invitationLabelsErrorKey()) {
+        <div class="candidate-load-error">
+          <p class="error-text">{{ invitationLabelsErrorKey() | translate }}</p>
+          <button type="button" class="btn-secondary" (click)="retryInvitationLabels()">
+            {{ 'elections.tryAgain' | translate }}
+          </button>
+        </div>
+        } @else if (invitationLabels().length === 0) {
+        <p class="field-help">{{ 'elections.noInvitationLabels' | translate }}</p>
+        } @else {
+        <div class="user-picker label-picker" #labelPickerRef>
+          <button id="invitedLabelIds" type="button" class="user-picker-trigger" (click)="toggleLabelPicker()"
+            [attr.aria-expanded]="labelPickerOpen()" aria-controls="invitation-label-panel">
+            <span>
+              @if (selectedInvitationLabels().length === 0) {
+              {{ 'elections.chooseInvitationLabels' | translate }}
+              } @else {
+              {{ 'elections.selectedLabelsCount' | translate: { count: selectedInvitationLabels().length } }}
+              }
+            </span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              [class.rotated]="labelPickerOpen()" aria-hidden="true">
+              <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+          </button>
+
+          @if (labelPickerOpen()) {
+          <div id="invitation-label-panel" class="user-picker-panel">
+            <div class="user-picker-search">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                aria-hidden="true">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+              </svg>
+              <input type="search" [formControl]="labelSearchControl"
+                [placeholder]="'elections.searchInvitationLabels' | translate" autocomplete="off" />
+            </div>
+
+            <div class="user-picker-list">
+              @for (label of filteredInvitationLabels(); track label.id) {
+              <label class="label-picker-item" [class.label-picker-item--selected]="isInvitationLabelSelected(label.id)"
+                [class.label-picker-item--disabled]="label.userCount === 0">
+                <span class="label-audience-copy">
+                  <strong>{{ label.name }}</strong>
+                  @if (label.category) {
+                  <small>{{ label.category }}</small>
+                  }
+                </span>
+                <span class="label-audience-count">
+                  {{ 'elections.labelUsersCount' | translate: { count: label.userCount } }}
+                </span>
+                <input type="checkbox" [checked]="isInvitationLabelSelected(label.id)"
+                  [disabled]="label.userCount === 0"
+                  (change)="toggleInvitationLabel(label.id, $any($event.target).checked)" />
+              </label>
+              } @empty {
+              <p class="user-picker-empty">{{ 'elections.noMatchingLabels' | translate }}</p>
+              }
+            </div>
+
+            <div class="user-picker-footer">
+              <span>{{ 'elections.selectedLabelsCount' | translate: { count: selectedInvitationLabels().length }
+                }}</span>
+              <div class="user-picker-footer-actions">
+                <button type="button" class="user-picker-select-all" (click)="toggleAllInvitationLabels()">
+                  {{ (allVisibleInvitationLabelsSelected() ? 'elections.clearLabelSelection' :
+                  'elections.selectAllLabels') | translate }}
+                </button>
+                <button type="button" class="user-picker-confirm" (click)="toggleLabelPicker()">
+                  {{ 'elections.selectLabels' | translate }}
+                </button>
+              </div>
+            </div>
+          </div>
+          }
+        </div>
+
+        @if (selectedInvitationLabels().length > 0) {
+        <div class="selected-label-chips" [attr.aria-label]="'elections.selectedInvitationLabels' | translate">
+          @for (label of selectedInvitationLabels(); track label.id) {
+          <span class="selected-label-chip">
+            <span>{{ label.name }}</span>
+            <button type="button" (click)="removeInvitationLabel(label.id)"
+              [attr.aria-label]="('elections.removeInvitationLabel' | translate) + ': ' + label.name">×</button>
+          </span>
+          }
+        </div>
+        }
+        }
+      </div>
+
+      <div class="field-group">
+        <label for="invitedUserIds">{{ 'elections.manualInviteLabel' | translate }}</label>
+        @if (invitationCandidatesLoading()) {
+        <div class="inline-state">
+          <span class="spinner"></span>
+          {{ 'elections.loadingInviteCandidates' | translate }}
+        </div>
+        } @else if (invitationCandidatesErrorKey()) {
+        <div class="candidate-load-error">
+          <p class="error-text">{{ invitationCandidatesErrorKey() | translate }}</p>
+          <button type="button" class="btn-secondary" (click)="retryInvitationCandidates()">
+            {{ 'elections.tryAgain' | translate }}
+          </button>
+        </div>
+        } @else if (invitationCandidates().length === 0) {
+        <p class="field-help">{{ 'elections.noRegisteredUsers' | translate }}</p>
+        } @else {
+        <div class="user-picker" #candidatePickerRef>
+          <button id="invitedUserIds" type="button" class="user-picker-trigger" (click)="toggleCandidatePicker()"
+            [attr.aria-expanded]="candidatePickerOpen()" aria-controls="invitation-candidate-panel">
+            <span>
+              @if (selectedInvitationCandidates().length === 0) {
+              {{ 'elections.chooseRegisteredUsers' | translate }}
+              } @else {
+              {{ 'elections.selectedUsersCount' | translate: { count: selectedInvitationCandidates().length } }}
+              }
+            </span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              [class.rotated]="candidatePickerOpen()" aria-hidden="true">
+              <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+          </button>
+
+          @if (candidatePickerOpen()) {
+          <div id="invitation-candidate-panel" class="user-picker-panel">
+            <div class="user-picker-search">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                aria-hidden="true">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+              </svg>
+              <input type="search" [formControl]="candidateSearchControl"
+                [placeholder]="'elections.searchRegisteredUsers' | translate" autocomplete="off" />
+            </div>
+
+            <div class="user-picker-list">
+              @for (candidate of filteredInvitationCandidates(); track candidate.id) {
+              <label class="user-picker-item"
+                [class.user-picker-item--selected]="isInvitationCandidateSelected(candidate.id)"
+                [class.user-picker-item--from-label]="isCandidateFromLabel(candidate.id)">
+                <span class="user-avatar">{{ candidate.email.charAt(0).toUpperCase() }}</span>
+                <span class="user-email">{{ candidate.email }}</span>
+                @if (isCandidateFromLabel(candidate.id)) {
+                <span class="label-tag-badge" title="{{ 'elections.coveredByLabel' | translate }}">🏷</span>
+                }
+                <input type="checkbox" [checked]="isInvitationCandidateSelected(candidate.id)"
+                  [disabled]="isCandidateFromLabel(candidate.id)"
+                  (change)="toggleInvitationCandidate(candidate.id, $any($event.target).checked)" />
+              </label>
+              } @empty {
+              <p class="user-picker-empty">{{ 'elections.noMatchingUsers' | translate }}</p>
+              }
+            </div>
+
+            <div class="user-picker-footer">
+              <span>{{ 'elections.selectedUsersCount' | translate: { count: selectedInvitationCandidates().length }
+                }}</span>
+              <div class="user-picker-footer-actions">
+                <button type="button" class="user-picker-select-all" (click)="toggleAllInvitationCandidates()">
+                  {{ (allInvitationCandidatesSelected() ? 'elections.clearSelection' : 'elections.selectAllUsers') |
+                  translate }}
+                </button>
+                <button type="button" class="user-picker-confirm" (click)="toggleCandidatePicker()">
+                  {{ 'elections.selectUsers' | translate }}
+                </button>
+              </div>
+            </div>
+          </div>
+          }
+        </div>
+
+        @if (selectedInvitationCandidates().length > 0) {
+        <div class="selected-user-chips" [attr.aria-label]="'elections.invitedUsersLabel' | translate">
+          @for (candidate of visibleCandidateChips(); track candidate.id) {
+          <span class="selected-user-chip" [class.selected-user-chip--from-label]="isCandidateFromLabel(candidate.id)">
+            <span class="user-avatar">{{ candidate.email.charAt(0).toUpperCase() }}</span>
+            <span>{{ candidate.email }}</span>
+            @if (!isCandidateFromLabel(candidate.id)) {
+            <button type="button" (click)="removeInvitationCandidate(candidate.id)"
+              [attr.aria-label]="('elections.removeInvitation' | translate) + ': ' + candidate.email">×</button>
+            }
+          </span>
+          }
+          @if (hiddenCandidateChipCount() > 0 || showAllCandidateChips()) {
+          <button type="button" class="chips-toggle" (click)="toggleShowAllCandidateChips()">
+            @if (showAllCandidateChips()) {
+            {{ 'elections.showLessChips' | translate }}
+            } @else {
+            +{{ hiddenCandidateChipCount() }} {{ 'elections.moreChips' | translate }}
+            }
+          </button>
+          }
+        </div>
+        }
+        }
+      </div>
+
+      <div class="field-group">
+        <label for="inviteEmail">{{ 'elections.emailInviteLabel' | translate }}</label>
+        <p class="field-help">{{ 'elections.emailInviteHelp' | translate }}</p>
+        <div class="email-invite-row">
+          <input id="inviteEmail" type="email" [formControl]="inviteEmailControl"
+            [placeholder]="'elections.emailInvitePlaceholder' | translate"
+            (keydown.enter)="$event.preventDefault(); addInviteEmail()" />
+          <button type="button" class="btn-add-email" (click)="addInviteEmail()"
+            [disabled]="inviteEmailControl.invalid || !inviteEmailControl.value?.trim()">
+            {{ 'elections.addEmail' | translate }}
+          </button>
+        </div>
+        @if (inviteEmailControl.touched && inviteEmailControl.invalid) {
+        <p class="error-text">{{ 'elections.emailInviteInvalid' | translate }}</p>
+        }
+
+        @if (invitedEmails().length > 0) {
+        <div class="email-chips" [attr.aria-label]="'elections.invitedEmailsLabel' | translate">
+          @for (email of invitedEmails(); track email) {
+          <span class="email-chip">
+            {{ email }}
+            <button type="button" (click)="removeInviteEmail(email)"
+              [attr.aria-label]="('elections.removeInvitation' | translate) + ': ' + email">×</button>
+          </span>
+          }
+        </div>
+        }
+      </div>
+    </div>
     }
 
     <div class="field-row">
@@ -362,64 +561,85 @@
 
     <div formArrayName="questions" class="questions-list">
       @for (question of questions.controls; track $index; let questionIndex = $index) {
-        <section class="question-card" [formGroupName]="questionIndex">
-          <div class="question-card__header">
-            <span class="question-number">{{ 'elections.questionNumber' | translate: { number: questionIndex + 1 } }}</span>
-            @if (questions.length > 1) {
-              <button type="button" class="btn-danger" (click)="removeQuestion(questionIndex)" [attr.aria-label]="'elections.removeQuestion' | translate">×</button>
-            }
-          </div>
-          <input type="text" formControlName="text" maxlength="500" [placeholder]="'elections.questionPlaceholder' | translate" />
+      <section class="question-card" [formGroupName]="questionIndex">
+        <div class="question-card__header">
+          <span class="question-number">{{ 'elections.questionNumber' | translate: { number: questionIndex + 1 }
+            }}</span>
+          @if (questions.length > 1) {
+          <button type="button" class="btn-danger" (click)="removeQuestion(questionIndex)"
+            [attr.aria-label]="'elections.removeQuestion' | translate">×</button>
+          }
+        </div>
+        <div class="question-type-toggles">
+          <label class="question-required-toggle">
+            <input type="checkbox" formControlName="isRequired" />
+            {{ 'elections.questionRequiredLabel' | translate }}
+          </label>
+          <label class="question-required-toggle">
+            <input type="checkbox" formControlName="allowMultipleAnswers" />
+            {{ 'elections.questionMultipleAnswersLabel' | translate }}
+          </label>
+        </div>
+        <input type="text" formControlName="text" maxlength="500"
+          [placeholder]="'elections.questionPlaceholder' | translate" />
 
-          <div formArrayName="options" class="question-options">
-            @for (option of questionOptions(questionIndex).controls; track $index; let optionIndex = $index) {
-              <div class="option-row option-row--image" [formGroupName]="optionIndex">
-                <div class="option-fields">
-                  <input type="text" formControlName="label" maxlength="100" [placeholder]="('elections.optionLabelPlaceholder' | translate) + ' ' + (optionIndex + 1)" />
-                  <input type="text" formControlName="description" maxlength="2000" [placeholder]="'elections.optionDescPlaceholder' | translate" />
-                </div>
-                <label class="image-upload">
-                  @if (option.get('imageDataUrl')?.value) {
-                    <img [src]="option.get('imageDataUrl')?.value" [alt]="option.get('label')?.value" />
-                  } @else {
-                    <span>＋</span>
-                  }
-                  <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" (change)="onOptionImageSelected($event, questionIndex, optionIndex)" />
-                </label>
-                @if (option.get('imageDataUrl')?.value) {
-                  <button type="button" class="btn-image-remove" (click)="removeOptionImage(questionIndex, optionIndex)">×</button>
-                }
-                @if (questionOptions(questionIndex).length > 2) {
-                  <button type="button" class="btn-danger" (click)="removeOption(questionIndex, optionIndex)" [attr.aria-label]="'elections.removeOption' | translate">×</button>
-                }
-              </div>
+        <div formArrayName="options" class="question-options">
+          @for (option of questionOptions(questionIndex).controls; track $index; let optionIndex = $index) {
+          <div class="option-row option-row--image" [formGroupName]="optionIndex">
+            <div class="option-fields">
+              <input type="text" formControlName="label" maxlength="100"
+                [placeholder]="('elections.optionLabelPlaceholder' | translate) + ' ' + (optionIndex + 1)" />
+              <input type="text" formControlName="description" maxlength="2000"
+                [placeholder]="'elections.optionDescPlaceholder' | translate" />
+            </div>
+            <label class="image-upload">
+              @if (option.get('imageDataUrl')?.value) {
+              <img [src]="option.get('imageDataUrl')?.value" [alt]="option.get('label')?.value" />
+              } @else {
+              <span>＋</span>
+              }
+              <input type="file" accept="image/png,image/jpeg,image/webp,image/gif"
+                (change)="onOptionImageSelected($event, questionIndex, optionIndex)" />
+            </label>
+            @if (option.get('imageDataUrl')?.value) {
+            <button type="button" class="btn-image-remove"
+              (click)="removeOptionImage(questionIndex, optionIndex)">×</button>
+            }
+            @if (questionOptions(questionIndex).length > 2) {
+            <button type="button" class="btn-danger" (click)="removeOption(questionIndex, optionIndex)"
+              [attr.aria-label]="'elections.removeOption' | translate">×</button>
             }
           </div>
-          <button type="button" class="btn-add-option" (click)="addOption(questionIndex)">
-            + {{ 'elections.addOption' | translate }}
-          </button>
-        </section>
+          }
+        </div>
+        <button type="button" class="btn-add-option" (click)="addOption(questionIndex)">
+          + {{ 'elections.addOption' | translate }}
+        </button>
+      </section>
       }
     </div>
+    @if (questions.touched && questions.hasError('noRequiredQuestion')) {
+    <p class="error-text">{{ 'elections.atLeastOneRequiredQuestionError' | translate }}</p>
+    }
     <button type="button" class="btn-add-question" (click)="addQuestion()">
       + {{ 'elections.addQuestion' | translate }}
     </button>
 
     @if (errorMessageKey()) {
-      <p class="error-text">{{ errorMessageKey() | translate }}</p>
+    <p class="error-text">{{ errorMessageKey() | translate }}</p>
     }
 
     <div class="form-actions">
       <button type="submit" class="btn-primary" [disabled]="isSubmitting() || isLocked()">
         @if (isSubmitting()) {
-          <span class="spinner" style="border-color: rgba(255,255,255,0.3); border-top-color: #fff;"></span>
+        <span class="spinner" style="border-color: rgba(255,255,255,0.3); border-top-color: #fff;"></span>
         }
         @if (isSubmitting()) {
-          {{ 'elections.submitting' | translate }}
+        {{ 'elections.submitting' | translate }}
         } @else if (isEditMode()) {
-          {{ 'elections.submitEdit' | translate }}
+        {{ 'elections.submitEdit' | translate }}
         } @else {
-          {{ 'elections.submitCreate' | translate }}
+        {{ 'elections.submitCreate' | translate }}
         }
       </button>
     </div>

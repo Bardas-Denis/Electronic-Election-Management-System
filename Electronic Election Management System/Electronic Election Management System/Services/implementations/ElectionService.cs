@@ -14,6 +14,7 @@ namespace Electronic_Election_Management_System.Services
         private readonly IUserRepository _users;
         private readonly IElectionInvitationRepository _invitations;
         private readonly ILabelRepository _labels;
+        private readonly ILogger<ElectionService> _logger;
 
         public ElectionService(
             IElectionRepository elections,
@@ -21,7 +22,8 @@ namespace Electronic_Election_Management_System.Services
             IVoteRepository votes,
             IUserRepository users,
             IElectionInvitationRepository invitations,
-            ILabelRepository labels)
+            ILabelRepository labels,
+            ILogger<ElectionService> logger)
         {
             _elections = elections;
             _auditLogs = auditLogs;
@@ -29,6 +31,7 @@ namespace Electronic_Election_Management_System.Services
             _users = users;
             _invitations = invitations;
             _labels = labels;
+            _logger = logger;
         }
 
         public async Task<List<ElectionDto>> GetAllAsync(Guid userId)
@@ -139,6 +142,8 @@ namespace Electronic_Election_Management_System.Services
             });
             await _elections.SaveChangesAsync();
 
+            _logger.LogInformation(LogMessages.ElectionCreated, election.Title, election.Id, userId);
+
             return ServiceResult<ElectionDto>.Ok(MapToDto(election));
         }
 
@@ -159,7 +164,10 @@ namespace Electronic_Election_Management_System.Services
                 return ServiceResult<ElectionDto>.NotFound(ErrorCode.ResourceNotFound);
 
             if (election.CreatedByUserId != userId)
+            {
+                _logger.LogWarning(LogMessages.ElectionUpdateUnauthorized, id, userId);
                 return ServiceResult<ElectionDto>.Fail(ErrorCode.NotAuthorizedToEdit);
+            }
 
             if (await _votes.HasAnyVotesInElectionAsync(election.Id))
                 return ServiceResult<ElectionDto>.Fail(ErrorCode.ElectionHasVotes);
@@ -179,8 +187,14 @@ namespace Electronic_Election_Management_System.Services
             _elections.RemoveQuestions(existingQuestions);
             election.Options.Clear();
             election.Questions.Clear();
-            foreach (var question in BuildQuestions(questions, election.Id))
-                election.Questions.Add(question);
+
+            // Must use DbSet.AddRangeAsync instead of election.Questions.Add().
+            // ElectionQuestion.Id = Guid.NewGuid() means new entities already have a
+            // real GUID at construction. Adding via the navigation collection made EF
+            // treat them as Modified (UPDATE) rather than Added (INSERT), causing a
+            // DbUpdateConcurrencyException when the UPDATE hit the now-deleted rows.
+            var newQuestions = BuildQuestions(questions, election.Id);
+            await _elections.AddQuestionsAsync(newQuestions);
 
             await _auditLogs.AddAsync(new AuditLog
             {
@@ -189,6 +203,8 @@ namespace Electronic_Election_Management_System.Services
                 Action = AuditAction.ElectionUpdated.ToDbValue()
             });
             await _elections.SaveChangesAsync();
+
+            _logger.LogInformation(LogMessages.ElectionUpdated, election.Id, userId);
 
             return ServiceResult<ElectionDto>.Ok(MapToDto(election));
         }
@@ -200,7 +216,10 @@ namespace Electronic_Election_Management_System.Services
                 return ServiceResult<bool>.NotFound(ErrorCode.ResourceNotFound);
 
             if (election.CreatedByUserId != userId)
+            {
+                _logger.LogWarning(LogMessages.ElectionDeleteUnauthorized, id, userId);
                 return ServiceResult<bool>.Fail(ErrorCode.NotAuthorizedToDelete);
+            }
 
             // Audit log written before delete so we still have the title.
             await _auditLogs.AddAsync(new AuditLog
@@ -212,6 +231,8 @@ namespace Electronic_Election_Management_System.Services
 
             _elections.Remove(election);
             await _elections.SaveChangesAsync();
+
+            _logger.LogInformation(LogMessages.ElectionDeleted, election.Title, election.Id, userId);
 
             return ServiceResult<bool>.Ok(true);
         }
@@ -252,16 +273,19 @@ namespace Electronic_Election_Management_System.Services
             foreach (var label in labels)
             {
                 var assignments = await _labels.GetUsersWithLabelAsync(label.Id);
+                var memberIds = assignments
+                    .Select(assignment => assignment.UserId)
+                    .Where(id => id != userId)
+                    .Distinct()
+                    .ToList();
+
                 result.Add(new InvitationLabelDto
                 {
                     Id = label.Id,
                     Name = label.Name,
                     Category = label.Category,
-                    UserCount = assignments
-                        .Select(assignment => assignment.UserId)
-                        .Where(id => id != userId)
-                        .Distinct()
-                        .Count()
+                    UserCount = memberIds.Count,
+                    UserIds = memberIds
                 });
             }
 
@@ -301,6 +325,8 @@ namespace Electronic_Election_Management_System.Services
                     Action = AuditAction.ElectionInvitationsAdded.ToDbValue()
                 });
                 await _invitations.SaveChangesAsync();
+                
+                _logger.LogInformation(LogMessages.InvitationsAdded, invitationResult.Data.Count, electionId, userId);
             }
 
             var invitations = await _invitations.GetByElectionAsync(electionId);
@@ -331,6 +357,7 @@ namespace Electronic_Election_Management_System.Services
                 Action = AuditAction.ElectionInvitationRemoved.ToDbValue()
             });
             await _invitations.SaveChangesAsync();
+            _logger.LogInformation(LogMessages.InvitationRemoved, invitationId, electionId, userId);
             return ServiceResult<bool>.Ok(true);
         }
 
@@ -479,6 +506,8 @@ namespace Electronic_Election_Management_System.Services
                 ElectionId = electionId ?? Guid.Empty,
                 Text = question.Text.Trim(),
                 DisplayOrder = questionIndex,
+                IsRequired = question.IsRequired,
+                AllowMultipleAnswers = question.AllowMultipleAnswers,
                 Options = question.Options
                     .Where(option => !string.IsNullOrWhiteSpace(option.Label))
                     .Select(option => new Option
@@ -500,6 +529,8 @@ namespace Electronic_Election_Management_System.Services
                     Id = q.Id,
                     Text = q.Text,
                     DisplayOrder = q.DisplayOrder,
+                    IsRequired = q.IsRequired,
+                    AllowMultipleAnswers = q.AllowMultipleAnswers,
                     Options = q.Options.Select(MapOptionToDto).ToList()
                 })
                 .ToList();
@@ -510,6 +541,7 @@ namespace Electronic_Election_Management_System.Services
                 {
                     Id = Guid.Empty,
                     Text = e.Question ?? e.Title,
+                    IsRequired = true,
                     Options = e.Options.Select(MapOptionToDto).ToList()
                 });
             }
