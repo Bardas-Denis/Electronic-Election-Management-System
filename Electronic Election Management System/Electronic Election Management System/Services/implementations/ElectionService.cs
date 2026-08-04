@@ -159,8 +159,8 @@ namespace Electronic_Election_Management_System.Services
                     var notification = new Notification
                     {
                         UserId = invitation.UserId.Value,
-                        Message = $"You have been invited to participate in the election '{election.Title}'.",
-                        Type = "Invitation",
+                        Message = NotificationMessages.InvitationNotification(election.Title),
+                        Type = NotificationMessages.InvitationType,
                         ReferenceId = election.Id
                     };
                     await _notifications.AddAsync(notification);
@@ -169,12 +169,12 @@ namespace Electronic_Election_Management_System.Services
                 if (!string.IsNullOrEmpty(invitation.Email))
                 {
                     string emailMessage = invitation.UserId.HasValue
-                        ? $"You have been invited to participate in the election '{election.Title}'."
-                        : $"You have been invited to participate in the election '{election.Title}' but you don't have an account yet. You can create one here: http://localhost:4200/auth/register";
+                        ? NotificationMessages.InvitationEmailRegistered(election.Title)
+                        : NotificationMessages.InvitationEmailUnregistered(election.Title);
 
                     await _emailService.SendEmailAsync(
                         invitation.Email,
-                        "Election Invitation",
+                        NotificationMessages.ElectionInvitationSubject,
                         emailMessage
                     );
                 }
@@ -251,8 +251,8 @@ namespace Electronic_Election_Management_System.Services
                     var notification = new Notification
                     {
                         UserId = invitation.UserId.Value,
-                        Message = $"The election '{election.Title}' has been updated (e.g., status or deadlines changed).",
-                        Type = "ElectionUpdated",
+                        Message = NotificationMessages.ElectionUpdatedNotification(election.Title),
+                        Type = NotificationMessages.ElectionUpdatedType,
                         ReferenceId = election.Id
                     };
                     await _notifications.AddAsync(notification);
@@ -261,12 +261,12 @@ namespace Electronic_Election_Management_System.Services
                 if (!string.IsNullOrEmpty(invitation.Email))
                 {
                     string emailMessage = invitation.UserId.HasValue
-                        ? $"The election '{election.Title}' has been updated. Please check the platform for the latest details."
-                        : $"The election '{election.Title}' has been updated. You were invited to it, but you don't have an account yet. You can create one here: http://localhost:4200/auth/register";
+                        ? NotificationMessages.ElectionUpdatedEmailRegistered(election.Title)
+                        : NotificationMessages.ElectionUpdatedEmailUnregistered(election.Title);
 
                     await _emailService.SendEmailAsync(
                         invitation.Email,
-                        "Election Updated",
+                        NotificationMessages.ElectionUpdatedSubject,
                         emailMessage
                     );
                 }
@@ -402,8 +402,8 @@ namespace Electronic_Election_Management_System.Services
                         var notification = new Notification
                         {
                             UserId = invitation.UserId.Value,
-                            Message = $"You have been invited to participate in the election '{election.Title}'.",
-                            Type = "Invitation",
+                            Message = NotificationMessages.InvitationNotification(election.Title),
+                            Type = NotificationMessages.InvitationType,
                             ReferenceId = election.Id
                         };
                         await _notifications.AddAsync(notification);
@@ -412,12 +412,12 @@ namespace Electronic_Election_Management_System.Services
                     if (!string.IsNullOrEmpty(invitation.Email))
                     {
                         string emailMessage = invitation.UserId.HasValue 
-                            ? $"You have been invited to participate in the election '{election.Title}'."
-                            : $"You have been invited to participate in the election '{election.Title}' but you don't have an account yet. You can create one here: http://localhost:4200/auth/register";
+                            ? NotificationMessages.InvitationEmailRegistered(election.Title)
+                            : NotificationMessages.InvitationEmailUnregistered(election.Title);
                             
                         await _emailService.SendEmailAsync(
                             invitation.Email,
-                            "Election Invitation",
+                            NotificationMessages.ElectionInvitationSubject,
                             emailMessage
                         );
                     }
