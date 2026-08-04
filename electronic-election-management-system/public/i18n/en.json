@@ -198,7 +198,13 @@
   "upcoming": "Starting soon",
   "changeVoteHint": "Click to change your vote",
   "begins": "Starts",
-  "ends": "Ends"
+  "ends": "Ends",
+  "groupStatus": "Status",
+  "groupTiming": "Timing",
+  "groupParticipation": "My Vote",
+  "groupType": "Type",
+  "groupVisibility": "Visibility",
+  "clearFilters": "Clear filters"
 },
   "vote": {
     "confirmed": "Your vote has been recorded",

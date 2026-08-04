@@ -18,60 +18,134 @@
 
     <!-- Sidebar Filters -->
     <aside class="filters-sidebar">
-      
-      <div style="margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--border-color, #f3f4f6);">
-        <h3 style="font-size: 0.95rem; font-weight: 600; color: inherit; margin: 0;">{{ 'elections.filterTitle' | translate }}</h3>
+
+      <div class="filters-sidebar-header">
+        <h3>
+          {{ 'elections.filterTitle' | translate }}
+          @if (activeFilterCount() > 0) {
+            <span class="count">({{ activeFilterCount() }})</span>
+          }
+        </h3>
       </div>
 
-      <div style="margin-bottom: 20px;">
-        <label for="electionSearch" style="display: block; font-size: 0.8rem; font-weight: 500; margin-bottom: 6px; opacity: 0.8;">{{ 'elections.searchLabel' | translate }}</label>
-        <input 
+      @if (activeFilterCount() > 0) {
+        <button type="button" class="filter-clear-link" (click)="clearAllFilters()">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+          {{ 'elections.clearFilters' | translate }}
+        </button>
+      }
+
+      <div class="filter-search">
+        <label for="electionSearch">{{ 'elections.searchLabel' | translate }}</label>
+        <input
           id="electionSearch"
-          type="search" 
-          [placeholder]="'elections.searchPlaceholder' | translate" 
-          [ngModel]="searchQuery()" 
+          type="search"
+          [placeholder]="'elections.searchPlaceholder' | translate"
+          [ngModel]="searchQuery()"
           (ngModelChange)="onSearchChange($event)"
-          style="width: 100%; padding: 8px 12px; background: var(--input-bg, var(--bg-sub, #f9fafb)); border: 1px solid var(--border-color, #d1d5db); color: inherit; border-radius: 6px; font-size: 0.85rem;"
         />
       </div>
 
-      <div>
-        <span style="display: block; font-size: 0.8rem; font-weight: 600; margin-top: 20px; margin-bottom: 14px; opacity: 0.85;">{{ 'elections.categoriesStatus' | translate }}</span>
-        <div style="display: flex; flex-direction: column; gap: 12px;">
-          
-          <label style="display: flex; align-items: center; gap: 10px; font-size: 0.85rem; cursor: pointer; color: inherit; opacity: 0.85;">
-            <input type="checkbox" [checked]="selectedFilters().political" (change)="toggleFilter('political')" style="width: 16px; height: 16px; margin: 0; cursor: pointer;" /> {{ 'elections.filterPolitical' | translate }}
+      <!-- Status -->
+      <button type="button" class="filter-group-header" (click)="toggleGroup('status')" [attr.aria-expanded]="isGroupExpanded('status')">
+        <span>{{ 'elections.groupStatus' | translate }}</span>
+        <svg class="chevron" [class.is-collapsed]="!isGroupExpanded('status')" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>
+      </button>
+      @if (isGroupExpanded('status')) {
+        <div class="filter-group">
+          <label class="filter-option" [class.is-zero]="filterCounts().active === 0">
+            <input type="checkbox" [checked]="selectedFilters().active" (change)="toggleFilter('active')" [disabled]="filterCounts().active === 0" />
+            <span class="filter-option-label">{{ 'elections.filterActive' | translate }}</span>
+            <span class="option-count">{{ filterCounts().active }}</span>
           </label>
-          <label style="display: flex; align-items: center; gap: 10px; font-size: 0.85rem; cursor: pointer; color: inherit; opacity: 0.85;">
-            <input type="checkbox" [checked]="selectedFilters().commercial" (change)="toggleFilter('commercial')" style="width: 16px; height: 16px; margin: 0; cursor: pointer;" /> {{ 'elections.filterCommercial' | translate }}
+          <label class="filter-option" [class.is-zero]="filterCounts().expired === 0">
+            <input type="checkbox" [checked]="selectedFilters().expired" (change)="toggleFilter('expired')" [disabled]="filterCounts().expired === 0" />
+            <span class="filter-option-label">{{ 'elections.filterExpired' | translate }}</span>
+            <span class="option-count">{{ filterCounts().expired }}</span>
           </label>
-          <label style="display: flex; align-items: center; gap: 10px; font-size: 0.85rem; cursor: pointer; color: inherit; opacity: 0.85;">
-            <input type="checkbox" [checked]="selectedFilters().anonymous" (change)="toggleFilter('anonymous')" style="width: 16px; height: 16px; margin: 0; cursor: pointer;" /> {{ 'elections.filterAnonymous' | translate }}
-          </label>
-          <label style="display: flex; align-items: center; gap: 10px; font-size: 0.85rem; cursor: pointer; color: inherit; opacity: 0.85;">
-            <input type="checkbox" [checked]="selectedFilters().nonAnonymous" (change)="toggleFilter('nonAnonymous')" style="width: 16px; height: 16px; margin: 0; cursor: pointer;" /> {{ 'elections.filterNonAnonymous' | translate }}
-          </label>
-          <label style="display: flex; align-items: center; gap: 10px; font-size: 0.85rem; cursor: pointer; color: inherit; opacity: 0.85;">
-            <input type="checkbox" [checked]="selectedFilters().voted" (change)="toggleFilter('voted')" style="width: 16px; height: 16px; margin: 0; cursor: pointer;" /> {{ 'elections.filterVoted' | translate }}
-          </label>
-          <label style="display: flex; align-items: center; gap: 10px; font-size: 0.85rem; cursor: pointer; color: inherit; opacity: 0.85;">
-            <input type="checkbox" [checked]="selectedFilters().unvoted" (change)="toggleFilter('unvoted')" style="width: 16px; height: 16px; margin: 0; cursor: pointer;" /> {{ 'elections.filterUnvoted' | translate }}
-          </label>
-          <label style="display: flex; align-items: center; gap: 10px; font-size: 0.85rem; cursor: pointer; color: inherit; opacity: 0.85;">
-            <input type="checkbox" [checked]="selectedFilters().active" (change)="toggleFilter('active')" style="width: 16px; height: 16px; margin: 0; cursor: pointer;" /> {{ 'elections.filterActive' | translate }}
-          </label>
-          <label style="display: flex; align-items: center; gap: 10px; font-size: 0.85rem; cursor: pointer; color: inherit; opacity: 0.85;">
-            <input type="checkbox" [checked]="selectedFilters().expired" (change)="toggleFilter('expired')" style="width: 16px; height: 16px; margin: 0; cursor: pointer;" /> {{ 'elections.filterExpired' | translate }}
-          </label>
-          <label style="display: flex; align-items: center; gap: 10px; font-size: 0.85rem; cursor: pointer; color: inherit; opacity: 0.85;">
-            <input type="checkbox" [checked]="selectedFilters().thisWeek" (change)="toggleFilter('thisWeek')" style="width: 16px; height: 16px; margin: 0; cursor: pointer;" /> {{ 'elections.filterThisWeek' | translate }}
-          </label>
-          <label style="display: flex; align-items: center; gap: 10px; font-size: 0.85rem; cursor: pointer; color: inherit; opacity: 0.85;">
-            <input type="checkbox" [checked]="selectedFilters().moreThanAMonth" (change)="toggleFilter('moreThanAMonth')" style="width: 16px; height: 16px; margin: 0; cursor: pointer;" /> {{ 'elections.filterMoreThanAMonth' | translate }}
-          </label>
-
         </div>
-      </div>
+      }
+
+      <!-- Timing -->
+      <button type="button" class="filter-group-header" (click)="toggleGroup('timing')" [attr.aria-expanded]="isGroupExpanded('timing')">
+        <span>{{ 'elections.groupTiming' | translate }}</span>
+        <svg class="chevron" [class.is-collapsed]="!isGroupExpanded('timing')" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>
+      </button>
+      @if (isGroupExpanded('timing')) {
+        <div class="filter-group">
+          <label class="filter-option" [class.is-zero]="filterCounts().thisWeek === 0">
+            <input type="checkbox" [checked]="selectedFilters().thisWeek" (change)="toggleFilter('thisWeek')" [disabled]="filterCounts().thisWeek === 0" />
+            <span class="filter-option-label">{{ 'elections.filterThisWeek' | translate }}</span>
+            <span class="option-count">{{ filterCounts().thisWeek }}</span>
+          </label>
+          <label class="filter-option" [class.is-zero]="filterCounts().moreThanAMonth === 0">
+            <input type="checkbox" [checked]="selectedFilters().moreThanAMonth" (change)="toggleFilter('moreThanAMonth')" [disabled]="filterCounts().moreThanAMonth === 0" />
+            <span class="filter-option-label">{{ 'elections.filterMoreThanAMonth' | translate }}</span>
+            <span class="option-count">{{ filterCounts().moreThanAMonth }}</span>
+          </label>
+        </div>
+      }
+
+      <!-- My Vote -->
+      <button type="button" class="filter-group-header" (click)="toggleGroup('participation')" [attr.aria-expanded]="isGroupExpanded('participation')">
+        <span>{{ 'elections.groupParticipation' | translate }}</span>
+        <svg class="chevron" [class.is-collapsed]="!isGroupExpanded('participation')" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>
+      </button>
+      @if (isGroupExpanded('participation')) {
+        <div class="filter-group">
+          <label class="filter-option" [class.is-zero]="filterCounts().voted === 0">
+            <input type="checkbox" [checked]="selectedFilters().voted" (change)="toggleFilter('voted')" [disabled]="filterCounts().voted === 0" />
+            <span class="filter-option-label">{{ 'elections.filterVoted' | translate }}</span>
+            <span class="option-count">{{ filterCounts().voted }}</span>
+          </label>
+          <label class="filter-option" [class.is-zero]="filterCounts().unvoted === 0">
+            <input type="checkbox" [checked]="selectedFilters().unvoted" (change)="toggleFilter('unvoted')" [disabled]="filterCounts().unvoted === 0" />
+            <span class="filter-option-label">{{ 'elections.filterUnvoted' | translate }}</span>
+            <span class="option-count">{{ filterCounts().unvoted }}</span>
+          </label>
+        </div>
+      }
+
+      <!-- Type -->
+      <button type="button" class="filter-group-header" (click)="toggleGroup('type')" [attr.aria-expanded]="isGroupExpanded('type')">
+        <span>{{ 'elections.groupType' | translate }}</span>
+        <svg class="chevron" [class.is-collapsed]="!isGroupExpanded('type')" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>
+      </button>
+      @if (isGroupExpanded('type')) {
+        <div class="filter-group">
+          <label class="filter-option" [class.is-zero]="filterCounts().political === 0">
+            <input type="checkbox" [checked]="selectedFilters().political" (change)="toggleFilter('political')" [disabled]="filterCounts().political === 0" />
+            <span class="filter-option-label">{{ 'elections.filterPolitical' | translate }}</span>
+            <span class="option-count">{{ filterCounts().political }}</span>
+          </label>
+          <label class="filter-option" [class.is-zero]="filterCounts().commercial === 0">
+            <input type="checkbox" [checked]="selectedFilters().commercial" (change)="toggleFilter('commercial')" [disabled]="filterCounts().commercial === 0" />
+            <span class="filter-option-label">{{ 'elections.filterCommercial' | translate }}</span>
+            <span class="option-count">{{ filterCounts().commercial }}</span>
+          </label>
+        </div>
+      }
+
+      <!-- Visibility -->
+      <button type="button" class="filter-group-header" (click)="toggleGroup('visibility')" [attr.aria-expanded]="isGroupExpanded('visibility')">
+        <span>{{ 'elections.groupVisibility' | translate }}</span>
+        <svg class="chevron" [class.is-collapsed]="!isGroupExpanded('visibility')" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>
+      </button>
+      @if (isGroupExpanded('visibility')) {
+        <div class="filter-group">
+          <label class="filter-option" [class.is-zero]="filterCounts().anonymous === 0">
+            <input type="checkbox" [checked]="selectedFilters().anonymous" (change)="toggleFilter('anonymous')" [disabled]="filterCounts().anonymous === 0" />
+            <span class="filter-option-label">{{ 'elections.filterAnonymous' | translate }}</span>
+            <span class="option-count">{{ filterCounts().anonymous }}</span>
+          </label>
+          <label class="filter-option" [class.is-zero]="filterCounts().nonAnonymous === 0">
+            <input type="checkbox" [checked]="selectedFilters().nonAnonymous" (change)="toggleFilter('nonAnonymous')" [disabled]="filterCounts().nonAnonymous === 0" />
+            <span class="filter-option-label">{{ 'elections.filterNonAnonymous' | translate }}</span>
+            <span class="option-count">{{ filterCounts().nonAnonymous }}</span>
+          </label>
+        </div>
+      }
+
     </aside>
 
     <!-- Content Area (Grid) -->
@@ -100,11 +174,11 @@
 </div>
 
 <ng-template #electionCard let-election="election">
-  <div class="election-card" style="display: flex; flex-direction: column; height: 100%;">
-    
-    <div style="flex: 1; display: flex; flex-direction: column;">
-      
-      <div class="election-badges" style="margin-bottom: 10px;">
+  <div class="election-card">
+
+    <div class="election-card-body">
+
+      <div class="election-badges">
         <span class="badge badge--neutral">{{ election.type }}</span>
         <span class="badge badge--neutral">{{ (election.isAnonymous ? 'elections.anonymous' : 'elections.nonAnonymous') | translate }}</span>
         @if (election.isClosed) {
@@ -115,10 +189,10 @@
         }
       </div>
 
-      <h3 style="margin: 0 0 4px 0; font-size: 1.1rem; line-height: 1.3; color: inherit;">{{ election.title }}</h3>
-      
+      <h3>{{ election.title }}</h3>
+
       @if (election.description) {
-        <p style="margin: 0 0 8px 0; font-size: 0.9rem; line-height: 1.4; opacity: 0.85;">{{ election.description }}</p>
+        <p>{{ election.description }}</p>
       }
 
       @if ($any(election).startDate || $any(election).endDate || $any(election).startsAt || $any(election).endsAt) {
@@ -126,24 +200,24 @@
 
           @if (isUpcoming(election)) {
             <!-- Not started yet: show only the start date -->
-            <span style="font-size: 0.7rem; font-weight: 700; opacity: 0.7; text-transform: uppercase; letter-spacing: 0.05em;">{{ 'elections.begins' | translate }}:</span>
-            <div style="display: flex; align-items: center; gap: 6px;">
-              <span style="font-size: 0.85rem; font-weight: 600; font-variant-numeric: tabular-nums;">
+            <span class="date-label">{{ 'elections.begins' | translate }}:</span>
+            <div class="date-value-row">
+              <span class="date-value">
                 {{ ($any(election).startDate || $any(election).startsAt) | date:'dd/MM/yyyy' }}
               </span>
-              <span style="opacity: 0.4; font-size: 0.85rem;">•</span>
+              <span class="date-separator">•</span>
               <span class="date-time-badge">
                 {{ ($any(election).startDate || $any(election).startsAt) | date:'HH:mm' }}
               </span>
             </div>
           } @else {
             <!-- Active (or expired): show only the end date -->
-            <span style="font-size: 0.7rem; font-weight: 700; opacity: 0.7; text-transform: uppercase; letter-spacing: 0.05em;">{{ 'elections.ends' | translate }}:</span>
-            <div style="display: flex; align-items: center; gap: 6px;">
-              <span style="font-size: 0.85rem; font-weight: 600; font-variant-numeric: tabular-nums;">
+            <span class="date-label">{{ 'elections.ends' | translate }}:</span>
+            <div class="date-value-row">
+              <span class="date-value">
                 {{ ($any(election).endDate || $any(election).endsAt) | date:'dd/MM/yyyy' }}
               </span>
-              <span style="opacity: 0.4; font-size: 0.85rem;">•</span>
+              <span class="date-separator">•</span>
               <span class="date-time-badge">
                 {{ ($any(election).endDate || $any(election).endsAt) | date:'HH:mm' }}
               </span>
@@ -155,10 +229,10 @@
     </div>
 
     <!-- Actions section corrected for upcoming state -->
-    <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border-color, #f1f5f9);">
-      
-      <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
-        
+    <div class="election-card-footer">
+
+      <div class="election-actions">
+
         @if (election.hasUserVoted) {
           <a [routerLink]="['/elections', election.id]" class="action-voted" [title]="'elections.changeVoteHint' | translate">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
@@ -170,7 +244,7 @@
           </span>
         } @else if (isUpcoming(election)) {
           <!-- Display upcoming status and hide vote button until it starts -->
-          <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 0.82rem; font-weight: 600; color: var(--text-sub, #64748b);">
+          <span class="action-upcoming">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
             {{ 'elections.upcoming' | translate }}
           </span>
@@ -191,7 +265,7 @@
 
       @if (election.hasUserVoted) {
         @if (votedOptionLabel(election); as votedOption) {
-          <div style="margin-top: 12px; font-size: 0.85rem; opacity: 0.75; font-weight: 500;">
+          <div class="voted-answer">
             {{ 'elections.votedAnswer' | translate: { answer: votedOption } }}
           </div>
         }
