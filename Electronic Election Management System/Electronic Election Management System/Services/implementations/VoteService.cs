@@ -260,13 +260,28 @@ namespace Electronic_Election_Management_System.Services
             if (selected.Count != requestedIds.Count)
                 return null;
 
-            var questionIds = election.Questions.Select(question => (Guid?)question.Id).ToList();
-            if (questionIds.Count == 0)
-                questionIds.Add(null);
+            var questions = election.Questions.ToList();
+            if (questions.Count == 0)
+            {
+                // Legacy single-question election (no ElectionQuestion rows) - always required.
+                return selected.Count == 1 && selected[0].QuestionId is null ? selected : null;
+            }
 
-            return questionIds.All(questionId =>
-                       selected.Count(option => option.QuestionId == questionId) == 1) &&
-                   selected.Count == questionIds.Count
+            // Single-answer questions: required needs exactly one, optional accepts zero or one.
+            // Multiple-answer questions: required needs at least one, optional accepts any count.
+            var countsValid = questions.All(question =>
+            {
+                var count = selected.Count(option => option.QuestionId == question.Id);
+                return question.AllowMultipleAnswers
+                    ? !question.IsRequired || count >= 1
+                    : question.IsRequired ? count == 1 : count <= 1;
+            });
+            if (!countsValid)
+                return null;
+
+            // Every selected option must belong to one of this election's questions.
+            var knownQuestionIds = questions.Select(question => question.Id).ToHashSet();
+            return selected.All(option => option.QuestionId.HasValue && knownQuestionIds.Contains(option.QuestionId.Value))
                 ? selected
                 : null;
         }

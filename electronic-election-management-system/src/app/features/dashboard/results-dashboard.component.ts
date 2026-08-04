@@ -19,6 +19,18 @@ interface PieSegment {
   isFullCircle: boolean;
 }
 
+// One ring for a multiple-answer question - each option gets its own
+// independent 0-100% ring instead of sharing one pie, since a respondent can
+// pick several options and the shares don't sum to a whole.
+interface OptionMeter {
+  optionId: string;
+  label: string;
+  voteCount: number;
+  percent: number;
+  colorVar: string;
+  dasharray: string;
+}
+
 @Component({
   selector: 'app-results-dashboard',
   standalone: true,
@@ -35,6 +47,9 @@ export class ResultsDashboardComponent implements OnInit, OnDestroy {
   // Angular gap between adjacent slices, in degrees - only applied when 2+
   // options actually have votes (see pieSegments).
   private readonly padAngleDeg = 1.6;
+
+  readonly meterRadius = 40;
+  private readonly meterCircumference = 2 * Math.PI * this.meterRadius;
 
   // Key of the segment/row currently under the pointer, shared between the
   // pie chart and the legend, so hovering either one also highlights its pair.
@@ -73,7 +88,7 @@ export class ResultsDashboardComponent implements OnInit, OnDestroy {
   questions(results: ElectionResultsDto): QuestionResultDto[] {
     return results.questions?.length
       ? results.questions
-      : [{ questionId: '', text: results.title, totalVotes: results.totalVotes, results: results.results }];
+      : [{ questionId: '', text: results.title, allowMultipleAnswers: false, totalVotes: results.totalVotes, results: results.results }];
   }
 
   percentFor(voteCount: number, total: number): number {
@@ -88,6 +103,25 @@ export class ResultsDashboardComponent implements OnInit, OnDestroy {
 
   sliceKey(questionId: string, optionId: string): string {
     return `${questionId}:${optionId}`;
+  }
+
+  // Turns a multiple-answer question's options into independent rings - one
+  // per option, each showing "% of respondents who picked this", since a
+  // respondent can pick several and the shares don't sum to a whole circle.
+  optionMeters(question: QuestionResultDto): OptionMeter[] {
+    const total = question.totalVotes;
+    return question.results.map((option: OptionResultDto, index: number) => {
+      const percent = this.percentFor(option.voteCount, total);
+      const filled = (percent / 100) * this.meterCircumference;
+      return {
+        optionId: option.optionId,
+        label: option.label,
+        voteCount: option.voteCount,
+        percent,
+        colorVar: `var(--series-${(index % 8) + 1})`,
+        dasharray: `${filled} ${this.meterCircumference - filled}`
+      };
+    });
   }
 
   // Turns a question's options into pie slices, as SVG path wedges with a

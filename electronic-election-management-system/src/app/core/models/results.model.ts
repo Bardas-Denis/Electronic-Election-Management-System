@@ -8,6 +8,7 @@ export interface OptionResultDto {
 export interface QuestionResultDto {
   questionId: string;
   text: string;
+  allowMultipleAnswers: boolean;
   totalVotes: number;
   results: OptionResultDto[];
 }

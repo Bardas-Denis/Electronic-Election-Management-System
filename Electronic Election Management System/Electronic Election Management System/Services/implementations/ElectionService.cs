@@ -506,6 +506,8 @@ namespace Electronic_Election_Management_System.Services
                 ElectionId = electionId ?? Guid.Empty,
                 Text = question.Text.Trim(),
                 DisplayOrder = questionIndex,
+                IsRequired = question.IsRequired,
+                AllowMultipleAnswers = question.AllowMultipleAnswers,
                 Options = question.Options
                     .Where(option => !string.IsNullOrWhiteSpace(option.Label))
                     .Select(option => new Option
@@ -527,6 +529,8 @@ namespace Electronic_Election_Management_System.Services
                     Id = q.Id,
                     Text = q.Text,
                     DisplayOrder = q.DisplayOrder,
+                    IsRequired = q.IsRequired,
+                    AllowMultipleAnswers = q.AllowMultipleAnswers,
                     Options = q.Options.Select(MapOptionToDto).ToList()
                 })
                 .ToList();
@@ -537,6 +541,7 @@ namespace Electronic_Election_Management_System.Services
                 {
                     Id = Guid.Empty,
                     Text = e.Question ?? e.Title,
+                    IsRequired = true,
                     Options = e.Options.Select(MapOptionToDto).ToList()
                 });
             }

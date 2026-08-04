@@ -128,6 +128,57 @@
   filter: brightness(1.1);
 }
 
+/* ─── Option meters (multiple-answer questions) ──────────────────────── */
+.meter-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  gap: 1rem;
+  flex: 1;
+}
+
+.meter-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.meter {
+  width: 88px;
+  height: 88px;
+}
+
+.meter-track {
+  fill: none;
+  stroke: var(--bg-subtle);
+  stroke-width: 10;
+}
+
+.meter-fill {
+  fill: none;
+  stroke-width: 10;
+  stroke-linecap: round;
+  transition: stroke-dasharray 0.4s ease;
+}
+
+.meter-percent {
+  font-size: 17px;
+  font-weight: 600;
+  fill: var(--text-primary);
+}
+
+.meter-label {
+  margin-top: 0.5rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.meter-count {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
 /* ─── Legend rows ─────────────────────────────────────────────────────── */
 .result-row {
   display: flex;

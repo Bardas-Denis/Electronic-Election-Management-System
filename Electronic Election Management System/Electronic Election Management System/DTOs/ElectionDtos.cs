@@ -28,6 +28,8 @@ namespace Electronic_Election_Management_System.DTOs
         public Guid Id { get; set; }
         public string Text { get; set; } = string.Empty;
         public int DisplayOrder { get; set; }
+        public bool IsRequired { get; set; } = true;
+        public bool AllowMultipleAnswers { get; set; } = false;
         public List<OptionDto> Options { get; set; } = new();
     }
 
@@ -35,6 +37,8 @@ namespace Electronic_Election_Management_System.DTOs
     {
         [Required, NotWhitespace, StringLength(ValidationRules.QuestionMaxLength)]
         public string Text { get; set; } = string.Empty;
+        public bool IsRequired { get; set; } = true;
+        public bool AllowMultipleAnswers { get; set; } = false;
         [Required, MinLength(2), MaxLength(ValidationRules.MaxOptionsPerQuestion)]
         public List<CreateOptionDto> Options { get; set; } = new();
 
@@ -149,6 +153,13 @@ namespace Electronic_Election_Management_System.DTOs
                     ValidationMessages.PoliticalElectionCannotBeAnonymous,
                     new[] { nameof(IsAnonymous) });
             }
+
+            // At least one question must be required, so an election can never end up with
+            // nothing mandatory to answer.
+            if (Questions.Count > 0 && Questions.All(question => !question.IsRequired))
+                yield return new ValidationResult(
+                    ValidationMessages.AtLeastOneRequiredQuestion,
+                    new[] { nameof(Questions) });
 
             if (InvitedUserIds.Any(id => id == Guid.Empty))
                 yield return new ValidationResult(

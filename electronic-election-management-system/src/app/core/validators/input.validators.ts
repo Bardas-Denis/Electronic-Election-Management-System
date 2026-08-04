@@ -39,3 +39,11 @@ export const uniqueOptionLabels: ValidatorFn = (control: AbstractControl): Valid
     : [];
   return labels.length === new Set(labels).size ? null : { duplicateOptionLabels: true };
 };
+
+// Ensures voters can never open an election with nothing mandatory to answer.
+export const atLeastOneRequiredQuestion: ValidatorFn = (control: AbstractControl): ValidationErrors | null => {
+  const questions = Array.isArray(control.value) ? control.value : [];
+  return questions.some((question: { isRequired?: boolean } | null) => question?.isRequired)
+    ? null
+    : { noRequiredQuestion: true };
+};
