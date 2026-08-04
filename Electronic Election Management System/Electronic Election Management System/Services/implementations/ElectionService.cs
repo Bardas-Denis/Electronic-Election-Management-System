@@ -172,11 +172,11 @@ namespace Electronic_Election_Management_System.Services
                         ? NotificationMessages.InvitationEmailRegistered(election.Title)
                         : NotificationMessages.InvitationEmailUnregistered(election.Title);
 
-                    await _emailService.SendEmailAsync(
+                    _ = Task.Run(() => _emailService.SendEmailAsync(
                         invitation.Email,
                         NotificationMessages.ElectionInvitationSubject,
                         emailMessage
-                    );
+                    ));
                 }
             }
 
@@ -264,11 +264,11 @@ namespace Electronic_Election_Management_System.Services
                         ? NotificationMessages.ElectionUpdatedEmailRegistered(election.Title)
                         : NotificationMessages.ElectionUpdatedEmailUnregistered(election.Title);
 
-                    await _emailService.SendEmailAsync(
+                    _ = Task.Run(() => _emailService.SendEmailAsync(
                         invitation.Email,
                         NotificationMessages.ElectionUpdatedSubject,
                         emailMessage
-                    );
+                    ));
                 }
             }
 
@@ -415,11 +415,11 @@ namespace Electronic_Election_Management_System.Services
                             ? NotificationMessages.InvitationEmailRegistered(election.Title)
                             : NotificationMessages.InvitationEmailUnregistered(election.Title);
                             
-                        await _emailService.SendEmailAsync(
+                        _ = Task.Run(() => _emailService.SendEmailAsync(
                             invitation.Email,
                             NotificationMessages.ElectionInvitationSubject,
                             emailMessage
-                        );
+                        ));
                     }
                 }
             }

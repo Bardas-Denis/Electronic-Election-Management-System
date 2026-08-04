@@ -11,6 +11,7 @@ public class EmailService : IEmailService
 {
     private readonly IConfiguration _configuration;
     private readonly ILogger<EmailService> _logger;
+    private static readonly SemaphoreSlim _smtpSemaphore = new SemaphoreSlim(1, 1);
 
     public EmailService(IConfiguration configuration, ILogger<EmailService> logger)
     {
@@ -36,6 +37,7 @@ public class EmailService : IEmailService
 
         int port = int.TryParse(portStr, out int p) ? p : 587;
 
+        await _smtpSemaphore.WaitAsync();
         try
         {
             var mimeMessage = new MimeMessage();
@@ -62,6 +64,10 @@ public class EmailService : IEmailService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to send email to {toEmail}", toEmail);
+        }
+        finally
+        {
+            _smtpSemaphore.Release();
         }
     }
 }
