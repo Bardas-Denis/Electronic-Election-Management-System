@@ -36,6 +36,13 @@ namespace Electronic_Election_Management_System.Services
         /// </summary>
         Task<ServiceResult<bool>> DeleteAsync(Guid id, Guid userId);
 
+        /// <summary>
+        /// Makes an invisible election visible (publishes / "starts" it).
+        /// Only the election owner may call this. Returns a conflict error if the election
+        /// is already visible so the caller can distinguish "just started" from "already started".
+        /// </summary>
+        Task<ServiceResult<ElectionDto>> PublishElectionAsync(Guid electionId, Guid userId);
+
         Task<ServiceResult<List<ElectionInvitationDto>>> GetInvitationsAsync(Guid electionId, Guid userId);
         Task<ServiceResult<List<ElectionInvitationDto>>> InviteAsync(
             Guid electionId,

@@ -126,6 +126,28 @@ namespace Electronic_Election_Management_System.Controllers
             return NoContent();
         }
 
+        /// <summary>
+        /// Publishes (starts) an election, making it visible to voters.
+        /// Only the election's creator may call this endpoint.
+        /// Returns 409 Conflict if the election is already visible.
+        /// </summary>
+        /// <param name="id">The id of the election to publish.</param>
+        [HttpPatch("{id:guid}/start")]
+        [Authorize(Roles = "Admin,ElectionManager")]
+        public async Task<ActionResult<ElectionDto>> StartElection(Guid id)
+        {
+            var result = await _electionService.PublishElectionAsync(id, GetCurrentUserId());
+            if (!result.Success)
+            {
+                if (result.IsNotFound)
+                    return NotFound(new { errorCode = result.ErrorCode });
+                if (result.ErrorCode == ErrorCode.ElectionAlreadyVisible)
+                    return Conflict(new { errorCode = result.ErrorCode });
+                return BadRequest(new { errorCode = result.ErrorCode });
+            }
+            return Ok(result.Data);
+        }
+
         /// <summary>Lists invitations for a closed election. Only its creator may call this endpoint.</summary>
         [HttpGet("{id:guid}/invitations")]
         [Authorize(Roles = "Admin,ElectionManager")]

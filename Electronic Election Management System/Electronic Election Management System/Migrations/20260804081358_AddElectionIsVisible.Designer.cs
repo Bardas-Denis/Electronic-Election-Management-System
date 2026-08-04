@@ -3,6 +3,7 @@ using System;
 using Electronic_Election_Management_System.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Electronic_Election_Management_System.Migrations
 {
     [DbContext(typeof(ElectionDbContext))]
-    partial class ElectionDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260804081358_AddElectionIsVisible")]
+    partial class AddElectionIsVisible
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.9");
@@ -177,39 +180,6 @@ namespace Electronic_Election_Management_System.Migrations
                         .IsUnique();
 
                     b.ToTable("Labels");
-                });
-
-            modelBuilder.Entity("Electronic_Election_Management_System.Models.Notification", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("TEXT");
-
-                    b.Property<bool>("IsRead")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("Message")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("TEXT");
-
-                    b.Property<Guid?>("ReferenceId")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Type")
-                        .HasColumnType("TEXT");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("Notifications");
                 });
 
             modelBuilder.Entity("Electronic_Election_Management_System.Models.Option", b =>
@@ -560,17 +530,6 @@ namespace Electronic_Election_Management_System.Migrations
                     b.Navigation("Election");
                 });
 
-            modelBuilder.Entity("Electronic_Election_Management_System.Models.Notification", b =>
-                {
-                    b.HasOne("Electronic_Election_Management_System.Models.User", "User")
-                        .WithMany("Notifications")
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("User");
-                });
-
             modelBuilder.Entity("Electronic_Election_Management_System.Models.Option", b =>
                 {
                     b.HasOne("Electronic_Election_Management_System.Models.Election", "Election")
@@ -736,8 +695,6 @@ namespace Electronic_Election_Management_System.Migrations
                     b.Navigation("ElectionInvitations");
 
                     b.Navigation("ElectionsCreated");
-
-                    b.Navigation("Notifications");
 
                     b.Navigation("UserDetails");
 

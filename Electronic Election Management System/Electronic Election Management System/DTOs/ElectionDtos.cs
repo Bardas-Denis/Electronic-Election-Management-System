@@ -65,6 +65,11 @@ namespace Electronic_Election_Management_System.DTOs
         public string Type { get; set; } = string.Empty;
         public bool IsAnonymous { get; set; }
         public bool IsClosed { get; set; }
+        /// <summary>
+        /// False while the owner has not yet published ("started") the election.
+        /// Invisible elections are hidden from voters' listing and cannot accept votes.
+        /// </summary>
+        public bool IsVisible { get; set; } = true;
         public DateTime StartsAt { get; set; }
         public DateTime EndsAt { get; set; }
         public List<OptionDto> Options { get; set; } = new();
@@ -110,6 +115,12 @@ namespace Electronic_Election_Management_System.DTOs
 
         /// <summary>When true, only the creator and invited users can discover or access the election.</summary>
         public bool IsClosed { get; set; }
+
+        /// <summary>
+        /// When false, the election is hidden from voters until the owner explicitly calls the Start (publish) action.
+        /// Defaults to true so creating an election without specifying this field makes it immediately visible.
+        /// </summary>
+        public bool IsVisible { get; set; } = true;
 
         /// <summary>Existing accounts to invite directly when the closed election is created.</summary>
         [Required, MaxLength(ValidationRules.MaxInvitations)]

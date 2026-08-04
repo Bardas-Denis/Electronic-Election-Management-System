@@ -131,6 +131,7 @@ namespace Electronic_Election_Management_System.Services
                 Type = type,
                 IsAnonymous = request.IsAnonymous,
                 IsClosed = request.IsClosed,
+                IsVisible = request.IsVisible,
                 StartsAt = request.StartsAt,
                 EndsAt = request.EndsAt,
                 Invitations = invitationResult.Data!
@@ -214,6 +215,7 @@ namespace Electronic_Election_Management_System.Services
             election.Type = type;
             election.IsAnonymous = request.IsAnonymous;
             election.IsClosed = request.IsClosed;
+            election.IsVisible = request.IsVisible;
             election.StartsAt = request.StartsAt;
             election.EndsAt = request.EndsAt;
 
@@ -301,6 +303,36 @@ namespace Electronic_Election_Management_System.Services
             _logger.LogInformation(LogMessages.ElectionDeleted, election.Title, election.Id, userId);
 
             return ServiceResult<bool>.Ok(true);
+        }
+
+        public async Task<ServiceResult<ElectionDto>> PublishElectionAsync(Guid electionId, Guid userId)
+        {
+            var election = await _elections.GetByIdAsync(electionId);
+            if (election is null)
+                return ServiceResult<ElectionDto>.NotFound(ErrorCode.ResourceNotFound);
+
+            if (election.CreatedByUserId != userId)
+            {
+                _logger.LogWarning(LogMessages.ElectionPublishUnauthorized, electionId, userId);
+                return ServiceResult<ElectionDto>.Fail(ErrorCode.NotAuthorizedToPublish);
+            }
+
+            if (election.IsVisible)
+                return ServiceResult<ElectionDto>.Fail(ErrorCode.ElectionAlreadyVisible);
+
+            election.IsVisible = true;
+
+            await _auditLogs.AddAsync(new AuditLog
+            {
+                UserId = userId,
+                ElectionId = election.Id,
+                Action = AuditAction.ElectionPublished.ToDbValue()
+            });
+            await _elections.SaveChangesAsync();
+
+            _logger.LogInformation(LogMessages.ElectionPublished, election.Id, userId);
+
+            return ServiceResult<ElectionDto>.Ok(MapToDto(election));
         }
 
         public async Task<ServiceResult<List<ElectionInvitationDto>>> GetInvitationsAsync(
@@ -650,6 +682,7 @@ namespace Electronic_Election_Management_System.Services
             Type = e.Type.ToString(),
             IsAnonymous = e.IsAnonymous,
             IsClosed = e.IsClosed,
+            IsVisible = e.IsVisible,
             StartsAt = e.StartsAt,
             EndsAt = e.EndsAt,
             Options = questions[0].Options,

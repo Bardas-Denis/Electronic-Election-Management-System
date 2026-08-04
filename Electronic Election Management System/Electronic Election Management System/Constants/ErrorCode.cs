@@ -68,6 +68,14 @@ namespace Electronic_Election_Management_System.Constants
         [JsonStringEnumMemberName("notAuthorizedToManageInvitations")]
         NotAuthorizedToManageInvitations,
 
+        /// <summary>Only the election creator can publish (start) an election.</summary>
+        [JsonStringEnumMemberName("notAuthorizedToPublish")]
+        NotAuthorizedToPublish,
+
+        /// <summary>The election is already visible — no action needed.</summary>
+        [JsonStringEnumMemberName("electionAlreadyVisible")]
+        ElectionAlreadyVisible,
+
         //Vote Errors
 
         /// <summary>This election is not currently open for voting.</summary>

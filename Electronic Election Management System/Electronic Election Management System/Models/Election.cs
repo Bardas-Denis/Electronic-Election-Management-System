@@ -36,6 +36,13 @@ namespace Electronic_Election_Management_System.Models
         /// </summary>
         public bool IsClosed { get; set; }
 
+        /// <summary>
+        /// When <c>false</c>, the election is hidden from voters regardless of its scheduled
+        /// date window. The owner must explicitly "Start" (publish) it to make it visible.
+        /// Defaults to <c>true</c> so elections created without touching this flag behave as before.
+        /// </summary>
+        public bool IsVisible { get; set; } = true;
+
         public DateTime StartsAt { get; set; }
         public DateTime EndsAt { get; set; }
 
@@ -49,6 +56,8 @@ namespace Electronic_Election_Management_System.Models
 
         public bool CanAcceptVotes()
         {
+            if (!IsVisible)
+                return false;
             var now = DateTime.UtcNow;
             return now >= StartsAt && now <= EndsAt;
         }

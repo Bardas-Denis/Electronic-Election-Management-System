@@ -30,9 +30,11 @@ namespace Electronic_Election_Management_System.Data.Repositories
                 return new List<Election>();
 
             return await _db.Elections
-                .Where(e => !e.IsClosed ||
-                            e.CreatedByUserId == userId ||
-                            e.Invitations.Any(i => i.UserId == userId || i.Email == email))
+                .Where(e =>
+                    (e.IsVisible || e.CreatedByUserId == userId) &&
+                    (!e.IsClosed ||
+                     e.CreatedByUserId == userId ||
+                     e.Invitations.Any(i => i.UserId == userId || i.Email == email)))
                 .Include(e => e.Options)
                 .Include(e => e.Questions).ThenInclude(q => q.Options)
                 .OrderByDescending(e => e.CreatedAt)
@@ -65,6 +67,7 @@ namespace Electronic_Election_Management_System.Data.Repositories
 
             return await _db.Elections
                 .Where(e => e.Id == id &&
+                            (e.IsVisible || e.CreatedByUserId == userId) &&
                             (!e.IsClosed ||
                              e.CreatedByUserId == userId ||
                              e.Invitations.Any(i => i.UserId == userId || i.Email == email)))
@@ -92,6 +95,7 @@ namespace Electronic_Election_Management_System.Data.Repositories
 
             return email is not null && await _db.Elections.AnyAsync(e =>
                 e.Id == electionId &&
+                (e.IsVisible || e.CreatedByUserId == userId) &&
                 (!e.IsClosed ||
                  e.CreatedByUserId == userId ||
                  e.Invitations.Any(i => i.UserId == userId || i.Email == email)));

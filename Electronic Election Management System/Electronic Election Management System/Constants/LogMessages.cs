@@ -17,6 +17,8 @@ public static class LogMessages
     public const string ElectionDeleted              = "Election deleted: '{Title}' (ElectionId: {ElectionId}) by UserId {UserId}";
     public const string ElectionUpdateUnauthorized   = "Unauthorized update attempt on ElectionId {ElectionId} by UserId {UserId}";
     public const string ElectionDeleteUnauthorized   = "Unauthorized delete attempt on ElectionId {ElectionId} by UserId {UserId}";
+    public const string ElectionPublished            = "Election published: {ElectionId} by UserId {UserId}";
+    public const string ElectionPublishUnauthorized  = "Unauthorized publish attempt on ElectionId {ElectionId} by UserId {UserId}";
     public const string InvitationsAdded             = "{Count} invitation(s) added to ElectionId {ElectionId} by UserId {UserId}";
     public const string InvitationRemoved            = "Invitation {InvitationId} removed from ElectionId {ElectionId} by UserId {UserId}";
 
