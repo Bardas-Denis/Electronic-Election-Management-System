@@ -127,7 +127,7 @@ builder.Services
                 if (user is null || user.SecurityStamp != tokenStamp)
                 {
                     var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
-                    logger.LogWarning(LogMessages.RevokedTokenRejected, userId);
+                    logger.LogWarning("Revoked token rejected for UserId {UserId}", userId);
                     context.Fail("revoked");
                 }
             },
