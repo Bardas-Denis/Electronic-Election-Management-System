@@ -129,7 +129,7 @@
   "selectLabels": "Select",
   "selectedInvitationLabels": "Selected invitation labels",
   "removeInvitationLabel": "Remove label",
-  "manualInviteLabel": "Invite registered users",
+  "manualInviteLabel": "Invite users",
   "manualInviteHelp": "Hold Ctrl (Windows) or Command (Mac) to select multiple people.",
   "chooseRegisteredUsers": "Choose registered users",
   "selectedUsersCount": "{{count}} selected",

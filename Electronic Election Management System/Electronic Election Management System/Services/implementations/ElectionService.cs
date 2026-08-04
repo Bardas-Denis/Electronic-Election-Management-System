@@ -3,6 +3,7 @@ using Electronic_Election_Management_System.Data.Repositories;
 using Electronic_Election_Management_System.DTOs;
 using Electronic_Election_Management_System.Models;
 using System.ComponentModel.DataAnnotations;
+using Electronic_Election_Management_System.Services.interfaces;
 
 namespace Electronic_Election_Management_System.Services
 {
@@ -15,6 +16,8 @@ namespace Electronic_Election_Management_System.Services
         private readonly IElectionInvitationRepository _invitations;
         private readonly ILabelRepository _labels;
         private readonly ILogger<ElectionService> _logger;
+        private readonly INotificationRepository _notifications;
+        private readonly IEmailService _emailService;
 
         public ElectionService(
             IElectionRepository elections,
@@ -23,7 +26,9 @@ namespace Electronic_Election_Management_System.Services
             IUserRepository users,
             IElectionInvitationRepository invitations,
             ILabelRepository labels,
-            ILogger<ElectionService> logger)
+            ILogger<ElectionService> logger,
+            INotificationRepository notifications,
+            IEmailService emailService)
         {
             _elections = elections;
             _auditLogs = auditLogs;
@@ -32,6 +37,8 @@ namespace Electronic_Election_Management_System.Services
             _invitations = invitations;
             _labels = labels;
             _logger = logger;
+            _notifications = notifications;
+            _emailService = emailService;
         }
 
         public async Task<List<ElectionDto>> GetAllAsync(Guid userId)
@@ -144,6 +151,35 @@ namespace Electronic_Election_Management_System.Services
 
             _logger.LogInformation(LogMessages.ElectionCreated, election.Title, election.Id, userId);
 
+            // Send notifications and emails to invited users
+            foreach (var invitation in election.Invitations)
+            {
+                if (invitation.UserId.HasValue)
+                {
+                    var notification = new Notification
+                    {
+                        UserId = invitation.UserId.Value,
+                        Message = NotificationMessages.InvitationNotification(election.Title),
+                        Type = NotificationMessages.InvitationType,
+                        ReferenceId = election.Id
+                    };
+                    await _notifications.AddAsync(notification);
+                }
+
+                if (!string.IsNullOrEmpty(invitation.Email))
+                {
+                    string emailMessage = invitation.UserId.HasValue
+                        ? NotificationMessages.InvitationEmailRegistered(election.Title)
+                        : NotificationMessages.InvitationEmailUnregistered(election.Title);
+
+                    _ = Task.Run(() => _emailService.SendEmailAsync(
+                        invitation.Email,
+                        NotificationMessages.ElectionInvitationSubject,
+                        emailMessage
+                    ));
+                }
+            }
+
             return ServiceResult<ElectionDto>.Ok(MapToDto(election));
         }
 
@@ -205,6 +241,36 @@ namespace Electronic_Election_Management_System.Services
             await _elections.SaveChangesAsync();
 
             _logger.LogInformation(LogMessages.ElectionUpdated, election.Id, userId);
+
+            // Notify invited users about the update
+            var invitationsForNotification = await _invitations.GetByElectionAsync(election.Id);
+            foreach (var invitation in invitationsForNotification)
+            {
+                if (invitation.UserId.HasValue)
+                {
+                    var notification = new Notification
+                    {
+                        UserId = invitation.UserId.Value,
+                        Message = NotificationMessages.ElectionUpdatedNotification(election.Title),
+                        Type = NotificationMessages.ElectionUpdatedType,
+                        ReferenceId = election.Id
+                    };
+                    await _notifications.AddAsync(notification);
+                }
+                
+                if (!string.IsNullOrEmpty(invitation.Email))
+                {
+                    string emailMessage = invitation.UserId.HasValue
+                        ? NotificationMessages.ElectionUpdatedEmailRegistered(election.Title)
+                        : NotificationMessages.ElectionUpdatedEmailUnregistered(election.Title);
+
+                    _ = Task.Run(() => _emailService.SendEmailAsync(
+                        invitation.Email,
+                        NotificationMessages.ElectionUpdatedSubject,
+                        emailMessage
+                    ));
+                }
+            }
 
             return ServiceResult<ElectionDto>.Ok(MapToDto(election));
         }
@@ -327,6 +393,35 @@ namespace Electronic_Election_Management_System.Services
                 await _invitations.SaveChangesAsync();
                 
                 _logger.LogInformation(LogMessages.InvitationsAdded, invitationResult.Data.Count, electionId, userId);
+
+                // Send notifications and emails
+                foreach (var invitation in invitationResult.Data)
+                {
+                    if (invitation.UserId.HasValue)
+                    {
+                        var notification = new Notification
+                        {
+                            UserId = invitation.UserId.Value,
+                            Message = NotificationMessages.InvitationNotification(election.Title),
+                            Type = NotificationMessages.InvitationType,
+                            ReferenceId = election.Id
+                        };
+                        await _notifications.AddAsync(notification);
+                    }
+                    
+                    if (!string.IsNullOrEmpty(invitation.Email))
+                    {
+                        string emailMessage = invitation.UserId.HasValue 
+                            ? NotificationMessages.InvitationEmailRegistered(election.Title)
+                            : NotificationMessages.InvitationEmailUnregistered(election.Title);
+                            
+                        _ = Task.Run(() => _emailService.SendEmailAsync(
+                            invitation.Email,
+                            NotificationMessages.ElectionInvitationSubject,
+                            emailMessage
+                        ));
+                    }
+                }
             }
 
             var invitations = await _invitations.GetByElectionAsync(electionId);

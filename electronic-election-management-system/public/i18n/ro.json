@@ -128,7 +128,7 @@
     "selectLabels": "Selectează",
     "selectedInvitationLabels": "Etichete selectate pentru invitații",
     "removeInvitationLabel": "Elimină eticheta",
-    "manualInviteLabel": "Invită utilizatori înregistrați",
+    "manualInviteLabel": "Invită utilizatori",
     "manualInviteHelp": "Ține apăsat Ctrl (Windows) sau Command (Mac) pentru a selecta mai multe persoane.",
     "chooseRegisteredUsers": "Alege utilizatori înregistrați",
     "selectedUsersCount": "{{count}} selectați",

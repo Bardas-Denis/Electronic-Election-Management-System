@@ -1,0 +1,38 @@
+<div class="notifications-container">
+  <button class="nav-btn" (click)="toggleDropdown($event)" [attr.aria-expanded]="isOpen">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M13.73 21a2 2 0 0 1-3.46 0" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    <span *ngIf="unreadCount > 0" class="badge badge--danger unread-badge">{{ unreadCount }}</span>
+  </button>
+
+  <div class="dropdown-menu" *ngIf="isOpen">
+    <div class="dropdown-header">
+      <h4>Notifications</h4>
+      <button class="mark-all-btn" (click)="markAllAsRead($event)" *ngIf="unreadCount > 0">Mark all as read</button>
+    </div>
+    
+    <div class="notifications-list">
+      <div class="notification-item" *ngFor="let notification of notifications" 
+           [class.unread]="!notification.isRead" (click)="markAsRead(notification, $event)">
+        <div class="notification-content">
+          <p>{{ notification.message }}</p>
+          <span class="notification-time">{{ notification.createdAt | date:'short' }}</span>
+        </div>
+        <div class="notification-actions" *ngIf="!notification.isRead">
+          <button class="mark-read-btn" (click)="markAsRead(notification, $event)" title="Mark as read">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M20 6L9 17l-5-5"/>
+            </svg>
+          </button>
+          <div class="unread-dot"></div>
+        </div>
+      </div>
+      
+      <div class="empty-state" *ngIf="notifications.length === 0">
+        <p>No notifications yet</p>
+      </div>
+    </div>
+  </div>
+</div>

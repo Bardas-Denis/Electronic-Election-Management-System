@@ -1,9 +1,12 @@
 using Electronic_Election_Management_System.Configuration;
 using Electronic_Election_Management_System.Data;
 using Electronic_Election_Management_System.Data.Repositories;
+using Electronic_Election_Management_System.Data.Repositories.implementations;
 using Electronic_Election_Management_System.Hubs;
 using Electronic_Election_Management_System.Models;
 using Electronic_Election_Management_System.Services;
+using Electronic_Election_Management_System.Services.interfaces;
+using Electronic_Election_Management_System.Services.implementations;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
@@ -56,6 +59,7 @@ builder.Services.AddScoped<IElectionInvitationRepository, ElectionInvitationRepo
 builder.Services.AddScoped<IAuditLogRepository, AuditLogRepository>();
 builder.Services.AddScoped<IVoteRepository, VoteRepository>();
 builder.Services.AddScoped<ILabelRepository, LabelRepository>();
+builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IElectionService, ElectionService>();
 builder.Services.AddScoped<IUserService, UserService>();
@@ -65,6 +69,7 @@ builder.Services.AddScoped<IResultsService, ResultsService>();
 builder.Services.AddScoped<ILabelService, LabelService>();
 builder.Services.AddSingleton<ICnpService, CnpService>();
 builder.Services.AddScoped<IUserNotifier, SignalRUserNotifier>();
+builder.Services.AddScoped<IEmailService, EmailService>();
 
 builder.Services.AddSignalR();
 
