@@ -599,6 +599,16 @@
             [attr.aria-label]="'elections.removeQuestion' | translate">×</button>
           }
         </div>
+        <div class="question-type-toggles">
+          <label class="question-required-toggle">
+            <input type="checkbox" formControlName="isRequired" />
+            {{ 'elections.questionRequiredLabel' | translate }}
+          </label>
+          <label class="question-required-toggle">
+            <input type="checkbox" formControlName="allowMultipleAnswers" />
+            {{ 'elections.questionMultipleAnswersLabel' | translate }}
+          </label>
+        </div>
         <input type="text" formControlName="text" maxlength="500"
           [placeholder]="'elections.questionPlaceholder' | translate" />
 
@@ -637,6 +647,9 @@
       </section>
       }
     </div>
+    @if (questions.touched && questions.hasError('noRequiredQuestion')) {
+    <p class="error-text">{{ 'elections.atLeastOneRequiredQuestionError' | translate }}</p>
+    }
     <button type="button" class="btn-add-question" (click)="addQuestion()">
       + {{ 'elections.addQuestion' | translate }}
     </button>

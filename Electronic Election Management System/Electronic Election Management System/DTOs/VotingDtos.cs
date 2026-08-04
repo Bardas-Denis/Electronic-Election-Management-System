@@ -57,10 +57,10 @@ namespace Electronic_Election_Management_System.DTOs
                     ValidationMessages.ElectionIdRequired,
                     new[] { nameof(ElectionId) });
 
-            if (OptionId == Guid.Empty && OptionIds.Count == 0)
-                yield return new ValidationResult(
-                    ValidationMessages.OptionSelectionRequired,
-                    new[] { nameof(OptionId), nameof(OptionIds) });
+            // No blanket "at least one option overall" check here on purpose - a ballot made
+            // entirely of optional questions can legitimately be submitted with zero picks.
+            // Per-question requirements (including "required" ones) are enforced afterwards,
+            // in VoteService.GetSelectedOptions, which knows about each question's own rules.
 
             if (OptionIds.Any(id => id == Guid.Empty) || OptionIds.Count != OptionIds.Distinct().Count())
                 yield return new ValidationResult(

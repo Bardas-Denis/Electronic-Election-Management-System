@@ -30,6 +30,7 @@ namespace Electronic_Election_Management_System.Services
                 {
                     QuestionId = q.Id,
                     Text = q.Text,
+                    AllowMultipleAnswers = q.AllowMultipleAnswers,
                     Results = q.Options.Select(o => new OptionResultDto
                     {
                         OptionId = o.Id,
@@ -39,8 +40,18 @@ namespace Electronic_Election_Management_System.Services
                     }).ToList()
                 })
                 .ToList();
-            foreach (var question in questions)
-                question.TotalVotes = question.Results.Sum(result => result.VoteCount);
+            foreach (var (question, source) in questions.Zip(election.Questions.OrderBy(q => q.DisplayOrder)))
+            {
+                question.TotalVotes = question.AllowMultipleAnswers
+                    // A respondent can appear under several options here, so summing VoteCount
+                    // would double-count them - count distinct respondents instead.
+                    ? source.Options
+                        .SelectMany(o => o.Votes)
+                        .Select(v => (object?)v.UserId ?? v.VoteTokenId)
+                        .Distinct()
+                        .Count()
+                    : question.Results.Sum(result => result.VoteCount);
+            }
 
             if (questions.Count == 0)
             {

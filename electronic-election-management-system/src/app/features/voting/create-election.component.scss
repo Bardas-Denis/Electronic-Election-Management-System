@@ -649,8 +649,76 @@
   border-radius: var(--radius-md);
   background: var(--bg-subtle);
 }
-.question-card__header { display: flex; justify-content: space-between; align-items: center; margin-bottom: .75rem; }
+.question-card__header { display: flex; align-items: center; gap: .75rem; margin-bottom: .6rem; }
+.question-card__header .btn-danger { margin-left: auto; }
 .question-number { font-weight: 700; color: var(--text-primary); }
+.question-type-toggles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .5rem;
+  margin-bottom: .75rem;
+}
+.question-required-toggle {
+  position: relative;
+  display: flex; align-items: center; gap: .4rem;
+  padding: .35rem .75rem;
+  border: 1px solid color-mix(in srgb, var(--border-color) 55%, var(--text-muted) 45%);
+  border-radius: 999px;
+  background: var(--bg-card);
+  box-shadow: var(--shadow-sm);
+  font-size: .8rem; font-weight: 600; color: var(--text-secondary); cursor: pointer;
+  transition: border-color var(--transition), color var(--transition), background var(--transition), box-shadow var(--transition);
+
+  // Dot indicator: always visible so the pill reads as a toggle even before
+  // any interaction, without bringing back the boxy native checkbox look.
+  &::before {
+    content: '';
+    flex: 0 0 auto;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    border: 1.5px solid currentColor;
+    opacity: .5;
+    transition: background var(--transition), border-color var(--transition), opacity var(--transition);
+  }
+
+  &:hover {
+    border-color: var(--accent);
+    color: var(--text-primary);
+  }
+
+  &:has(input:checked) {
+    border-color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 14%, var(--bg-card));
+    box-shadow: var(--shadow-md);
+    color: var(--accent);
+
+    &::before {
+      background: var(--accent);
+      border-color: var(--accent);
+      opacity: 1;
+    }
+  }
+
+  &:has(input:focus-visible) {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+}
+// Selection state reads from the pill's own border/fill plus the dot
+// indicator above - the checkbox itself stays in the DOM for click/keyboard/
+// screen-reader support but is not shown, so there's no separate checkbox
+// icon competing with the pill for attention.
+.question-required-toggle input[type="checkbox"] {
+  position: absolute;
+  width: 1px; height: 1px;
+  margin: -1px;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+}
 .question-options { display: grid; gap: .7rem; margin-top: .9rem; }
 .option-row--image { position: relative; align-items: center; }
 .option-fields { display: grid; grid-template-columns: 1fr 1fr; gap: .6rem; flex: 1; }

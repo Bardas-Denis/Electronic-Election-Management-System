@@ -14,6 +14,7 @@ import {
   InvitationLabelDto
 } from '../../core/models/voting.model';
 import {
+  atLeastOneRequiredQuestion,
   dateRangeValidator,
   INPUT_LIMITS,
   trimmedRequired,
@@ -206,6 +207,8 @@ export class CreateElectionComponent implements OnInit {
 
     return this.fb.group({
       text: [question?.text ?? '', [trimmedRequired, Validators.maxLength(INPUT_LIMITS.question)]],
+      isRequired: [question?.isRequired ?? true],
+      allowMultipleAnswers: [question?.allowMultipleAnswers ?? false],
       options: this.fb.array(
         optionGroups,
         [
@@ -224,7 +227,11 @@ export class CreateElectionComponent implements OnInit {
 
     return this.fb.array(
       groups,
-      [Validators.minLength(1), Validators.maxLength(INPUT_LIMITS.maxQuestions)]
+      [
+        Validators.minLength(1),
+        Validators.maxLength(INPUT_LIMITS.maxQuestions),
+        atLeastOneRequiredQuestion
+      ]
     );
   }
 
@@ -557,6 +564,11 @@ export class CreateElectionComponent implements OnInit {
       return;
     }
 
+    if (this.questions.hasError('noRequiredQuestion')) {
+      this.errorMessageKey.set('elections.atLeastOneRequiredQuestionError');
+      return;
+    }
+
     if (this.isClosedElection && this.inviteEmailControl.value?.trim()) {
       if (this.inviteEmailControl.invalid) {
         this.inviteEmailControl.markAsTouched();
@@ -726,6 +738,8 @@ export function normalizeEditableQuestions(election: ElectionDto): CreateElectio
   if (Array.isArray(election.questions) && election.questions.length > 0) {
     return election.questions.map((question, index) => ({
       text: question.text || (index === 0 ? election.question : '') || '',
+      isRequired: question.isRequired ?? true,
+      allowMultipleAnswers: question.allowMultipleAnswers ?? false,
       options: Array.isArray(question.options) && question.options.length > 0
         ? question.options.map(option => ({
           label: option.label ?? '',
@@ -744,6 +758,8 @@ export function normalizeEditableQuestions(election: ElectionDto): CreateElectio
 
   return [{
     text: election.question || election.title || '',
+    isRequired: true,
+    allowMultipleAnswers: false,
     options: (election.options ?? []).map(option => ({
       label: option.label ?? '',
       description: option.description ?? '',
