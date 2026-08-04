@@ -8,6 +8,8 @@ import { AuthService } from '../../core/services/auth.service';
 import { ElectionListFiltersService } from '../../core/services/election-list-filters.service';
 import { ElectionDto } from '../../core/models/voting.model';
 
+type FilterCategory = 'status' | 'timing' | 'participation' | 'type' | 'visibility';
+
 @Component({
   selector: 'app-election-list',
   standalone: true,
@@ -48,8 +50,8 @@ export class ElectionListComponent implements OnInit {
   });
 
   // Elections narrowed only by the search box, ignoring checkbox filters.
-  // This is the base list the per-option counts are computed from, so a
-  // count answers "how many results if I also check this box".
+  // This is the base pool that both the main list and the sidebar counts
+  // are computed from.
   private searchFilteredElections = computed(() => {
     const query = this.searchQuery().toLowerCase().trim();
     const list = this.elections();
@@ -57,32 +59,114 @@ export class ElectionListComponent implements OnInit {
     return list.filter((e) => e.title.toLowerCase().includes(query));
   });
 
+  // Single source of truth for "does this election match the current
+  // filters". Both filteredElections and filterCounts call this, so the
+  // two can never drift apart the way two separately-maintained filter
+  // blocks eventually do.
+  //
+  // ignoreCategory skips that one category's own restriction, so a count
+  // for an option WITHIN a category answers "how many results if this
+  // option were picked instead of (or alongside) its siblings", while
+  // every OTHER category's current selection still applies normally.
+  private matchesElection(election: any, filters: ReturnType<typeof this.selectedFilters>, now: Date, ignoreCategory?: FilterCategory): boolean {
+    // Status: active / expired
+    if (ignoreCategory !== 'status') {
+      const statusSelected = filters.active || filters.expired;
+      if (statusSelected) {
+        const matchesStatus =
+          (filters.active && !election.isExpired) || (filters.expired && election.isExpired);
+        if (!matchesStatus) return false;
+      } else if (election.isExpired) {
+        // Default: hide expired elections when no status box is checked.
+        return false;
+      }
+    }
+
+    // Timing: this week / more than a month
+    if (ignoreCategory !== 'timing') {
+      const timeSelected = filters.thisWeek || filters.moreThanAMonth;
+      if (timeSelected) {
+        const dateStr = election.startDate || election.startsAt || election.date || election.createdAt;
+        if (!dateStr) return false;
+        const diffDays = (new Date(dateStr).getTime() - now.getTime()) / (1000 * 3600 * 24);
+        const matchesTime =
+          (filters.thisWeek && diffDays >= -7 && diffDays <= 7) ||
+          (filters.moreThanAMonth && diffDays >= 28);
+        if (!matchesTime) return false;
+      }
+    }
+
+    // Participation: voted / not voted
+    if (ignoreCategory !== 'participation') {
+      const voteSelected = filters.voted || filters.unvoted;
+      if (voteSelected) {
+        const matchesVote =
+          (filters.voted && election.hasUserVoted) ||
+          (filters.unvoted && !election.hasUserVoted && !election.isExpired);
+        if (!matchesVote) return false;
+      }
+    }
+
+    // Type: political / commercial
+    if (ignoreCategory !== 'type') {
+      const typeSelected = filters.political || filters.commercial;
+      if (typeSelected) {
+        const type = election.type?.toLowerCase();
+        const isPolitic = type === 'politic' || type === 'political';
+        const isComercial = type === 'comercial' || type === 'commercial';
+        const matchesType = (filters.political && isPolitic) || (filters.commercial && isComercial);
+        if (!matchesType) return false;
+      }
+    }
+
+    // Visibility: anonymous / non-anonymous
+    if (ignoreCategory !== 'visibility') {
+      const anonSelected = filters.anonymous || filters.nonAnonymous;
+      if (anonSelected) {
+        const matchesAnon =
+          (filters.anonymous && election.isAnonymous) || (filters.nonAnonymous && !election.isAnonymous);
+        if (!matchesAnon) return false;
+      }
+    }
+
+    return true;
+  }
+
+  // Live counts shown next to each checkbox. Because this reads from the
+  // same computed() signals as filteredElections, it recalculates the
+  // instant any checkbox, search term, or the underlying election list
+  // changes — there's no manual refresh or polling involved.
   filterCounts = computed(() => {
     const list = this.searchFilteredElections();
+    const filters = this.selectedFilters();
     const now = new Date();
 
-    const matchesTiming = (election: any, kind: 'week' | 'month') => {
-      const dateStr = election.startDate || election.startsAt || election.date || election.createdAt;
-      if (!dateStr) return false;
-      const diffDays = (new Date(dateStr).getTime() - now.getTime()) / (1000 * 3600 * 24);
-      return kind === 'week' ? diffDays >= -7 && diffDays <= 7 : diffDays >= 28;
-    };
+    const countWhere = (category: FilterCategory, extra: (e: any) => boolean) =>
+      list.filter((election: any) => this.matchesElection(election, filters, now, category) && extra(election)).length;
+
+    const isType = (election: any, ...values: string[]) => values.includes(election.type?.toLowerCase());
 
     return {
-      active: list.filter((e) => !e.isExpired).length,
-      expired: list.filter((e) => e.isExpired).length,
-      thisWeek: list.filter((e) => matchesTiming(e, 'week')).length,
-      moreThanAMonth: list.filter((e) => matchesTiming(e, 'month')).length,
-      voted: list.filter((e) => e.hasUserVoted).length,
-      unvoted: list.filter((e) => !e.hasUserVoted && !e.isExpired).length,
-      political: list.filter(
-        (e) => e.type?.toLowerCase() === 'politic' || e.type?.toLowerCase() === 'political'
-      ).length,
-      commercial: list.filter(
-        (e) => e.type?.toLowerCase() === 'comercial' || e.type?.toLowerCase() === 'commercial'
-      ).length,
-      anonymous: list.filter((e) => e.isAnonymous).length,
-      nonAnonymous: list.filter((e) => !e.isAnonymous).length
+      active: countWhere('status', (e) => !e.isExpired),
+      expired: countWhere('status', (e) => e.isExpired),
+      thisWeek: countWhere('timing', (e) => {
+        const dateStr = e.startDate || e.startsAt || e.date || e.createdAt;
+        if (!dateStr) return false;
+        const diffDays = (new Date(dateStr).getTime() - now.getTime()) / (1000 * 3600 * 24);
+        return diffDays >= -7 && diffDays <= 7;
+      }),
+      moreThanAMonth: countWhere('timing', (e) => {
+        const dateStr = e.startDate || e.startsAt || e.date || e.createdAt;
+        if (!dateStr) return false;
+        const diffDays = (new Date(dateStr).getTime() - now.getTime()) / (1000 * 3600 * 24);
+        return diffDays >= 28;
+      }),
+      voted: countWhere('participation', (e) => e.hasUserVoted),
+      unvoted: countWhere('participation', (e) => !e.hasUserVoted && !e.isExpired),
+      political: countWhere('type', (e) => isType(e, 'politic', 'political')),
+      commercial: countWhere('type', (e) => isType(e, 'comercial', 'commercial')),
+      anonymous: countWhere('visibility', (e) => e.isAnonymous),
+      nonAnonymous: countWhere('visibility', (e) => !e.isAnonymous)
     };
   });
 
@@ -92,94 +176,22 @@ export class ElectionListComponent implements OnInit {
     const list = this.elections();
     const now = new Date();
 
-    return list.filter((election) => {
-      // 1. Search by title
-      if (query && !election.title.toLowerCase().includes(query)) {
-        return false;
-      }
-
-      // 2. Category Filter (Political / Commercial)
-      const typeSelected = filters.political || filters.commercial;
-      if (typeSelected) {
-        const isPolitic = election.type?.toLowerCase() === 'politic' || election.type?.toLowerCase() === 'political';
-        const isComercial = election.type?.toLowerCase() === 'comercial' || election.type?.toLowerCase() === 'commercial';
-
-        let matchesType = false;
-        if (filters.political && isPolitic) matchesType = true;
-        if (filters.commercial && isComercial) matchesType = true;
-
-        if (!matchesType) return false;
-      }
-
-      // 3. Anonymity Filter (Anonymous / Non-Anonymous)
-      const anonSelected = filters.anonymous || filters.nonAnonymous;
-      if (anonSelected) {
-        let matchesAnon = false;
-        if (filters.anonymous && election.isAnonymous) matchesAnon = true;
-        if (filters.nonAnonymous && !election.isAnonymous) matchesAnon = true;
-        if (!matchesAnon) return false;
-      }
-
-      // 4. Vote / Participation Filter
-      const voteSelected = filters.voted || filters.unvoted;
-      if (voteSelected) {
-        let matchesVote = false;
-        if (filters.voted && election.hasUserVoted) matchesVote = true;
-        if (filters.unvoted && !election.hasUserVoted && !election.isExpired) matchesVote = true;
-        if (!matchesVote) return false;
-      }
-
-      // 5. Time Status Filter (Active / Expired)
-      const statusSelected = filters.active || filters.expired;
-      if (statusSelected) {
-        let matchesStatus = false;
-        if (filters.active && !election.isExpired) matchesStatus = true;
-        if (filters.expired && election.isExpired) matchesStatus = true;
-        if (!matchesStatus) return false;
-      } else {
-        // Default: hide expired elections from the front page
-        if (election.isExpired) return false;
-      }
-
-      // 6. Time Filter (This week / More than a month)
-      const timeSelected = filters.thisWeek || filters.moreThanAMonth;
-      if (timeSelected) {
-        const electionDateStr = (election as any).startDate || (election as any).startsAt || (election as any).date || (election as any).createdAt;
-        if (electionDateStr) {
-          const eDate = new Date(electionDateStr);
-          const diffTime = eDate.getTime() - now.getTime();
-          const diffDays = diffTime / (1000 * 3600 * 24);
-
-          let timeMatched = false;
-
-          // This week (between -7 and 7 days)
-          if (filters.thisWeek && diffDays >= -7 && diffDays <= 7) {
-            timeMatched = true;
-          }
-
-          // More than a month (estimated >= 28 days)
-          if (filters.moreThanAMonth && diffDays >= 28) {
-            timeMatched = true;
-          }
-
-          if (!timeMatched) return false;
-        } else {
-          return false;
-        }
-      }
-
-      return true;
+    return list.filter((election: any) => {
+      if (query && !election.title.toLowerCase().includes(query)) return false;
+      return this.matchesElection(election, filters, now);
     });
   });
 
   toggleFilter(key: keyof ReturnType<typeof this.selectedFilters>): void {
+    const count = this.filterCounts()[key] ?? 0;
+    if (count === 0) {
+      return;
+    }
     this.selectedFilters.update(current => {
       return { ...current, [key]: !current[key] };
     });
   }
 
-  // Resets every filter checkbox to unchecked without touching the search
-  // query, so the grid falls back to the default "active only" view.
   clearAllFilters(): void {
     this.selectedFilters.update(current => {
       const cleared = { ...current };
