@@ -82,6 +82,9 @@ export class CreateElectionComponent implements OnInit {
     // Kept in the form payload even before the invitation UI is added, so editing
     // an existing closed election never accidentally makes it public.
     isClosed: [false],
+    // Defaults to true: elections are immediately visible unless the owner explicitly unchecks.
+    // When false, the election is hidden from voters until the owner clicks Start.
+    isVisible: [true],
     invitedUserIds: this.fb.control<string[]>([]),
     invitedEmails: this.fb.control<string[]>([]),
     invitedLabelIds: this.fb.control<string[]>([]),
@@ -142,6 +145,7 @@ export class CreateElectionComponent implements OnInit {
           type: election.type,
           isAnonymous: election.isAnonymous,
           isClosed: election.isClosed,
+          isVisible: election.isVisible,
           startsAt: toDatetimeLocal(election.startsAt),
           endsAt: toDatetimeLocal(election.endsAt)
         });

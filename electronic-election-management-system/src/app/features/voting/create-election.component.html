@@ -69,6 +69,14 @@
       </label>
     </div>
 
+    <div class="field-group" style="margin-top: 1rem;">
+      <div class="checkbox-field">
+        <input type="checkbox" id="isVisible" formControlName="isVisible" />
+        <label for="isVisible">{{ 'elections.isVisibleLabel' | translate }}</label>
+      </div>
+      <p class="field-help">{{ 'elections.isVisibleHelp' | translate }}</p>
+    </div>
+
     @if (isClosedElection && isEditMode()) {
     <!-- EDIT MODE for a closed election: full invitation management with label-expand diff on save -->
     <div class="invitation-panel">
