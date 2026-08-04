@@ -69,6 +69,9 @@
       @if (election.isExpired) {
         <span class="badge badge--expired">{{ 'elections.expired' | translate }}</span>
       }
+      @if (election.isVisible === false) {
+        <span class="badge badge--draft">{{ 'elections.hidden' | translate }}</span>
+      }
     </div>
 
     <h3>{{ election.title }}</h3>
@@ -89,6 +92,19 @@
     </div>
 
     <div class="manage-actions">
+      @if (election.isVisible === false) {
+        <button
+          type="button"
+          class="btn-success"
+          [disabled]="startingElectionId() === election.id"
+          (click)="startElection(election.id)">
+          @if (startingElectionId() === election.id) {
+            {{ 'elections.starting' | translate }}
+          } @else {
+            {{ 'elections.start' | translate }}
+          }
+        </button>
+      }
       @if (election.hasVotes) {
         <span class="btn-secondary btn-disabled" [title]="'elections.editDisabledTitle' | translate">
           {{ 'elections.edit' | translate }}

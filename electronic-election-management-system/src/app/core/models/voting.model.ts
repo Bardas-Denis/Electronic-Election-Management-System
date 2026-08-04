@@ -39,6 +39,12 @@ export interface ElectionDto {
   isExpired?: boolean;
   // True if at least one vote has been recorded; once true, the election can no longer be edited
   hasVotes?: boolean;
+  // SYNC: ElectionDto — false while the owner has not yet published the election.
+  // Invisible elections are hidden from voters' listing and cannot accept votes.
+  // Owners always see their own elections regardless of this flag (via /elections/mine).
+  // Optional so that stale API responses (missing field) are treated as visible rather
+  // than showing a false-positive "Hidden" badge.
+  isVisible?: boolean;
 }
 
 export interface CreateOptionDto {
@@ -62,6 +68,10 @@ export interface CreateElectionRequest {
   type: ElectionType;
   isAnonymous: boolean;
   isClosed: boolean;
+  // SYNC: CreateElectionRequest — when false, the election is hidden from voters until the
+  // owner explicitly calls PATCH /elections/{id}/start. Defaults to true so elections created
+  // without touching this field remain immediately visible (preserving existing behaviour).
+  isVisible: boolean;
   invitedUserIds?: string[];
   invitedEmails?: string[];
   invitedLabelIds?: string[];

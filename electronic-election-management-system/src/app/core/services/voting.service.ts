@@ -44,6 +44,14 @@ export class VotingService {
     return this.http.delete<void>(`${this.baseUrl}/elections/${id}`);
   }
 
+  // PATCH /elections/{id}/start — makes an invisible election visible.
+  // 200: election is now visible (returns updated ElectionDto)
+  // 409: election was already visible (treat as success, refresh local state)
+  // 400: not authorized (notAuthorizedToPublish)
+  startElection(id: string): Observable<ElectionDto> {
+    return this.http.patch<ElectionDto>(`${this.baseUrl}/elections/${id}/start`, {});
+  }
+
   getInvitationCandidates(): Observable<InvitationCandidateDto[]> {
     return this.http.get<InvitationCandidateDto[]>(`${this.baseUrl}/elections/invitation-candidates`);
   }
