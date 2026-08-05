@@ -54,14 +54,14 @@ namespace Electronic_Election_Management_System.Services
             // election's live results dashboard.
             if (result.Success)
             {
-                _logger.LogInformation(LogMessages.VoteCast, userId, election.Id);
+                _logger.LogInformation("User {UserId} voted in Election {ElectionId}", userId, election.Id);
                 try
                 {
                     await BroadcastResultsAsync(election.Id);
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogWarning(ex, LogMessages.SignalRBroadcastFailed, election.Id);
+                    _logger.LogWarning(ex, "SignalR broadcast failed for ElectionId {ElectionId}", election.Id);
                     // Broadcasting live results should not affect the vote-casting outcome.
                 }
             }
@@ -89,14 +89,14 @@ namespace Electronic_Election_Management_System.Services
 
             if (result.Success)
             {
-                _logger.LogInformation(LogMessages.VoteUpdated, userId, request.ElectionId);
+                _logger.LogInformation("User {UserId} updated vote in Election {ElectionId}", userId, request.ElectionId);
                 try
                 {
                     await BroadcastResultsAsync(election.Id);
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogWarning(ex, LogMessages.SignalRBroadcastFailed, election.Id);
+                    _logger.LogWarning(ex, "SignalR broadcast failed for ElectionId {ElectionId}", election.Id);
                     // Broadcasting live results should not affect the vote-editing outcome.
                 }
             }
@@ -147,11 +147,11 @@ namespace Electronic_Election_Management_System.Services
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, LogMessages.SignalRBroadcastFailed, electionId);
+                _logger.LogWarning(ex, "SignalR broadcast failed for ElectionId {ElectionId}", electionId);
                 // Broadcasting live results should not affect the vote-deletion outcome.
             }
 
-            _logger.LogInformation(LogMessages.VoteDeleted, userId, electionId);
+            _logger.LogInformation("User {UserId} deleted vote in Election {ElectionId}", userId, electionId);
 
             return ServiceResult<bool>.Ok(true);
         }

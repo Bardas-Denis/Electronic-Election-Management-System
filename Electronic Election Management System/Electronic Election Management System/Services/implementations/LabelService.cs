@@ -65,7 +65,7 @@ namespace Electronic_Election_Management_System.Services
             await _labels.AddAsync(label);
             await _labels.SaveChangesAsync();
 
-            _logger.LogInformation(LogMessages.LabelCreated, label.Name, label.Id);
+            _logger.LogInformation("Label created: '{Name}' (LabelId: {LabelId})", label.Name, label.Id);
 
             return ServiceResult<LabelDto>.Ok(ToDto(label));
         }
@@ -79,7 +79,7 @@ namespace Electronic_Election_Management_System.Services
             _labels.Remove(label);
             await _labels.SaveChangesAsync();
 
-            _logger.LogInformation(LogMessages.LabelDeleted, label.Name, id);
+            _logger.LogInformation("Label deleted: '{Name}' (LabelId: {LabelId})", label.Name, id);
 
             return ServiceResult<bool>.Ok(true);
         }
@@ -109,7 +109,7 @@ namespace Electronic_Election_Management_System.Services
                 return ServiceResult<List<UserLabelDto>>.Fail(ErrorCode.LabelNotFound);
 
             var rows = await _labels.AssignLabelsAsync(userId, request.LabelIds, adminId);
-            _logger.LogInformation(LogMessages.LabelsAssigned, rows.Count, userId, adminId);
+            _logger.LogInformation("{Count} label(s) assigned to UserId {UserId} by AdminId {AdminId}", rows.Count, userId, adminId);
             return ServiceResult<List<UserLabelDto>>.Ok(rows.Select(ToUserLabelDto).ToList());
         }
 
@@ -120,7 +120,7 @@ namespace Electronic_Election_Management_System.Services
                 return ServiceResult<bool>.NotFound(ErrorCode.ResourceNotFound);
 
             await _labels.SaveChangesAsync();
-            _logger.LogInformation(LogMessages.LabelRemoved, labelId, userId);
+            _logger.LogInformation("Label {LabelId} removed from UserId {UserId}", labelId, userId);
             return ServiceResult<bool>.Ok(true);
         }
 

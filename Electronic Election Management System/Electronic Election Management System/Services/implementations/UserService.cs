@@ -59,7 +59,7 @@ namespace Electronic_Election_Management_System.Services
                 int adminCount = await _users.AdminCountAsync();
                 if (adminCount <= 1)
                 {
-                    _logger.LogWarning(LogMessages.LastAdminDemoteBlocked, targetId, currentUserId);
+                    _logger.LogWarning("Attempt to demote last admin UserId {TargetId} blocked by UserId {AdminId}", targetId, currentUserId);
                     return ServiceResult<UserDto>.Fail(ErrorCode.LastAdminRoleProtected);
                 }
             }
@@ -75,7 +75,7 @@ namespace Electronic_Election_Management_System.Services
             });
 
             await _users.SaveChangesAsync();
-            _logger.LogInformation(LogMessages.UserRoleChanged, targetId, newRole, currentUserId);
+            _logger.LogInformation("Role changed: UserId {TargetId} → {NewRole} by AdminId {AdminId}", targetId, newRole, currentUserId);
 
             // Best-effort push: notifies the affected user that their role has changed.
             // If the hub connection is absent the call is a no-op — SecurityStamp revocation remains the primary enforcement mechanism.
@@ -177,12 +177,12 @@ namespace Electronic_Election_Management_System.Services
             }
             catch (DbUpdateException ex)
             {
-                _logger.LogError(ex, LogMessages.UserDeleteConstraintFail, targetId);
+                _logger.LogError(ex, "Unexpected constraint violation deleting UserId {TargetId}", targetId);
                 // Generic safety net just in case some other constraint is violated.
                 return ServiceResult<bool>.Fail(ErrorCode.UserHasDependentRecords);
             }
 
-            _logger.LogInformation(LogMessages.UserDeleted, targetId, currentUserId);
+            _logger.LogInformation("User deleted: UserId {TargetId} by AdminId {AdminId}", targetId, currentUserId);
 
             return ServiceResult<bool>.Ok(true);
         }
