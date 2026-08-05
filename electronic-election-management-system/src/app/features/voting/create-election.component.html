@@ -611,11 +611,22 @@
             [attr.aria-label]="'elections.removeQuestion' | translate">×</button>
           }
         </div>
+        <div class="question-type-toggle-group">
+          <button type="button" class="question-type-toggle" [class.active]="!isFreeTextQuestion(questionIndex)"
+            (click)="setQuestionType(questionIndex, 'Choice')">
+            {{ 'elections.questionTypeChoiceLabel' | translate }}
+          </button>
+          <button type="button" class="question-type-toggle" [class.active]="isFreeTextQuestion(questionIndex)"
+            (click)="setQuestionType(questionIndex, 'FreeText')">
+            {{ 'elections.questionTypeFreeTextLabel' | translate }}
+          </button>
+        </div>
         <div class="question-type-toggles">
           <label class="question-required-toggle">
             <input type="checkbox" formControlName="isRequired" />
             {{ 'elections.questionRequiredLabel' | translate }}
           </label>
+          @if (!isFreeTextQuestion(questionIndex)) {
           <label class="question-required-toggle">
             <input type="checkbox" formControlName="allowMultipleAnswers" />
             {{ 'elections.questionMultipleAnswersLabel' | translate }}
@@ -624,10 +635,12 @@
             <input type="checkbox" formControlName="allowOtherOption" />
             {{ 'elections.questionAllowOtherLabel' | translate }}
           </label>
+          }
         </div>
         <input type="text" formControlName="text" maxlength="500"
           [placeholder]="'elections.questionPlaceholder' | translate" />
 
+        @if (!isFreeTextQuestion(questionIndex)) {
         <p class="question-options-label">{{ 'elections.optionsLabel' | translate }}</p>
         <div formArrayName="options" class="question-options">
           @for (option of questionOptions(questionIndex).controls; track $index; let optionIndex = $index) {
@@ -661,6 +674,7 @@
         <button type="button" class="btn-add-option" (click)="addOption(questionIndex)">
           + {{ 'elections.addOption' | translate }}
         </button>
+        }
       </section>
       }
     </div>

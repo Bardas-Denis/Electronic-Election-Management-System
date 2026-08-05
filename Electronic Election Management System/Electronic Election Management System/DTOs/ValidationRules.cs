@@ -11,7 +11,9 @@ namespace Electronic_Election_Management_System.DTOs
         public const int TitleMaxLength = 200;
         public const int QuestionMaxLength = 500;
         public const int DescriptionMaxLength = 2_000;
-        public const int AnswerMaxLength = 50;
+        // FreeText questions allow a longer answer than a Choice question's "Other" answer.
+        public const int AnswerMaxLength = 150;
+        public const int OtherAnswerMaxLength = 50;
         public const int AddressMaxLength = 500;
         public const int ImageDataUrlMaxLength = 3_000_000;
         public const int MaxQuestions = 20;
