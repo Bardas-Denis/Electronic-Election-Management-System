@@ -63,6 +63,11 @@ export class CreateElectionComponent implements OnInit {
   readonly CHIP_PREVIEW = 5;
   private invitationCandidatesLoaded = false;
   private invitationLabelsLoaded = false;
+  /**
+   * Users that belong to a selected label but have been explicitly removed by the user.
+   * They are excluded from the effective invite list while their label chip remains selected.
+   */
+  excludedLabelUserIds = signal<Set<string>>(new Set<string>());
   private elRef = inject(ElementRef);
 
   /** Existing invitations loaded when entering edit mode for a closed election. */
@@ -339,22 +344,54 @@ export class CreateElectionComponent implements OnInit {
     );
   }
 
-  /** IDs of users that are already covered by at least one selected label. */
+  /** IDs of users that are already covered by at least one selected label, minus excluded ones. */
   labelMemberIds(): string[] {
     const selectedLabelIds = new Set(this.form.controls.invitedLabelIds.value ?? []);
+    const excluded = this.excludedLabelUserIds();
     const ids = new Set<string>();
     this.invitationLabels()
       .filter(label => selectedLabelIds.has(label.id))
-      .forEach(label => (label.userIds ?? []).forEach(id => ids.add(id)));
+      .forEach(label => (label.userIds ?? []).forEach(id => {
+        if (!excluded.has(id)) ids.add(id);
+      }));
     return [...ids];
   }
 
-  /** True when the candidate is already covered by a selected label. */
+  /**
+   * True when the candidate is covered by a selected label AND has not been individually excluded.
+   * Excluded candidates lose their label-chip binding and can be re-added/removed manually.
+   */
   isCandidateFromLabel(candidateId: string): boolean {
+    if (this.excludedLabelUserIds().has(candidateId)) return false;
     const selectedLabelIds = new Set(this.form.controls.invitedLabelIds.value ?? []);
     return this.invitationLabels()
       .filter(label => selectedLabelIds.has(label.id))
       .some(label => (label.userIds ?? []).includes(candidateId));
+  }
+
+  /**
+   * Returns the effective count for a label chip: total members minus those explicitly excluded.
+   * Example: a label with 43 members where 3 were excluded returns 40.
+   */
+  labelEffectiveCount(labelId: string): number {
+    const label = this.invitationLabels().find(l => l.id === labelId);
+    if (!label) return 0;
+    const excluded = this.excludedLabelUserIds();
+    const excludedInThisLabel = (label.userIds ?? []).filter(id => excluded.has(id)).length;
+    return label.userCount - excludedInThisLabel;
+  }
+
+  /**
+   * Excludes a user that was covered by a label from the effective invite list.
+   * The user appears as a deselected candidate chip; their label chip counter decrements.
+   */
+  excludeFromLabel(candidateId: string): void {
+    const next = new Set(this.excludedLabelUserIds());
+    next.add(candidateId);
+    this.excludedLabelUserIds.set(next);
+    // Also make sure this user isn't sitting in invitedUserIds
+    const currentIds = this.form.controls.invitedUserIds.value ?? [];
+    this.form.controls.invitedUserIds.setValue(currentIds.filter(id => id !== candidateId));
   }
 
   /**
@@ -419,8 +456,18 @@ export class CreateElectionComponent implements OnInit {
   }
 
   toggleInvitationCandidate(candidateId: string, selected: boolean): void {
-    // Prevent un-checking a user that is already covered by a selected label.
-    if (!selected && this.isCandidateFromLabel(candidateId)) return;
+    if (selected) {
+      // If the user was previously excluded from a label, remove the exclusion so they
+      // are covered by the label again (no need to keep them in invitedUserIds separately).
+      const next = new Set(this.excludedLabelUserIds());
+      next.delete(candidateId);
+      this.excludedLabelUserIds.set(next);
+    } else if (this.isCandidateFromLabel(candidateId)) {
+      // Unchecking a label-covered user: add them to the exclusion set so the label
+      // counter decrements and they are dropped from the effective invite list.
+      this.excludeFromLabel(candidateId);
+      return;
+    }
     const currentIds = this.form.controls.invitedUserIds.value ?? [];
     const nextIds = selected
       ? [...new Set([...currentIds, candidateId])]
@@ -497,6 +544,26 @@ export class CreateElectionComponent implements OnInit {
   }
 
   removeInvitationLabel(labelId: string): void {
+    // When a label is removed, clean up any exclusions that only belonged to this label.
+    // We keep an exclusion only if the user is still a member of another selected label.
+    const label = this.invitationLabels().find(l => l.id === labelId);
+    if (label) {
+      const remainingLabelIds = new Set(
+        (this.form.controls.invitedLabelIds.value ?? []).filter(id => id !== labelId)
+      );
+      const remainingMemberIds = new Set<string>();
+      this.invitationLabels()
+        .filter(l => remainingLabelIds.has(l.id))
+        .forEach(l => (l.userIds ?? []).forEach(id => remainingMemberIds.add(id)));
+
+      // Remove exclusions for users that are not in any remaining label
+      const removedLabelUserIds = new Set(label.userIds ?? []);
+      const next = new Set(this.excludedLabelUserIds());
+      for (const id of removedLabelUserIds) {
+        if (!remainingMemberIds.has(id)) next.delete(id);
+      }
+      this.excludedLabelUserIds.set(next);
+    }
     this.toggleInvitationLabel(labelId, false);
   }
 
@@ -566,6 +633,7 @@ export class CreateElectionComponent implements OnInit {
     this.form.controls.invitedEmails.setValue([]);
     this.form.controls.invitedLabelIds.setValue([]);
     this.invitedEmails.set([]);
+    this.excludedLabelUserIds.set(new Set<string>());
     this.inviteEmailControl.reset('');
     this.labelSearchControl.reset('');
     this.candidateSearchControl.reset('');
@@ -604,6 +672,15 @@ export class CreateElectionComponent implements OnInit {
     const payload = this.form.getRawValue() as any;
     payload.question = payload.questions[0].text;
     payload.options = payload.questions[0].options;
+
+    // In create mode, expand label IDs into user IDs and subtract exclusions so the backend
+    // receives a flat, already-resolved list without depending on label expansion server-side.
+    if (!this.editingElectionId && this.isClosedElection) {
+      const labelUserIds = this.labelMemberIds(); // already excludes excludedLabelUserIds
+      const manualIds: string[] = payload.invitedUserIds ?? [];
+      payload.invitedUserIds = [...new Set([...manualIds, ...labelUserIds])];
+      payload.invitedLabelIds = []; // backend receives resolved list
+    }
 
     // In edit mode, invitations are managed via dedicated endpoints — clear from PUT body
     if (this.editingElectionId) {
