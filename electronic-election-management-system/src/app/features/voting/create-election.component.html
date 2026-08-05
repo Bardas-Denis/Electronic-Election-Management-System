@@ -182,6 +182,10 @@
           @for (label of selectedInvitationLabels(); track label.id) {
           <span class="selected-label-chip">
             <span>{{ label.name }}</span>
+            <span class="label-chip-counter"
+              [class.label-chip-counter--reduced]="labelEffectiveCount(label.id) < label.userCount">
+              {{ labelEffectiveCount(label.id) }}/{{ label.userCount }}
+            </span>
             <button type="button" (click)="removeInvitationLabel(label.id)"
               [attr.aria-label]="('elections.removeInvitationLabel' | translate) + ': ' + label.name">×</button>
           </span>
@@ -247,7 +251,6 @@
                 <span class="label-tag-badge" title="{{ 'elections.coveredByLabel' | translate }}">🏷</span>
                 }
                 <input type="checkbox" [checked]="isInvitationCandidateSelected(candidate.id)"
-                  [disabled]="isCandidateFromLabel(candidate.id)"
                   (change)="toggleInvitationCandidate(candidate.id, $any($event.target).checked)" />
               </label>
               } @empty {
@@ -278,10 +281,9 @@
           <span class="selected-user-chip" [class.selected-user-chip--from-label]="isCandidateFromLabel(candidate.id)">
             <span class="user-avatar">{{ candidate.email.charAt(0).toUpperCase() }}</span>
             <span>{{ candidate.email }}</span>
-            @if (!isCandidateFromLabel(candidate.id)) {
-            <button type="button" (click)="removeInvitationCandidate(candidate.id)"
+            <button type="button"
+              (click)="isCandidateFromLabel(candidate.id) ? excludeFromLabel(candidate.id) : removeInvitationCandidate(candidate.id)"
               [attr.aria-label]="('elections.removeInvitation' | translate) + ': ' + candidate.email">×</button>
-            }
           </span>
           }
           @if (hiddenCandidateChipCount() > 0 || showAllCandidateChips()) {
@@ -432,6 +434,10 @@
           @for (label of selectedInvitationLabels(); track label.id) {
           <span class="selected-label-chip">
             <span>{{ label.name }}</span>
+            <span class="label-chip-counter"
+              [class.label-chip-counter--reduced]="labelEffectiveCount(label.id) < label.userCount">
+              {{ labelEffectiveCount(label.id) }}/{{ label.userCount }}
+            </span>
             <button type="button" (click)="removeInvitationLabel(label.id)"
               [attr.aria-label]="('elections.removeInvitationLabel' | translate) + ': ' + label.name">×</button>
           </span>
@@ -497,7 +503,6 @@
                 <span class="label-tag-badge" title="{{ 'elections.coveredByLabel' | translate }}">🏷</span>
                 }
                 <input type="checkbox" [checked]="isInvitationCandidateSelected(candidate.id)"
-                  [disabled]="isCandidateFromLabel(candidate.id)"
                   (change)="toggleInvitationCandidate(candidate.id, $any($event.target).checked)" />
               </label>
               } @empty {
@@ -528,10 +533,9 @@
           <span class="selected-user-chip" [class.selected-user-chip--from-label]="isCandidateFromLabel(candidate.id)">
             <span class="user-avatar">{{ candidate.email.charAt(0).toUpperCase() }}</span>
             <span>{{ candidate.email }}</span>
-            @if (!isCandidateFromLabel(candidate.id)) {
-            <button type="button" (click)="removeInvitationCandidate(candidate.id)"
+            <button type="button"
+              (click)="isCandidateFromLabel(candidate.id) ? excludeFromLabel(candidate.id) : removeInvitationCandidate(candidate.id)"
               [attr.aria-label]="('elections.removeInvitation' | translate) + ': ' + candidate.email">×</button>
-            }
           </span>
           }
           @if (hiddenCandidateChipCount() > 0 || showAllCandidateChips()) {
