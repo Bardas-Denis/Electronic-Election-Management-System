@@ -48,6 +48,20 @@ namespace Electronic_Election_Management_System.Services
                 .ToList();
             foreach (var (question, source) in questions.Zip(election.Questions.OrderBy(q => q.DisplayOrder)))
             {
+                // A Choice question's "Other" answers get their own synthetic entry in Results
+                // (same shape as a real option) so the piechart/meter rings account for every
+                // vote instead of only the fixed options - fixes the total-vs-chart mismatch.
+                if (source.QuestionType == QuestionType.Choice && source.AllowOtherOption)
+                {
+                    question.Results.Add(new OptionResultDto
+                    {
+                        OptionId = Guid.Empty,
+                        Label = "Other",
+                        VoteCount = question.TextAnswers.Count,
+                        IsOtherOption = true
+                    });
+                }
+
                 if (source.QuestionType == QuestionType.FreeText)
                 {
                     question.TotalVotes = question.TextAnswers.Count;
@@ -68,7 +82,9 @@ namespace Electronic_Election_Management_System.Services
                 else
                 {
                     // Single-answer: every option pick or "Other" answer is its own respondent.
-                    question.TotalVotes = question.Results.Sum(result => result.VoteCount) + question.TextAnswers.Count;
+                    // The "Other" entry added above is already part of Results, so summing it
+                    // alone (no separate "+ TextAnswers.Count") avoids double-counting.
+                    question.TotalVotes = question.Results.Sum(result => result.VoteCount);
                 }
             }
 

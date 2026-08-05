@@ -2,6 +2,7 @@
 import { ElectionDto, ElectionInvitationDto } from '../../core/models/voting.model';
 import {
   computeInvitationDiff,
+  freeTextTypeSideEffects,
   normalizeEditableQuestions
 } from './create-election.component';
 
@@ -51,6 +52,23 @@ describe('normalizeEditableQuestions', () => {
     expect(result[0].text).toBe(election.question);
     expect(result[0].options.map(option => option.label))
       .toEqual(election.options.map(option => option.label));
+  });
+});
+
+// ---------------------------------------------------------------------------
+// freeTextTypeSideEffects
+// ---------------------------------------------------------------------------
+
+describe('freeTextTypeSideEffects', () => {
+  it('clears allowMultipleAnswers and allowOtherOption when switching to FreeText', () => {
+    expect(freeTextTypeSideEffects('FreeText')).toEqual({
+      allowMultipleAnswers: false,
+      allowOtherOption: false
+    });
+  });
+
+  it('returns null for Choice, since those fields stay under the admin\'s control', () => {
+    expect(freeTextTypeSideEffects('Choice')).toBeNull();
   });
 });
 

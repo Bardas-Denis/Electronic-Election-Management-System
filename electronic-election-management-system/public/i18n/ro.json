@@ -390,7 +390,8 @@
     "noResults": "Nu există rezultate momentan",
     "votes": "voturi",
     "noTextAnswers": "Niciun răspuns încă.",
-    "otherAnswersTitle": "Alte răspunsuri"
+    "otherAnswersTitle": "Alte răspunsuri",
+    "otherOptionLabel": "Altele"
   },
   "errors": {
     "emailAlreadyExists": "Există deja un cont cu acest email.",

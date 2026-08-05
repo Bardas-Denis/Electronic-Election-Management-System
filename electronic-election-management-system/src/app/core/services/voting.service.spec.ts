@@ -102,6 +102,7 @@ function electionRequest(): CreateElectionRequest {
     type: 'Comercial',
     isAnonymous: true,
     isClosed: false,
+    isVisible: true,
     invitedUserIds: [],
     invitedEmails: [],
     startsAt: '2026-07-27T10:00:00Z',

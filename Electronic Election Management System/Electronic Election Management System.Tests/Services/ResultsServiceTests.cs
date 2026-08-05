@@ -47,6 +47,43 @@ public class ResultsServiceTests
     }
 
     [Fact]
+    public async Task GetResultsAsync_WhenChoiceQuestionAllowsOther_AddsOtherEntryAndCountsItOnce()
+    {
+        var election = new Election { Title = "With other" };
+        var question = new ElectionQuestion
+        {
+            ElectionId = election.Id,
+            Text = "Pick one",
+            DisplayOrder = 0,
+            QuestionType = QuestionType.Choice,
+            AllowOtherOption = true
+        };
+        var option = new Option
+        {
+            ElectionId = election.Id,
+            QuestionId = question.Id,
+            Question = question,
+            Label = "Alice",
+            Votes = Enumerable.Range(0, 2).Select(_ => new Vote()).ToList()
+        };
+        question.Options.Add(option);
+        election.Options.Add(option);
+        question.Votes.Add(new Vote { QuestionId = question.Id, AnswerText = "Carol" });
+        election.Questions.Add(question);
+        _elections.GetByIdWithResultsAsync(election.Id).Returns(election);
+
+        var result = await _service.GetResultsAsync(election.Id);
+
+        result.Should().NotBeNull();
+        var resultQuestion = result!.Questions.Single();
+        // The "Other" answer must be counted once in the total, not skipped or double-counted.
+        resultQuestion.TotalVotes.Should().Be(3);
+        resultQuestion.Results.Should().ContainSingle(r => r.IsOtherOption)
+            .Which.VoteCount.Should().Be(1);
+        resultQuestion.Results.Sum(r => r.VoteCount).Should().Be(3);
+    }
+
+    [Fact]
     public async Task GetResultsAsync_WhenUserCannotAccessElection_DoesNotLoadResults()
     {
         var electionId = Guid.NewGuid();

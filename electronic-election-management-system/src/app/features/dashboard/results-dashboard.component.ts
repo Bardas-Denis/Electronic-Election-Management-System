@@ -17,6 +17,7 @@ interface PieSegment {
   colorVar: string;
   path: string;
   isFullCircle: boolean;
+  isOtherOption: boolean;
 }
 
 // One ring for a multiple-answer question - each option gets its own
@@ -29,6 +30,7 @@ interface OptionMeter {
   percent: number;
   colorVar: string;
   dasharray: string;
+  isOtherOption: boolean;
 }
 
 @Component({
@@ -122,7 +124,8 @@ export class ResultsDashboardComponent implements OnInit, OnDestroy {
         voteCount: option.voteCount,
         percent,
         colorVar: `var(--series-${(index % 8) + 1})`,
-        dasharray: `${filled} ${this.meterCircumference - filled}`
+        dasharray: `${filled} ${this.meterCircumference - filled}`,
+        isOtherOption: !!option.isOtherOption
       };
     });
   }
@@ -160,7 +163,8 @@ export class ResultsDashboardComponent implements OnInit, OnDestroy {
         percent: this.percentFor(option.voteCount, total),
         colorVar: `var(--series-${(index % 8) + 1})`,
         path,
-        isFullCircle
+        isFullCircle,
+        isOtherOption: !!option.isOtherOption
       };
     });
   }
