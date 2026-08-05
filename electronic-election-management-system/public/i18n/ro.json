@@ -229,6 +229,7 @@
     "freeTextPlaceholder": "Scrie răspunsul tău...",
     "otherOptionLabel": "Altceva",
     "otherPlaceholder": "Scrie propriul răspuns...",
+    "otherDuplicatesOption": "Acest răspuns se potrivește cu o opțiune deja din listă - alege-o direct pe aceea.",
     "confirmed": "Votul tău a fost înregistrat",
     "confirmedMessage": "Mulțumim pentru participare! Rezultatele se actualizează live.",
     "seeResults": "Vezi rezultate live",

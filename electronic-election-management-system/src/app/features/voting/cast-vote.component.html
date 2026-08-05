@@ -130,6 +130,9 @@
             (input)="setTextAnswer(question.id, $any($event.target).value)"
             [placeholder]="'vote.otherPlaceholder' | translate"></textarea>
           <p class="free-text-counter">{{ getTextAnswer(question.id).length }}/50</p>
+          @if (isOtherAnswerDuplicate(question)) {
+          <p class="error-text">{{ 'vote.otherDuplicatesOption' | translate }}</p>
+          }
         </div>
         }
         }

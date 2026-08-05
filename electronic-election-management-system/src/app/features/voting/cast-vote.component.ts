@@ -151,9 +151,22 @@ export class CastVoteComponent implements OnInit {
     this.setTextAnswer(questionId, suggestionText);
   }
 
+  /** True when a Choice question's "Other" text exactly matches one of its own
+   * fixed options - that would silently split one option's tally between the
+   * real pick and a redundant "Other" answer, so it's treated as invalid. */
+  isOtherAnswerDuplicate(question: { id: string; options: { label: string }[] }): boolean {
+    const text = this.getTextAnswer(question.id).trim().toLocaleLowerCase();
+    if (!text) return false;
+    return question.options.some(option => option.label.trim().toLocaleLowerCase() === text);
+  }
+
   hasAllAnswers(): boolean {
     const election = this.election();
     return !!election && this.questions(election).every(q => {
+      if (q.questionType !== 'FreeText' && q.allowOtherOption && this.isOtherSelected(q.id) &&
+        this.isOtherAnswerDuplicate(q)) {
+        return false;
+      }
       if (q.isRequired === false) return true;
       if (q.questionType === 'FreeText') {
         return this.getTextAnswer(q.id).trim().length > 0;
