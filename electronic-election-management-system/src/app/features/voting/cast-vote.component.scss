@@ -59,6 +59,10 @@
   margin: 1.5rem 0;
 }
 
+.other-answer {
+  margin-top: -0.9rem;
+}
+
 .option-item {
   display: flex;
   align-items: flex-start;
@@ -97,6 +101,86 @@
 
 .options-list.locked .option-item {
   pointer-events: none;
+}
+
+.free-text-answer {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin: 1.5rem 0;
+
+  &.locked {
+    pointer-events: none;
+  }
+}
+
+// Suggestion chips styled like the choice-question option list (a grid of
+// full-width rows) rather than small inline pills - each one is a quick-fill
+// action for the text box below, not a persistent selection.
+.suggestion-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.suggestion-item {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  text-align: left;
+  font-family: inherit;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 0.9rem 1rem;
+  cursor: pointer;
+  transition: border-color var(--transition), background var(--transition);
+
+  &:hover {
+    border-color: var(--text-muted);
+    background: var(--bg-subtle);
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+
+    &:hover {
+      border-color: var(--border-color);
+      background: var(--bg-card);
+    }
+  }
+}
+
+.free-text-input {
+  width: 100%;
+  min-height: 90px;
+  padding: 0.75rem 0.9rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background: var(--bg-card);
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 0.9375rem;
+  resize: vertical;
+  transition: border-color var(--transition);
+
+  &:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+  }
+}
+
+.free-text-counter {
+  align-self: flex-end;
+  margin: -0.4rem 0 0;
+  color: var(--text-muted);
+  font-size: 0.75rem;
 }
 
 .already-voted-banner {

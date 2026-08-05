@@ -9,8 +9,12 @@ export interface QuestionResultDto {
   questionId: string;
   text: string;
   allowMultipleAnswers: boolean;
+  questionType: 'Choice' | 'FreeText';
   totalVotes: number;
   results: OptionResultDto[];
+  // Populated only for a 'FreeText' question - the raw submitted answers, with no
+  // attribution to who submitted them.
+  textAnswers: string[];
 }
 
 // Full results snapshot for one election - used by both HTTP and SignalR

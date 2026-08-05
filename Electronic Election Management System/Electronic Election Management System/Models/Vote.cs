@@ -6,8 +6,17 @@ namespace Electronic_Election_Management_System.Models
     {
         public Guid Id { get; set; } = Guid.NewGuid();
 
-        public Guid OptionId { get; set; }
+        /// <summary>Set for an answer to a <see cref="QuestionType.Choice"/> question; exactly one of
+        /// <see cref="OptionId"/> and (<see cref="QuestionId"/> + <see cref="AnswerText"/>) is set.</summary>
+        public Guid? OptionId { get; set; }
         public Option? Option { get; set; }
+
+        /// <summary>Set for an answer to a <see cref="QuestionType.FreeText"/> question, alongside
+        /// <see cref="AnswerText"/>, instead of <see cref="OptionId"/>.</summary>
+        public Guid? QuestionId { get; set; }
+        public ElectionQuestion? Question { get; set; }
+        /// <summary>The voter's typed answer for a <see cref="QuestionType.FreeText"/> question.</summary>
+        public string? AnswerText { get; set; }
 
         /// <summary>Set when the parent election is anonymous; exactly one of <see cref="VoteTokenId"/> and <see cref="UserId"/> is non-null.</summary>
         public Guid? VoteTokenId { get; set; }

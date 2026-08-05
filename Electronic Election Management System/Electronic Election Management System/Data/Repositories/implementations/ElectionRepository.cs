@@ -84,6 +84,7 @@ namespace Electronic_Election_Management_System.Data.Repositories
                 .Include(e => e.Options)
                     .ThenInclude(o => o.Votes)
                 .Include(e => e.Questions).ThenInclude(q => q.Options).ThenInclude(o => o.Votes)
+                .Include(e => e.Questions).ThenInclude(q => q.Votes)
                 .FirstOrDefaultAsync(e => e.Id == id);
 
         public async Task<bool> CanUserAccessAsync(Guid electionId, Guid userId)

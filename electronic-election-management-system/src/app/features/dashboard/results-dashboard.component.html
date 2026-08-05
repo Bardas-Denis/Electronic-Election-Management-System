@@ -21,7 +21,17 @@
             <p class="question-votes">{{ question.totalVotes }} {{ 'results.votes' | translate }}</p>
 
             <div class="result-body">
-              @if (question.allowMultipleAnswers) {
+              @if (question.questionType === 'FreeText') {
+                @if (question.textAnswers.length > 0) {
+                  <ul class="text-answers-list">
+                    @for (answer of question.textAnswers; track $index) {
+                      <li class="text-answer-item">{{ answer }}</li>
+                    }
+                  </ul>
+                } @else {
+                  <p class="text-answers-empty">{{ 'results.noTextAnswers' | translate }}</p>
+                }
+              } @else if (question.allowMultipleAnswers) {
                 <div class="meter-grid">
                   @for (meter of optionMeters(question); track meter.optionId) {
                     <div class="meter-card">
@@ -99,6 +109,16 @@
                       </div>
                     </div>
                   }
+                </div>
+              }
+              @if (question.questionType !== 'FreeText' && question.textAnswers.length > 0) {
+                <div class="other-answers-section">
+                  <h4 class="other-answers-title">{{ 'results.otherAnswersTitle' | translate }}</h4>
+                  <ul class="text-answers-list">
+                    @for (answer of question.textAnswers; track $index) {
+                      <li class="text-answer-item">{{ answer }}</li>
+                    }
+                  </ul>
                 </div>
               }
             </div>

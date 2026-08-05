@@ -24,6 +24,15 @@ export class CastVoteComponent implements OnInit {
   // so multi-answer questions don't need a separate code path here.
   selectedOptionIds = signal<Record<string, string[]>>({});
   userVoteAnswers = signal<Record<string, string[]>>({});
+  // Typed answers for FreeText questions, and for Choice questions' "Other"
+  // answer, keyed by questionId - mirrors the selectedOptionIds/userVoteAnswers
+  // pair, but for text instead of option picks.
+  textAnswers = signal<Record<string, string>>({});
+  userTextAnswers = signal<Record<string, string>>({});
+  // Whether the "Other" pseudo-option is active for a Choice question, keyed
+  // by questionId. Irrelevant for FreeText questions (always "on").
+  otherSelected = signal<Record<string, boolean>>({});
+  userOtherSelected = signal<Record<string, boolean>>({});
   userVoteOptionId = signal<string | null>(null);
   userVoteOptionLabel = signal<string | null>(null);
   isEditingVote = signal(false);
@@ -64,7 +73,11 @@ export class CastVoteComponent implements OnInit {
   questions(election: ElectionDto) {
     return election.questions?.length
       ? election.questions
-      : [{ id: '', text: election.question ?? election.title, displayOrder: 0, isRequired: true, allowMultipleAnswers: false, options: election.options }];
+      : [{
+        id: '', text: election.question ?? election.title, displayOrder: 0, isRequired: true,
+        allowMultipleAnswers: false, questionType: 'Choice' as const, allowOtherOption: false,
+        options: election.options
+      }];
   }
 
   // Single-answer question: picking an option replaces whatever was selected before.
@@ -73,6 +86,8 @@ export class CastVoteComponent implements OnInit {
   // since it can never legitimately end up with zero.
   selectOption(questionId: string, optionId: string, isRequired: boolean = true): void {
     if (!this.canSelectOptions()) return;
+    // Picking a real option always deselects "Other" for a single-answer question.
+    this.otherSelected.update(current => ({ ...current, [questionId]: false }));
     this.selectedOptionIds.update(selected => {
       const current = selected[questionId] ?? [];
       if (!isRequired && current.includes(optionId)) {
@@ -98,11 +113,56 @@ export class CastVoteComponent implements OnInit {
     return (this.selectedOptionIds()[questionId] ?? []).includes(optionId);
   }
 
+  isOtherSelected(questionId: string): boolean {
+    return this.otherSelected()[questionId] ?? false;
+  }
+
+  // Toggles the "Other" pseudo-option for a Choice question. For a single-answer
+  // question it behaves like a radio pick (mutually exclusive with real options,
+  // clicking it again while required keeps it selected); for a multiple-answer
+  // question it's an independent checkbox alongside any selected options.
+  toggleOther(questionId: string, isMultiple: boolean, isRequired: boolean = true): void {
+    if (!this.canSelectOptions()) return;
+    if (isMultiple) {
+      this.otherSelected.update(current => ({ ...current, [questionId]: !current[questionId] }));
+      return;
+    }
+    const isOn = this.isOtherSelected(questionId);
+    if (!isRequired && isOn) {
+      this.otherSelected.update(current => ({ ...current, [questionId]: false }));
+      return;
+    }
+    this.otherSelected.update(current => ({ ...current, [questionId]: true }));
+    this.selectedOptionIds.update(selected => ({ ...selected, [questionId]: [] }));
+  }
+
+  setTextAnswer(questionId: string, text: string): void {
+    if (!this.canSelectOptions()) return;
+    this.textAnswers.update(current => ({ ...current, [questionId]: text }));
+  }
+
+  getTextAnswer(questionId: string): string {
+    return this.textAnswers()[questionId] ?? '';
+  }
+
+  /** Fills a FreeText question's answer with a suggestion chip's text - not a
+   * selection, just a convenience prefill the voter can still edit freely. */
+  applySuggestion(questionId: string, suggestionText: string): void {
+    this.setTextAnswer(questionId, suggestionText);
+  }
+
   hasAllAnswers(): boolean {
     const election = this.election();
-    return !!election && this.questions(election).every(
-      q => q.isRequired === false || (this.selectedOptionIds()[q.id]?.length ?? 0) > 0
-    );
+    return !!election && this.questions(election).every(q => {
+      if (q.isRequired === false) return true;
+      if (q.questionType === 'FreeText') {
+        return this.getTextAnswer(q.id).trim().length > 0;
+      }
+      const optionCount = this.selectedOptionIds()[q.id]?.length ?? 0;
+      const hasOtherAnswer = q.allowOtherOption && this.isOtherSelected(q.id) &&
+        this.getTextAnswer(q.id).trim().length > 0;
+      return optionCount > 0 || hasOtherAnswer;
+    });
   }
 
   // "Trimite votul" - anonymous elections vote immediately, non-anonymous ones
@@ -132,6 +192,8 @@ export class CastVoteComponent implements OnInit {
 
     if (Object.keys(this.userVoteAnswers()).length)
       this.selectedOptionIds.set({ ...this.userVoteAnswers() });
+    this.textAnswers.set({ ...this.userTextAnswers() });
+    this.otherSelected.set({ ...this.userOtherSelected() });
     this.errorMessageKey.set(null);
     this.successMessageKey.set(null);
     this.isEditingVote.set(true);
@@ -141,6 +203,8 @@ export class CastVoteComponent implements OnInit {
     this.isEditingVote.set(false);
     this.errorMessageKey.set(null);
     this.selectedOptionIds.set({ ...this.userVoteAnswers() });
+    this.textAnswers.set({ ...this.userTextAnswers() });
+    this.otherSelected.set({ ...this.userOtherSelected() });
   }
 
   deleteVote(): void {
@@ -159,6 +223,10 @@ export class CastVoteComponent implements OnInit {
         this.userVoteOptionLabel.set(null);
         this.selectedOptionIds.set({});
         this.userVoteAnswers.set({});
+        this.textAnswers.set({});
+        this.userTextAnswers.set({});
+        this.otherSelected.set({});
+        this.userOtherSelected.set({});
         // Deleting consumes the same one-time change budget as editing does - if this stayed
         // true, someone could delete + revote in a loop to bypass the limit entirely.
         this.canEditVote.set(false);
@@ -205,23 +273,41 @@ export class CastVoteComponent implements OnInit {
   private loadMyVote(): void {
     this.votingService.getMyVote(this.electionId).subscribe({
       next: (vote) => {
-        this.userVoteOptionId.set(vote.optionId);
+        this.userVoteOptionId.set(vote.optionId ?? null);
         if (vote.answers?.length) {
           // A multiple-answer question can contribute more than one answer row
-          // with the same questionId - group them instead of overwriting.
+          // with the same questionId - group them instead of overwriting. A
+          // FreeText/Other answer carries text instead of an optionId.
+          const election = this.election();
+          const questionsById = new Map((election ? this.questions(election) : []).map(q => [q.id, q]));
           const answers: Record<string, string[]> = {};
+          const texts: Record<string, string> = {};
+          const others: Record<string, boolean> = {};
           for (const answer of vote.answers) {
-            (answers[answer.questionId] ??= []).push(answer.optionId);
+            if (answer.text !== undefined && answer.text !== null) {
+              texts[answer.questionId] = answer.text;
+              if (questionsById.get(answer.questionId)?.questionType === 'Choice') {
+                others[answer.questionId] = true;
+              }
+            } else if (answer.optionId) {
+              (answers[answer.questionId] ??= []).push(answer.optionId);
+            }
           }
           this.selectedOptionIds.set(answers);
           this.userVoteAnswers.set(answers);
+          this.textAnswers.set(texts);
+          this.userTextAnswers.set(texts);
+          this.otherSelected.set(others);
+          this.userOtherSelected.set(others);
         } else {
           const election = this.election();
-          const answers = { [election ? this.questions(election)[0]?.id ?? '' : '']: [vote.optionId] };
+          const answers = vote.optionId
+            ? { [election ? this.questions(election)[0]?.id ?? '' : '']: [vote.optionId] }
+            : {};
           this.selectedOptionIds.set(answers);
           this.userVoteAnswers.set(answers);
         }
-        this.userVoteOptionLabel.set(vote.optionLabel ?? this.optionLabelById(vote.optionId));
+        this.userVoteOptionLabel.set(vote.optionLabel ?? this.optionLabelById(vote.optionId ?? null));
         this.canEditVote.set(vote.canEdit ?? true);
       },
       error: () => {
@@ -236,12 +322,22 @@ export class CastVoteComponent implements OnInit {
     const optionIds = Object.values(this.selectedOptionIds()).flat();
     if (!this.hasAllAnswers()) return;
     const optionId = optionIds[0];
+    const election = this.election();
+    // Only send text for a FreeText question (always), or a Choice question
+    // where "Other" is actively selected - a stale typed value left over from
+    // a since-deselected "Other" must not be submitted.
+    const textAnswers = election
+      ? this.questions(election)
+          .filter(q => q.questionType === 'FreeText' || (q.allowOtherOption && this.isOtherSelected(q.id)))
+          .map(q => ({ questionId: q.id, text: this.getTextAnswer(q.id).trim() }))
+          .filter(answer => answer.text.length > 0)
+      : [];
 
     this.isSubmitting.set(true);
     this.errorMessageKey.set(null);
     this.successMessageKey.set(null);
 
-    const payload = { electionId: this.electionId, optionId, optionIds, voterDeclaration };
+    const payload = { electionId: this.electionId, optionId, optionIds, textAnswers, voterDeclaration };
     const wasEditing = this.isEditingVote();
     const request$ = wasEditing
       ? this.votingService.updateMyVote(payload)
@@ -273,8 +369,10 @@ export class CastVoteComponent implements OnInit {
   }
 
   private applyVoteLocally(optionId: string): void {
-    this.userVoteOptionId.set(optionId);
+    this.userVoteOptionId.set(optionId ?? null);
     this.userVoteAnswers.set({ ...this.selectedOptionIds() });
+    this.userTextAnswers.set({ ...this.textAnswers() });
+    this.userOtherSelected.set({ ...this.otherSelected() });
     this.userVoteOptionLabel.set(this.optionLabelById(optionId));
 
     const current = this.election();

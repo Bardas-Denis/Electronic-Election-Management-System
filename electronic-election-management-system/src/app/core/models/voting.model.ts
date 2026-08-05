@@ -1,4 +1,5 @@
 export type ElectionType = 'Politic' | 'Comercial';
+export type QuestionType = 'Choice' | 'FreeText';
 
 export interface OptionDto {
   id: string;
@@ -13,6 +14,12 @@ export interface ElectionQuestionDto {
   displayOrder: number;
   isRequired: boolean;
   allowMultipleAnswers: boolean;
+  questionType: QuestionType;
+  // Only meaningful for a 'Choice' question: voters may answer with free text
+  // ("Other: ___") instead of / alongside picking a fixed option.
+  allowOtherOption: boolean;
+  // For a 'Choice' question, the selectable options. For a 'FreeText' question,
+  // optional suggestion chips - voters may still type anything.
   options: OptionDto[];
 }
 
@@ -51,6 +58,8 @@ export interface CreateElectionQuestionDto {
   text: string;
   isRequired: boolean;
   allowMultipleAnswers: boolean;
+  questionType: QuestionType;
+  allowOtherOption: boolean;
   options: CreateOptionDto[];
 }
 
@@ -88,22 +97,36 @@ export interface VoterDeclarationDto {
   employeeId?: string;
 }
 
+export interface TextAnswerDto {
+  questionId: string;
+  text: string;
+}
+
 export interface CastVoteRequest {
   electionId: string;
   optionId: string;
   optionIds: string[];
+  textAnswers: TextAnswerDto[];
   // Required by the backend when the election is not anonymous; omitted entirely for anonymous ones.
   voterDeclaration?: VoterDeclarationDto;
 }
 
+export interface UserVoteAnswerDto {
+  questionId: string;
+  optionId?: string;
+  optionLabel?: string;
+  // Set instead of optionId/optionLabel when this answer is for a FreeText question.
+  text?: string;
+}
+
 export interface UserVoteDto {
   electionId: string;
-  optionId: string;
+  optionId?: string;
   optionLabel?: string;
   votedAt?: string;
   // False once the voter has already used their one allowed edit
   canEdit?: boolean;
-  answers?: { questionId: string; optionId: string; optionLabel?: string }[];
+  answers?: UserVoteAnswerDto[];
 }
 
 export interface InviteToElectionRequest {

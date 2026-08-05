@@ -17,6 +17,7 @@ import {
   atLeastOneRequiredQuestion,
   dateRangeValidator,
   INPUT_LIMITS,
+  optionsRequiredForChoiceQuestion,
   trimmedRequired,
   uniqueOptionLabels
 } from '../../core/validators/input.validators';
@@ -209,15 +210,24 @@ export class CreateElectionComponent implements OnInit {
       text: [question?.text ?? '', [trimmedRequired, Validators.maxLength(INPUT_LIMITS.question)]],
       isRequired: [question?.isRequired ?? true],
       allowMultipleAnswers: [question?.allowMultipleAnswers ?? false],
+      questionType: [question?.questionType ?? 'Choice'],
+      allowOtherOption: [question?.allowOtherOption ?? false],
       options: this.fb.array(
         optionGroups,
         [
-          Validators.minLength(2),
+          optionsRequiredForChoiceQuestion,
           Validators.maxLength(INPUT_LIMITS.maxOptionsPerQuestion),
           uniqueOptionLabels
         ]
       )
     });
+  }
+
+  /** True when the given question is a FreeText question (options become optional suggestions).
+   * Not creatable from this form anymore, but still relevant when editing an older election
+   * that already has one. */
+  isFreeTextQuestion(questionIndex: number): boolean {
+    return this.questions.at(questionIndex).get('questionType')?.value === 'FreeText';
   }
 
   private createQuestionsArray(questions: CreateElectionQuestionDto[] = []): FormArray {
@@ -265,10 +275,12 @@ export class CreateElectionComponent implements OnInit {
     options.push(this.createOptionGroup());
   }
 
-  // Every question must retain at least two options.
+  // A Choice question must retain at least two options; a FreeText question's
+  // suggestion chips are optional and can be removed down to zero.
   removeOption(questionIndex: number, optionIndex: number): void {
     const options = this.questionOptions(questionIndex);
-    if (options.length > 2) {
+    const minOptions = this.isFreeTextQuestion(questionIndex) ? 0 : 2;
+    if (options.length > minOptions) {
       options.removeAt(optionIndex);
     }
   }
@@ -740,6 +752,8 @@ export function normalizeEditableQuestions(election: ElectionDto): CreateElectio
       text: question.text || (index === 0 ? election.question : '') || '',
       isRequired: question.isRequired ?? true,
       allowMultipleAnswers: question.allowMultipleAnswers ?? false,
+      questionType: question.questionType ?? 'Choice',
+      allowOtherOption: question.allowOtherOption ?? false,
       options: Array.isArray(question.options) && question.options.length > 0
         ? question.options.map(option => ({
           label: option.label ?? '',
@@ -760,6 +774,8 @@ export function normalizeEditableQuestions(election: ElectionDto): CreateElectio
     text: election.question || election.title || '',
     isRequired: true,
     allowMultipleAnswers: false,
+    questionType: 'Choice',
+    allowOtherOption: false,
     options: (election.options ?? []).map(option => ({
       label: option.label ?? '',
       description: option.description ?? '',

@@ -88,7 +88,10 @@ export class ResultsDashboardComponent implements OnInit, OnDestroy {
   questions(results: ElectionResultsDto): QuestionResultDto[] {
     return results.questions?.length
       ? results.questions
-      : [{ questionId: '', text: results.title, allowMultipleAnswers: false, totalVotes: results.totalVotes, results: results.results }];
+      : [{
+        questionId: '', text: results.title, allowMultipleAnswers: false, questionType: 'Choice',
+        totalVotes: results.totalVotes, results: results.results, textAnswers: []
+      }];
   }
 
   percentFor(voteCount: number, total: number): number {

@@ -90,6 +90,20 @@ namespace Electronic_Election_Management_System.Data
                 .HasForeignKey(o => o.QuestionId)
                 .OnDelete(DeleteBehavior.Cascade);
 
+            // Stored as string ("Choice"/"FreeText"). Explicit lambdas for the same
+            // reason as User.Role above.
+            modelBuilder.Entity<ElectionQuestion>()
+                .Property(q => q.QuestionType)
+                .HasConversion(
+                    type => type.ToString(),
+                    value => (QuestionType)Enum.Parse(typeof(QuestionType), value));
+
+            modelBuilder.Entity<Vote>()
+                .HasOne(v => v.Question)
+                .WithMany(q => q.Votes)
+                .HasForeignKey(v => v.QuestionId)
+                .OnDelete(DeleteBehavior.Cascade);
+
             modelBuilder.Entity<VoteToken>()
                 .HasOne(vt => vt.User)
                 .WithMany(u => u.VoteTokens)
@@ -135,6 +149,15 @@ namespace Electronic_Election_Management_System.Data
                     "CK_Votes_ExactlyOneVoterIdentity",
                     "((VoteTokenId IS NOT NULL AND UserId IS NULL) " +
                     "OR (VoteTokenId IS NULL AND UserId IS NOT NULL))"
+                ));
+
+            // A vote is either a Choice-question option pick, or a FreeText-question
+            // answer (QuestionId + AnswerText) - never both, never neither.
+            modelBuilder.Entity<Vote>()
+                .ToTable(t => t.HasCheckConstraint(
+                    "CK_Votes_ExactlyOneAnswerKind",
+                    "((OptionId IS NOT NULL AND QuestionId IS NULL AND AnswerText IS NULL) " +
+                    "OR (OptionId IS NULL AND QuestionId IS NOT NULL AND AnswerText IS NOT NULL))"
                 ));
 
             // A VoterDeclaration only ever exists for a non-anonymous vote (UserId set, VoteTokenId null).

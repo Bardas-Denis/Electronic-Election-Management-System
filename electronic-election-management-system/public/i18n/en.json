@@ -175,6 +175,8 @@
   "questionNumber": "Question {{number}}",
   "questionRequiredLabel": "Required",
   "questionMultipleAnswersLabel": "Multiple answers",
+  "questionAllowOtherLabel": "Allow another answer",
+  "optionsLabel": "Options",
   "addQuestion": "Add another question",
   "removeQuestion": "Remove question",
   "atLeastOneRequiredQuestionError": "At least one question must be required, so voters always have something they must answer.",
@@ -218,6 +220,9 @@
   "vote": {
     "questionOptional": "(optional)",
     "questionMultipleAnswers": "(choose one or more)",
+    "freeTextPlaceholder": "Type your answer...",
+    "otherOptionLabel": "Other",
+    "otherPlaceholder": "Type your own answer...",
     "confirmed": "Your vote has been recorded",
     "confirmedMessage": "Thank you for participating! Results update in real time.",
     "seeResults": "See live results",
@@ -375,7 +380,9 @@
     "totalVotes": "Total votes:",
     "live": "Live",
     "noResults": "No results yet",
-    "votes": "votes"
+    "votes": "votes",
+    "noTextAnswers": "No answers yet.",
+    "otherAnswersTitle": "Other answers"
   },
   "errors": {
     "emailAlreadyExists": "An account with this email already exists.",

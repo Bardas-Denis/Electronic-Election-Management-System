@@ -47,3 +47,13 @@ export const atLeastOneRequiredQuestion: ValidatorFn = (control: AbstractControl
     ? null
     : { noRequiredQuestion: true };
 };
+
+// A Choice question needs 2+ options; a FreeText question's options are just optional
+// suggestion chips, so none are required. Reads the sibling questionType control since the
+// requirement depends on it.
+export const optionsRequiredForChoiceQuestion: ValidatorFn = (control: AbstractControl): ValidationErrors | null => {
+  const questionType = control.parent?.get('questionType')?.value;
+  if (questionType === 'FreeText') return null;
+  const options = Array.isArray(control.value) ? control.value : [];
+  return options.length >= 2 ? null : { minOptionsForChoice: true };
+};

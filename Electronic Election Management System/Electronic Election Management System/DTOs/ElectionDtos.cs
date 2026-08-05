@@ -30,6 +30,13 @@ namespace Electronic_Election_Management_System.DTOs
         public int DisplayOrder { get; set; }
         public bool IsRequired { get; set; } = true;
         public bool AllowMultipleAnswers { get; set; } = false;
+        /// <summary>Valid values: <c>"Choice"</c> or <c>"FreeText"</c>.</summary>
+        public string QuestionType { get; set; } = "Choice";
+        /// <summary>Only meaningful for a <c>"Choice"</c> question: when true, voters may answer
+        /// with free text ("Other: ___") instead of / alongside picking a fixed option.</summary>
+        public bool AllowOtherOption { get; set; } = false;
+        /// <summary>For a <c>"Choice"</c> question, the selectable options. For a <c>"FreeText"</c>
+        /// question, optional suggestion chips - voters may still type anything.</summary>
         public List<OptionDto> Options { get; set; } = new();
     }
 
@@ -39,7 +46,16 @@ namespace Electronic_Election_Management_System.DTOs
         public string Text { get; set; } = string.Empty;
         public bool IsRequired { get; set; } = true;
         public bool AllowMultipleAnswers { get; set; } = false;
-        [Required, MinLength(2), MaxLength(ValidationRules.MaxOptionsPerQuestion)]
+        /// <summary>Valid values: <c>"Choice"</c> or <c>"FreeText"</c>.</summary>
+        [Required, NotWhitespace, StringLength(20)]
+        public string QuestionType { get; set; } = "Choice";
+        /// <summary>Only meaningful for a <c>"Choice"</c> question: when true, voters may answer
+        /// with free text ("Other: ___") instead of / alongside picking a fixed option.</summary>
+        public bool AllowOtherOption { get; set; } = false;
+        /// <summary>Required to have at least 2 for a <c>"Choice"</c> question (enforced in
+        /// <c>ElectionService.QuestionsAreValid</c>, since the requirement depends on
+        /// <see cref="QuestionType"/>); optional suggestion chips for a <c>"FreeText"</c> question.</summary>
+        [MaxLength(ValidationRules.MaxOptionsPerQuestion)]
         public List<CreateOptionDto> Options { get; set; } = new();
 
         public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
