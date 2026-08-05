@@ -735,6 +735,37 @@
   clip: rect(0, 0, 0, 0);
   white-space: nowrap;
 }
+// Segmented control (real buttons, not checkboxes) since Choice/FreeText is a
+// mutually-exclusive pick - unlike the independent required/multiple/other pills.
+.question-type-toggle-group {
+  display: inline-flex;
+  gap: .3rem;
+  padding: .2rem;
+  margin-bottom: 1rem;
+  border: 1px solid color-mix(in srgb, var(--border-color) 55%, var(--text-muted) 45%);
+  border-radius: 999px;
+  background: var(--bg-card);
+}
+.question-type-toggle {
+  padding: .3rem .7rem;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  font-size: .8rem; font-weight: 600; color: var(--text-secondary); cursor: pointer;
+  transition: background var(--transition), color var(--transition);
+
+  &:hover { color: var(--text-primary); }
+
+  &.active {
+    background: var(--accent);
+    color: #fff;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+}
 .question-options-label {
   margin: .9rem 0 .35rem;
   color: var(--text-secondary);

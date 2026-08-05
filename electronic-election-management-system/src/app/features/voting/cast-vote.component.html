@@ -86,11 +86,11 @@
             }
           </div>
           }
-          <textarea class="free-text-input" maxlength="50" [disabled]="!canSelectOptions()"
+          <textarea class="free-text-input" [attr.maxlength]="freeTextAnswerMaxLength" [disabled]="!canSelectOptions()"
             [value]="getTextAnswer(question.id)"
             (input)="setTextAnswer(question.id, $any($event.target).value)"
             [placeholder]="'vote.freeTextPlaceholder' | translate"></textarea>
-          <p class="free-text-counter">{{ getTextAnswer(question.id).length }}/50</p>
+          <p class="free-text-counter">{{ getTextAnswer(question.id).length }}/{{ freeTextAnswerMaxLength }}</p>
         </div>
         } @else {
         <div class="options-list" [class.locked]="!canSelectOptions()">
@@ -125,11 +125,11 @@
         </div>
         @if (question.allowOtherOption && isOtherSelected(question.id)) {
         <div class="free-text-answer other-answer">
-          <textarea class="free-text-input" maxlength="50" [disabled]="!canSelectOptions()"
+          <textarea class="free-text-input" [attr.maxlength]="otherAnswerMaxLength" [disabled]="!canSelectOptions()"
             [value]="getTextAnswer(question.id)"
             (input)="setTextAnswer(question.id, $any($event.target).value)"
             [placeholder]="'vote.otherPlaceholder' | translate"></textarea>
-          <p class="free-text-counter">{{ getTextAnswer(question.id).length }}/50</p>
+          <p class="free-text-counter">{{ getTextAnswer(question.id).length }}/{{ otherAnswerMaxLength }}</p>
           @if (isOtherAnswerDuplicate(question)) {
           <p class="error-text">{{ 'vote.otherDuplicatesOption' | translate }}</p>
           }

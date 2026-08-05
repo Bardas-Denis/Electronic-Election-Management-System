@@ -9,7 +9,10 @@ export const INPUT_LIMITS = {
   description: 2_000,
   address: 500,
   maxQuestions: 20,
-  maxOptionsPerQuestion: 50
+  maxOptionsPerQuestion: 50,
+  // A FreeText question's answer may be longer than a Choice question's "Other" answer.
+  freeTextAnswer: 150,
+  otherAnswer: 50
 } as const;
 
 export function trimmedRequired(control: AbstractControl): ValidationErrors | null {

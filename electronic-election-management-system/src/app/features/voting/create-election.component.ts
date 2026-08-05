@@ -11,7 +11,8 @@ import {
   ElectionDto,
   ElectionInvitationDto,
   InvitationCandidateDto,
-  InvitationLabelDto
+  InvitationLabelDto,
+  QuestionType
 } from '../../core/models/voting.model';
 import {
   atLeastOneRequiredQuestion,
@@ -232,11 +233,30 @@ export class CreateElectionComponent implements OnInit {
     });
   }
 
-  /** True when the given question is a FreeText question (options become optional suggestions).
-   * Not creatable from this form anymore, but still relevant when editing an older election
-   * that already has one. */
+  /** True when the given question is a FreeText question (options become optional suggestions). */
   isFreeTextQuestion(questionIndex: number): boolean {
     return this.questions.at(questionIndex).get('questionType')?.value === 'FreeText';
+  }
+
+  /**
+   * Sets a question's type and applies the side effects of switching to FreeText:
+   * allowMultipleAnswers/allowOtherOption are Choice-only concepts, and the options
+   * array's minimum-count validator depends on questionType but isn't re-run just
+   * because a sibling control changed - so it's nudged here explicitly.
+   */
+  setQuestionType(questionIndex: number, type: QuestionType): void {
+    const group = this.questions.at(questionIndex);
+    group.get('questionType')?.setValue(type);
+
+    const sideEffects = freeTextTypeSideEffects(type);
+    if (sideEffects) {
+      group.patchValue(sideEffects);
+      // FreeText questions have no options UI at all - drop any Choice options
+      // carried over from before the switch instead of submitting them unseen.
+      this.questionOptions(questionIndex).clear();
+    }
+
+    this.questionOptions(questionIndex).updateValueAndValidity();
   }
 
   private createQuestionsArray(questions: CreateElectionQuestionDto[] = []): FormArray {
@@ -284,12 +304,11 @@ export class CreateElectionComponent implements OnInit {
     options.push(this.createOptionGroup());
   }
 
-  // A Choice question must retain at least two options; a FreeText question's
-  // suggestion chips are optional and can be removed down to zero.
+  // A Choice question must retain at least two options. The options UI is only
+  // ever shown for a Choice question, so this never runs for a FreeText one.
   removeOption(questionIndex: number, optionIndex: number): void {
     const options = this.questionOptions(questionIndex);
-    const minOptions = this.isFreeTextQuestion(questionIndex) ? 0 : 2;
-    if (options.length > minOptions) {
+    if (options.length > 2) {
       options.removeAt(optionIndex);
     }
   }
@@ -814,6 +833,21 @@ export function computeInvitationDiff(
   }
 
   return { toAdd: { userIds: newUserIds, emails: newEmails }, toRemove };
+}
+
+/**
+ * Pure function: the form-field patch to apply when a question's type changes.
+ * allowMultipleAnswers and allowOtherOption only make sense for a Choice question
+ * (picking among fixed options), so switching to FreeText clears both - otherwise
+ * a stale allowMultipleAnswers: true would still show the "multiple answers"
+ * badge to voters on a single-textarea question. Exported for unit-testing.
+ */
+export function freeTextTypeSideEffects(
+  type: QuestionType
+): { allowMultipleAnswers: boolean; allowOtherOption: boolean } | null {
+  return type === 'FreeText'
+    ? { allowMultipleAnswers: false, allowOtherOption: false }
+    : null;
 }
 
 // Converts the backend ISO date into the format expected by <input type="datetime-local">.

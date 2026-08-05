@@ -158,8 +158,10 @@ namespace Electronic_Election_Management_System.DTOs
         /// <summary>The date and time when the election closes. Must be strictly after <see cref="StartsAt"/>.</summary>
         public DateTime EndsAt { get; set; }
 
-        /// <summary>The options for this election. Must contain at least 2 items.</summary>
-        [Required, MinLength(2), MaxLength(ValidationRules.MaxOptionsPerQuestion)]
+        /// <summary>The options for this election, used only when <see cref="Questions"/> is
+        /// empty (legacy single-question elections). Minimum-count requirements depend on
+        /// question type and are enforced in <c>ElectionService.QuestionsAreValid</c>.</summary>
+        [Required, MaxLength(ValidationRules.MaxOptionsPerQuestion)]
         public List<CreateOptionDto> Options { get; set; } = new();
         [Required, MaxLength(ValidationRules.MaxQuestions)]
         public List<CreateElectionQuestionDto> Questions { get; set; } = new();

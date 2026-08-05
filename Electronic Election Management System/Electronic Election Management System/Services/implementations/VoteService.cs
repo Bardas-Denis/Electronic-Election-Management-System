@@ -324,6 +324,16 @@ namespace Electronic_Election_Management_System.Services
             if (duplicatesExistingOption)
                 return null;
 
+            // A FreeText question's answer may be longer than a Choice question's "Other"
+            // answer - see ValidationRules.AnswerMaxLength / OtherAnswerMaxLength.
+            var exceedsAnswerLength = questions.Any(question =>
+                textByQuestionId.TryGetValue(question.Id, out var text) &&
+                text.Length > (question.QuestionType == QuestionType.FreeText
+                    ? ValidationRules.AnswerMaxLength
+                    : ValidationRules.OtherAnswerMaxLength));
+            if (exceedsAnswerLength)
+                return null;
+
             // Single-answer questions: required needs exactly one answer (option or text),
             // optional accepts zero or one. Multiple-answer questions: required needs at least
             // one, optional accepts any count.

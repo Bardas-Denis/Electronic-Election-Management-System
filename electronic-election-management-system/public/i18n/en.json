@@ -182,6 +182,8 @@
   "questionRequiredLabel": "Required",
   "questionMultipleAnswersLabel": "Multiple answers",
   "questionAllowOtherLabel": "Allow another answer",
+  "questionTypeChoiceLabel": "Choice",
+  "questionTypeFreeTextLabel": "Free text",
   "optionsLabel": "Options",
   "addQuestion": "Add another question",
   "removeQuestion": "Remove question",

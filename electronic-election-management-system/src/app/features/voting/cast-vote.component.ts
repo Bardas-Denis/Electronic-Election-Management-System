@@ -5,6 +5,7 @@ import { TranslatePipe } from '@ngx-translate/core';
 import { VotingService } from '../../core/services/voting.service';
 import { ElectionDto, VoterDeclarationDto } from '../../core/models/voting.model';
 import { VoterDeclarationModalComponent } from './voter-declaration-modal.component';
+import { INPUT_LIMITS } from '../../core/validators/input.validators';
 
 @Component({
   selector: 'app-cast-vote',
@@ -17,6 +18,9 @@ export class CastVoteComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private votingService = inject(VotingService);
+
+  readonly freeTextAnswerMaxLength = INPUT_LIMITS.freeTextAnswer;
+  readonly otherAnswerMaxLength = INPUT_LIMITS.otherAnswer;
 
   election = signal<ElectionDto | null>(null);
   // One or more selected option ids per question - a single-answer question

@@ -181,6 +181,8 @@
     "questionRequiredLabel": "Obligatorie",
     "questionMultipleAnswersLabel": "Răspuns multiplu",
     "questionAllowOtherLabel": "Permite un alt răspuns",
+    "questionTypeChoiceLabel": "Cu variante",
+    "questionTypeFreeTextLabel": "Răspuns liber",
     "optionsLabel": "Opțiuni",
     "addQuestion": "Adaugă încă o întrebare",
     "removeQuestion": "Șterge întrebarea",
