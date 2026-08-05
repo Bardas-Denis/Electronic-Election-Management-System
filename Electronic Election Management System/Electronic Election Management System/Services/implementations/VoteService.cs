@@ -313,6 +313,17 @@ namespace Electronic_Election_Management_System.Services
                 answer => answer.QuestionId,
                 answer => answer.Text?.Trim() ?? string.Empty);
 
+            // A Choice question's "Other" answer must not duplicate one of its own fixed
+            // options - typing the same text as an existing option would silently split
+            // that option's tally between the real pick and a redundant "Other" answer.
+            var duplicatesExistingOption = questions.Any(question =>
+                question.QuestionType == QuestionType.Choice &&
+                textByQuestionId.TryGetValue(question.Id, out var text) &&
+                !string.IsNullOrWhiteSpace(text) &&
+                question.Options.Any(option => string.Equals(option.Label.Trim(), text, StringComparison.OrdinalIgnoreCase)));
+            if (duplicatesExistingOption)
+                return null;
+
             // Single-answer questions: required needs exactly one answer (option or text),
             // optional accepts zero or one. Multiple-answer questions: required needs at least
             // one, optional accepts any count.

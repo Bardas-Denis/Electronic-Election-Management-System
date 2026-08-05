@@ -223,6 +223,7 @@
     "freeTextPlaceholder": "Type your answer...",
     "otherOptionLabel": "Other",
     "otherPlaceholder": "Type your own answer...",
+    "otherDuplicatesOption": "This matches one of the options already on the list - please choose it directly instead.",
     "confirmed": "Your vote has been recorded",
     "confirmedMessage": "Thank you for participating! Results update in real time.",
     "seeResults": "See live results",
