@@ -82,7 +82,9 @@ namespace Electronic_Election_Management_System.Constants
         [JsonStringEnumMemberName("electionNotOpen")]
         ElectionNotOpen,
 
-        /// <summary>The selected option does not belong to this election.</summary>
+        /// <summary>The selected option does not belong to this election, a text answer
+        /// targets a question that doesn't accept one, or a required/single-answer question's
+        /// answer count doesn't add up.</summary>
         [JsonStringEnumMemberName("invalidOption")]
         InvalidOption,
 

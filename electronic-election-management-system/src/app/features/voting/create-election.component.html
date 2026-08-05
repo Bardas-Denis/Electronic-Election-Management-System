@@ -616,10 +616,15 @@
             <input type="checkbox" formControlName="allowMultipleAnswers" />
             {{ 'elections.questionMultipleAnswersLabel' | translate }}
           </label>
+          <label class="question-required-toggle">
+            <input type="checkbox" formControlName="allowOtherOption" />
+            {{ 'elections.questionAllowOtherLabel' | translate }}
+          </label>
         </div>
         <input type="text" formControlName="text" maxlength="500"
           [placeholder]="'elections.questionPlaceholder' | translate" />
 
+        <p class="question-options-label">{{ 'elections.optionsLabel' | translate }}</p>
         <div formArrayName="options" class="question-options">
           @for (option of questionOptions(questionIndex).controls; track $index; let optionIndex = $index) {
           <div class="option-row option-row--image" [formGroupName]="optionIndex">

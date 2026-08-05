@@ -576,6 +576,14 @@ namespace Electronic_Election_Management_System.Services
                    Enum.TryParse(raw, ignoreCase: true, out type);
         }
 
+        private static bool TryParseQuestionType(string raw, out QuestionType type)
+        {
+            type = default;
+            return Enum.GetNames<QuestionType>().Any(
+                       name => string.Equals(name, raw.Trim(), StringComparison.OrdinalIgnoreCase)) &&
+                   Enum.TryParse(raw, ignoreCase: true, out type);
+        }
+
         private static List<CreateElectionQuestionDto> NormalizeQuestions(CreateElectionRequest request)
         {
             var supplied = request.Questions
@@ -597,7 +605,11 @@ namespace Electronic_Election_Management_System.Services
         private static bool QuestionsAreValid(IEnumerable<CreateElectionQuestionDto> questions)
             => questions.Any() && questions.All(q =>
                 !string.IsNullOrWhiteSpace(q.Text) &&
-                q.Options.Count(o => !string.IsNullOrWhiteSpace(o.Label)) >= 2 &&
+                TryParseQuestionType(q.QuestionType, out var questionType) &&
+                // A Choice question needs 2+ selectable options; a FreeText question's options
+                // are just optional suggestion chips, so none are required.
+                (questionType == QuestionType.FreeText ||
+                 q.Options.Count(o => !string.IsNullOrWhiteSpace(o.Label)) >= 2) &&
                 q.Options.All(o => IsValidImage(o.ImageDataUrl)));
 
         private static bool IsValidImage(string? image)
@@ -628,23 +640,30 @@ namespace Electronic_Election_Management_System.Services
         private static List<ElectionQuestion> BuildQuestions(
             IEnumerable<CreateElectionQuestionDto> questions,
             Guid? electionId = null)
-            => questions.Select((question, questionIndex) => new ElectionQuestion
+            => questions.Select((question, questionIndex) =>
             {
-                ElectionId = electionId ?? Guid.Empty,
-                Text = question.Text.Trim(),
-                DisplayOrder = questionIndex,
-                IsRequired = question.IsRequired,
-                AllowMultipleAnswers = question.AllowMultipleAnswers,
-                Options = question.Options
-                    .Where(option => !string.IsNullOrWhiteSpace(option.Label))
-                    .Select(option => new Option
-                    {
-                        ElectionId = electionId ?? Guid.Empty,
-                        Label = option.Label.Trim(),
-                        Description = option.Description?.Trim(),
-                        ImageDataUrl = option.ImageDataUrl
-                    })
-                    .ToList()
+                // Already validated as parseable by QuestionsAreValid before this runs.
+                TryParseQuestionType(question.QuestionType, out var questionType);
+                return new ElectionQuestion
+                {
+                    ElectionId = electionId ?? Guid.Empty,
+                    Text = question.Text.Trim(),
+                    DisplayOrder = questionIndex,
+                    IsRequired = question.IsRequired,
+                    AllowMultipleAnswers = question.AllowMultipleAnswers,
+                    QuestionType = questionType,
+                    AllowOtherOption = questionType == QuestionType.Choice && question.AllowOtherOption,
+                    Options = question.Options
+                        .Where(option => !string.IsNullOrWhiteSpace(option.Label))
+                        .Select(option => new Option
+                        {
+                            ElectionId = electionId ?? Guid.Empty,
+                            Label = option.Label.Trim(),
+                            Description = option.Description?.Trim(),
+                            ImageDataUrl = option.ImageDataUrl
+                        })
+                        .ToList()
+                };
             }).ToList();
 
         private static ElectionDto MapToDto(Election e)
@@ -658,6 +677,8 @@ namespace Electronic_Election_Management_System.Services
                     DisplayOrder = q.DisplayOrder,
                     IsRequired = q.IsRequired,
                     AllowMultipleAnswers = q.AllowMultipleAnswers,
+                    QuestionType = q.QuestionType.ToString(),
+                    AllowOtherOption = q.AllowOtherOption,
                     Options = q.Options.Select(MapOptionToDto).ToList()
                 })
                 .ToList();
@@ -669,6 +690,7 @@ namespace Electronic_Election_Management_System.Services
                     Id = Guid.Empty,
                     Text = e.Question ?? e.Title,
                     IsRequired = true,
+                    QuestionType = QuestionType.Choice.ToString(),
                     Options = e.Options.Select(MapOptionToDto).ToList()
                 });
             }

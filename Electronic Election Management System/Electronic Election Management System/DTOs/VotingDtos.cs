@@ -38,6 +38,15 @@ namespace Electronic_Election_Management_System.DTOs
         public string? Company { get; set; }
     }
 
+    // SYNC: voting.model.ts -> QuestionAnswerDto
+    /// <summary>A voter's typed answer to one FreeText question.</summary>
+    public class QuestionAnswerDto
+    {
+        public Guid QuestionId { get; set; }
+        [StringLength(ValidationRules.AnswerMaxLength)]
+        public string Text { get; set; } = string.Empty;
+    }
+
     // SYNC: voting.model.ts -> CastVoteRequest
     public class CastVoteRequest : IValidatableObject
     {
@@ -46,6 +55,9 @@ namespace Electronic_Election_Management_System.DTOs
         public Guid OptionId { get; set; }
         [Required, MaxLength(ValidationRules.MaxQuestions)]
         public List<Guid> OptionIds { get; set; } = new();
+
+        [Required, MaxLength(ValidationRules.MaxQuestions)]
+        public List<QuestionAnswerDto> TextAnswers { get; set; } = new();
 
         /// <summary>Required for non-anonymous elections.</summary>
         public PersonalDetailsDto? VoterDeclaration { get; set; }
@@ -66,6 +78,13 @@ namespace Electronic_Election_Management_System.DTOs
                 yield return new ValidationResult(
                     ValidationMessages.InvalidOptionIds,
                     new[] { nameof(OptionIds) });
+
+            var textAnswerQuestionIds = TextAnswers.Select(answer => answer.QuestionId).ToList();
+            if (TextAnswers.Any(answer => answer.QuestionId == Guid.Empty) ||
+                textAnswerQuestionIds.Count != textAnswerQuestionIds.Distinct().Count())
+                yield return new ValidationResult(
+                    ValidationMessages.InvalidTextAnswers,
+                    new[] { nameof(TextAnswers) });
         }
     }
 
@@ -73,7 +92,7 @@ namespace Electronic_Election_Management_System.DTOs
     public class UserVoteDto
     {
         public Guid ElectionId { get; set; }
-        public Guid OptionId { get; set; }
+        public Guid? OptionId { get; set; }
         public string? OptionLabel { get; set; }
         public DateTime? VotedAt { get; set; }
         /// <summary>False once the voter has already used their one allowed change (edit or delete).</summary>
@@ -84,7 +103,9 @@ namespace Electronic_Election_Management_System.DTOs
     public class UserVoteAnswerDto
     {
         public Guid QuestionId { get; set; }
-        public Guid OptionId { get; set; }
+        public Guid? OptionId { get; set; }
         public string? OptionLabel { get; set; }
+        /// <summary>Set instead of <see cref="OptionId"/>/<see cref="OptionLabel"/> when this answer is for a FreeText question.</summary>
+        public string? Text { get; set; }
     }
 }

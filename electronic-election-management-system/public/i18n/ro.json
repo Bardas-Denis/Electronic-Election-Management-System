@@ -180,6 +180,8 @@
     "questionNumber": "Întrebarea {{number}}",
     "questionRequiredLabel": "Obligatorie",
     "questionMultipleAnswersLabel": "Răspuns multiplu",
+    "questionAllowOtherLabel": "Permite un alt răspuns",
+    "optionsLabel": "Opțiuni",
     "addQuestion": "Adaugă încă o întrebare",
     "removeQuestion": "Șterge întrebarea",
     "atLeastOneRequiredQuestionError": "Cel puțin o întrebare trebuie să fie obligatorie, ca alegătorii să aibă mereu la ce să răspundă.",
@@ -224,6 +226,9 @@
   "vote": {
     "questionOptional": "(opțional)",
     "questionMultipleAnswers": "(alegi una sau mai multe)",
+    "freeTextPlaceholder": "Scrie răspunsul tău...",
+    "otherOptionLabel": "Altceva",
+    "otherPlaceholder": "Scrie propriul răspuns...",
     "confirmed": "Votul tău a fost înregistrat",
     "confirmedMessage": "Mulțumim pentru participare! Rezultatele se actualizează live.",
     "seeResults": "Vezi rezultate live",
@@ -380,7 +385,9 @@
     "totalVotes": "Total voturi:",
     "live": "Live",
     "noResults": "Nu există rezultate momentan",
-    "votes": "voturi"
+    "votes": "voturi",
+    "noTextAnswers": "Niciun răspuns încă.",
+    "otherAnswersTitle": "Alte răspunsuri"
   },
   "errors": {
     "emailAlreadyExists": "Există deja un cont cu acest email.",

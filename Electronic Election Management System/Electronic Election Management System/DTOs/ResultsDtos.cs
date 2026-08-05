@@ -17,13 +17,20 @@ namespace Electronic_Election_Management_System.DTOs
         public Guid QuestionId { get; set; }
         public string Text { get; set; } = string.Empty;
         public bool AllowMultipleAnswers { get; set; }
+        /// <summary>Valid values: <c>"Choice"</c> or <c>"FreeText"</c>.</summary>
+        public string QuestionType { get; set; } = "Choice";
         // For a single-answer question this is the sum of option vote counts (every respondent
         // picked exactly one). For a multiple-answer question it's the distinct respondent count
         // instead, since a respondent's several picks would otherwise inflate this beyond the
         // number of people who actually answered - each option's own VoteCount can then exceed
-        // this total, and that's expected.
+        // this total, and that's expected. For a FreeText question it's simply the number of
+        // submitted answers.
         public int TotalVotes { get; set; }
         public List<OptionResultDto> Results { get; set; } = new();
+        /// <summary>Populated only for a <c>"FreeText"</c> question - the raw submitted answers,
+        /// with no attribution to who submitted them (consistent with option tallies never
+        /// exposing individual votes either).</summary>
+        public List<string> TextAnswers { get; set; } = new();
     }
 
     // SYNC: results.model.ts -> ElectionResultsDto

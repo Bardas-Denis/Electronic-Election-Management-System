@@ -18,6 +18,10 @@ describe('normalizeEditableQuestions', () => {
         id: 'question-id',
         text: 'Who should lead?',
         displayOrder: 0,
+        isRequired: true,
+        allowMultipleAnswers: false,
+        questionType: 'Choice',
+        allowOtherOption: false,
         options: [
           { id: 'one', label: 'Alice', description: 'Candidate one' },
           { id: 'two', label: 'Bob', description: 'Candidate two' }

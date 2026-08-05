@@ -3,6 +3,7 @@ using Electronic_Election_Management_System.Data.Repositories;
 using Electronic_Election_Management_System.DTOs;
 using Electronic_Election_Management_System.Models;
 using Electronic_Election_Management_System.Services;
+using Electronic_Election_Management_System.Services.interfaces;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
@@ -19,6 +20,8 @@ public class ElectionServiceTests
         Substitute.For<IElectionInvitationRepository>();
     private readonly ILabelRepository _labels = Substitute.For<ILabelRepository>();
     private readonly ILogger<ElectionService> _logger = Substitute.For<ILogger<ElectionService>>();
+    private readonly INotificationRepository _notifications = Substitute.For<INotificationRepository>();
+    private readonly IEmailService _emailService = Substitute.For<IEmailService>();
     private readonly ElectionService _service;
     private readonly Guid _creatorId = Guid.NewGuid();
 
@@ -27,6 +30,7 @@ public class ElectionServiceTests
         _users.GetByEmailsAsync(Arg.Any<IEnumerable<string>>()).Returns([]);
         _users.GetByIdsAsync(Arg.Any<IEnumerable<Guid>>())
             .Returns(callInfo => callInfo.Arg<IEnumerable<Guid>>().Select(id => new User { Id = id, Email = $"user{id}@example.com" }).ToList());
+        _invitations.GetByElectionAsync(Arg.Any<Guid>()).Returns([]);
         _service = new ElectionService(
             _elections,
             _auditLogs,
@@ -34,7 +38,9 @@ public class ElectionServiceTests
             _users,
             _invitations,
             _labels,
-            _logger);
+            _logger,
+            _notifications,
+            _emailService);
     }
 
     [Fact]
