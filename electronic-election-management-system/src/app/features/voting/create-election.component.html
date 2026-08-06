@@ -93,7 +93,28 @@
       </div>
 
       <div class="field-group">
-        <label>{{ 'elections.labelInviteLabel' | translate }}</label>
+        <div class="field-group-header">
+          <label>{{ 'elections.labelInviteLabel' | translate }}</label>
+          <button type="button" class="info-guide-trigger" (click)="toggleInfoPopover()"
+            [attr.title]="'elections.infoGuideButtonTitle' | translate"
+            [attr.aria-expanded]="showInfoPopover()">
+            <span class="info-icon">i</span>
+          </button>
+          @if (showInfoPopover()) {
+          <div class="info-popover-card">
+            <div class="info-popover-header">
+              <strong>{{ 'elections.infoGuideTitle' | translate }}</strong>
+              <button type="button" class="info-popover-close" (click)="toggleInfoPopover()">&#215;</button>
+            </div>
+            <ul class="info-popover-list">
+              <li>{{ 'elections.infoGuideAnd' | translate }}</li>
+              <li>{{ 'elections.infoGuideOr' | translate }}</li>
+              <li>{{ 'elections.infoGuideNot' | translate }}</li>
+              <li>{{ 'elections.infoGuideIndividual' | translate }}</li>
+            </ul>
+          </div>
+          }
+        </div>
         <p class="field-help">{{ 'elections.labelInviteHelp' | translate }}</p>
         @if (invitationLabelsLoading()) {
         <div class="inline-state">
@@ -108,6 +129,19 @@
           </button>
         </div>
         } @else {
+        @if (audienceSummaryText()) {
+        <div class="audience-summary-card">
+          <div class="audience-summary-header">
+            <span class="summary-badge">{{ 'elections.audienceSummaryLabel' | translate }}</span>
+            @if (excludedGroupUserIds().size > 0) {
+            <span class="summary-exclusions-badge">
+              {{ 'elections.audienceSummaryExclusionsNote' | translate: { count: excludedGroupUserIds().size } }}
+            </span>
+            }
+          </div>
+          <p class="summary-formula">{{ audienceSummaryText() }}</p>
+        </div>
+        }
         <!-- Audience group builder -->
         <div class="audience-groups">
           @for (group of audienceGroupsArray.controls; track $index; let gi = $index) {
@@ -138,9 +172,15 @@
             <div class="audience-group-conditions">
               @for (cond of groupConditions(gi).controls; track $index; let ci = $index) {
               @if (ci > 0) { <span class="condition-and-sep">{{ 'elections.andLabel' | translate }}</span> }
-              <span class="condition-chip" [class.condition-chip--excluded]="cond.get('isExcluded')?.value">
+              <span class="condition-chip"
+                [class.condition-chip--positive]="!cond.get('isExcluded')?.value"
+                [class.condition-chip--excluded]="cond.get('isExcluded')?.value">
                 <span class="condition-chip__label">
-                  @if (cond.get('isExcluded')?.value) { <span class="condition-not-badge">{{ 'elections.notBadge' | translate }}</span> }
+                  @if (cond.get('isExcluded')?.value) {
+                  <span class="condition-not-badge">- {{ 'elections.mustNotHaveBadge' | translate }}</span>
+                  } @else {
+                  <span class="condition-must-badge">+ {{ 'elections.mustHaveBadge' | translate }}</span>
+                  }
                   {{ labelById(cond.get('labelId')?.value)?.name ?? cond.get('labelId')?.value }}
                 </span>
                 <button type="button" class="condition-chip__toggle"
@@ -186,6 +226,49 @@
             + {{ 'elections.addGroup' | translate }}
           </button>
         </div>
+
+        @if (excludedGroupUserIds().size > 0) {
+        <div class="excluded-users-banner">
+          <div class="excluded-users-header">
+            <button type="button" class="btn-toggle-excluded" (click)="toggleExcludedUsersDrawer()">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                [class.rotated]="showExcludedUsersDrawer()">
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+              <strong>{{ 'elections.excludedUsersHeader' | translate }}</strong>
+              <span class="excluded-count-tag">
+                {{ 'elections.excludedUsersCount' | translate: { count: excludedGroupUserIds().size } }}
+              </span>
+            </button>
+            <button type="button" class="btn-restore-all" (click)="restoreAllExclusions()">
+              ↺ {{ 'elections.restoreAllExclusions' | translate }}
+            </button>
+          </div>
+          @if (showExcludedUsersDrawer()) {
+          <div class="excluded-users-list">
+            @for (user of visibleExcludedUserChips(); track user.id) {
+            <span class="excluded-user-chip">
+              <span class="user-avatar">{{ user.email.charAt(0).toUpperCase() }}</span>
+              <span class="user-email">{{ user.email }}</span>
+              <button type="button" class="btn-restore-user" (click)="restoreExcludedUser(user.id)"
+                [attr.aria-label]="('elections.restoreUser' | translate) + ': ' + user.email">
+                ↺ {{ 'elections.restoreUser' | translate }}
+              </button>
+            </span>
+            }
+            @if (hiddenExcludedChipCount() > 0 || showAllExcludedChips()) {
+            <button type="button" class="chips-toggle" (click)="toggleShowAllExcludedChips()">
+              @if (showAllExcludedChips()) {
+              {{ 'elections.showLessChips' | translate }}
+              } @else {
+              +{{ hiddenExcludedChipCount() }} {{ 'elections.moreChips' | translate }}
+              }
+            </button>
+            }
+          </div>
+          }
+        </div>
+        }
         }
       </div>
 
@@ -339,7 +422,28 @@
       </div>
 
       <div class="field-group">
-        <label>{{ 'elections.labelInviteLabel' | translate }}</label>
+        <div class="field-group-header">
+          <label>{{ 'elections.labelInviteLabel' | translate }}</label>
+          <button type="button" class="info-guide-trigger" (click)="toggleInfoPopover()"
+            [attr.title]="'elections.infoGuideButtonTitle' | translate"
+            [attr.aria-expanded]="showInfoPopover()">
+            <span class="info-icon">i</span>
+          </button>
+          @if (showInfoPopover()) {
+          <div class="info-popover-card">
+            <div class="info-popover-header">
+              <strong>{{ 'elections.infoGuideTitle' | translate }}</strong>
+              <button type="button" class="info-popover-close" (click)="toggleInfoPopover()">&#215;</button>
+            </div>
+            <ul class="info-popover-list">
+              <li>{{ 'elections.infoGuideAnd' | translate }}</li>
+              <li>{{ 'elections.infoGuideOr' | translate }}</li>
+              <li>{{ 'elections.infoGuideNot' | translate }}</li>
+              <li>{{ 'elections.infoGuideIndividual' | translate }}</li>
+            </ul>
+          </div>
+          }
+        </div>
         <p class="field-help">{{ 'elections.labelInviteHelp' | translate }}</p>
         @if (invitationLabelsLoading()) {
         <div class="inline-state">
@@ -354,6 +458,19 @@
           </button>
         </div>
         } @else {
+        @if (audienceSummaryText()) {
+        <div class="audience-summary-card">
+          <div class="audience-summary-header">
+            <span class="summary-badge">{{ 'elections.audienceSummaryLabel' | translate }}</span>
+            @if (excludedGroupUserIds().size > 0) {
+            <span class="summary-exclusions-badge">
+              {{ 'elections.audienceSummaryExclusionsNote' | translate: { count: excludedGroupUserIds().size } }}
+            </span>
+            }
+          </div>
+          <p class="summary-formula">{{ audienceSummaryText() }}</p>
+        </div>
+        }
         <!-- Audience group builder -->
         <div class="audience-groups">
           @for (group of audienceGroupsArray.controls; track $index; let gi = $index) {
@@ -384,9 +501,15 @@
             <div class="audience-group-conditions">
               @for (cond of groupConditions(gi).controls; track $index; let ci = $index) {
               @if (ci > 0) { <span class="condition-and-sep">{{ 'elections.andLabel' | translate }}</span> }
-              <span class="condition-chip" [class.condition-chip--excluded]="cond.get('isExcluded')?.value">
+              <span class="condition-chip"
+                [class.condition-chip--positive]="!cond.get('isExcluded')?.value"
+                [class.condition-chip--excluded]="cond.get('isExcluded')?.value">
                 <span class="condition-chip__label">
-                  @if (cond.get('isExcluded')?.value) { <span class="condition-not-badge">{{ 'elections.notBadge' | translate }}</span> }
+                  @if (cond.get('isExcluded')?.value) {
+                  <span class="condition-not-badge">- {{ 'elections.mustNotHaveBadge' | translate }}</span>
+                  } @else {
+                  <span class="condition-must-badge">+ {{ 'elections.mustHaveBadge' | translate }}</span>
+                  }
                   {{ labelById(cond.get('labelId')?.value)?.name ?? cond.get('labelId')?.value }}
                 </span>
                 <button type="button" class="condition-chip__toggle"
@@ -432,6 +555,49 @@
             + {{ 'elections.addGroup' | translate }}
           </button>
         </div>
+
+        @if (excludedGroupUserIds().size > 0) {
+        <div class="excluded-users-banner">
+          <div class="excluded-users-header">
+            <button type="button" class="btn-toggle-excluded" (click)="toggleExcludedUsersDrawer()">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                [class.rotated]="showExcludedUsersDrawer()">
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+              <strong>{{ 'elections.excludedUsersHeader' | translate }}</strong>
+              <span class="excluded-count-tag">
+                {{ 'elections.excludedUsersCount' | translate: { count: excludedGroupUserIds().size } }}
+              </span>
+            </button>
+            <button type="button" class="btn-restore-all" (click)="restoreAllExclusions()">
+              ↺ {{ 'elections.restoreAllExclusions' | translate }}
+            </button>
+          </div>
+          @if (showExcludedUsersDrawer()) {
+          <div class="excluded-users-list">
+            @for (user of visibleExcludedUserChips(); track user.id) {
+            <span class="excluded-user-chip">
+              <span class="user-avatar">{{ user.email.charAt(0).toUpperCase() }}</span>
+              <span class="user-email">{{ user.email }}</span>
+              <button type="button" class="btn-restore-user" (click)="restoreExcludedUser(user.id)"
+                [attr.aria-label]="('elections.restoreUser' | translate) + ': ' + user.email">
+                ↺ {{ 'elections.restoreUser' | translate }}
+              </button>
+            </span>
+            }
+            @if (hiddenExcludedChipCount() > 0 || showAllExcludedChips()) {
+            <button type="button" class="chips-toggle" (click)="toggleShowAllExcludedChips()">
+              @if (showAllExcludedChips()) {
+              {{ 'elections.showLessChips' | translate }}
+              } @else {
+              +{{ hiddenExcludedChipCount() }} {{ 'elections.moreChips' | translate }}
+              }
+            </button>
+            }
+          </div>
+          }
+        </div>
+        }
         }
       </div>
 

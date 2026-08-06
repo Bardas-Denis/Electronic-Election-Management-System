@@ -2,7 +2,7 @@ import { Component, OnInit, inject, signal, ElementRef, HostListener, ViewChild 
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormArray, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { TranslatePipe } from '@ngx-translate/core';
+import { TranslateService, TranslatePipe } from '@ngx-translate/core';
 import { forkJoin, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { VotingService } from '../../core/services/voting.service';
@@ -39,6 +39,7 @@ export class CreateElectionComponent implements OnInit {
   private votingService = inject(VotingService);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
+  private translate = inject(TranslateService);
 
   isSubmitting = signal(false);
   isLoading = signal(false);
@@ -54,6 +55,8 @@ export class CreateElectionComponent implements OnInit {
   invitationLabelsErrorKey = signal<string | null>(null);
   invitedEmails = signal<string[]>([]);
   excludedGroupUserIds = signal<Set<string>>(new Set());
+  showInfoPopover = signal(false);
+  showExcludedUsersDrawer = signal(false);
   inviteEmailControl = this.fb.control('', [
     Validators.email,
     Validators.maxLength(INPUT_LIMITS.email)
@@ -64,6 +67,7 @@ export class CreateElectionComponent implements OnInit {
   candidatePickerOpen = signal(false);
   /** When false, only the first CHIP_PREVIEW chips are rendered; toggled by the user. */
   showAllCandidateChips = signal(false);
+  showAllExcludedChips = signal(false);
   readonly CHIP_PREVIEW = 5;
   private invitationCandidatesLoaded = false;
   private invitationLabelsLoaded = false;
@@ -508,6 +512,95 @@ export class CreateElectionComponent implements OnInit {
     return this.invitationLabels().find(l => l.id === labelId);
   }
 
+  toggleInfoPopover(): void {
+    this.showInfoPopover.update(v => !v);
+  }
+
+  toggleExcludedUsersDrawer(): void {
+    this.showExcludedUsersDrawer.update(v => !v);
+  }
+
+  excludedUserCandidates(): InvitationCandidateDto[] {
+    const excluded = this.excludedGroupUserIds();
+    return this.invitationCandidates().filter(c => excluded.has(c.id));
+  }
+
+  restoreExcludedUser(candidateId: string): void {
+    const nextExclusions = new Set(this.excludedGroupUserIds());
+    nextExclusions.delete(candidateId);
+    this.excludedGroupUserIds.set(nextExclusions);
+  }
+
+  restoreAllExclusions(): void {
+    this.excludedGroupUserIds.set(new Set());
+  }
+
+  toggleShowAllExcludedChips(): void {
+    this.showAllExcludedChips.update(v => !v);
+  }
+
+  visibleExcludedUserChips(): InvitationCandidateDto[] {
+    const list = this.excludedUserCandidates();
+    return this.showAllExcludedChips() ? list : list.slice(0, this.CHIP_PREVIEW);
+  }
+
+  hiddenExcludedChipCount(): number {
+    return Math.max(0, this.excludedUserCandidates().length - this.CHIP_PREVIEW);
+  }
+
+  /**
+   * Generates a readable natural-language summary of the audience group rules in human language,
+   * translated into the active UI locale.
+   * Example (EN): "Inviting voters with Cluj and Finance"
+   * Example (RO): "Se invită alegătorii cu Cluj și Finance"
+   */
+  audienceSummaryText(): string {
+    const rawGroups = this.audienceGroupsArray.value as { labelId: string; isExcluded: boolean }[][];
+    const groupSummaries: string[] = [];
+
+    const andWord = this.translate.instant('elections.andLabel');
+    const allVotersWord = this.translate.instant('elections.audienceSummaryAllVoters');
+
+    for (const conditions of rawGroups) {
+      if (!conditions || conditions.length === 0) continue;
+      const validConditions = conditions.filter(c => c.labelId);
+      if (validConditions.length === 0) continue;
+
+      const positiveNames = validConditions
+        .filter(c => !c.isExcluded)
+        .map(c => this.labelById(c.labelId)?.name ?? c.labelId);
+
+      const excludedNames = validConditions
+        .filter(c => c.isExcluded)
+        .map(c => this.labelById(c.labelId)?.name ?? c.labelId);
+
+      let text = '';
+      if (positiveNames.length === 1) {
+        text = positiveNames[0];
+      } else if (positiveNames.length > 1) {
+        text = positiveNames.slice(0, -1).join(', ') + ` ${andWord} ` + positiveNames[positiveNames.length - 1];
+      } else {
+        text = allVotersWord;
+      }
+
+      if (excludedNames.length === 1) {
+        text += ` ` + this.translate.instant('elections.audienceSummaryExcluding', { names: excludedNames[0] });
+      } else if (excludedNames.length > 1) {
+        const exclStr = excludedNames.slice(0, -1).join(', ') + ` ${andWord} ` + excludedNames[excludedNames.length - 1];
+        text += ` ` + this.translate.instant('elections.audienceSummaryExcluding', { names: exclStr });
+      }
+
+      groupSummaries.push(text);
+    }
+
+    if (groupSummaries.length === 0) return '';
+    if (groupSummaries.length === 1) {
+      return this.translate.instant('elections.audienceSummarySingleGroup', { group: groupSummaries[0] });
+    }
+    const orWord = ` ${this.translate.instant('elections.orLabel').toUpperCase()} `;
+    return this.translate.instant('elections.audienceSummaryMultiGroup', { groups: groupSummaries.join(`] ${orWord} [`) });
+  }
+
 
   // AND/OR/NOT audience evaluation (mirrors ExpandAudienceGroupsAsync server-side)
 
@@ -769,77 +862,7 @@ export class CreateElectionComponent implements OnInit {
     return { effective, total };
   }
 
-  /**
-   * Calculates the progressive number of users matching conditions in group `groupIndex`
-   * up to and including `conditionIndex`.
-   */
-  conditionProgressiveCount(groupIndex: number, conditionIndex: number): { count: number; isIntersected: boolean } {
-    const labels = this.invitationLabels();
-    const labelMap = new Map<string, Set<string>>();
-    for (const label of labels) {
-      labelMap.set(label.id, new Set(label.userIds ?? []));
-    }
 
-    const rawGroups = this.audienceGroupsArray.value as { labelId: string; isExcluded: boolean }[][];
-    const groupConditions = rawGroups[groupIndex];
-    if (!groupConditions || conditionIndex < 0 || conditionIndex >= groupConditions.length) {
-      return { count: 0, isIntersected: false };
-    }
-
-    const subset = groupConditions.slice(0, conditionIndex + 1);
-    const positive = subset.filter(c => !c.isExcluded && c.labelId);
-    const excluded = subset.filter(c => c.isExcluded && c.labelId);
-
-    if (positive.length === 0) return { count: 0, isIntersected: false };
-
-    let candidates: Set<string> | null = null;
-    for (const cond of positive) {
-      const users = labelMap.get(cond.labelId);
-      if (!users) { candidates = new Set(); break; }
-      if (candidates === null) {
-        candidates = new Set(users);
-      } else {
-        for (const id of [...candidates]) {
-          if (!users.has(id)) candidates.delete(id);
-        }
-      }
-    }
-
-    if (!candidates || candidates.size === 0) {
-      return { count: 0, isIntersected: conditionIndex > 0 };
-    }
-
-    for (const cond of excluded) {
-      const users = labelMap.get(cond.labelId);
-      if (users) for (const id of users) candidates.delete(id);
-    }
-
-    return {
-      count: candidates.size,
-      isIntersected: conditionIndex > 0
-    };
-  }
-
-  /**
-   * Returns the effective number of users invited from this label, accounting for
-   * individual user exclusions (X). Returns e.g. 19 for a label of 20 with 1 excluded user.
-   */
-  labelEffectiveCount(labelId: string): number {
-    const label = this.invitationLabels().find(l => l.id === labelId);
-    if (!label) return 0;
-    const excluded = this.excludedGroupUserIds();
-    const excludedCount = (label.userIds ?? []).filter(id => excluded.has(id)).length;
-    return Math.max(0, label.userCount - excludedCount);
-  }
-
-  selectedInvitationLabels(): InvitationLabelDto[] {
-    // All labels that appear in at least one condition across all groups.
-    const rawGroups = this.audienceGroupsArray.value as { labelId: string; isExcluded: boolean }[][];
-    const usedIds = new Set(
-      rawGroups.flatMap(group => group.map(c => c.labelId)).filter(Boolean)
-    );
-    return this.invitationLabels().filter(l => usedIds.has(l.id));
-  }
 
   toggleLabelPicker(): void {
     this.labelPickerOpen.update(open => !open);
@@ -847,9 +870,6 @@ export class CreateElectionComponent implements OnInit {
       this.labelSearchControl.reset('');
     }
   }
-
-  /** @deprecated Retained for the user-picker toggle; label picker is now per-condition. */
-  toggleInvitationLabel(_labelId: string, _selected: boolean): void { /* no-op */ }
 
   removeInvitationLabel(labelId: string): void {
     // Remove every condition across all groups that references this label.
@@ -866,15 +886,7 @@ export class CreateElectionComponent implements OnInit {
     this.cleanExclusionsForLabel(labelId);
   }
 
-  allVisibleInvitationLabelsSelected(): boolean {
-    // "All selected" when every non-empty label appears in some group condition.
-    const availableLabels = this.filteredInvitationLabels().filter(l => l.userCount > 0);
-    return availableLabels.length > 0 && availableLabels.every(l => this.isInvitationLabelSelected(l.id));
-  }
 
-  toggleAllInvitationLabels(): void {
-    // no-op in group mode — bulk select/deselect doesn't map cleanly onto AND-groups.
-  }
 
   private loadInvitationCandidates(): void {
     if (this.invitationCandidatesLoaded || this.invitationCandidatesLoading()) {
