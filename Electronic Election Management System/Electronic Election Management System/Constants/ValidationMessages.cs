@@ -18,5 +18,9 @@ namespace Electronic_Election_Management_System.Constants
         public const string InvitationRecipientRequired = "At least one invitation recipient is required.";
         public const string AtLeastOneRequiredQuestion = "At least one question must be required.";
         public const string InvalidTextAnswers = "Text answers must reference distinct, valid questions.";
+        public const string AudienceGroupRequiresPositiveCondition =
+            "Each audience group must contain at least one non-excluded (positive) label condition.";
+        public const string AudienceConditionLabelIdInvalid =
+            "Audience condition label IDs cannot be empty (Guid.Empty).";
     }
 }

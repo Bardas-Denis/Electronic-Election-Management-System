@@ -95,7 +95,13 @@ public class ElectionServiceTests
     public async Task CreateAsync_WithLabelAudienceOnPublicElection_IsRejected()
     {
         var request = ValidCreateRequest();
-        request.InvitedLabelIds = [Guid.NewGuid()];
+        request.InvitedAudienceGroups =
+        [
+            new AudienceGroupDto
+            {
+                Conditions = [new AudienceConditionDto { LabelId = Guid.NewGuid() }]
+            }
+        ];
 
         var result = await _service.CreateAsync(request, _creatorId);
 
@@ -109,7 +115,13 @@ public class ElectionServiceTests
     {
         var request = ValidCreateRequest();
         request.IsClosed = true;
-        request.InvitedLabelIds = [Guid.NewGuid()];
+        request.InvitedAudienceGroups =
+        [
+            new AudienceGroupDto
+            {
+                Conditions = [new AudienceConditionDto { LabelId = Guid.NewGuid() }]
+            }
+        ];
         _labels.GetByIdsAsync(Arg.Any<IEnumerable<Guid>>()).Returns([]);
 
         var result = await _service.CreateAsync(request, _creatorId);
@@ -127,7 +139,18 @@ public class ElectionServiceTests
         var secondUser = new User { Email = "second@example.com" };
         var request = ValidCreateRequest();
         request.IsClosed = true;
-        request.InvitedLabelIds = [firstLabel.Id, secondLabel.Id];
+        // Two OR-groups, each with one positive condition — equivalent to the old OR-of-labels.
+        request.InvitedAudienceGroups =
+        [
+            new AudienceGroupDto
+            {
+                Conditions = [new AudienceConditionDto { LabelId = firstLabel.Id }]
+            },
+            new AudienceGroupDto
+            {
+                Conditions = [new AudienceConditionDto { LabelId = secondLabel.Id }]
+            }
+        ];
 
         _labels.GetByIdsAsync(Arg.Any<IEnumerable<Guid>>())
             .Returns([firstLabel, secondLabel]);
@@ -154,6 +177,168 @@ public class ElectionServiceTests
         persisted!.Invitations.Select(invitation => invitation.UserId)
             .Should().BeEquivalentTo([firstUser.Id, secondUser.Id]);
         persisted.Invitations.Should().OnlyHaveUniqueItems(invitation => invitation.Email);
+    }
+
+    [Fact]
+    public async Task CreateAsync_SingleAndGroup_UserMissingOneLabelIsExcluded()
+    {
+        var clujLabel   = new Label { Name = "Cluj" };
+        var hrLabel     = new Label { Name = "HR" };
+        var userBoth    = new User { Email = "both@example.com" };
+        var userOneOnly = new User { Email = "one@example.com" };
+        var request = ValidCreateRequest();
+        request.IsClosed = true;
+        // One AND-group requiring both Cluj AND HR.
+        request.InvitedAudienceGroups =
+        [
+            new AudienceGroupDto
+            {
+                Conditions =
+                [
+                    new AudienceConditionDto { LabelId = clujLabel.Id },
+                    new AudienceConditionDto { LabelId = hrLabel.Id }
+                ]
+            }
+        ];
+
+        _labels.GetByIdsAsync(Arg.Any<IEnumerable<Guid>>())
+            .Returns([clujLabel, hrLabel]);
+        // userBoth has both labels; userOneOnly only has Cluj.
+        _labels.GetUsersWithLabelAsync(clujLabel.Id).Returns(
+        [
+            CreateUserLabel(userBoth, clujLabel),
+            CreateUserLabel(userOneOnly, clujLabel)
+        ]);
+        _labels.GetUsersWithLabelAsync(hrLabel.Id).Returns(
+        [
+            CreateUserLabel(userBoth, hrLabel)
+        ]);
+        _users.GetByIdsAsync(Arg.Any<IEnumerable<Guid>>()).Returns([userBoth]);
+
+        Election? persisted = null;
+        _elections.AddAsync(Arg.Do<Election>(e => persisted = e)).Returns(Task.CompletedTask);
+
+        var result = await _service.CreateAsync(request, _creatorId);
+
+        result.Success.Should().BeTrue();
+        persisted!.Invitations.Select(i => i.UserId)
+            .Should().BeEquivalentTo([userBoth.Id]);
+    }
+
+    [Fact]
+    public async Task CreateAsync_TwoOrGroups_UserMatchingEitherIsInvitedOnce()
+    {
+        var clujLabel      = new Label { Name = "Cluj" };
+        var bucharestLabel = new Label { Name = "Bucharest" };
+        var userCluj       = new User { Email = "cluj@example.com" };
+        var userBucharest  = new User { Email = "buc@example.com" };
+        var userBoth       = new User { Email = "both@example.com" };
+        var request = ValidCreateRequest();
+        request.IsClosed = true;
+        // Cluj OR Bucharest.
+        request.InvitedAudienceGroups =
+        [
+            new AudienceGroupDto { Conditions = [new AudienceConditionDto { LabelId = clujLabel.Id }] },
+            new AudienceGroupDto { Conditions = [new AudienceConditionDto { LabelId = bucharestLabel.Id }] }
+        ];
+
+        _labels.GetByIdsAsync(Arg.Any<IEnumerable<Guid>>())
+            .Returns([clujLabel, bucharestLabel]);
+        _labels.GetUsersWithLabelAsync(clujLabel.Id).Returns(
+        [
+            CreateUserLabel(userCluj, clujLabel),
+            CreateUserLabel(userBoth, clujLabel)
+        ]);
+        _labels.GetUsersWithLabelAsync(bucharestLabel.Id).Returns(
+        [
+            CreateUserLabel(userBucharest, bucharestLabel),
+            CreateUserLabel(userBoth, bucharestLabel)
+        ]);
+        _users.GetByIdsAsync(Arg.Any<IEnumerable<Guid>>())
+            .Returns([userCluj, userBucharest, userBoth]);
+
+        Election? persisted = null;
+        _elections.AddAsync(Arg.Do<Election>(e => persisted = e)).Returns(Task.CompletedTask);
+
+        var result = await _service.CreateAsync(request, _creatorId);
+
+        result.Success.Should().BeTrue();
+        // All three users should be invited exactly once.
+        persisted!.Invitations.Select(i => i.UserId)
+            .Should().BeEquivalentTo([userCluj.Id, userBucharest.Id, userBoth.Id]);
+        persisted.Invitations.Should().OnlyHaveUniqueItems(i => i.UserId);
+    }
+
+    [Fact]
+    public async Task CreateAsync_NotCondition_ExcludesUserWhoHasExcludedLabel()
+    {
+        var hrLabel    = new Label { Name = "HR" };
+        var youngLabel = new Label { Name = "0-18" };
+        var adultUser  = new User { Email = "adult@example.com" };
+        var youngUser  = new User { Email = "young@example.com" };
+        var request = ValidCreateRequest();
+        request.IsClosed = true;
+        // HR AND NOT 0-18.
+        request.InvitedAudienceGroups =
+        [
+            new AudienceGroupDto
+            {
+                Conditions =
+                [
+                    new AudienceConditionDto { LabelId = hrLabel.Id,    IsExcluded = false },
+                    new AudienceConditionDto { LabelId = youngLabel.Id, IsExcluded = true  }
+                ]
+            }
+        ];
+
+        _labels.GetByIdsAsync(Arg.Any<IEnumerable<Guid>>())
+            .Returns([hrLabel, youngLabel]);
+        // Both users have HR; only youngUser has 0-18.
+        _labels.GetUsersWithLabelAsync(hrLabel.Id).Returns(
+        [
+            CreateUserLabel(adultUser, hrLabel),
+            CreateUserLabel(youngUser, hrLabel)
+        ]);
+        _labels.GetUsersWithLabelAsync(youngLabel.Id).Returns(
+        [
+            CreateUserLabel(youngUser, youngLabel)
+        ]);
+        _users.GetByIdsAsync(Arg.Any<IEnumerable<Guid>>()).Returns([adultUser]);
+
+        Election? persisted = null;
+        _elections.AddAsync(Arg.Do<Election>(e => persisted = e)).Returns(Task.CompletedTask);
+
+        var result = await _service.CreateAsync(request, _creatorId);
+
+        result.Success.Should().BeTrue();
+        persisted!.Invitations.Select(i => i.UserId)
+            .Should().BeEquivalentTo([adultUser.Id]);
+        persisted.Invitations.Select(i => i.UserId)
+            .Should().NotContain(youngUser.Id);
+    }
+
+    [Fact]
+    public async Task CreateAsync_EmptyAudienceGroups_FallsBackToManualUserIds()
+    {
+        var manualUser = new User { Email = "manual@example.com" };
+        var request = ValidCreateRequest();
+        request.IsClosed = true;
+        request.InvitedUserIds = [manualUser.Id];
+        // No audience groups — should behave like the old empty InvitedLabelIds path.
+        request.InvitedAudienceGroups = [];
+
+        _users.GetByIdsAsync(Arg.Any<IEnumerable<Guid>>()).Returns([manualUser]);
+
+        Election? persisted = null;
+        _elections.AddAsync(Arg.Do<Election>(e => persisted = e)).Returns(Task.CompletedTask);
+
+        var result = await _service.CreateAsync(request, _creatorId);
+
+        result.Success.Should().BeTrue();
+        persisted!.Invitations.Select(i => i.UserId)
+            .Should().BeEquivalentTo([manualUser.Id]);
+        // Labels repository should never be touched when groups are empty.
+        await _labels.DidNotReceive().GetByIdsAsync(Arg.Any<IEnumerable<Guid>>());
     }
 
     [Fact]

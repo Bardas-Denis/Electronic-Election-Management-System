@@ -19,6 +19,10 @@ namespace Electronic_Election_Management_System.DTOs
         public const int MaxQuestions = 20;
         public const int MaxOptionsPerQuestion = 50;
         public const int MaxInvitations = 500;
+        /// <summary>Maximum number of label conditions inside one AND-group.</summary>
+        public const int MaxLabelsPerGroup = 10;
+        /// <summary>Maximum number of AND-groups in a single audience rule.</summary>
+        public const int MaxAudienceGroups = 20;
     }
 
     /// <summary>Rejects strings that contain only whitespace.</summary>

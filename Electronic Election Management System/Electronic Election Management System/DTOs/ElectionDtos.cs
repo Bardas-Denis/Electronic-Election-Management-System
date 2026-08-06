@@ -110,6 +110,21 @@ namespace Electronic_Election_Management_System.DTOs
         public bool HasVotes { get; set; } = false;
     }
 
+    // SYNC: voting.model.ts -> AudienceConditionDto
+    public class AudienceConditionDto
+    {
+        public Guid LabelId { get; set; }
+        /// <summary>True means "does NOT have this label" (NOT condition).</summary>
+        public bool IsExcluded { get; set; } = false;
+    }
+
+    // SYNC: voting.model.ts -> AudienceGroupDto
+    public class AudienceGroupDto
+    {
+        [Required, MinLength(1), MaxLength(ValidationRules.MaxLabelsPerGroup)]
+        public List<AudienceConditionDto> Conditions { get; set; } = new();
+    }
+
     // SYNC: voting.model.ts -> CreateElectionRequest
     public class CreateElectionRequest : IValidatableObject
     {
@@ -147,11 +162,11 @@ namespace Electronic_Election_Management_System.DTOs
         public List<string> InvitedEmails { get; set; } = new();
 
         /// <summary>
-        /// Labels whose currently assigned users should be invited when the closed election is created.
-        /// Label membership is expanded into individual invitations at creation time.
+        /// Audience rule: an OR of AND-groups. Each group's conditions are ANDed together;
+        /// IsExcluded conditions apply a NOT. Expanded into individual invitations at creation time.
         /// </summary>
-        [Required, MaxLength(ValidationRules.MaxInvitations)]
-        public List<Guid> InvitedLabelIds { get; set; } = new();
+        [Required, MaxLength(ValidationRules.MaxAudienceGroups)]
+        public List<AudienceGroupDto> InvitedAudienceGroups { get; set; } = new();
 
         public DateTime StartsAt { get; set; }
 
@@ -204,6 +219,23 @@ namespace Electronic_Election_Management_System.DTOs
                 yield return new ValidationResult(
                     ValidationMessages.InvalidInvitationEmails,
                     new[] { nameof(InvitedEmails) });
+            }
+
+            // Audience group validation: mirrors the InvitedUserIds checks above.
+            if (InvitedAudienceGroups.Any(group =>
+                    group.Conditions.Any(c => c.LabelId == Guid.Empty)))
+            {
+                yield return new ValidationResult(
+                    ValidationMessages.AudienceConditionLabelIdInvalid,
+                    new[] { nameof(InvitedAudienceGroups) });
+            }
+
+            if (InvitedAudienceGroups.Any(group =>
+                    group.Conditions.All(c => c.IsExcluded)))
+            {
+                yield return new ValidationResult(
+                    ValidationMessages.AudienceGroupRequiresPositiveCondition,
+                    new[] { nameof(InvitedAudienceGroups) });
             }
         }
     }
