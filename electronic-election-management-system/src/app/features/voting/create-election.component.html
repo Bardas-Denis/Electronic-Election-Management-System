@@ -319,17 +319,41 @@
 
             <div class="user-picker-list">
               @for (candidate of filteredInvitationCandidates(); track candidate.id) {
-              <label class="user-picker-item"
+              <div class="user-picker-item"
                 [class.user-picker-item--selected]="isInvitationCandidateSelected(candidate.id)"
-                [class.user-picker-item--from-label]="isCandidateFromGroup(candidate.id)">
+                [class.user-picker-item--from-label]="isCandidateFromGroup(candidate.id)"
+                (click)="toggleInvitationCandidate(candidate.id)">
                 <span class="user-avatar">{{ candidate.email.charAt(0).toUpperCase() }}</span>
                 <span class="user-email">{{ candidate.email }}</span>
-            @if (isCandidateFromGroup(candidate.id)) {
-                <span class="label-tag-badge" title="{{ 'elections.coveredByGroup' | translate }}">⊕</span>
+                
+                @if (candidateLabels(candidate.id); as cl) {
+                <div class="user-item-labels"
+                  [class.has-overflow]="cl.hiddenCount > 0"
+                  [class.is-expanded]="isCandidateLabelsExpanded(candidate.id)"
+                  (mousedown)="$event.stopPropagation()"
+                  (click)="onUserItemLabelsClick(candidate.id, cl.hiddenCount > 0, $event)">
+                  <div class="user-item-labels-default">
+                    @for (lbl of cl.visible; track lbl.id) {
+                    <span class="user-item-label-chip">{{ lbl.name }}</span>
+                    }
+                    @if (cl.hiddenCount > 0) {
+                    <span class="user-item-label-more">+{{ cl.hiddenCount }}</span>
+                    }
+                  </div>
+                  @if (cl.hiddenCount > 0) {
+                  <div class="user-item-labels-expanded">
+                    @for (lbl of cl.all; track lbl.id) {
+                    <span class="user-item-label-chip">{{ lbl.name }}</span>
+                    }
+                  </div>
+                  }
+                </div>
                 }
+
                 <input type="checkbox" [checked]="isInvitationCandidateSelected(candidate.id)"
+                  (click)="$event.stopPropagation()"
                   (change)="toggleInvitationCandidate(candidate.id, $any($event.target).checked)" />
-              </label>
+              </div>
               } @empty {
               <p class="user-picker-empty">{{ 'elections.noMatchingUsers' | translate }}</p>
               }
@@ -648,17 +672,41 @@
 
             <div class="user-picker-list">
               @for (candidate of filteredInvitationCandidates(); track candidate.id) {
-              <label class="user-picker-item"
+              <div class="user-picker-item"
                 [class.user-picker-item--selected]="isInvitationCandidateSelected(candidate.id)"
-                [class.user-picker-item--from-label]="isCandidateFromGroup(candidate.id)">
+                [class.user-picker-item--from-label]="isCandidateFromGroup(candidate.id)"
+                (click)="toggleInvitationCandidate(candidate.id)">
                 <span class="user-avatar">{{ candidate.email.charAt(0).toUpperCase() }}</span>
                 <span class="user-email">{{ candidate.email }}</span>
-                @if (isCandidateFromGroup(candidate.id)) {
-                <span class="label-tag-badge" title="{{ 'elections.coveredByGroup' | translate }}">&#8853;</span>
+                
+                @if (candidateLabels(candidate.id); as cl) {
+                <div class="user-item-labels"
+                  [class.has-overflow]="cl.hiddenCount > 0"
+                  [class.is-expanded]="isCandidateLabelsExpanded(candidate.id)"
+                  (mousedown)="$event.stopPropagation()"
+                  (click)="onUserItemLabelsClick(candidate.id, cl.hiddenCount > 0, $event)">
+                  <div class="user-item-labels-default">
+                    @for (lbl of cl.visible; track lbl.id) {
+                    <span class="user-item-label-chip">{{ lbl.name }}</span>
+                    }
+                    @if (cl.hiddenCount > 0) {
+                    <span class="user-item-label-more">+{{ cl.hiddenCount }}</span>
+                    }
+                  </div>
+                  @if (cl.hiddenCount > 0) {
+                  <div class="user-item-labels-expanded">
+                    @for (lbl of cl.all; track lbl.id) {
+                    <span class="user-item-label-chip">{{ lbl.name }}</span>
+                    }
+                  </div>
+                  }
+                </div>
                 }
+
                 <input type="checkbox" [checked]="isInvitationCandidateSelected(candidate.id)"
+                  (click)="$event.stopPropagation()"
                   (change)="toggleInvitationCandidate(candidate.id, $any($event.target).checked)" />
-              </label>
+              </div>
               } @empty {
               <p class="user-picker-empty">{{ 'elections.noMatchingUsers' | translate }}</p>
               }

@@ -153,6 +153,7 @@
   "restoreAllExclusions": "Restore all",
   "moreChips": "more",
   "showLessChips": "Show less",
+  "allAssignedLabels": "All assigned labels",
   "labelInviteLabel": "Invite by label",
   "labelInviteHelp": "Invites all users in the selected labels. Duplicates are ignored.",
   "loadingInviteLabels": "Loading labels...",
