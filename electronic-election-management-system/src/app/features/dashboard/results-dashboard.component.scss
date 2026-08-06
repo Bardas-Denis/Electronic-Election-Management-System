@@ -229,6 +229,10 @@
   font-size: 0.85rem;
 }
 
+/* ─── "Other" answers row (below the chart, not beside it) ─────────────
+   Truncated chip list: first N answers as pills, then a "+N more" pill
+   that expands the rest in place - same pattern as the invite-users
+   picker's "+95 more" chip, instead of a long always-open scroll list. */
 .other-answers-section {
   margin-top: 1.5rem;
   padding-top: 1.25rem;
@@ -241,4 +245,45 @@
   font-size: 0.8rem;
   font-weight: 600;
 }
+
+.text-answers-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.text-answer-chip {
+  display: inline-block;
+  vertical-align: middle;
+  max-width: 420px;
+  padding: 0.4rem 0.75rem;
+  border: 1px solid var(--border-color);
+  border-radius: 999px;
+  background: var(--bg-subtle);
+  color: var(--text-primary);
+  font-size: 0.8125rem;
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.text-answers-more {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.4rem 0.75rem;
+  border: 1.5px solid var(--text-primary);
+  border-radius: 999px;
+  background: var(--bg-card);
+  color: var(--text-primary);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease;
+
+  &:hover {
+    background: var(--bg-subtle);
+  }
+}
+
 .result-option-image { width: 68px; height: 54px; object-fit: cover; border-radius: 9px; }

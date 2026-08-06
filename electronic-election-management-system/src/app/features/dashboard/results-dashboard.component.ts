@@ -12,6 +12,7 @@ import { ElectionResultsDto, OptionResultDto, QuestionResultDto } from '../../co
 interface PieSegment {
   optionId: string;
   label: string;
+  isOtherOption: boolean;
   voteCount: number;
   percent: number;
   colorVar: string;
@@ -25,6 +26,7 @@ interface PieSegment {
 interface OptionMeter {
   optionId: string;
   label: string;
+  isOtherOption: boolean;
   voteCount: number;
   percent: number;
   colorVar: string;
@@ -50,6 +52,15 @@ export class ResultsDashboardComponent implements OnInit, OnDestroy {
 
   readonly meterRadius = 40;
   private readonly meterCircumference = 2 * Math.PI * this.meterRadius;
+
+  // How many free-text "Other" answers to show before collapsing the rest
+  // behind a "+N more" chip, same pattern as the invite-users picker.
+  readonly otherAnswersPreviewCount = 2;
+
+  // Which questions' Other-answers list the user has expanded to show
+  // everything. Keyed by questionId since a page can have several
+  // questions, each with its own independent expand state.
+  private expandedOtherAnswers = signal<ReadonlySet<string>>(new Set());
 
   // Key of the segment/row currently under the pointer, shared between the
   // pie chart and the legend, so hovering either one also highlights its pair.
@@ -108,9 +119,38 @@ export class ResultsDashboardComponent implements OnInit, OnDestroy {
     return `${questionId}:${optionId}`;
   }
 
+  isOtherAnswersExpanded(questionId: string): boolean {
+    return this.expandedOtherAnswers().has(questionId);
+  }
+
+  toggleOtherAnswers(questionId: string): void {
+    this.expandedOtherAnswers.update((current) => {
+      const next = new Set(current);
+      if (next.has(questionId)) {
+        next.delete(questionId);
+      } else {
+        next.add(questionId);
+      }
+      return next;
+    });
+  }
+
+  // The answers actually rendered as chips: everything once expanded,
+  // otherwise just the first `otherAnswersPreviewCount` - the remainder is
+  // summarized by the "+N more" chip instead of being rendered and hidden,
+  // so a question with hundreds of Other answers doesn't bloat the page.
+  visibleTextAnswers(question: QuestionResultDto): string[] {
+    return this.isOtherAnswersExpanded(question.questionId)
+      ? question.textAnswers
+      : question.textAnswers.slice(0, this.otherAnswersPreviewCount);
+  }
+
   // Turns a multiple-answer question's options into independent rings - one
   // per option, each showing "% of respondents who picked this", since a
   // respondent can pick several and the shares don't sum to a whole circle.
+  // Includes the synthetic "Other" entry (option.isOtherOption) the backend
+  // appends to `results` when applicable, same as any other option - it just
+  // gets its own ring like everything else here.
   optionMeters(question: QuestionResultDto): OptionMeter[] {
     const total = question.totalVotes;
     return question.results.map((option: OptionResultDto, index: number) => {
@@ -119,6 +159,7 @@ export class ResultsDashboardComponent implements OnInit, OnDestroy {
       return {
         optionId: option.optionId,
         label: option.label,
+        isOtherOption: !!option.isOtherOption,
         voteCount: option.voteCount,
         percent,
         colorVar: `var(--series-${(index % 8) + 1})`,
@@ -132,6 +173,11 @@ export class ResultsDashboardComponent implements OnInit, OnDestroy {
   // a circle with stroke-dasharray) avoid a seam artefact where the circle's
   // own start/end point meets - with the dasharray trick that seam silently
   // swallows one side of the gap whenever two slices meet exactly there.
+  //
+  // Includes the synthetic "Other" entry (option.isOtherOption) the backend
+  // appends to `results` when applicable, same as any other option - it just
+  // gets its own wedge like everything else here, which is what keeps the
+  // slices' vote counts summing back up to the question's total.
   pieSegments(question: QuestionResultDto): PieSegment[] {
     const total = question.totalVotes;
     const optionsWithVotes = question.results.filter((r) => r.voteCount > 0).length;
@@ -156,6 +202,7 @@ export class ResultsDashboardComponent implements OnInit, OnDestroy {
       return {
         optionId: option.optionId,
         label: option.label,
+        isOtherOption: !!option.isOtherOption,
         voteCount: option.voteCount,
         percent: this.percentFor(option.voteCount, total),
         colorVar: `var(--series-${(index % 8) + 1})`,

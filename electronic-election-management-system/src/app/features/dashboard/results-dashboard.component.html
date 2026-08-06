@@ -35,7 +35,7 @@
                 <div class="meter-grid">
                   @for (meter of optionMeters(question); track meter.optionId) {
                     <div class="meter-card">
-                      <svg class="meter" viewBox="0 0 100 100" [attr.aria-label]="meter.label">
+                      <svg class="meter" viewBox="0 0 100 100" [attr.aria-label]="meter.isOtherOption ? ('results.otherOptionLabel' | translate) : meter.label">
                         <circle class="meter-track" [attr.cx]="pieCenter" [attr.cy]="pieCenter" [attr.r]="meterRadius" />
                         <circle
                           class="meter-fill"
@@ -46,7 +46,7 @@
                         />
                         <text x="50" y="55" text-anchor="middle" class="meter-percent">{{ meter.percent }}%</text>
                       </svg>
-                      <span class="meter-label">{{ meter.label }}</span>
+                      <span class="meter-label">{{ meter.isOtherOption ? ('results.otherOptionLabel' | translate) : meter.label }}</span>
                       <span class="meter-count">{{ meter.voteCount }} {{ 'results.votes' | translate }}</span>
                     </div>
                   }
@@ -66,7 +66,7 @@
                           (pointerenter)="hoveredSlice.set(sliceKey(question.questionId, segment.optionId))"
                           (pointerleave)="hoveredSlice.set(null)"
                         >
-                          <title>{{ segment.label }}: {{ segment.voteCount }} {{ 'results.votes' | translate }} ({{ segment.percent }}%)</title>
+                          <title>{{ segment.isOtherOption ? ('results.otherOptionLabel' | translate) : segment.label }}: {{ segment.voteCount }} {{ 'results.votes' | translate }} ({{ segment.percent }}%)</title>
                         </circle>
                       } @else if (segment.path) {
                         <path
@@ -78,7 +78,7 @@
                           (pointerenter)="hoveredSlice.set(sliceKey(question.questionId, segment.optionId))"
                           (pointerleave)="hoveredSlice.set(null)"
                         >
-                          <title>{{ segment.label }}: {{ segment.voteCount }} {{ 'results.votes' | translate }} ({{ segment.percent }}%)</title>
+                          <title>{{ segment.isOtherOption ? ('results.otherOptionLabel' | translate) : segment.label }}: {{ segment.voteCount }} {{ 'results.votes' | translate }} ({{ segment.percent }}%)</title>
                         </path>
                       }
                     }
@@ -103,7 +103,7 @@
                       }
                       <div class="result-content">
                         <div class="result-label">
-                          <span>{{ option.label }}</span>
+                          <span>{{ option.isOtherOption ? ('results.otherOptionLabel' | translate) : option.label }}</span>
                           <span>{{ option.voteCount }} {{ 'results.votes' | translate }} · {{ percentFor(option.voteCount, question.totalVotes) }}%</span>
                         </div>
                       </div>
@@ -111,17 +111,30 @@
                   }
                 </div>
               }
-              @if (question.questionType !== 'FreeText' && question.textAnswers.length > 0) {
-                <div class="other-answers-section">
-                  <h4 class="other-answers-title">{{ 'results.otherAnswersTitle' | translate }}</h4>
-                  <ul class="text-answers-list">
-                    @for (answer of question.textAnswers; track $index) {
-                      <li class="text-answer-item">{{ answer }}</li>
-                    }
-                  </ul>
-                </div>
-              }
             </div>
+            @if (question.questionType !== 'FreeText' && question.textAnswers.length > 0) {
+              <div class="other-answers-section">
+                <h4 class="other-answers-title">{{ 'results.otherAnswersTitle' | translate }}</h4>
+                <div class="text-answers-chips">
+                  @for (answer of visibleTextAnswers(question); track $index) {
+                    <span class="text-answer-chip" [title]="answer">{{ answer }}</span>
+                  }
+                  @if (question.textAnswers.length > otherAnswersPreviewCount) {
+                    <button
+                      type="button"
+                      class="text-answers-more"
+                      (click)="toggleOtherAnswers(question.questionId)"
+                    >
+                      @if (isOtherAnswersExpanded(question.questionId)) {
+                        {{ 'results.less' | translate }}
+                      } @else {
+                        +{{ question.textAnswers.length - otherAnswersPreviewCount }} {{ 'results.more' | translate }}
+                      }
+                    </button>
+                  }
+                </div>
+              </div>
+            }
           </section>
         }
       </div>

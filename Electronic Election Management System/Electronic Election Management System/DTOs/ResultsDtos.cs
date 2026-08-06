@@ -10,6 +10,13 @@ namespace Electronic_Election_Management_System.DTOs
         public string Label { get; set; } = string.Empty;
         public int VoteCount { get; set; }
         public string? ImageDataUrl { get; set; }
+        /// <summary>True for the synthetic "Other" slice added when a Choice question has
+        /// <see cref="Models.ElectionQuestion.AllowOtherOption"/> set and at least one respondent
+        /// answered with free text instead of picking a fixed option. There's no real
+        /// <see cref="Models.Option"/> behind this row - <see cref="OptionId"/> is
+        /// <see cref="Guid.Empty"/> and <see cref="Label"/> is a plain-English fallback; the
+        /// frontend substitutes its own localized "Other" label when this flag is set.</summary>
+        public bool IsOtherOption { get; set; }
     }
 
     public class QuestionResultDto
@@ -25,6 +32,11 @@ namespace Electronic_Election_Management_System.DTOs
         // number of people who actually answered - each option's own VoteCount can then exceed
         // this total, and that's expected. For a FreeText question it's simply the number of
         // submitted answers.
+        //
+        // Either way, an "Other" answer counts toward this total exactly like a normal option
+        // pick, and (when AllowOtherOption is set) is also represented as its own row in
+        // Results - see OptionResultDto.IsOtherOption - so the total and what's plotted on the
+        // chart always agree.
         public int TotalVotes { get; set; }
         public List<OptionResultDto> Results { get; set; } = new();
         /// <summary>Populated only for a <c>"FreeText"</c> question - the raw submitted answers,

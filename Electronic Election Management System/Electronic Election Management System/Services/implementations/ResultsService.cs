@@ -60,15 +60,44 @@ namespace Electronic_Election_Management_System.Services
                     var optionRespondents = source.Options
                         .SelectMany(o => o.Votes)
                         .Select(v => (object?)v.UserId ?? v.VoteTokenId);
-                    var otherRespondents = source.Votes
+                    var otherRespondentIds = source.Votes
                         .Where(v => v.AnswerText != null)
-                        .Select(v => (object?)v.UserId ?? v.VoteTokenId);
-                    question.TotalVotes = optionRespondents.Concat(otherRespondents).Distinct().Count();
+                        .Select(v => (object?)v.UserId ?? v.VoteTokenId)
+                        .Distinct()
+                        .ToList();
+                    question.TotalVotes = optionRespondents.Concat(otherRespondentIds).Distinct().Count();
+
+                    // Give "Other" its own ring alongside the fixed options - otherwise its
+                    // respondents are counted in TotalVotes but never plotted anywhere.
+                    if (source.AllowOtherOption && otherRespondentIds.Count > 0)
+                    {
+                        question.Results.Add(new OptionResultDto
+                        {
+                            OptionId = Guid.Empty,
+                            Label = "Other",
+                            IsOtherOption = true,
+                            VoteCount = otherRespondentIds.Count
+                        });
+                    }
                 }
                 else
                 {
                     // Single-answer: every option pick or "Other" answer is its own respondent.
-                    question.TotalVotes = question.Results.Sum(result => result.VoteCount) + question.TextAnswers.Count;
+                    var otherCount = question.TextAnswers.Count;
+                    question.TotalVotes = question.Results.Sum(result => result.VoteCount) + otherCount;
+
+                    // Give "Other" its own pie slice - otherwise its votes are counted in
+                    // TotalVotes but the slices only ever add up to less than the whole circle.
+                    if (source.AllowOtherOption && otherCount > 0)
+                    {
+                        question.Results.Add(new OptionResultDto
+                        {
+                            OptionId = Guid.Empty,
+                            Label = "Other",
+                            IsOtherOption = true,
+                            VoteCount = otherCount
+                        });
+                    }
                 }
             }
 
