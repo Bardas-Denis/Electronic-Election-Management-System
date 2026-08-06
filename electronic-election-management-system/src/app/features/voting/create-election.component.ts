@@ -512,6 +512,52 @@ export class CreateElectionComponent implements OnInit {
     return this.invitationLabels().find(l => l.id === labelId);
   }
 
+  /**
+   * Returns assigned labels for a given candidate user ID.
+   * Splits into the first 2 visible labels, hidden count, and all assigned labels.
+   */
+  candidateLabels(candidateId: string): { visible: InvitationLabelDto[]; hiddenCount: number; all: InvitationLabelDto[] } {
+    const assigned = this.invitationLabels().filter(l => l.userIds?.includes(candidateId));
+    const visible = assigned.slice(0, 2);
+    const hiddenCount = Math.max(0, assigned.length - 2);
+    return {
+      visible,
+      hiddenCount,
+      all: assigned
+    };
+  }
+
+  /** Set of candidate user IDs whose labels are currently expanded via click/tap. */
+  expandedCandidateLabelIds = signal<Set<string>>(new Set());
+
+  isCandidateLabelsExpanded(candidateId: string): boolean {
+    return this.expandedCandidateLabelIds().has(candidateId);
+  }
+
+  toggleCandidateLabelsExpanded(candidateId: string, event?: Event): void {
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+    this.expandedCandidateLabelIds.update(set => {
+      const next = new Set(set);
+      if (next.has(candidateId)) {
+        next.delete(candidateId);
+      } else {
+        next.add(candidateId);
+      }
+      return next;
+    });
+  }
+
+  onUserItemLabelsClick(candidateId: string, hasOverflow: boolean, event: Event): void {
+    event.preventDefault();
+    event.stopPropagation();
+    if (hasOverflow) {
+      this.toggleCandidateLabelsExpanded(candidateId);
+    }
+  }
+
   toggleInfoPopover(): void {
     this.showInfoPopover.update(v => !v);
   }
@@ -737,7 +783,10 @@ export class CreateElectionComponent implements OnInit {
     return this.showAllCandidateChips() ? 0 : Math.max(0, total - this.CHIP_PREVIEW);
   }
 
-  toggleInvitationCandidate(candidateId: string, selected: boolean): void {
+  toggleInvitationCandidate(candidateId: string, selected?: boolean): void {
+    if (selected === undefined) {
+      selected = !this.isInvitationCandidateSelected(candidateId);
+    }
     const groupIds = new Set(this.audienceGroupMemberIds());
     const currentManual = this.form.controls.invitedUserIds.value ?? [];
 
