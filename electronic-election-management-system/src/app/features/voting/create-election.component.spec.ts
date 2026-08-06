@@ -1,14 +1,13 @@
-﻿import { describe, expect, it } from 'vitest';
-import { ElectionDto, ElectionInvitationDto } from '../../core/models/voting.model';
+import { describe, expect, it } from 'vitest';
+import { ElectionDto, ElectionInvitationDto, InvitationLabelDto } from '../../core/models/voting.model';
 import {
   computeInvitationDiff,
+  expandAudienceGroups,
   freeTextTypeSideEffects,
   normalizeEditableQuestions
 } from './create-election.component';
 
-// ---------------------------------------------------------------------------
 // normalizeEditableQuestions
-// ---------------------------------------------------------------------------
 
 describe('normalizeEditableQuestions', () => {
   it('preserves current question and option values for editing', () => {
@@ -178,4 +177,93 @@ function userInvitation(userId: string, email: string, id: string): ElectionInvi
 
 function emailInvitation(email: string, id: string): ElectionInvitationDto {
   return { id, userId: undefined, email, method: 'Email', createdAt: '' };
+}
+
+// expandAudienceGroups (pure frontend AND/OR/NOT evaluator)
+
+
+describe('expandAudienceGroups', () => {
+  it('returns empty set when groups are empty', () => {
+    const result = expandAudienceGroups([], []);
+    expect(result).toHaveLength(0);
+  });
+
+  it('includes users who have all positive labels in a single AND-group', () => {
+    const clujId = 'label-cluj';
+    const hrId = 'label-hr';
+    const userBoth = 'user-both';
+    const userOneOnly = 'user-one';
+    const labels = [
+      makeLabel(clujId, [userBoth, userOneOnly]),
+      makeLabel(hrId, [userBoth])
+    ];
+    
+    const groups = [{ conditions: [{ labelId: clujId, isExcluded: false }, { labelId: hrId, isExcluded: false }] }];
+
+    const result = expandAudienceGroups(groups, labels);
+
+    expect(result).toContain(userBoth);
+    expect(result).not.toContain(userOneOnly);
+  });
+
+  it('unions two OR-groups and deduplicates users appearing in both', () => {
+    const clujId = 'label-cluj';
+    const bucId = 'label-buc';
+    const userCluj = 'user-cluj';
+    const userBuc = 'user-buc';
+    const userBoth = 'user-both';
+    const labels = [
+      makeLabel(clujId, [userCluj, userBoth]),
+      makeLabel(bucId, [userBuc, userBoth])
+    ];
+    // Cluj OR Bucharest
+    const groups = [
+      { conditions: [{ labelId: clujId, isExcluded: false }] },
+      { conditions: [{ labelId: bucId, isExcluded: false }] }
+    ];
+
+    const result = expandAudienceGroups(groups, labels);
+
+    expect(result).toContain(userCluj);
+    expect(result).toContain(userBuc);
+    expect(result).toContain(userBoth);
+    // No duplicates
+    expect(new Set(result).size).toBe(result.length);
+  });
+
+  it('excludes users who have the NOT-condition label', () => {
+    const hrId = 'label-hr';
+    const youngId = 'label-young';
+    const adultUser = 'user-adult';
+    const youngUser = 'user-young';
+    const labels = [
+      makeLabel(hrId, [adultUser, youngUser]),
+      makeLabel(youngId, [youngUser])
+    ];
+    // HR AND NOT young
+    const groups = [{ conditions: [{ labelId: hrId, isExcluded: false }, { labelId: youngId, isExcluded: true }] }];
+
+    const result = expandAudienceGroups(groups, labels);
+
+    expect(result).toContain(adultUser);
+    expect(result).not.toContain(youngUser);
+  });
+
+  it('skips a group where all conditions are excluded (no positive conditions)', () => {
+    const labels = [makeLabel('label-x', ['user-x'])];
+    // A group with only a NOT condition — should produce zero members
+    const groups = [{ conditions: [{ labelId: 'label-x', isExcluded: true }] }];
+
+    const result = expandAudienceGroups(groups, labels);
+
+    expect(result).toHaveLength(0);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+function makeLabel(id: string, userIds: string[]): InvitationLabelDto {
+  return { id, name: id, userCount: userIds.length, userIds };
 }

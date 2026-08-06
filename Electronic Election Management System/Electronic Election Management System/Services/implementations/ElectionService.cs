@@ -94,7 +94,7 @@ namespace Electronic_Election_Management_System.Services
             if (!request.IsClosed &&
                 (request.InvitedUserIds.Count > 0 ||
                  request.InvitedEmails.Count > 0 ||
-                 request.InvitedLabelIds.Count > 0))
+                 request.InvitedAudienceGroups.Count > 0))
             {
                 return ServiceResult<ElectionDto>.Fail(ErrorCode.InvitationsRequireClosedElection);
             }
@@ -102,9 +102,9 @@ namespace Electronic_Election_Management_System.Services
             ServiceResult<List<ElectionInvitation>> invitationResult;
             if (request.IsClosed)
             {
-                var audienceResult = await ExpandLabelAudienceAsync(
+                var audienceResult = await ExpandAudienceGroupsAsync(
                     request.InvitedUserIds,
-                    request.InvitedLabelIds);
+                    request.InvitedAudienceGroups);
                 if (!audienceResult.Success)
                     return ServiceResult<ElectionDto>.Fail(audienceResult.ErrorCode!.Value);
 
@@ -545,27 +545,73 @@ namespace Electronic_Election_Management_System.Services
             return ServiceResult<List<ElectionInvitation>>.Ok(candidates);
         }
 
-        private async Task<ServiceResult<List<Guid>>> ExpandLabelAudienceAsync(
+        /// <summary>
+        /// Pure, side-effect-free evaluator: resolves an OR-of-AND-groups audience rule
+        /// (with per-condition NOT support) into the flat set of user IDs to invite.
+        /// Each distinct label ID is fetched from the repository exactly once.
+        /// </summary>
+        private async Task<ServiceResult<List<Guid>>> ExpandAudienceGroupsAsync(
             IEnumerable<Guid> manuallyInvitedUserIds,
-            IEnumerable<Guid> invitedLabelIds)
+            IEnumerable<AudienceGroupDto> audienceGroups)
         {
-            var labelIds = invitedLabelIds.Distinct().ToList();
-            if (labelIds.Count == 0)
+            var groups = audienceGroups.ToList();
+
+            // Collect all distinct label IDs referenced across all groups/conditions.
+            var referencedLabelIds = groups
+                .SelectMany(g => g.Conditions)
+                .Select(c => c.LabelId)
+                .Distinct()
+                .ToList();
+
+            // Early return when there are no group conditions — behaves like the old
+            // ExpandLabelAudienceAsync empty-list path: manual user IDs only.
+            if (referencedLabelIds.Count == 0)
                 return ServiceResult<List<Guid>>.Ok(manuallyInvitedUserIds.Distinct().ToList());
 
-            var existingLabels = await _labels.GetByIdsAsync(labelIds);
-            if (existingLabels.Count != labelIds.Count)
+            // Validate that every referenced label exists.
+            var existingLabels = await _labels.GetByIdsAsync(referencedLabelIds);
+            if (existingLabels.Count != referencedLabelIds.Count)
                 return ServiceResult<List<Guid>>.Fail(ErrorCode.LabelNotFound);
 
-            var userIds = manuallyInvitedUserIds.ToHashSet();
-            foreach (var labelId in labelIds)
+            // Fetch each label's user-set exactly once to avoid redundant DB calls when
+            // the same label appears in multiple groups.
+            var labelUserSets = new Dictionary<Guid, HashSet<Guid>>();
+            foreach (var labelId in referencedLabelIds)
             {
                 var assignments = await _labels.GetUsersWithLabelAsync(labelId);
-                foreach (var assignment in assignments)
-                    userIds.Add(assignment.UserId);
+                labelUserSets[labelId] = assignments.Select(a => a.UserId).ToHashSet();
             }
 
-            return ServiceResult<List<Guid>>.Ok(userIds.ToList());
+            // Evaluate each AND-group and union the results.
+            var result = manuallyInvitedUserIds.ToHashSet();
+            foreach (var group in groups)
+            {
+                var positiveConditions = group.Conditions.Where(c => !c.IsExcluded).ToList();
+                var excludedConditions = group.Conditions.Where(c => c.IsExcluded).ToList();
+
+                // Start with all users that have every positive label (intersection).
+                HashSet<Guid>? candidates = null;
+                foreach (var condition in positiveConditions)
+                {
+                    var usersWithLabel = labelUserSets[condition.LabelId];
+                    if (candidates is null)
+                        candidates = new HashSet<Guid>(usersWithLabel);
+                    else
+                        candidates.IntersectWith(usersWithLabel);
+                }
+
+                if (candidates is null || candidates.Count == 0)
+                    continue;
+
+                // Remove users that have any excluded label.
+                foreach (var exclusion in excludedConditions)
+                    candidates.ExceptWith(labelUserSets[exclusion.LabelId]);
+
+                foreach (var uid in candidates)
+                    result.Add(uid);
+            }
+
+            return ServiceResult<List<Guid>>.Ok(result.ToList());
         }
 
         private static bool TryParseType(string raw, out ElectionType type)

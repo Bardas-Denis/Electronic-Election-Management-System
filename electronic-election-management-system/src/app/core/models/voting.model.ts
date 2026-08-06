@@ -69,6 +69,18 @@ export interface CreateElectionQuestionDto {
   options: CreateOptionDto[];
 }
 
+// SYNC: AudienceConditionDto — one label condition inside an AND-group
+export interface AudienceConditionDto {
+  labelId: string;
+  /** True means "does NOT have this label" (NOT condition). */
+  isExcluded: boolean;
+}
+
+// SYNC: AudienceGroupDto — one AND-group in the audience OR-of-AND rule
+export interface AudienceGroupDto {
+  conditions: AudienceConditionDto[];
+}
+
 // Payload for both create AND update (same shape, different HTTP verb)
 export interface CreateElectionRequest {
   title: string;
@@ -83,7 +95,8 @@ export interface CreateElectionRequest {
   isVisible: boolean;
   invitedUserIds?: string[];
   invitedEmails?: string[];
-  invitedLabelIds?: string[];
+  /** Audience rule: an OR of AND-groups with per-condition NOT support. */
+  invitedAudienceGroups?: AudienceGroupDto[];
   startsAt: string;
   endsAt: string;
   options: CreateOptionDto[];

@@ -7,6 +7,8 @@ import { forkJoin, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { VotingService } from '../../core/services/voting.service';
 import {
+  AudienceConditionDto,
+  AudienceGroupDto,
   CreateElectionQuestionDto,
   ElectionDto,
   ElectionInvitationDto,
@@ -51,6 +53,7 @@ export class CreateElectionComponent implements OnInit {
   invitationLabelsLoading = signal(false);
   invitationLabelsErrorKey = signal<string | null>(null);
   invitedEmails = signal<string[]>([]);
+  excludedGroupUserIds = signal<Set<string>>(new Set());
   inviteEmailControl = this.fb.control('', [
     Validators.email,
     Validators.maxLength(INPUT_LIMITS.email)
@@ -65,10 +68,11 @@ export class CreateElectionComponent implements OnInit {
   private invitationCandidatesLoaded = false;
   private invitationLabelsLoaded = false;
   /**
-   * Users that belong to a selected label but have been explicitly removed by the user.
-   * They are excluded from the effective invite list while their label chip remains selected.
+   * Tracks which condition picker is open: [groupIndex, conditionIndex | -1 for "add new"].
+   * -1 for conditionIndex means the "add condition" picker for that group is open.
    */
-  excludedLabelUserIds = signal<Set<string>>(new Set<string>());
+  openConditionPicker = signal<{ groupIndex: number; conditionIndex: number } | null>(null);
+  conditionSearchControl = this.fb.control('');
   private elRef = inject(ElementRef);
 
   /** Existing invitations loaded when entering edit mode for a closed election. */
@@ -94,11 +98,15 @@ export class CreateElectionComponent implements OnInit {
     isVisible: [true],
     invitedUserIds: this.fb.control<string[]>([]),
     invitedEmails: this.fb.control<string[]>([]),
-    invitedLabelIds: this.fb.control<string[]>([]),
+    audienceGroups: this.fb.array<ReturnType<CreateElectionComponent['createGroupArray']>>([]),
     startsAt: ['', Validators.required],
     endsAt: ['', Validators.required],
     questions: this.createQuestionsArray()
   }, { validators: dateRangeValidator });
+
+  get audienceGroupsArray(): FormArray {
+    return this.form.get('audienceGroups') as FormArray;
+  }
 
   get isPoliticalElection(): boolean {
     return this.form.get('type')?.value === 'Politic';
@@ -363,80 +371,242 @@ export class CreateElectionComponent implements OnInit {
     );
   }
 
-  /** IDs of users that are already covered by at least one selected label, minus excluded ones. */
-  labelMemberIds(): string[] {
-    const selectedLabelIds = new Set(this.form.controls.invitedLabelIds.value ?? []);
-    const excluded = this.excludedLabelUserIds();
-    const ids = new Set<string>();
-    this.invitationLabels()
-      .filter(label => selectedLabelIds.has(label.id))
-      .forEach(label => (label.userIds ?? []).forEach(id => {
-        if (!excluded.has(id)) ids.add(id);
-      }));
-    return [...ids];
+  // Audience group builder
+
+  /** Build a FormGroup for a single condition {labelId, isExcluded}. */
+  private createConditionGroup(labelId: string = '', isExcluded: boolean = false) {
+    return this.fb.group({
+      labelId: [labelId, Validators.required],
+      isExcluded: [isExcluded]
+    });
   }
 
-  /**
-   * True when the candidate is covered by a selected label AND has not been individually excluded.
-   * Excluded candidates lose their label-chip binding and can be re-added/removed manually.
-   */
-  isCandidateFromLabel(candidateId: string): boolean {
-    if (this.excludedLabelUserIds().has(candidateId)) return false;
-    const selectedLabelIds = new Set(this.form.controls.invitedLabelIds.value ?? []);
-    return this.invitationLabels()
-      .filter(label => selectedLabelIds.has(label.id))
-      .some(label => (label.userIds ?? []).includes(candidateId));
+  /** Build a FormArray for one AND-group (a list of conditions). */
+  private createGroupArray(
+    conditions: { labelId: string; isExcluded: boolean }[] = []
+  ) {
+    return this.fb.array(conditions.map(c => this.createConditionGroup(c.labelId, c.isExcluded)));
   }
 
-  /**
-   * Returns the effective count for a label chip: total members minus those explicitly excluded.
-   * Example: a label with 43 members where 3 were excluded returns 40.
-   */
-  labelEffectiveCount(labelId: string): number {
+  /** Adds a blank AND-group to the audienceGroups FormArray. */
+  addGroup(): void {
+    this.audienceGroupsArray.push(this.createGroupArray());
+  }
+
+  /** Cleans up any user exclusions associated with a label when that label is no longer used in any group. */
+  private cleanExclusionsForLabel(labelId: string): void {
+    if (!labelId) return;
     const label = this.invitationLabels().find(l => l.id === labelId);
-    if (!label) return 0;
-    const excluded = this.excludedLabelUserIds();
-    const excludedInThisLabel = (label.userIds ?? []).filter(id => excluded.has(id)).length;
-    return label.userCount - excludedInThisLabel;
+    if (!label || !label.userIds || label.userIds.length === 0) return;
+
+    const rawGroups = this.audienceGroupsArray.value as { labelId: string; isExcluded: boolean }[][];
+    const isStillUsed = rawGroups.some(group => group.some(c => c.labelId === labelId));
+
+    if (!isStillUsed) {
+      const nextExclusions = new Set(this.excludedGroupUserIds());
+      for (const userId of label.userIds) {
+        nextExclusions.delete(userId);
+      }
+      this.excludedGroupUserIds.set(nextExclusions);
+    }
+  }
+
+  /** Removes the AND-group at the given index. */
+  removeGroup(groupIndex: number): void {
+    const group = this.groupConditions(groupIndex);
+    const labelIds = (group.value as { labelId: string }[]).map(c => c.labelId).filter(Boolean);
+    this.audienceGroupsArray.removeAt(groupIndex);
+
+    for (const labelId of labelIds) {
+      this.cleanExclusionsForLabel(labelId);
+    }
+  }
+
+  /** Returns the conditions FormArray for a specific group. */
+  groupConditions(groupIndex: number): FormArray {
+    return this.audienceGroupsArray.at(groupIndex) as FormArray;
   }
 
   /**
-   * Excludes a user that was covered by a label from the effective invite list.
-   * The user appears as a deselected candidate chip; their label chip counter decrements.
+   * Adds a condition to an existing group.
+   * If conditionIndex is -1, a new condition is appended; otherwise it replaces the
+   * condition at that index (used when the user re-picks a label for an existing slot).
    */
-  excludeFromLabel(candidateId: string): void {
-    const next = new Set(this.excludedLabelUserIds());
-    next.add(candidateId);
-    this.excludedLabelUserIds.set(next);
-    // Also make sure this user isn't sitting in invitedUserIds
-    const currentIds = this.form.controls.invitedUserIds.value ?? [];
-    this.form.controls.invitedUserIds.setValue(currentIds.filter(id => id !== candidateId));
+  addConditionToGroup(
+    groupIndex: number,
+    labelId: string,
+    isExcluded: boolean = false,
+    conditionIndex: number = -1
+  ): void {
+    const group = this.groupConditions(groupIndex);
+    const oldLabelId = conditionIndex >= 0 ? group.at(conditionIndex)?.get('labelId')?.value : null;
+    const newCondition = this.createConditionGroup(labelId, isExcluded);
+
+    if (conditionIndex >= 0) {
+      group.setControl(conditionIndex, newCondition);
+    } else {
+      group.push(newCondition);
+    }
+
+    this.openConditionPicker.set(null);
+    this.conditionSearchControl.reset('');
+
+    if (oldLabelId && oldLabelId !== labelId) {
+      this.cleanExclusionsForLabel(oldLabelId);
+    }
+  }
+
+  /** Removes a single condition from a group. Removes the whole group if it becomes empty. */
+  removeCondition(groupIndex: number, conditionIndex: number): void {
+    const group = this.groupConditions(groupIndex);
+    const labelId = group.at(conditionIndex)?.get('labelId')?.value;
+    group.removeAt(conditionIndex);
+
+    if (group.length === 0) {
+      this.audienceGroupsArray.removeAt(groupIndex);
+    }
+
+    if (labelId) {
+      this.cleanExclusionsForLabel(labelId);
+    }
+  }
+
+  /** Toggles the isExcluded flag on a condition chip. */
+  toggleConditionExclusion(groupIndex: number, conditionIndex: number): void {
+    const ctrl = this.groupConditions(groupIndex).at(conditionIndex).get('isExcluded');
+    ctrl?.setValue(!ctrl.value);
+  }
+
+  /** Opens the condition picker for a given group (conditionIndex -1 = add new). */
+  openConditionPickerFor(groupIndex: number, conditionIndex: number): void {
+    const current = this.openConditionPicker();
+    if (current?.groupIndex === groupIndex && current?.conditionIndex === conditionIndex) {
+      this.openConditionPicker.set(null);
+      this.conditionSearchControl.reset('');
+    } else {
+      this.openConditionPicker.set({ groupIndex, conditionIndex });
+      this.conditionSearchControl.reset('');
+    }
+  }
+
+  isConditionPickerOpen(groupIndex: number, conditionIndex: number): boolean {
+    const p = this.openConditionPicker();
+    return p?.groupIndex === groupIndex && p?.conditionIndex === conditionIndex;
+  }
+
+  filteredConditionLabels(): InvitationLabelDto[] {
+    const query = this.conditionSearchControl.value?.trim().toLowerCase() ?? '';
+    if (!query) return this.invitationLabels();
+    return this.invitationLabels().filter(l =>
+      l.name.toLowerCase().includes(query) ||
+      l.category?.toLowerCase().includes(query)
+    );
+  }
+
+  /** Returns a label object by ID (for display in a condition chip). */
+  labelById(labelId: string): InvitationLabelDto | undefined {
+    return this.invitationLabels().find(l => l.id === labelId);
+  }
+
+
+  // AND/OR/NOT audience evaluation (mirrors ExpandAudienceGroupsAsync server-side)
+
+  /**
+   * Evaluates all audience groups client-side using the same AND/OR/NOT logic as
+   * ExpandAudienceGroupsAsync. Returns the set of user IDs that would be invited
+   * via the group rule (not counting manually selected users or emails).
+   */
+  audienceGroupMemberIds(): string[] {
+    const labels = this.invitationLabels();
+    const labelMap = new Map<string, Set<string>>();
+    for (const label of labels) {
+      labelMap.set(label.id, new Set(label.userIds ?? []));
+    }
+
+    const result = new Set<string>();
+    const rawGroups = this.audienceGroupsArray.value as { labelId: string; isExcluded: boolean }[][];
+
+    for (const conditions of rawGroups) {
+      if (!conditions || conditions.length === 0) continue;
+
+      const positive = conditions.filter(c => !c.isExcluded && c.labelId);
+      const excluded = conditions.filter(c => c.isExcluded && c.labelId);
+
+      if (positive.length === 0) continue;
+
+      // Intersect user-sets for all positive conditions.
+      let candidates: Set<string> | null = null;
+      for (const cond of positive) {
+        const users = labelMap.get(cond.labelId);
+        if (!users) { candidates = new Set(); break; }
+        if (candidates === null) {
+          candidates = new Set(users);
+        } else {
+          for (const id of [...candidates]) {
+            if (!users.has(id)) candidates.delete(id);
+          }
+        }
+      }
+
+      if (!candidates || candidates.size === 0) continue;
+
+      // Remove users that have any excluded label.
+      for (const cond of excluded) {
+        const users = labelMap.get(cond.labelId);
+        if (users) for (const id of users) candidates.delete(id);
+      }
+
+      for (const id of candidates) result.add(id);
+    }
+
+    return [...result];
+  }
+
+  /**
+   * Returns the effective set of user IDs to invite based on:
+   * (manual user IDs + group member user IDs) minus individual exclusions (excludedGroupUserIds).
+   */
+  selectedCandidateIds(): Set<string> {
+    const manualIds = new Set(this.form.controls.invitedUserIds.value ?? []);
+    const groupIds = new Set(this.audienceGroupMemberIds());
+    const excluded = this.excludedGroupUserIds();
+
+    const result = new Set<string>();
+    for (const id of manualIds) {
+      if (!excluded.has(id)) result.add(id);
+    }
+    for (const id of groupIds) {
+      if (!excluded.has(id)) result.add(id);
+    }
+    return result;
+  }
+
+  /**
+   * True when the given candidate is invited solely because of the audience groups
+   * (not manually selected). Used to show a group-badge on the candidate chip.
+   */
+  isCandidateFromGroup(candidateId: string): boolean {
+    const manualIds = new Set(this.form.controls.invitedUserIds.value ?? []);
+    if (manualIds.has(candidateId)) return false;
+    return this.audienceGroupMemberIds().includes(candidateId);
   }
 
   /**
    * Total number of unique people that will be invited:
-   * union of manually selected registered users + label members + free-text emails.
+   * union of manually selected registered users + audience group members + free-text emails minus individual exclusions.
    */
   totalUniqueInvitees(): number {
-    const userIds = new Set([
-      ...(this.form.controls.invitedUserIds.value ?? []),
-      ...this.labelMemberIds()
-    ]);
     const emailCount = (this.form.controls.invitedEmails.value ?? []).length;
-    return userIds.size + emailCount;
+    return this.selectedCandidateIds().size + emailCount;
   }
 
   selectedInvitationCandidates(): InvitationCandidateDto[] {
-    const selectedIds = new Set(this.form.controls.invitedUserIds.value ?? []);
-    const labelIds = new Set(this.labelMemberIds());
-    return this.invitationCandidates().filter(
-      candidate => selectedIds.has(candidate.id) || labelIds.has(candidate.id)
-    );
+    const selectedIds = this.selectedCandidateIds();
+    return this.invitationCandidates().filter(candidate => selectedIds.has(candidate.id));
   }
 
   isInvitationCandidateSelected(candidateId: string): boolean {
-    return (this.form.controls.invitedUserIds.value ?? []).includes(candidateId)
-      || this.isCandidateFromLabel(candidateId);
+    return this.selectedCandidateIds().has(candidateId);
   }
 
   toggleCandidatePicker(): void {
@@ -475,23 +645,28 @@ export class CreateElectionComponent implements OnInit {
   }
 
   toggleInvitationCandidate(candidateId: string, selected: boolean): void {
-    if (selected) {
-      // If the user was previously excluded from a label, remove the exclusion so they
-      // are covered by the label again (no need to keep them in invitedUserIds separately).
-      const next = new Set(this.excludedLabelUserIds());
-      next.delete(candidateId);
-      this.excludedLabelUserIds.set(next);
-    } else if (this.isCandidateFromLabel(candidateId)) {
-      // Unchecking a label-covered user: add them to the exclusion set so the label
-      // counter decrements and they are dropped from the effective invite list.
-      this.excludeFromLabel(candidateId);
-      return;
+    const groupIds = new Set(this.audienceGroupMemberIds());
+    const currentManual = this.form.controls.invitedUserIds.value ?? [];
+
+    if (!selected) {
+      if (groupIds.has(candidateId)) {
+        const nextExclusions = new Set(this.excludedGroupUserIds());
+        nextExclusions.add(candidateId);
+        this.excludedGroupUserIds.set(nextExclusions);
+      }
+      if (currentManual.includes(candidateId)) {
+        this.form.controls.invitedUserIds.setValue(currentManual.filter(id => id !== candidateId));
+      }
+    } else {
+      if (this.excludedGroupUserIds().has(candidateId)) {
+        const nextExclusions = new Set(this.excludedGroupUserIds());
+        nextExclusions.delete(candidateId);
+        this.excludedGroupUserIds.set(nextExclusions);
+      }
+      if (!groupIds.has(candidateId) && !currentManual.includes(candidateId)) {
+        this.form.controls.invitedUserIds.setValue([...currentManual, candidateId]);
+      }
     }
-    const currentIds = this.form.controls.invitedUserIds.value ?? [];
-    const nextIds = selected
-      ? [...new Set([...currentIds, candidateId])]
-      : currentIds.filter(id => id !== candidateId);
-    this.form.controls.invitedUserIds.setValue(nextIds);
   }
 
   removeInvitationCandidate(candidateId: string): void {
@@ -500,19 +675,17 @@ export class CreateElectionComponent implements OnInit {
 
   allInvitationCandidatesSelected(): boolean {
     const candidates = this.filteredInvitationCandidates();
-    const selectedIds = new Set(this.form.controls.invitedUserIds.value ?? []);
+    const selectedIds = this.selectedCandidateIds();
     return candidates.length > 0 && candidates.every(candidate => selectedIds.has(candidate.id));
   }
 
   toggleAllInvitationCandidates(): void {
-    const visibleIds = new Set(this.filteredInvitationCandidates().map(candidate => candidate.id));
-    const currentIds = this.form.controls.invitedUserIds.value ?? [];
+    const visibleCandidates = this.filteredInvitationCandidates();
+    const allSelected = this.allInvitationCandidatesSelected();
 
-    const userIds = this.allInvitationCandidatesSelected()
-      ? currentIds.filter(id => !visibleIds.has(id))
-      : [...new Set([...currentIds, ...visibleIds])];
-
-    this.form.controls.invitedUserIds.setValue(userIds);
+    for (const candidate of visibleCandidates) {
+      this.toggleInvitationCandidate(candidate.id, !allSelected);
+    }
   }
 
   retryInvitationCandidates(): void {
@@ -528,7 +701,9 @@ export class CreateElectionComponent implements OnInit {
   }
 
   isInvitationLabelSelected(labelId: string): boolean {
-    return (this.form.controls.invitedLabelIds.value ?? []).includes(labelId);
+    // A label is "selected" if it appears in any condition of any group.
+    const rawGroups = this.audienceGroupsArray.value as { labelId: string; isExcluded: boolean }[][];
+    return rawGroups.some(group => group.some(c => c.labelId === labelId));
   }
 
   filteredInvitationLabels(): InvitationLabelDto[] {
@@ -542,9 +717,128 @@ export class CreateElectionComponent implements OnInit {
     );
   }
 
+  /**
+   * Evaluates a single audience group (AND/NOT conditions) and returns:
+   * - total: total user IDs matched by the group logic
+   * - effective: user IDs matched minus individual user exclusions (excludedGroupUserIds)
+   */
+  groupCoverage(groupIndex: number): { effective: number; total: number } {
+    const labels = this.invitationLabels();
+    const labelMap = new Map<string, Set<string>>();
+    for (const label of labels) {
+      labelMap.set(label.id, new Set(label.userIds ?? []));
+    }
+
+    const rawGroups = this.audienceGroupsArray.value as { labelId: string; isExcluded: boolean }[][];
+    const groupConditions = rawGroups[groupIndex];
+    if (!groupConditions || groupConditions.length === 0) {
+      return { effective: 0, total: 0 };
+    }
+
+    const positive = groupConditions.filter(c => !c.isExcluded && c.labelId);
+    const excluded = groupConditions.filter(c => c.isExcluded && c.labelId);
+    if (positive.length === 0) return { effective: 0, total: 0 };
+
+    let candidates: Set<string> | null = null;
+    for (const cond of positive) {
+      const users = labelMap.get(cond.labelId);
+      if (!users) { candidates = new Set(); break; }
+      if (candidates === null) {
+        candidates = new Set(users);
+      } else {
+        for (const id of [...candidates]) {
+          if (!users.has(id)) candidates.delete(id);
+        }
+      }
+    }
+
+    if (!candidates || candidates.size === 0) return { effective: 0, total: 0 };
+
+    for (const cond of excluded) {
+      const users = labelMap.get(cond.labelId);
+      if (users) for (const id of users) candidates.delete(id);
+    }
+
+    const total = candidates.size;
+    const excludedSet = this.excludedGroupUserIds();
+    let effective = 0;
+    for (const id of candidates) {
+      if (!excludedSet.has(id)) effective++;
+    }
+
+    return { effective, total };
+  }
+
+  /**
+   * Calculates the progressive number of users matching conditions in group `groupIndex`
+   * up to and including `conditionIndex`.
+   */
+  conditionProgressiveCount(groupIndex: number, conditionIndex: number): { count: number; isIntersected: boolean } {
+    const labels = this.invitationLabels();
+    const labelMap = new Map<string, Set<string>>();
+    for (const label of labels) {
+      labelMap.set(label.id, new Set(label.userIds ?? []));
+    }
+
+    const rawGroups = this.audienceGroupsArray.value as { labelId: string; isExcluded: boolean }[][];
+    const groupConditions = rawGroups[groupIndex];
+    if (!groupConditions || conditionIndex < 0 || conditionIndex >= groupConditions.length) {
+      return { count: 0, isIntersected: false };
+    }
+
+    const subset = groupConditions.slice(0, conditionIndex + 1);
+    const positive = subset.filter(c => !c.isExcluded && c.labelId);
+    const excluded = subset.filter(c => c.isExcluded && c.labelId);
+
+    if (positive.length === 0) return { count: 0, isIntersected: false };
+
+    let candidates: Set<string> | null = null;
+    for (const cond of positive) {
+      const users = labelMap.get(cond.labelId);
+      if (!users) { candidates = new Set(); break; }
+      if (candidates === null) {
+        candidates = new Set(users);
+      } else {
+        for (const id of [...candidates]) {
+          if (!users.has(id)) candidates.delete(id);
+        }
+      }
+    }
+
+    if (!candidates || candidates.size === 0) {
+      return { count: 0, isIntersected: conditionIndex > 0 };
+    }
+
+    for (const cond of excluded) {
+      const users = labelMap.get(cond.labelId);
+      if (users) for (const id of users) candidates.delete(id);
+    }
+
+    return {
+      count: candidates.size,
+      isIntersected: conditionIndex > 0
+    };
+  }
+
+  /**
+   * Returns the effective number of users invited from this label, accounting for
+   * individual user exclusions (X). Returns e.g. 19 for a label of 20 with 1 excluded user.
+   */
+  labelEffectiveCount(labelId: string): number {
+    const label = this.invitationLabels().find(l => l.id === labelId);
+    if (!label) return 0;
+    const excluded = this.excludedGroupUserIds();
+    const excludedCount = (label.userIds ?? []).filter(id => excluded.has(id)).length;
+    return Math.max(0, label.userCount - excludedCount);
+  }
+
   selectedInvitationLabels(): InvitationLabelDto[] {
-    const selectedIds = new Set(this.form.controls.invitedLabelIds.value ?? []);
-    return this.invitationLabels().filter(label => selectedIds.has(label.id));
+    // All labels that appear in at least one condition across all groups.
+    const rawGroups = this.audienceGroupsArray.value as { labelId: string; isExcluded: boolean }[][];
+    const usedIds = new Set(
+      rawGroups.flatMap(group => group.map(c => c.labelId)).filter(Boolean)
+    );
+    return this.invitationLabels().filter(l => usedIds.has(l.id));
   }
 
   toggleLabelPicker(): void {
@@ -554,57 +848,32 @@ export class CreateElectionComponent implements OnInit {
     }
   }
 
-  toggleInvitationLabel(labelId: string, selected: boolean): void {
-    const currentIds = this.form.controls.invitedLabelIds.value ?? [];
-    const nextIds = selected
-      ? [...new Set([...currentIds, labelId])]
-      : currentIds.filter(id => id !== labelId);
-    this.form.controls.invitedLabelIds.setValue(nextIds);
-  }
+  /** @deprecated Retained for the user-picker toggle; label picker is now per-condition. */
+  toggleInvitationLabel(_labelId: string, _selected: boolean): void { /* no-op */ }
 
   removeInvitationLabel(labelId: string): void {
-    // When a label is removed, clean up any exclusions that only belonged to this label.
-    // We keep an exclusion only if the user is still a member of another selected label.
-    const label = this.invitationLabels().find(l => l.id === labelId);
-    if (label) {
-      const remainingLabelIds = new Set(
-        (this.form.controls.invitedLabelIds.value ?? []).filter(id => id !== labelId)
-      );
-      const remainingMemberIds = new Set<string>();
-      this.invitationLabels()
-        .filter(l => remainingLabelIds.has(l.id))
-        .forEach(l => (l.userIds ?? []).forEach(id => remainingMemberIds.add(id)));
-
-      // Remove exclusions for users that are not in any remaining label
-      const removedLabelUserIds = new Set(label.userIds ?? []);
-      const next = new Set(this.excludedLabelUserIds());
-      for (const id of removedLabelUserIds) {
-        if (!remainingMemberIds.has(id)) next.delete(id);
+    // Remove every condition across all groups that references this label.
+    const arr = this.audienceGroupsArray;
+    for (let gi = arr.length - 1; gi >= 0; gi--) {
+      const group = arr.at(gi) as FormArray;
+      for (let ci = group.length - 1; ci >= 0; ci--) {
+        if (group.at(ci).get('labelId')?.value === labelId) {
+          group.removeAt(ci);
+        }
       }
-      this.excludedLabelUserIds.set(next);
+      if (group.length === 0) arr.removeAt(gi);
     }
-    this.toggleInvitationLabel(labelId, false);
+    this.cleanExclusionsForLabel(labelId);
   }
 
   allVisibleInvitationLabelsSelected(): boolean {
-    const availableLabels = this.filteredInvitationLabels()
-      .filter(label => label.userCount > 0);
-    const selectedIds = new Set(this.form.controls.invitedLabelIds.value ?? []);
-    return availableLabels.length > 0 &&
-      availableLabels.every(label => selectedIds.has(label.id));
+    // "All selected" when every non-empty label appears in some group condition.
+    const availableLabels = this.filteredInvitationLabels().filter(l => l.userCount > 0);
+    return availableLabels.length > 0 && availableLabels.every(l => this.isInvitationLabelSelected(l.id));
   }
 
   toggleAllInvitationLabels(): void {
-    const visibleIds = new Set(
-      this.filteredInvitationLabels()
-        .filter(label => label.userCount > 0)
-        .map(label => label.id)
-    );
-    const currentIds = this.form.controls.invitedLabelIds.value ?? [];
-    const nextIds = this.allVisibleInvitationLabelsSelected()
-      ? currentIds.filter(id => !visibleIds.has(id))
-      : [...new Set([...currentIds, ...visibleIds])];
-    this.form.controls.invitedLabelIds.setValue(nextIds);
+    // no-op in group mode — bulk select/deselect doesn't map cleanly onto AND-groups.
   }
 
   private loadInvitationCandidates(): void {
@@ -650,14 +919,16 @@ export class CreateElectionComponent implements OnInit {
   private clearInvitations(): void {
     this.form.controls.invitedUserIds.setValue([]);
     this.form.controls.invitedEmails.setValue([]);
-    this.form.controls.invitedLabelIds.setValue([]);
+    this.audienceGroupsArray.clear();
     this.invitedEmails.set([]);
-    this.excludedLabelUserIds.set(new Set<string>());
+    this.excludedGroupUserIds.set(new Set());
     this.inviteEmailControl.reset('');
     this.labelSearchControl.reset('');
     this.candidateSearchControl.reset('');
+    this.conditionSearchControl.reset('');
     this.labelPickerOpen.set(false);
     this.candidatePickerOpen.set(false);
+    this.openConditionPicker.set(null);
   }
 
   onSubmit(): void {
@@ -692,20 +963,32 @@ export class CreateElectionComponent implements OnInit {
     payload.question = payload.questions[0].text;
     payload.options = payload.questions[0].options;
 
-    // In create mode, expand label IDs into user IDs and subtract exclusions so the backend
-    // receives a flat, already-resolved list without depending on label expansion server-side.
+    // Build invitedAudienceGroups from the groups FormArray.
+    // The form groups contain raw {labelId, isExcluded} objects; map to the DTO shape.
+    const rawGroups = this.audienceGroupsArray.value as { labelId: string; isExcluded: boolean }[][];
+    payload.invitedAudienceGroups = rawGroups
+      .filter(group => group.some(c => !c.isExcluded && c.labelId))
+      .map(group => ({
+        conditions: group
+          .filter(c => c.labelId)
+          .map(c => ({ labelId: c.labelId, isExcluded: c.isExcluded }))
+      }));
+
+    // In create mode for a closed election: resolve audience groups + manual user IDs - exclusions
+    // into invitedUserIds, and clear invitedAudienceGroups if individual exclusions exist.
     if (!this.editingElectionId && this.isClosedElection) {
-      const labelUserIds = this.labelMemberIds(); // already excludes excludedLabelUserIds
-      const manualIds: string[] = payload.invitedUserIds ?? [];
-      payload.invitedUserIds = [...new Set([...manualIds, ...labelUserIds])];
-      payload.invitedLabelIds = []; // backend receives resolved list
+      const finalUserIds = Array.from(this.selectedCandidateIds());
+      payload.invitedUserIds = finalUserIds;
+      if (this.excludedGroupUserIds().size > 0) {
+        payload.invitedAudienceGroups = [];
+      }
     }
 
     // In edit mode, invitations are managed via dedicated endpoints — clear from PUT body
     if (this.editingElectionId) {
       payload.invitedUserIds = [];
       payload.invitedEmails = [];
-      payload.invitedLabelIds = [];
+      payload.invitedAudienceGroups = [];
     }
 
     // Ensure the datetime-local values are sent as UTC ISO strings so server comparisons use UTC correctly
@@ -762,10 +1045,7 @@ export class CreateElectionComponent implements OnInit {
    */
   private async syncInvitationsOnEdit(): Promise<void> {
     const electionId = this.editingElectionId!;
-    const desiredUserIds = [
-      ...(this.form.controls.invitedUserIds.value ?? []),
-      ...this.labelMemberIds()
-    ];
+    const desiredUserIds = Array.from(this.selectedCandidateIds());
     const { toAdd, toRemove } = computeInvitationDiff(
       this.existingInvitations(),
       desiredUserIds,
@@ -796,6 +1076,44 @@ export class CreateElectionComponent implements OnInit {
 
     await Promise.all(promises);
   }
+}
+
+export function expandAudienceGroups(
+  groups: { conditions: { labelId: string; isExcluded: boolean }[] }[],
+  labels: { id: string; userIds?: string[] }[]
+): string[] {
+  const labelMap = new Map<string, Set<string>>();
+  for (const label of labels) {
+    labelMap.set(label.id, new Set(label.userIds ?? []));
+  }
+
+  const result = new Set<string>();
+  for (const group of groups) {
+    if (!group.conditions || group.conditions.length === 0) continue;
+    const positive = group.conditions.filter(c => !c.isExcluded && c.labelId);
+    const excluded = group.conditions.filter(c => c.isExcluded && c.labelId);
+    if (positive.length === 0) continue;
+
+    let candidates: Set<string> | null = null;
+    for (const cond of positive) {
+      const users = labelMap.get(cond.labelId);
+      if (!users) { candidates = new Set(); break; }
+      if (candidates === null) {
+        candidates = new Set(users);
+      } else {
+        for (const id of [...candidates]) {
+          if (!users.has(id)) candidates.delete(id);
+        }
+      }
+    }
+    if (!candidates || candidates.size === 0) continue;
+    for (const cond of excluded) {
+      const users = labelMap.get(cond.labelId);
+      if (users) for (const id of users) candidates.delete(id);
+    }
+    for (const id of candidates) result.add(id);
+  }
+  return [...result];
 }
 
 /**
