@@ -10,6 +10,11 @@ namespace Electronic_Election_Management_System.DTOs
         public string Label { get; set; } = string.Empty;
         public int VoteCount { get; set; }
         public string? ImageDataUrl { get; set; }
+        /// <summary>True for the synthetic entry representing a Choice question's "Other"
+        /// answers - there is no real <see cref="Models.Option"/> behind it, so
+        /// <see cref="OptionId"/> is <see cref="Guid.Empty"/> and the frontend substitutes a
+        /// translated label instead of <see cref="Label"/>.</summary>
+        public bool IsOtherOption { get; set; }
     }
 
     public class QuestionResultDto

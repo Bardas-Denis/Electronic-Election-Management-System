@@ -3,6 +3,9 @@ export interface OptionResultDto {
   label: string;
   voteCount: number;
   imageDataUrl?: string;
+  // True for the synthetic entry representing a Choice question's "Other" answers - there is
+  // no real option behind it, so the label is replaced with a translated string in the UI.
+  isOtherOption?: boolean;
 }
 
 export interface QuestionResultDto {
