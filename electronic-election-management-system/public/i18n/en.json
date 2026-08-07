@@ -425,7 +425,9 @@
     "votes": "votes",
     "noTextAnswers": "No answers yet.",
     "otherAnswersTitle": "Other answers",
-    "otherOptionLabel": "Other"
+    "otherOptionLabel": "Other",
+    "more": "more",
+    "less": "less"
   },
   "errors": {
     "emailAlreadyExists": "An account with this email already exists.",

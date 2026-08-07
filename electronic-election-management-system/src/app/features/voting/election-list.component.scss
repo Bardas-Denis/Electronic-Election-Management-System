@@ -12,11 +12,9 @@
 
 /* ── Filters Sidebar Container ──────────────────────────── */
 .filters-sidebar {
-  position: static !important;
+  position: sticky;
+  top: calc(56px + 1.5rem);
   width: 100%;
-  height: auto !important;
-  max-height: none !important;
-  overflow-y: visible !important;
   padding: 20px;
   background: var(--bg-card, #ffffff);
   border: 1px solid var(--border-color, #e5e7eb);
@@ -93,9 +91,28 @@
         border-color: var(--link-color, #3b82f6);
         box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
       }
+
+      /* Make the native "clear search" (x) button show a pointer cursor
+         on hover, like any other clickable control, instead of the
+         browser's default arrow/text cursor. Scaled up slightly since
+         the native icon renders quite small by default. */
+      &::-webkit-search-cancel-button {
+    -webkit-appearance: none;
+    appearance: none;
+    cursor: pointer;
+    width: 16px;
+    height: 16px;
+    background-color: var(--link-color, #3b82f6);
+    -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round'%3E%3Cline x1='18' y1='6' x2='6' y2='18'/%3E%3Cline x1='6' y1='6' x2='18' y2='18'/%3E%3C/svg%3E");
+   mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round'%3E%3Cline x1='18' y1='6' x2='6' y2='18'/%3E%3Cline x1='6' y1='6' x2='18' y2='18'/%3E%3C/svg%3E");
+    -webkit-mask-size: contain;
+    mask-size: contain;
+    margin-top: 1px;
+    }
     }
   }
 
+  /* ── Titluri Secțiuni: Fără uppercase, font normal și bold ── */
   .filter-group-header {
     width: 100%;
     display: flex;
@@ -230,6 +247,12 @@
   }
 }
 
+/* ── Dark mode overrides ───────────────────────────────────
+   var(--bg-sub) / var(--bg-input) aren't defined as real theme
+   variables in this app, so they always fall back to their light
+   default regardless of theme. These explicit overrides fix that
+   for the pieces that need it: the vote button, the option counts,
+   the search input, and the time badge. */
 :host-context([data-theme='dark']) {
   .filters-sidebar .option-count {
     background: rgba(255, 255, 255, 0.12);
@@ -265,6 +288,7 @@
   }
 }
 
+/* ── Content Area & Cards Layout ──────────────────────────── */
 .elections-content-area {
   min-width: 0;
 }
@@ -308,12 +332,15 @@
   }
 }
 
+/* Inner wrapper that holds badges/title/description/date and grows to
+   push the footer (actions) to the bottom of the card. */
 .election-card-body {
   flex: 1;
   display: flex;
   flex-direction: column;
 }
 
+/* Footer strip: vote/results actions + the "voted" answer line. */
 .election-card-footer {
   margin-top: 12px;
   padding-top: 12px;
@@ -336,6 +363,8 @@
   margin-top: 0.5rem;
 }
 
+/* "Upcoming" status label shown instead of the Vote button before an
+   election has started. */
 .action-upcoming {
   display: inline-flex;
   align-items: center;
@@ -419,6 +448,7 @@
   width: fit-content;
 }
 
+/* "BEGINS:" / "ENDS:" uppercase label inside the date container. */
 .date-label {
   font-size: 0.7rem;
   font-weight: 700;
@@ -427,6 +457,7 @@
   letter-spacing: 0.05em;
 }
 
+/* Row holding the date value, the separator dot, and the time badge. */
 .date-value-row {
   display: flex;
   align-items: center;
@@ -531,10 +562,8 @@
   }
 
   .filters-sidebar {
-    position: static !important;
-    width: 100%;
-    height: auto !important;
-    max-height: none !important;
-    overflow-y: visible !important;
+    position: static;
+    max-height: none;
+    overflow-y: visible;
   }
 }

@@ -423,7 +423,9 @@
     "votes": "voturi",
     "noTextAnswers": "Niciun răspuns încă.",
     "otherAnswersTitle": "Alte răspunsuri",
-    "otherOptionLabel": "Altele"
+    "otherOptionLabel": "Altele",
+    "more": "mai multi",
+    "less": "mai puțin"
   },
   "errors": {
     "emailAlreadyExists": "Există deja un cont cu acest email.",
