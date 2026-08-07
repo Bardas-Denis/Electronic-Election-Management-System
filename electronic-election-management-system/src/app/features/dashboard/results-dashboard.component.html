@@ -111,17 +111,30 @@
                   }
                 </div>
               }
-              @if (question.questionType !== 'FreeText' && question.textAnswers.length > 0) {
-                <div class="other-answers-section">
-                  <h4 class="other-answers-title">{{ 'results.otherAnswersTitle' | translate }}</h4>
-                  <ul class="text-answers-list">
-                    @for (answer of question.textAnswers; track $index) {
-                      <li class="text-answer-item">{{ answer }}</li>
-                    }
-                  </ul>
-                </div>
-              }
             </div>
+            @if (question.questionType !== 'FreeText' && question.textAnswers.length > 0) {
+              <div class="other-answers-section">
+                <h4 class="other-answers-title">{{ 'results.otherAnswersTitle' | translate }}</h4>
+                <div class="text-answers-chips">
+                  @for (answer of visibleTextAnswers(question); track $index) {
+                    <span class="text-answer-chip" [title]="answer">{{ truncateAnswer(answer) }}</span>
+                  }
+                  @if (question.textAnswers.length > otherAnswersPreviewCount) {
+                    <button
+                      type="button"
+                      class="text-answers-more"
+                      (click)="toggleOtherAnswers(question.questionId)"
+                    >
+                      @if (isOtherAnswersExpanded(question.questionId)) {
+                        {{ 'results.less' | translate }}
+                      } @else {
+                        +{{ question.textAnswers.length - otherAnswersPreviewCount }} {{ 'results.more' | translate }}
+                      }
+                    </button>
+                  }
+                </div>
+              </div>
+            }
           </section>
         }
       </div>
