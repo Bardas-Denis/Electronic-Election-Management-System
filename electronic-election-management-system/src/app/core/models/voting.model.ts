@@ -1,5 +1,5 @@
 export type ElectionType = 'Politic' | 'Comercial';
-export type QuestionType = 'Choice' | 'FreeText';
+export type QuestionType = 'Choice' | 'FreeText' | 'Ranking';
 
 export interface OptionDto {
   id: string;
@@ -125,11 +125,17 @@ export interface TextAnswerDto {
   text: string;
 }
 
+export interface RankedOptionDto {
+  optionId: string;
+  rank: number;
+}
+
 export interface CastVoteRequest {
   electionId: string;
   optionId: string;
   optionIds: string[];
   textAnswers: TextAnswerDto[];
+  rankedOptions: RankedOptionDto[];
   // Required by the backend when the election is not anonymous; omitted entirely for anonymous ones.
   voterDeclaration?: VoterDeclarationDto;
 }
@@ -140,6 +146,7 @@ export interface UserVoteAnswerDto {
   optionLabel?: string;
   // Set instead of optionId/optionLabel when this answer is for a FreeText question.
   text?: string;
+  rank?: number;
 }
 
 export interface UserVoteDto {

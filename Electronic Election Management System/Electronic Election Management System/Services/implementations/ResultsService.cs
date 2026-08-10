@@ -38,7 +38,9 @@ namespace Electronic_Election_Management_System.Services
                         OptionId = o.Id,
                         Label = o.Label,
                         ImageDataUrl = o.ImageDataUrl,
-                        VoteCount = o.Votes.Count
+                        VoteCount = q.QuestionType == QuestionType.Ranking
+                            ? o.Votes.Sum(v => GetRankingPoints(v.Rank))
+                            : o.Votes.Count
                     }).ToList(),
                     // A FreeText question's answers, or a Choice question's "Other" answers.
                     TextAnswers = q.QuestionType == QuestionType.FreeText || q.AllowOtherOption
@@ -66,7 +68,7 @@ namespace Electronic_Election_Management_System.Services
                 {
                     question.TotalVotes = question.TextAnswers.Count;
                 }
-                else if (question.AllowMultipleAnswers)
+                else if (question.AllowMultipleAnswers || source.QuestionType == QuestionType.Ranking)
                 {
                     // A respondent can appear under several options here, so summing VoteCount
                     // would double-count them - count distinct respondents instead. A respondent
@@ -123,6 +125,25 @@ namespace Electronic_Election_Management_System.Services
                 return null;
 
             return await GetResultsAsync(electionId);
+        }
+
+        private static int GetRankingPoints(int? rank)
+        {
+            if (!rank.HasValue) return 0;
+            return rank.Value switch
+            {
+                1 => 12,
+                2 => 10,
+                3 => 8,
+                4 => 7,
+                5 => 6,
+                6 => 5,
+                7 => 4,
+                8 => 3,
+                9 => 2,
+                10 => 1,
+                _ => 0
+            };
         }
     }
 }

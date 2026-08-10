@@ -92,6 +92,64 @@
             [placeholder]="'vote.freeTextPlaceholder' | translate"></textarea>
           <p class="free-text-counter">{{ getTextAnswer(question.id).length }}/{{ freeTextAnswerMaxLength }}</p>
         </div>
+        } @else if (question.questionType === 'Ranking') {
+        <div class="ranking-answer" [class.locked]="!canSelectOptions()">
+          <div class="ranking-lists-container">
+            <div class="ranking-list available-options">
+              <h4>Candidați Disponibili</h4>
+              <div
+                cdkDropList
+                #availableList="cdkDropList"
+                [cdkDropListData]="availableRankingOptions()[question.id]"
+                [cdkDropListConnectedTo]="[rankedList]"
+                class="drag-list"
+                (cdkDropListDropped)="dropRankingOption($event, question.id)">
+                @for (item of availableRankingOptions()[question.id]; track item.id) {
+                <div class="drag-item" cdkDrag [cdkDragDisabled]="!canSelectOptions()">
+                  @if (item.imageDataUrl) {
+                  <img [src]="item.imageDataUrl" alt="" class="item-img" />
+                  }
+                  <div class="item-details">
+                    <strong>{{ item.label }}</strong>
+                    @if (item.description) {
+                    <span>{{ item.description }}</span>
+                    }
+                  </div>
+                </div>
+                }
+              </div>
+            </div>
+
+            <div class="ranking-list my-ranking">
+              <h4>Topul Meu</h4>
+              <div
+                cdkDropList
+                #rankedList="cdkDropList"
+                [cdkDropListData]="rankedOptions()[question.id]"
+                [cdkDropListConnectedTo]="[availableList]"
+                class="drag-list"
+                (cdkDropListDropped)="dropRankingOption($event, question.id)">
+                @for (item of rankedOptions()[question.id]; track item.id; let i = $index) {
+                <div class="drag-item" cdkDrag [cdkDragDisabled]="!canSelectOptions()">
+                  <div class="rank-badge">{{ i + 1 }}</div>
+                  @if (item.imageDataUrl) {
+                  <img [src]="item.imageDataUrl" alt="" class="item-img" />
+                  }
+                  <div class="item-details">
+                    <strong>{{ item.label }}</strong>
+                    @if (item.description) {
+                    <span>{{ item.description }}</span>
+                    }
+                  </div>
+                </div>
+                }
+                @if (!rankedOptions()[question.id] || rankedOptions()[question.id].length === 0) {
+                <div class="empty-list-placeholder">Trageți candidații aici pentru a-i ordona</div>
+                }
+              </div>
+            </div>
+          </div>
+        </div>
         } @else {
         <div class="options-list" [class.locked]="!canSelectOptions()">
           @for (option of question.options; track option.id) {

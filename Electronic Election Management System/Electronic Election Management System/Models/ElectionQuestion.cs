@@ -3,7 +3,8 @@ namespace Electronic_Election_Management_System.Models
     public enum QuestionType
     {
         Choice,
-        FreeText
+        FreeText,
+        Ranking
     }
 
     public class ElectionQuestion

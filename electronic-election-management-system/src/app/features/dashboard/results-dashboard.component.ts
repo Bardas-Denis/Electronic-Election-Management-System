@@ -91,6 +91,20 @@ export class ResultsDashboardComponent implements OnInit, OnDestroy {
     this.resultsService.connectToLiveResults(this.electionId);
   }
 
+  questionTotal(question: QuestionResultDto): number {
+    if (question.questionType === 'Ranking') {
+      return question.results.reduce((sum, opt) => sum + opt.voteCount, 0);
+    }
+    return question.totalVotes;
+  }
+
+  sortedResults(question: QuestionResultDto): OptionResultDto[] {
+    if (question.questionType === 'Ranking') {
+      return [...question.results].sort((a, b) => b.voteCount - a.voteCount);
+    }
+    return question.results;
+  }
+
   // important: inchide conexiunea SignalR la parasirea paginii
   ngOnDestroy(): void {
     this.resultsService.disconnect();
@@ -179,7 +193,7 @@ export class ResultsDashboardComponent implements OnInit, OnDestroy {
   // gets its own wedge like everything else here, which is what keeps the
   // slices' vote counts summing back up to the question's total.
   pieSegments(question: QuestionResultDto): PieSegment[] {
-    const total = question.totalVotes;
+    const total = this.questionTotal(question);
     const optionsWithVotes = question.results.filter((r) => r.voteCount > 0).length;
     // Only cut a gap when at least two options actually have votes - a single
     // option holding 100% must render as one unbroken circle, not a wedge

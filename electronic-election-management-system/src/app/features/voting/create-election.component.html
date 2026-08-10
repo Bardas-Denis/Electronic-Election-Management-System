@@ -815,11 +815,15 @@
           }
         </div>
         <div class="question-type-toggle-group">
-          <button type="button" class="question-type-toggle" [class.active]="!isFreeTextQuestion(questionIndex)"
+          <button type="button" class="question-type-toggle" [class.active]="getQuestionType(questionIndex) === 'Choice'"
             (click)="setQuestionType(questionIndex, 'Choice')">
             {{ 'elections.questionTypeChoiceLabel' | translate }}
           </button>
-          <button type="button" class="question-type-toggle" [class.active]="isFreeTextQuestion(questionIndex)"
+          <button type="button" class="question-type-toggle" [class.active]="getQuestionType(questionIndex) === 'Ranking'"
+            (click)="setQuestionType(questionIndex, 'Ranking')">
+            Ranking / Ordonare
+          </button>
+          <button type="button" class="question-type-toggle" [class.active]="getQuestionType(questionIndex) === 'FreeText'"
             (click)="setQuestionType(questionIndex, 'FreeText')">
             {{ 'elections.questionTypeFreeTextLabel' | translate }}
           </button>
@@ -829,7 +833,7 @@
             <input type="checkbox" formControlName="isRequired" />
             {{ 'elections.questionRequiredLabel' | translate }}
           </label>
-          @if (!isFreeTextQuestion(questionIndex)) {
+          @if (getQuestionType(questionIndex) === 'Choice') {
           <label class="question-required-toggle">
             <input type="checkbox" formControlName="allowMultipleAnswers" />
             {{ 'elections.questionMultipleAnswersLabel' | translate }}
@@ -843,7 +847,7 @@
         <input type="text" formControlName="text" maxlength="500"
           [placeholder]="'elections.questionPlaceholder' | translate" />
 
-        @if (!isFreeTextQuestion(questionIndex)) {
+        @if (getQuestionType(questionIndex) !== 'FreeText') {
         <p class="question-options-label">{{ 'elections.optionsLabel' | translate }}</p>
         <div formArrayName="options" class="question-options">
           @for (option of questionOptions(questionIndex).controls; track $index; let optionIndex = $index) {
