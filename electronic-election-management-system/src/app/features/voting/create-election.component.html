@@ -821,7 +821,7 @@
           </button>
           <button type="button" class="question-type-toggle" [class.active]="getQuestionType(questionIndex) === 'Ranking'"
             (click)="setQuestionType(questionIndex, 'Ranking')">
-            Ranking / Ordonare
+            {{ 'elections.questionTypeRankingLabel' | translate }}
           </button>
           <button type="button" class="question-type-toggle" [class.active]="getQuestionType(questionIndex) === 'FreeText'"
             (click)="setQuestionType(questionIndex, 'FreeText')">
