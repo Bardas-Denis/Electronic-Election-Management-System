@@ -245,16 +245,12 @@ export class CreateElectionComponent implements OnInit {
     });
   }
 
-  /** True when the given question is a FreeText question (options become optional suggestions). */
-  isFreeTextQuestion(questionIndex: number): boolean {
-    return this.questions.at(questionIndex).get('questionType')?.value === 'FreeText';
+  getQuestionType(questionIndex: number): QuestionType {
+    return this.questions.at(questionIndex).get('questionType')?.value as QuestionType;
   }
 
   /**
-   * Sets a question's type and applies the side effects of switching to FreeText:
-   * allowMultipleAnswers/allowOtherOption are Choice-only concepts, and the options
-   * array's minimum-count validator depends on questionType but isn't re-run just
-   * because a sibling control changed - so it's nudged here explicitly.
+   * Sets a question's type and applies the side effects.
    */
   setQuestionType(questionIndex: number, type: QuestionType): void {
     const group = this.questions.at(questionIndex);
@@ -263,7 +259,10 @@ export class CreateElectionComponent implements OnInit {
     const sideEffects = freeTextTypeSideEffects(type);
     if (sideEffects) {
       group.patchValue(sideEffects);
-      // FreeText questions have no options UI at all - drop any Choice options
+    }
+
+    if (type === 'FreeText') {
+      // FreeText questions have no options UI at all - drop any Choice/Ranking options
       // carried over from before the switch instead of submitting them unseen.
       this.questionOptions(questionIndex).clear();
     }
@@ -1224,7 +1223,7 @@ export function computeInvitationDiff(
 export function freeTextTypeSideEffects(
   type: QuestionType
 ): { allowMultipleAnswers: boolean; allowOtherOption: boolean } | null {
-  return type === 'FreeText'
+  return type === 'FreeText' || type === 'Ranking'
     ? { allowMultipleAnswers: false, allowOtherOption: false }
     : null;
 }

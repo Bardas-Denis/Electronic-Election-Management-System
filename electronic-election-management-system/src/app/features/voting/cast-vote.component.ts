@@ -2,15 +2,16 @@ import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { TranslatePipe } from '@ngx-translate/core';
+import { CdkDragDrop, CdkDrag, CdkDropList, moveItemInArray, transferArrayItem } from '@angular/cdk/drag-drop';
 import { VotingService } from '../../core/services/voting.service';
-import { ElectionDto, VoterDeclarationDto } from '../../core/models/voting.model';
+import { ElectionDto, VoterDeclarationDto, OptionDto } from '../../core/models/voting.model';
 import { VoterDeclarationModalComponent } from './voter-declaration-modal.component';
 import { INPUT_LIMITS } from '../../core/validators/input.validators';
 
 @Component({
   selector: 'app-cast-vote',
   standalone: true,
-  imports: [CommonModule, VoterDeclarationModalComponent, TranslatePipe],
+  imports: [CommonModule, VoterDeclarationModalComponent, TranslatePipe, CdkDropList, CdkDrag],
   templateUrl: './cast-vote.component.html',
   styleUrl: './cast-vote.component.scss'
 })
@@ -37,6 +38,12 @@ export class CastVoteComponent implements OnInit {
   // by questionId. Irrelevant for FreeText questions (always "on").
   otherSelected = signal<Record<string, boolean>>({});
   userOtherSelected = signal<Record<string, boolean>>({});
+
+  availableRankingOptions = signal<Record<string, OptionDto[]>>({});
+  userAvailableRankingOptions = signal<Record<string, OptionDto[]>>({});
+  rankedOptions = signal<Record<string, OptionDto[]>>({});
+  userRankedOptions = signal<Record<string, OptionDto[]>>({});
+
   userVoteOptionId = signal<string | null>(null);
   userVoteOptionLabel = signal<string | null>(null);
   isEditingVote = signal(false);
@@ -164,6 +171,22 @@ export class CastVoteComponent implements OnInit {
     return question.options.some(option => option.label.trim().toLocaleLowerCase() === text);
   }
 
+  dropRankingOption(event: CdkDragDrop<OptionDto[]>, questionId: string): void {
+    if (!this.canSelectOptions()) return;
+    if (event.previousContainer === event.container) {
+      moveItemInArray(event.container.data, event.previousIndex, event.currentIndex);
+    } else {
+      transferArrayItem(
+        event.previousContainer.data,
+        event.container.data,
+        event.previousIndex,
+        event.currentIndex,
+      );
+    }
+    this.rankedOptions.update(r => ({ ...r }));
+    this.availableRankingOptions.update(a => ({ ...a }));
+  }
+
   hasAllAnswers(): boolean {
     const election = this.election();
     return !!election && this.questions(election).every(q => {
@@ -172,6 +195,9 @@ export class CastVoteComponent implements OnInit {
         return false;
       }
       if (q.isRequired === false) return true;
+      if (q.questionType === 'Ranking') {
+        return (this.rankedOptions()[q.id]?.length ?? 0) > 0;
+      }
       if (q.questionType === 'FreeText') {
         return this.getTextAnswer(q.id).trim().length > 0;
       }
@@ -203,14 +229,25 @@ export class CastVoteComponent implements OnInit {
     this.showDeclarationModal.set(false);
   }
 
-  startEditVote(): void {
-    const e = this.election();
-    if (!e || e.isExpired || !e.hasUserVoted || !this.canEditVote()) return;
-
+  private resetToUserVote(): void {
     if (Object.keys(this.userVoteAnswers()).length)
       this.selectedOptionIds.set({ ...this.userVoteAnswers() });
     this.textAnswers.set({ ...this.userTextAnswers() });
     this.otherSelected.set({ ...this.userOtherSelected() });
+
+    const availableOpts: Record<string, OptionDto[]> = {};
+    const rankedOpts: Record<string, OptionDto[]> = {};
+    for (const [k, v] of Object.entries(this.userAvailableRankingOptions())) availableOpts[k] = [...v];
+    for (const [k, v] of Object.entries(this.userRankedOptions())) rankedOpts[k] = [...v];
+    this.availableRankingOptions.set(availableOpts);
+    this.rankedOptions.set(rankedOpts);
+  }
+
+  startEditVote(): void {
+    const e = this.election();
+    if (!e || e.isExpired || !e.hasUserVoted || !this.canEditVote()) return;
+
+    this.resetToUserVote();
     this.errorMessageKey.set(null);
     this.successMessageKey.set(null);
     this.isEditingVote.set(true);
@@ -219,9 +256,7 @@ export class CastVoteComponent implements OnInit {
   cancelEditVote(): void {
     this.isEditingVote.set(false);
     this.errorMessageKey.set(null);
-    this.selectedOptionIds.set({ ...this.userVoteAnswers() });
-    this.textAnswers.set({ ...this.userTextAnswers() });
-    this.otherSelected.set({ ...this.userOtherSelected() });
+    this.resetToUserVote();
   }
 
   deleteVote(): void {
@@ -244,11 +279,16 @@ export class CastVoteComponent implements OnInit {
         this.userTextAnswers.set({});
         this.otherSelected.set({});
         this.userOtherSelected.set({});
+        
+        const current = this.election();
+        if (current) {
+          this.syncUserVoteFromElection({ ...current, hasUserVoted: false });
+        }
+        
         // Deleting consumes the same one-time change budget as editing does - if this stayed
         // true, someone could delete + revote in a loop to bypass the limit entirely.
         this.canEditVote.set(false);
         this.successMessageKey.set('vote.deleteSuccess');
-        const current = this.election();
         if (current) {
           this.election.set({
             ...current,
@@ -275,6 +315,19 @@ export class CastVoteComponent implements OnInit {
   }
 
   private syncUserVoteFromElection(election: ElectionDto): void {
+    const availableOpts: Record<string, OptionDto[]> = {};
+    const rankedOpts: Record<string, OptionDto[]> = {};
+    
+    election.questions?.forEach(q => {
+      if (q.questionType === 'Ranking') {
+        availableOpts[q.id] = [...q.options];
+        rankedOpts[q.id] = [];
+      }
+    });
+    
+    this.availableRankingOptions.set(availableOpts);
+    this.rankedOptions.set(rankedOpts);
+
     if (!election.hasUserVoted) return;
     if (election.userVoteOptionId) {
       this.userVoteOptionId.set(election.userVoteOptionId);
@@ -300,8 +353,17 @@ export class CastVoteComponent implements OnInit {
           const answers: Record<string, string[]> = {};
           const texts: Record<string, string> = {};
           const others: Record<string, boolean> = {};
+          const ranked: Record<string, { option: OptionDto; rank: number }[]> = {};
+          
+          election?.questions?.filter(q => q.questionType === 'Ranking').forEach(q => ranked[q.id] = []);
+
           for (const answer of vote.answers) {
-            if (answer.text !== undefined && answer.text !== null) {
+            if (answer.rank !== undefined && answer.rank !== null && answer.optionId) {
+              const option = questionsById.get(answer.questionId)?.options.find(o => o.id === answer.optionId);
+              if (option) {
+                ranked[answer.questionId].push({ option, rank: answer.rank });
+              }
+            } else if (answer.text !== undefined && answer.text !== null) {
               texts[answer.questionId] = answer.text;
               if (questionsById.get(answer.questionId)?.questionType === 'Choice') {
                 others[answer.questionId] = true;
@@ -310,6 +372,21 @@ export class CastVoteComponent implements OnInit {
               (answers[answer.questionId] ??= []).push(answer.optionId);
             }
           }
+          
+          const availableOpts = { ...this.availableRankingOptions() };
+          const rankedOpts: Record<string, OptionDto[]> = {};
+          for (const qId in ranked) {
+            rankedOpts[qId] = ranked[qId].sort((a, b) => a.rank - b.rank).map(x => x.option);
+            const allOpts = questionsById.get(qId)?.options ?? [];
+            const rankedIds = new Set(rankedOpts[qId].map(o => o.id));
+            availableOpts[qId] = allOpts.filter(o => !rankedIds.has(o.id));
+          }
+          
+          this.availableRankingOptions.set(availableOpts);
+          this.userAvailableRankingOptions.set(structuredClone(availableOpts));
+          this.rankedOptions.set(rankedOpts);
+          this.userRankedOptions.set(structuredClone(rankedOpts));
+
           this.selectedOptionIds.set(answers);
           this.userVoteAnswers.set(answers);
           this.textAnswers.set(texts);
@@ -350,11 +427,18 @@ export class CastVoteComponent implements OnInit {
           .filter(answer => answer.text.length > 0)
       : [];
 
+    const rankedOptionsPayload = election ? this.questions(election)
+      .filter(q => q.questionType === 'Ranking')
+      .flatMap(q => (this.rankedOptions()[q.id] ?? []).map((opt, index) => ({
+        optionId: opt.id,
+        rank: index + 1
+      }))) : [];
+
     this.isSubmitting.set(true);
     this.errorMessageKey.set(null);
     this.successMessageKey.set(null);
 
-    const payload = { electionId: this.electionId, optionId, optionIds, textAnswers, voterDeclaration };
+    const payload = { electionId: this.electionId, optionId, optionIds, textAnswers, rankedOptions: rankedOptionsPayload, voterDeclaration };
     const wasEditing = this.isEditingVote();
     const request$ = wasEditing
       ? this.votingService.updateMyVote(payload)
@@ -391,6 +475,9 @@ export class CastVoteComponent implements OnInit {
     this.userTextAnswers.set({ ...this.textAnswers() });
     this.userOtherSelected.set({ ...this.otherSelected() });
     this.userVoteOptionLabel.set(this.optionLabelById(optionId));
+
+    this.userAvailableRankingOptions.set(structuredClone(this.availableRankingOptions()));
+    this.userRankedOptions.set(structuredClone(this.rankedOptions()));
 
     const current = this.election();
     if (!current) return;
