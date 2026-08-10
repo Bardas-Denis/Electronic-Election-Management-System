@@ -230,48 +230,98 @@
 }
 
 /* ─── "Other" answers row (below the chart, not beside it) ─────────────
-   Truncated chip list: first N answers as pills, then a "+N more" pill
-   that expands the rest in place (and turns into "less" to collapse
-   again) - same pattern as the invite-users picker's "+95 more" chip,
+   A grid of answer cards showing the first N, then a "+N more" pill that
+   expands the rest in place (and turns into "less" to collapse again) -
+   same expand pattern as the invite-users picker's "+95 more" chip,
    instead of a long always-open scroll list. */
 .other-answers-section {
+  flex-basis: 100%;
+  width: 100%;
   margin-top: 1.5rem;
   padding-top: 1.25rem;
   border-top: 1px solid var(--border-color);
 }
 
 .other-answers-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
   margin: 0 0 0.75rem;
   color: var(--text-secondary);
   font-size: 0.8rem;
   font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
-.text-answers-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
-
-.text-answer-chip {
-  display: inline-block;
-  vertical-align: middle;
-  max-width: 420px;
-  padding: 0.4rem 0.75rem;
+.other-answers-count {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0;
+  color: var(--text-secondary);
+  background: var(--bg-subtle);
   border: 1px solid var(--border-color);
   border-radius: 999px;
-  background: var(--bg-subtle);
-  color: var(--text-primary);
-  font-size: 0.8125rem;
-  line-height: 1.3;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  padding: 0.1rem 0.45rem;
 }
 
+// Scoped to the "Other" block - FreeText questions keep the plain single-column
+// scroll list above.
+.other-answers-section .text-answers-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 0.75rem;
+  // Cards on the same row share a height, so a two-line answer next to a
+  // one-line one doesn't leave the row visibly ragged.
+  align-items: stretch;
+  align-content: start;
+  // The base rule caps the list at 360px and scrolls the overflow, which would
+  // trap the expanded answers in a scrollbox and defeat the "+N more" toggle -
+  // here the toggle is what controls the height instead.
+  max-height: none;
+  overflow: visible;
+  padding-right: 0;
+  // Nothing in the app resets list markers, and the ul has no left padding, so
+  // the default discs used to render outside the list box and get clipped. In a
+  // two-column grid the second column's markers land in the gap between columns
+  // and become visible.
+  list-style: none;
+}
+
+// Card look instead of the flat grey block. The left bar stays neutral on
+// purpose: any --series-* colour would falsely imply these answers belong to
+// the pie slice of that colour.
+.other-answers-section .text-answer-item {
+  // The section sits on a --bg-card panel, so cards keep the subtle fill to
+  // read as distinct tiles - on --bg-card they'd be white on white, visible
+  // only by their 1px border. Hover then lifts them to --bg-card.
+  background: var(--bg-subtle);
+  border-left: 3px solid var(--text-muted);
+  padding: 0.7rem 0.9rem 0.7rem 1rem;
+  line-height: 1.55;
+  // align-items: stretch grows a short card to its row's height; without this
+  // the text would centre itself in that extra space instead of staying on the
+  // first line, next to its neighbour's first line.
+  display: flex;
+  align-items: flex-start;
+  transition:
+    background var(--transition),
+    border-color var(--transition),
+    box-shadow var(--transition);
+
+  &:hover {
+    background: var(--bg-card);
+    border-left-color: var(--text-secondary);
+    box-shadow: var(--shadow-sm);
+  }
+}
+
+// Sits under the card grid rather than inline among chips, so it needs its own
+// top gap.
 .text-answers-more {
   display: inline-flex;
   align-items: center;
+  margin-top: 0.75rem;
   padding: 0.4rem 0.75rem;
   border: 1.5px solid var(--text-primary);
   border-radius: 999px;
