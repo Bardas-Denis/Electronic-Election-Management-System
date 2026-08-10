@@ -47,6 +47,13 @@ namespace Electronic_Election_Management_System.DTOs
         public string Text { get; set; } = string.Empty;
     }
 
+    // SYNC: voting.model.ts -> RankedOptionDto
+    public class RankedOptionDto
+    {
+        public Guid OptionId { get; set; }
+        public int Rank { get; set; }
+    }
+
     // SYNC: voting.model.ts -> CastVoteRequest
     public class CastVoteRequest : IValidatableObject
     {
@@ -58,6 +65,9 @@ namespace Electronic_Election_Management_System.DTOs
 
         [Required, MaxLength(ValidationRules.MaxQuestions)]
         public List<QuestionAnswerDto> TextAnswers { get; set; } = new();
+
+        [Required, MaxLength(ValidationRules.MaxQuestions * ValidationRules.MaxOptionsPerQuestion)]
+        public List<RankedOptionDto> RankedOptions { get; set; } = new();
 
         /// <summary>Required for non-anonymous elections.</summary>
         public PersonalDetailsDto? VoterDeclaration { get; set; }
@@ -85,6 +95,11 @@ namespace Electronic_Election_Management_System.DTOs
                 yield return new ValidationResult(
                     ValidationMessages.InvalidTextAnswers,
                     new[] { nameof(TextAnswers) });
+
+            if (RankedOptions.Any(r => r.OptionId == Guid.Empty) || RankedOptions.Select(r => r.OptionId).Distinct().Count() != RankedOptions.Count)
+                yield return new ValidationResult(
+                    "Invalid ranked options.",
+                    new[] { nameof(RankedOptions) });
         }
     }
 
@@ -107,5 +122,6 @@ namespace Electronic_Election_Management_System.DTOs
         public string? OptionLabel { get; set; }
         /// <summary>Set instead of <see cref="OptionId"/>/<see cref="OptionLabel"/> when this answer is for a FreeText question.</summary>
         public string? Text { get; set; }
+        public int? Rank { get; set; }
     }
 }

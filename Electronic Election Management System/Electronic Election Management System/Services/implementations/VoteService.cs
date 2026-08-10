@@ -189,14 +189,15 @@ namespace Electronic_Election_Management_System.Services
                     QuestionId = v.OptionId.HasValue ? (v.Option?.QuestionId ?? Guid.Empty) : (v.QuestionId ?? Guid.Empty),
                     OptionId = v.OptionId,
                     OptionLabel = v.Option?.Label,
-                    Text = v.AnswerText
+                    Text = v.AnswerText,
+                    Rank = v.Rank
                 }).ToList(),
                 CanEdit = changeCount < 1
             });
         }
 
         private async Task<ServiceResult<bool>> UpdateAnonymousAsync(
-            Guid electionId, List<Option> selected, List<Vote> textAnswers, Guid userId)
+            Guid electionId, List<Vote> optionVotes, List<Vote> textAnswers, Guid userId)
         {
             var token = await _votes.GetVoteTokenWithVotesAsync(userId, electionId);
             if (token is null || token.Votes.Count == 0)
@@ -207,8 +208,11 @@ namespace Electronic_Election_Management_System.Services
                 return ServiceResult<bool>.Fail(ErrorCode.VoteChangeLimit);
 
             _votes.RemoveVotes(token.Votes);
-            foreach (var option in selected)
-                await _votes.AddVoteAsync(new Vote { OptionId = option.Id, VoteTokenId = token.Id });
+            foreach (var optionVote in optionVotes)
+            {
+                optionVote.VoteTokenId = token.Id;
+                await _votes.AddVoteAsync(optionVote);
+            }
             foreach (var textAnswer in textAnswers)
             {
                 textAnswer.VoteTokenId = token.Id;
@@ -221,7 +225,7 @@ namespace Electronic_Election_Management_System.Services
         }
 
         private async Task<ServiceResult<bool>> UpdateIdentifiedAsync(
-            Election election, List<Option> selected, List<Vote> textAnswers, Guid userId, PersonalDetailsDto? declarationDto)
+            Election election, List<Vote> optionVotes, List<Vote> textAnswers, Guid userId, PersonalDetailsDto? declarationDto)
         {
             var existingVotes = await _votes.GetUserVotesInElectionAsync(userId, election.Id);
             if (existingVotes.Count == 0)
@@ -236,7 +240,9 @@ namespace Electronic_Election_Management_System.Services
                 return ServiceResult<bool>.Fail(declarationResult.ErrorCode!.Value);
 
             _votes.RemoveVotes(existingVotes);
-            var newVotes = selected.Select(option => new Vote { OptionId = option.Id, UserId = userId }).ToList();
+            foreach (var optionVote in optionVotes)
+                optionVote.UserId = userId;
+            var newVotes = optionVotes.ToList();
             foreach (var textAnswer in textAnswers)
                 textAnswer.UserId = userId;
             newVotes.AddRange(textAnswers);
@@ -269,16 +275,19 @@ namespace Electronic_Election_Management_System.Services
         /// doesn't add up: an unknown option/question id, a text answer for a question that
         /// doesn't accept one, or a required/single-answer count violation - a text answer
         /// counts as one answer alongside any selected options for that question.</summary>
-        private static (List<Option> Options, List<Vote> TextAnswers)? ValidateAndBuildAnswers(
+        private static (List<Vote> OptionVotes, List<Vote> TextAnswers)? ValidateAndBuildAnswers(
             Election election, CastVoteRequest request)
         {
-            var requestedOptionIds = (request.OptionIds.Count > 0
+            var normalOptionIds = (request.OptionIds.Count > 0
                     ? request.OptionIds
                     : request.OptionId == Guid.Empty ? new List<Guid>() : new List<Guid> { request.OptionId })
                 .Distinct()
                 .ToList();
-            var selectedOptions = election.Options.Where(option => requestedOptionIds.Contains(option.Id)).ToList();
-            if (selectedOptions.Count != requestedOptionIds.Count)
+            var rankedOptions = request.RankedOptions.DistinctBy(r => r.OptionId).ToList();
+            var allRequestedOptionIds = normalOptionIds.Concat(rankedOptions.Select(r => r.OptionId)).Distinct().ToList();
+
+            var selectedOptions = election.Options.Where(option => allRequestedOptionIds.Contains(option.Id)).ToList();
+            if (selectedOptions.Count != allRequestedOptionIds.Count)
                 return null;
 
             var questions = election.Questions.ToList();
@@ -288,8 +297,9 @@ namespace Electronic_Election_Management_System.Services
                 // never has text answers.
                 if (request.TextAnswers.Count > 0)
                     return null;
+                var optionVotesFallback = selectedOptions.Select(o => new Vote { OptionId = o.Id }).ToList();
                 return selectedOptions.Count == 1 && selectedOptions[0].QuestionId is null
-                    ? (selectedOptions, new List<Vote>())
+                    ? (optionVotesFallback, new List<Vote>())
                     : null;
             }
 
@@ -343,6 +353,20 @@ namespace Electronic_Election_Management_System.Services
                 var hasTextAnswer = textByQuestionId.TryGetValue(question.Id, out var text) &&
                     !string.IsNullOrWhiteSpace(text);
                 var effectiveCount = optionCount + (hasTextAnswer ? 1 : 0);
+                
+                if (question.QuestionType == QuestionType.Ranking)
+                {
+                    var qRankedOptions = rankedOptions.Where(r => selectedOptions.Any(o => o.Id == r.OptionId && o.QuestionId == question.Id)).ToList();
+                    if (qRankedOptions.Count != optionCount) return false; // Mixing ranked and normal options for the same question
+                    
+                    var ranks = qRankedOptions.Select(r => r.Rank).OrderBy(r => r).ToList();
+                    for (int i = 0; i < ranks.Count; i++) {
+                        if (ranks[i] != i + 1) return false; // Ranks must be exactly 1, 2, 3...
+                    }
+                    
+                    return !question.IsRequired || effectiveCount >= 1;
+                }
+
                 return question.AllowMultipleAnswers
                     ? !question.IsRequired || effectiveCount >= 1
                     : question.IsRequired ? effectiveCount == 1 : effectiveCount <= 1;
@@ -355,11 +379,16 @@ namespace Electronic_Election_Management_System.Services
                 .Select(question => new Vote { QuestionId = question.Id, AnswerText = textByQuestionId[question.Id] })
                 .ToList();
 
-            return (selectedOptions, textAnswerVotes);
+            var optionVotes = selectedOptions.Select(option => {
+                var rank = rankedOptions.FirstOrDefault(r => r.OptionId == option.Id)?.Rank;
+                return new Vote { OptionId = option.Id, Rank = rank };
+            }).ToList();
+
+            return (optionVotes, textAnswerVotes);
         }
 
         private async Task<ServiceResult<bool>> CastAnonymousAsync(
-            Guid electionId, List<Option> selected, List<Vote> textAnswers, Guid userId)
+            Guid electionId, List<Vote> optionVotes, List<Vote> textAnswers, Guid userId)
         {
             var token = await _votes.GetVoteTokenAsync(userId, electionId);
             if (token is null)
@@ -376,8 +405,11 @@ namespace Electronic_Election_Management_System.Services
 
             // Anonymous path: only VoteTokenId is set, no UserId and no VoterDeclaration - the
             // vote can never be traced back to who cast it.
-            foreach (var option in selected)
-                await _votes.AddVoteAsync(new Vote { OptionId = option.Id, VoteTokenId = token.Id });
+            foreach (var optionVote in optionVotes)
+            {
+                optionVote.VoteTokenId = token.Id;
+                await _votes.AddVoteAsync(optionVote);
+            }
             foreach (var textAnswer in textAnswers)
             {
                 textAnswer.VoteTokenId = token.Id;
@@ -389,7 +421,7 @@ namespace Electronic_Election_Management_System.Services
         }
 
         private async Task<ServiceResult<bool>> CastIdentifiedAsync(
-            Election election, List<Option> selected, List<Vote> textAnswers, Guid userId, PersonalDetailsDto? declarationDto)
+            Election election, List<Vote> optionVotes, List<Vote> textAnswers, Guid userId, PersonalDetailsDto? declarationDto)
         {
             if (await _votes.HasUserVotedAsync(userId, election.Id))
                 return ServiceResult<bool>.Fail(ErrorCode.AlreadyVoted);
@@ -398,7 +430,9 @@ namespace Electronic_Election_Management_System.Services
             if (!declarationResult.Success)
                 return ServiceResult<bool>.Fail(declarationResult.ErrorCode!.Value);
 
-            var votes = selected.Select(option => new Vote { OptionId = option.Id, UserId = userId }).ToList();
+            foreach (var optionVote in optionVotes)
+                optionVote.UserId = userId;
+            var votes = optionVotes.ToList();
             foreach (var textAnswer in textAnswers)
                 textAnswer.UserId = userId;
             votes.AddRange(textAnswers);
