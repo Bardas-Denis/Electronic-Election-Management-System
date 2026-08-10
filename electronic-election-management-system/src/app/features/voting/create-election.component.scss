@@ -692,6 +692,20 @@
 }
 // Segmented control (real buttons, not checkboxes) since Choice/FreeText is a
 // mutually-exclusive pick - unlike the independent required/multiple/other pills.
+.rank-count-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 0.5rem 0 0.25rem;
+}
+
+.rank-count-input { width: 5rem; }
+
+.rank-count-hint {
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+}
+
 .question-type-toggle-group {
   display: inline-flex;
   gap: .3rem;

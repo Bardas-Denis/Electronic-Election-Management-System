@@ -88,6 +88,9 @@ namespace Electronic_Election_Management_System.Services
             if (!QuestionsAreValid(questions))
                 return ServiceResult<ElectionDto>.Fail(ErrorCode.TooFewOptions);
 
+            if (!RankCountsAreValid(questions))
+                return ServiceResult<ElectionDto>.Fail(ErrorCode.InvalidRankCount);
+
             if (request.EndsAt <= request.StartsAt)
                 return ServiceResult<ElectionDto>.Fail(ErrorCode.InvalidDateRange);
 
@@ -192,6 +195,9 @@ namespace Electronic_Election_Management_System.Services
             var questions = NormalizeQuestions(request);
             if (!QuestionsAreValid(questions))
                 return ServiceResult<ElectionDto>.Fail(ErrorCode.TooFewOptions);
+
+            if (!RankCountsAreValid(questions))
+                return ServiceResult<ElectionDto>.Fail(ErrorCode.InvalidRankCount);
 
             if (request.EndsAt <= request.StartsAt)
                 return ServiceResult<ElectionDto>.Fail(ErrorCode.InvalidDateRange);
@@ -658,6 +664,20 @@ namespace Electronic_Election_Management_System.Services
                  q.Options.Count(o => !string.IsNullOrWhiteSpace(o.Label)) >= 2) &&
                 q.Options.All(o => IsValidImage(o.ImageDataUrl)));
 
+        // Kept apart from QuestionsAreValid so the caller can report it as its own error: a bad
+        // rank count folded into TooFewOptions would tell the creator to add options they already
+        // have.
+        private static bool RankCountsAreValid(IEnumerable<CreateElectionQuestionDto> questions)
+            => questions.All(q =>
+            {
+                if (!q.RequiredRankCount.HasValue)
+                    return true;
+                if (!TryParseQuestionType(q.QuestionType, out var questionType) || questionType != QuestionType.Ranking)
+                    return false;
+                var optionCount = q.Options.Count(o => !string.IsNullOrWhiteSpace(o.Label));
+                return q.RequiredRankCount.Value >= 1 && q.RequiredRankCount.Value <= optionCount;
+            });
+
         private static bool IsValidImage(string? image)
         {
             if (string.IsNullOrWhiteSpace(image))
@@ -699,6 +719,7 @@ namespace Electronic_Election_Management_System.Services
                     AllowMultipleAnswers = question.AllowMultipleAnswers,
                     QuestionType = questionType,
                     AllowOtherOption = questionType == QuestionType.Choice && question.AllowOtherOption,
+                    RequiredRankCount = questionType == QuestionType.Ranking ? question.RequiredRankCount : null,
                     Options = question.Options
                         .Where(option => !string.IsNullOrWhiteSpace(option.Label))
                         .Select(option => new Option
@@ -725,6 +746,7 @@ namespace Electronic_Election_Management_System.Services
                     AllowMultipleAnswers = q.AllowMultipleAnswers,
                     QuestionType = q.QuestionType.ToString(),
                     AllowOtherOption = q.AllowOtherOption,
+                    RequiredRankCount = q.RequiredRankCount,
                     Options = q.Options.Select(MapOptionToDto).ToList()
                 })
                 .ToList();

@@ -18,6 +18,9 @@ export interface ElectionQuestionDto {
   // Only meaningful for a 'Choice' question: voters may answer with free text
   // ("Other: ___") instead of / alongside picking a fixed option.
   allowOtherOption: boolean;
+  // Only meaningful for a 'Ranking' question: when set, a ballot must place exactly
+  // this many options. Null leaves the count open.
+  requiredRankCount: number | null;
   // For a 'Choice' question, the selectable options. For a 'FreeText' question,
   // optional suggestion chips - voters may still type anything.
   options: OptionDto[];
@@ -66,6 +69,9 @@ export interface CreateElectionQuestionDto {
   allowMultipleAnswers: boolean;
   questionType: QuestionType;
   allowOtherOption: boolean;
+  // Only meaningful for a 'Ranking' question: when set, a ballot must place exactly
+  // this many options. Null leaves the count open.
+  requiredRankCount: number | null;
   options: CreateOptionDto[];
 }
 

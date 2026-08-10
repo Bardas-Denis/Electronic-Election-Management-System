@@ -21,6 +21,7 @@ import {
   dateRangeValidator,
   INPUT_LIMITS,
   optionsRequiredForChoiceQuestion,
+  rankCountWithinOptions,
   trimmedRequired,
   uniqueOptionLabels
 } from '../../core/validators/input.validators';
@@ -234,6 +235,7 @@ export class CreateElectionComponent implements OnInit {
       allowMultipleAnswers: [question?.allowMultipleAnswers ?? false],
       questionType: [question?.questionType ?? 'Choice'],
       allowOtherOption: [question?.allowOtherOption ?? false],
+      requiredRankCount: [question?.requiredRankCount ?? null],
       options: this.fb.array(
         optionGroups,
         [
@@ -242,7 +244,7 @@ export class CreateElectionComponent implements OnInit {
           uniqueOptionLabels
         ]
       )
-    });
+    }, { validators: rankCountWithinOptions });
   }
 
   getQuestionType(questionIndex: number): QuestionType {
@@ -267,7 +269,36 @@ export class CreateElectionComponent implements OnInit {
       this.questionOptions(questionIndex).clear();
     }
 
+    if (type !== 'Ranking') {
+      // The count only means something on a Ranking question, and its input is hidden
+      // off one - clear it rather than submit a value the creator can no longer see.
+      group.get('requiredRankCount')?.setValue(null);
+    }
+
     this.questionOptions(questionIndex).updateValueAndValidity();
+  }
+
+  isRankCountLimited(questionIndex: number): boolean {
+    return this.questions.at(questionIndex).get('requiredRankCount')?.value != null;
+  }
+
+  /**
+   * Turns the "rank exactly N" rule on or off. Switching it on starts at 3, or at the
+   * option count when there are fewer than 3 to rank.
+   */
+  toggleRankCountLimit(questionIndex: number): void {
+    const control = this.questions.at(questionIndex).get('requiredRankCount');
+    if (!control) return;
+    control.setValue(control.value == null ? Math.min(3, this.rankCountMax(questionIndex)) : null);
+  }
+
+  rankCountMax(questionIndex: number): number {
+    return this.questionOptions(questionIndex).length;
+  }
+
+  hasRankCountError(questionIndex: number): boolean {
+    const group = this.questions.at(questionIndex);
+    return group.hasError('rankCountOutOfRange') && group.touched;
   }
 
   private createQuestionsArray(questions: CreateElectionQuestionDto[] = []): FormArray {
@@ -1247,6 +1278,7 @@ export function normalizeEditableQuestions(election: ElectionDto): CreateElectio
       allowMultipleAnswers: question.allowMultipleAnswers ?? false,
       questionType: question.questionType ?? 'Choice',
       allowOtherOption: question.allowOtherOption ?? false,
+      requiredRankCount: question.requiredRankCount ?? null,
       options: Array.isArray(question.options) && question.options.length > 0
         ? question.options.map(option => ({
           label: option.label ?? '',
@@ -1269,6 +1301,7 @@ export function normalizeEditableQuestions(election: ElectionDto): CreateElectio
     allowMultipleAnswers: false,
     questionType: 'Choice',
     allowOtherOption: false,
+    requiredRankCount: null,
     options: (election.options ?? []).map(option => ({
       label: option.label ?? '',
       description: option.description ?? '',
