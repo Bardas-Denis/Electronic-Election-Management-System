@@ -66,7 +66,7 @@
                           (pointerenter)="hoveredSlice.set(sliceKey(question.questionId, segment.optionId))"
                           (pointerleave)="hoveredSlice.set(null)"
                         >
-                          <title>{{ segment.isOtherOption ? ('results.otherOptionLabel' | translate) : segment.label }}: {{ segment.voteCount }} {{ 'results.votes' | translate }} ({{ segment.percent }}%)</title>
+                          <title>{{ segment.isOtherOption ? ('results.otherOptionLabel' | translate) : segment.label }}: {{ segment.voteCount }} {{ question.questionType === 'Ranking' ? 'pct.' : ('results.votes' | translate) }} ({{ segment.percent }}%)</title>
                         </circle>
                       } @else if (segment.path) {
                         <path
@@ -78,7 +78,7 @@
                           (pointerenter)="hoveredSlice.set(sliceKey(question.questionId, segment.optionId))"
                           (pointerleave)="hoveredSlice.set(null)"
                         >
-                          <title>{{ segment.isOtherOption ? ('results.otherOptionLabel' | translate) : segment.label }}: {{ segment.voteCount }} {{ 'results.votes' | translate }} ({{ segment.percent }}%)</title>
+                          <title>{{ segment.isOtherOption ? ('results.otherOptionLabel' | translate) : segment.label }}: {{ segment.voteCount }} {{ question.questionType === 'Ranking' ? 'pct.' : ('results.votes' | translate) }} ({{ segment.percent }}%)</title>
                         </path>
                       }
                     }
@@ -86,7 +86,7 @@
                 </div>
 
                 <div class="results-list">
-                  @for (option of question.results; track option.optionId; let i = $index) {
+                  @for (option of sortedResults(question); track option.optionId; let i = $index) {
                     <div
                       class="result-row"
                       [class.is-leading]="isLeading(option.voteCount, question)"
@@ -104,7 +104,7 @@
                       <div class="result-content">
                         <div class="result-label">
                           <span>{{ option.isOtherOption ? ('results.otherOptionLabel' | translate) : option.label }}</span>
-                          <span>{{ option.voteCount }} {{ 'results.votes' | translate }} · {{ percentFor(option.voteCount, question.totalVotes) }}%</span>
+                          <span>{{ option.voteCount }} {{ question.questionType === 'Ranking' ? 'pct.' : ('results.votes' | translate) }} · {{ percentFor(option.voteCount, questionTotal(question)) }}%</span>
                         </div>
                       </div>
                     </div>
