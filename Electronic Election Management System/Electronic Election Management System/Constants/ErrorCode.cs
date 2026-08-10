@@ -36,6 +36,10 @@ namespace Electronic_Election_Management_System.Constants
         [JsonStringEnumMemberName("tooFewOptions")]
         TooFewOptions,
 
+        /// <summary>A ranking question's required rank count must be between 1 and its option count.</summary>
+        [JsonStringEnumMemberName("invalidRankCount")]
+        InvalidRankCount,
+
         /// <summary>End Date needs to be after start Date.</summary>
         [JsonStringEnumMemberName("invalidDateRange")]
         InvalidDateRange,

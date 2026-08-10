@@ -35,6 +35,9 @@ namespace Electronic_Election_Management_System.DTOs
         /// <summary>Only meaningful for a <c>"Choice"</c> question: when true, voters may answer
         /// with free text ("Other: ___") instead of / alongside picking a fixed option.</summary>
         public bool AllowOtherOption { get; set; } = false;
+        /// <summary>Only meaningful for a <c>"Ranking"</c> question: when set, a ballot must place
+        /// exactly this many options. Null leaves the count open.</summary>
+        public int? RequiredRankCount { get; set; }
         /// <summary>For a <c>"Choice"</c> question, the selectable options. For a <c>"FreeText"</c>
         /// question, optional suggestion chips - voters may still type anything.</summary>
         public List<OptionDto> Options { get; set; } = new();
@@ -52,6 +55,10 @@ namespace Electronic_Election_Management_System.DTOs
         /// <summary>Only meaningful for a <c>"Choice"</c> question: when true, voters may answer
         /// with free text ("Other: ___") instead of / alongside picking a fixed option.</summary>
         public bool AllowOtherOption { get; set; } = false;
+        /// <summary>Only meaningful for a <c>"Ranking"</c> question: when set, a ballot must place
+        /// exactly this many options. Must be between 1 and the option count (enforced in
+        /// <c>ElectionService.QuestionsAreValid</c>). Null leaves the count open.</summary>
+        public int? RequiredRankCount { get; set; }
         /// <summary>Required to have at least 2 for a <c>"Choice"</c> question (enforced in
         /// <c>ElectionService.QuestionsAreValid</c>, since the requirement depends on
         /// <see cref="QuestionType"/>); optional suggestion chips for a <c>"FreeText"</c> question.</summary>

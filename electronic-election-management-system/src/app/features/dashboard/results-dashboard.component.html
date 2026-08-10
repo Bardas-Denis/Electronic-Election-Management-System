@@ -31,6 +31,28 @@
                 } @else {
                   <p class="text-answers-empty">{{ 'results.noTextAnswers' | translate }}</p>
                 }
+              } @else if (question.questionType === 'Ranking') {
+                <ol class="ranking-list">
+                  @for (option of sortedResults(question); track option.optionId; let i = $index) {
+                    <li class="ranking-row" [class.is-podium]="i < 3" [class.is-winner]="i === 0">
+                      <span class="ranking-position">{{ i + 1 }}</span>
+                      <div class="ranking-content">
+                        <div class="ranking-label">
+                          @if (option.imageDataUrl) {
+                            <img class="result-option-image" [src]="option.imageDataUrl" [alt]="option.label" />
+                          }
+                          <span>{{ option.label }}</span>
+                        </div>
+                        <div class="ranking-track">
+                          <div class="ranking-bar" [style.width.%]="percentOfLeader(option.voteCount, question)"></div>
+                        </div>
+                      </div>
+                      <span class="ranking-points">
+                        {{ option.voteCount }}<span class="ranking-points-unit">{{ 'results.points' | translate }}</span>
+                      </span>
+                    </li>
+                  }
+                </ol>
               } @else if (question.allowMultipleAnswers) {
                 <div class="meter-grid">
                   @for (meter of optionMeters(question); track meter.optionId) {
@@ -66,7 +88,7 @@
                           (pointerenter)="hoveredSlice.set(sliceKey(question.questionId, segment.optionId))"
                           (pointerleave)="hoveredSlice.set(null)"
                         >
-                          <title>{{ segment.isOtherOption ? ('results.otherOptionLabel' | translate) : segment.label }}: {{ segment.voteCount }} {{ question.questionType === 'Ranking' ? 'pct.' : ('results.votes' | translate) }} ({{ segment.percent }}%)</title>
+                          <title>{{ segment.isOtherOption ? ('results.otherOptionLabel' | translate) : segment.label }}: {{ segment.voteCount }} {{ 'results.votes' | translate }} ({{ segment.percent }}%)</title>
                         </circle>
                       } @else if (segment.path) {
                         <path
@@ -78,7 +100,7 @@
                           (pointerenter)="hoveredSlice.set(sliceKey(question.questionId, segment.optionId))"
                           (pointerleave)="hoveredSlice.set(null)"
                         >
-                          <title>{{ segment.isOtherOption ? ('results.otherOptionLabel' | translate) : segment.label }}: {{ segment.voteCount }} {{ question.questionType === 'Ranking' ? 'pct.' : ('results.votes' | translate) }} ({{ segment.percent }}%)</title>
+                          <title>{{ segment.isOtherOption ? ('results.otherOptionLabel' | translate) : segment.label }}: {{ segment.voteCount }} {{ 'results.votes' | translate }} ({{ segment.percent }}%)</title>
                         </path>
                       }
                     }
@@ -104,7 +126,7 @@
                       <div class="result-content">
                         <div class="result-label">
                           <span>{{ option.isOtherOption ? ('results.otherOptionLabel' | translate) : option.label }}</span>
-                          <span>{{ option.voteCount }} {{ question.questionType === 'Ranking' ? 'pct.' : ('results.votes' | translate) }} · {{ percentFor(option.voteCount, questionTotal(question)) }}%</span>
+                          <span>{{ option.voteCount }} {{ 'results.votes' | translate }} · {{ percentFor(option.voteCount, questionTotal(question)) }}%</span>
                         </div>
                       </div>
                     </div>

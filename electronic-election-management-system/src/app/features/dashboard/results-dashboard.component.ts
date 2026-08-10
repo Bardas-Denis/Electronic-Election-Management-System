@@ -123,6 +123,15 @@ export class ResultsDashboardComponent implements OnInit, OnDestroy {
     return total > 0 ? Math.round((voteCount / total) * 100) : 0;
   }
 
+  // A ranking bar is sized against the leader's score rather than the summed
+  // points: "82% of the winner" compares two candidates, while a share of the
+  // total says nothing, since ranking points accumulate independently instead
+  // of dividing up a whole the way votes on a Choice question do.
+  percentOfLeader(voteCount: number, question: QuestionResultDto): number {
+    const leader = Math.max(...question.results.map((r) => r.voteCount), 0);
+    return leader > 0 ? Math.round((voteCount / leader) * 100) : 0;
+  }
+
   // true daca aceasta optiune e in frunte (folosit probabil pt highlight in UI)
   isLeading(voteCount: number, question: QuestionResultDto): boolean {
     if (question.totalVotes === 0 || voteCount === 0) return false;

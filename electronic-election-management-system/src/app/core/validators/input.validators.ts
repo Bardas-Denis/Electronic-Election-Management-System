@@ -60,3 +60,15 @@ export const optionsRequiredForChoiceQuestion: ValidatorFn = (control: AbstractC
   const options = Array.isArray(control.value) ? control.value : [];
   return options.length >= 2 ? null : { minOptionsForChoice: true };
 };
+
+// A Ranking question may demand that a ballot place exactly N options. N only means
+// anything next to the option list, so this validates the question group rather than
+// the control on its own - a count above the option count could never be satisfied.
+export const rankCountWithinOptions: ValidatorFn = (control: AbstractControl): ValidationErrors | null => {
+  if (control.get('questionType')?.value !== 'Ranking') return null;
+  const count = control.get('requiredRankCount')?.value;
+  if (count === null || count === undefined || count === '') return null;
+  const options = control.get('options')?.value;
+  const optionCount = Array.isArray(options) ? options.length : 0;
+  return count >= 1 && count <= optionCount ? null : { rankCountOutOfRange: true };
+};

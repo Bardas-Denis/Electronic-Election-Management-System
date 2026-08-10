@@ -204,6 +204,102 @@
 
 .result-content { flex: 1; min-width: 0; }
 
+// .result-body is a flex row built for the pie + list pairing; the ranking
+// block is the only child on its branch, so it has to claim the full width
+// back or it collapses to its content and the bars end up stunted.
+.ranking-list {
+  flex: 1 1 100%;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.ranking-row {
+  display: grid;
+  grid-template-columns: 26px minmax(0, 1fr) 76px;
+  align-items: center;
+  gap: 0.85rem;
+}
+
+.ranking-position {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-subtle);
+  color: var(--text-muted);
+  font-size: 0.8125rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.ranking-row.is-podium .ranking-position { color: var(--text-secondary); }
+
+.ranking-row.is-winner .ranking-position {
+  background: var(--accent);
+  color: var(--bg-card);
+}
+
+.ranking-content { min-width: 0; }
+
+.ranking-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.4rem;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+
+  span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+.ranking-row.is-podium .ranking-label { color: var(--text-primary); }
+
+.ranking-track {
+  height: 10px;
+  border-radius: 5px;
+  background: var(--bg-subtle);
+  overflow: hidden;
+}
+
+// One ink, three weights, rather than one colour per candidate: the bars all
+// measure the same thing, so a categorical palette would imply a distinction
+// that isn't there. Intensity carries the ranking instead.
+.ranking-bar {
+  height: 100%;
+  border-radius: 5px;
+  background: var(--accent);
+  opacity: 0.4;
+  transition: width 0.3s ease;
+}
+
+.ranking-row.is-podium .ranking-bar { opacity: 0.62; }
+.ranking-row.is-winner .ranking-bar { opacity: 1; }
+
+.ranking-points {
+  font-size: 0.875rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  text-align: right;
+}
+
+.ranking-row.is-podium .ranking-points { color: var(--text-primary); }
+
+.ranking-points-unit {
+  margin-left: 0.25rem;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+}
+
 .text-answers-list {
   display: flex;
   flex-direction: column;

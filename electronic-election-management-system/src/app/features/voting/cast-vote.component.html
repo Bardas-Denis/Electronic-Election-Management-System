@@ -96,7 +96,7 @@
         <div class="ranking-answer" [class.locked]="!canSelectOptions()">
           <div class="ranking-lists-container">
             <div class="ranking-list available-options">
-              <h4>Candidați Disponibili</h4>
+              <h4>{{ 'vote.rankingAvailableLabel' | translate }}</h4>
               <div
                 cdkDropList
                 #availableList="cdkDropList"
@@ -121,7 +121,7 @@
             </div>
 
             <div class="ranking-list my-ranking">
-              <h4>Topul Meu</h4>
+              <h4>{{ 'vote.rankingMyRankingLabel' | translate }}</h4>
               <div
                 cdkDropList
                 #rankedList="cdkDropList"
@@ -144,7 +144,7 @@
                 </div>
                 }
                 @if (!rankedOptions()[question.id] || rankedOptions()[question.id].length === 0) {
-                <div class="empty-list-placeholder">Trageți candidații aici pentru a-i ordona</div>
+                <div class="empty-list-placeholder">{{ 'vote.rankingEmptyPlaceholder' | translate }}</div>
                 }
               </div>
             </div>

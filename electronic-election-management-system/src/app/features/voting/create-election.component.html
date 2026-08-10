@@ -821,7 +821,7 @@
           </button>
           <button type="button" class="question-type-toggle" [class.active]="getQuestionType(questionIndex) === 'Ranking'"
             (click)="setQuestionType(questionIndex, 'Ranking')">
-            Ranking / Ordonare
+            {{ 'elections.questionTypeRankingLabel' | translate }}
           </button>
           <button type="button" class="question-type-toggle" [class.active]="getQuestionType(questionIndex) === 'FreeText'"
             (click)="setQuestionType(questionIndex, 'FreeText')">
@@ -843,7 +843,28 @@
             {{ 'elections.questionAllowOtherLabel' | translate }}
           </label>
           }
+          @if (getQuestionType(questionIndex) === 'Ranking') {
+          <label class="question-required-toggle">
+            <input type="checkbox" [checked]="isRankCountLimited(questionIndex)"
+              (change)="toggleRankCountLimit(questionIndex)" />
+            {{ 'elections.questionRankCountLabel' | translate }}
+          </label>
+          }
         </div>
+        @if (getQuestionType(questionIndex) === 'Ranking' && isRankCountLimited(questionIndex)) {
+        <div class="rank-count-row">
+          <input type="number" class="rank-count-input" formControlName="requiredRankCount" min="1"
+            [max]="rankCountMax(questionIndex)" />
+          <span class="rank-count-hint">
+            {{ 'elections.questionRankCountHint' | translate:{ max: rankCountMax(questionIndex) } }}
+          </span>
+        </div>
+        @if (hasRankCountError(questionIndex)) {
+        <p class="error-text">
+          {{ 'elections.questionRankCountError' | translate:{ max: rankCountMax(questionIndex) } }}
+        </p>
+        }
+        }
         <input type="text" formControlName="text" maxlength="500"
           [placeholder]="'elections.questionPlaceholder' | translate" />
 

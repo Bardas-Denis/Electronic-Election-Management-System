@@ -47,7 +47,8 @@ describe('VotingService', () => {
       electionId: 'election-id',
       optionId: 'option-id',
       optionIds: ['option-id'],
-      textAnswers: []
+      textAnswers: [],
+      rankedOptions: []
     };
     service.castVote(payload).subscribe();
 

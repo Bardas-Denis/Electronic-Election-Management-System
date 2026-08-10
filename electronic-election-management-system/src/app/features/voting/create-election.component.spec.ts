@@ -22,6 +22,7 @@ describe('normalizeEditableQuestions', () => {
         allowMultipleAnswers: false,
         questionType: 'Choice',
         allowOtherOption: false,
+        requiredRankCount: null,
         options: [
           { id: 'one', label: 'Alice', description: 'Candidate one' },
           { id: 'two', label: 'Bob', description: 'Candidate two' }

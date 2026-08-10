@@ -1,3 +1,5 @@
+import { QuestionType } from './voting.model';
+
 export interface OptionResultDto {
   optionId: string;
   label: string;
@@ -12,7 +14,7 @@ export interface QuestionResultDto {
   questionId: string;
   text: string;
   allowMultipleAnswers: boolean;
-  questionType: 'Choice' | 'FreeText';
+  questionType: QuestionType;
   totalVotes: number;
   results: OptionResultDto[];
   // Populated only for a 'FreeText' question - the raw submitted answers, with no
