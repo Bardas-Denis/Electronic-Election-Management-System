@@ -18,6 +18,9 @@ namespace Electronic_Election_Management_System.Models
         /// <summary>The voter's typed answer for a <see cref="QuestionType.FreeText"/> question.</summary>
         public string? AnswerText { get; set; }
 
+        /// <summary>Used when the question is of type <see cref="QuestionType.Ranking"/>. Indicates the preference rank (1 is highest).</summary>
+        public int? Rank { get; set; }
+
         /// <summary>Set when the parent election is anonymous; exactly one of <see cref="VoteTokenId"/> and <see cref="UserId"/> is non-null.</summary>
         public Guid? VoteTokenId { get; set; }
         public VoteToken? VoteToken { get; set; }
