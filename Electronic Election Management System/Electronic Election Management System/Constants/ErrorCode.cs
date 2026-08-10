@@ -40,6 +40,10 @@ namespace Electronic_Election_Management_System.Constants
         [JsonStringEnumMemberName("invalidRankCount")]
         InvalidRankCount,
 
+        /// <summary>The ballot ranked a different number of options than the question demands.</summary>
+        [JsonStringEnumMemberName("rankCountMismatch")]
+        RankCountMismatch,
+
         /// <summary>End Date needs to be after start Date.</summary>
         [JsonStringEnumMemberName("invalidDateRange")]
         InvalidDateRange,

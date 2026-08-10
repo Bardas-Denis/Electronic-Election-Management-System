@@ -333,7 +333,7 @@
   margin-bottom: 1.75rem;
 }
 .vote-questions { display: grid; gap: 1.5rem; }
-.vote-question-block { padding-bottom: 1.25rem; border-bottom: 1px solid #e6ebf0; }
+.vote-question-block { padding-bottom: 1.25rem; border-bottom: 1px solid var(--border-color); }
 .vote-question-block:last-child { border-bottom: 0; }
 .option-image { width: 76px; height: 60px; object-fit: cover; border-radius: 9px; flex: 0 0 auto; }
 
@@ -349,18 +349,33 @@
   }
 }
 
+.ranking-counter {
+  margin-left: 0.5rem;
+  font-size: 0.8125rem;
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted);
+}
+
+.ranking-counter.is-complete {
+  color: var(--success-color);
+}
+
+// The panel sits inside the vote card, so it takes the subtle surface and the items
+// on it take the card surface - that ordering keeps them distinguishable in both
+// themes, where the two tokens swap which one is lighter.
 .ranking-list {
   flex: 1;
-  background: #f9f9f9;
+  background: var(--bg-subtle);
   border-radius: 8px;
   padding: 1rem;
-  border: 1px solid #e0e0e0;
+  border: 1px solid var(--border-color);
 }
 
 .ranking-list h4 {
   margin-bottom: 1rem;
   font-size: 1.1rem;
-  color: #333;
+  color: var(--text-primary);
 }
 
 .drag-list {
@@ -374,11 +389,11 @@
   display: flex;
   align-items: center;
   padding: 0.75rem;
-  background: white;
-  border: 1px solid #ddd;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
   border-radius: 6px;
   cursor: grab;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  box-shadow: var(--shadow-sm);
   transition: box-shadow 0.2s ease, transform 0.2s ease;
 }
 
@@ -389,8 +404,10 @@
 .cdk-drag-preview {
   box-sizing: border-box;
   border-radius: 6px;
-  box-shadow: 0 5px 15px rgba(0,0,0,0.15);
-  background: white;
+  box-shadow: var(--shadow-md);
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
   display: flex;
   align-items: center;
   padding: 0.75rem;
@@ -428,12 +445,12 @@
 
 .item-details span {
   font-size: 0.8rem;
-  color: #666;
+  color: var(--text-secondary);
 }
 
 .rank-badge {
-  background: #000;
-  color: white;
+  background: var(--accent);
+  color: var(--bg-card);
   width: 24px;
   height: 24px;
   border-radius: 50%;
@@ -448,9 +465,9 @@
 
 .empty-list-placeholder {
   text-align: center;
-  color: #888;
+  color: var(--text-muted);
   padding: 2rem;
-  border: 2px dashed #ccc;
+  border: 2px dashed var(--border-color);
   border-radius: 6px;
   margin-top: 0.5rem;
 }

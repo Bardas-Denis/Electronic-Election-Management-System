@@ -87,7 +87,7 @@ export class CastVoteComponent implements OnInit {
       : [{
         id: '', text: election.question ?? election.title, displayOrder: 0, isRequired: true,
         allowMultipleAnswers: false, questionType: 'Choice' as const, allowOtherOption: false,
-        options: election.options
+        requiredRankCount: null, options: election.options
       }];
   }
 
@@ -171,8 +171,27 @@ export class CastVoteComponent implements OnInit {
     return question.options.some(option => option.label.trim().toLocaleLowerCase() === text);
   }
 
+  /** How many options this question demands be ranked, or null when the count is open. */
+  requiredRankCount(questionId: string): number | null {
+    const election = this.election();
+    if (!election) return null;
+    return this.questions(election).find(q => q.id === questionId)?.requiredRankCount ?? null;
+  }
+
+  rankedCount(questionId: string): number {
+    return this.rankedOptions()[questionId]?.length ?? 0;
+  }
+
   dropRankingOption(event: CdkDragDrop<OptionDto[]>, questionId: string): void {
     if (!this.canSelectOptions()) return;
+
+    // Refuse the drop rather than let the list overfill and fail on submit: a capped
+    // question wants exactly this many, so the extra one has nowhere to go.
+    const limit = this.requiredRankCount(questionId);
+    const enteringRanked = event.previousContainer !== event.container &&
+      event.container.data === this.rankedOptions()[questionId];
+    if (enteringRanked && limit !== null && this.rankedCount(questionId) >= limit) return;
+
     if (event.previousContainer === event.container) {
       moveItemInArray(event.container.data, event.previousIndex, event.currentIndex);
     } else {
@@ -194,10 +213,18 @@ export class CastVoteComponent implements OnInit {
         this.isOtherAnswerDuplicate(q)) {
         return false;
       }
-      if (q.isRequired === false) return true;
+      // Ranking is checked before the optional shortcut below: a capped question that has
+      // been started must be finished, even when answering it was optional in the first
+      // place - otherwise the backend rejects a ballot the button called complete.
       if (q.questionType === 'Ranking') {
-        return (this.rankedOptions()[q.id]?.length ?? 0) > 0;
+        const placed = this.rankedCount(q.id);
+        const limit = q.requiredRankCount ?? null;
+        if (limit !== null) {
+          return placed === limit || (q.isRequired === false && placed === 0);
+        }
+        return q.isRequired === false || placed > 0;
       }
+      if (q.isRequired === false) return true;
       if (q.questionType === 'FreeText') {
         return this.getTextAnswer(q.id).trim().length > 0;
       }

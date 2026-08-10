@@ -41,6 +41,9 @@ namespace Electronic_Election_Management_System.Services
             if (!election.CanAcceptVotes())
                 return ServiceResult<bool>.Fail(ErrorCode.ElectionNotOpen);
 
+            if (!RankCountsMatch(election, request))
+                return ServiceResult<bool>.Fail(ErrorCode.RankCountMismatch);
+
             var validated = ValidateAndBuildAnswers(election, request);
             if (validated is null)
                 return ServiceResult<bool>.Fail(ErrorCode.InvalidOption);
@@ -77,6 +80,9 @@ namespace Electronic_Election_Management_System.Services
 
             if (!election.CanAcceptVotes())
                 return ServiceResult<bool>.Fail(ErrorCode.ElectionNotOpen);
+
+            if (!RankCountsMatch(election, request))
+                return ServiceResult<bool>.Fail(ErrorCode.RankCountMismatch);
 
             var validated = ValidateAndBuildAnswers(election, request);
             if (validated is null)
@@ -385,6 +391,29 @@ namespace Electronic_Election_Management_System.Services
             }).ToList();
 
             return (optionVotes, textAnswerVotes);
+        }
+
+        /// <summary>
+        /// Checked ahead of <c>ValidateAndBuildAnswers</c> rather than inside it, so a ballot with
+        /// the wrong number of ranked options can say exactly that instead of collapsing into the
+        /// generic InvalidOption every other shape problem there returns.
+        /// </summary>
+        private static bool RankCountsMatch(Election election, CastVoteRequest request)
+        {
+            var ranked = request.RankedOptions.DistinctBy(r => r.OptionId).ToList();
+
+            return election.Questions.All(question =>
+            {
+                if (question.QuestionType != QuestionType.Ranking || !question.RequiredRankCount.HasValue)
+                    return true;
+
+                var placed = ranked.Count(r => question.Options.Any(option => option.Id == r.OptionId));
+
+                // An optional question may still be skipped outright; answering it at all means
+                // placing exactly as many as it asks for.
+                return placed == question.RequiredRankCount.Value ||
+                       (!question.IsRequired && placed == 0);
+            });
         }
 
         private async Task<ServiceResult<bool>> CastAnonymousAsync(

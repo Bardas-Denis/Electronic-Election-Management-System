@@ -235,6 +235,10 @@ export class CreateElectionComponent implements OnInit {
       allowMultipleAnswers: [question?.allowMultipleAnswers ?? false],
       questionType: [question?.questionType ?? 'Choice'],
       allowOtherOption: [question?.allowOtherOption ?? false],
+      // Whether the rule is on is tracked apart from the number itself. Deriving it from
+      // the number instead would tear the input out of the DOM the moment the field goes
+      // empty - which is exactly what happens while retyping a value.
+      limitRankCount: [question?.requiredRankCount != null],
       requiredRankCount: [question?.requiredRankCount ?? null],
       options: this.fb.array(
         optionGroups,
@@ -272,6 +276,7 @@ export class CreateElectionComponent implements OnInit {
     if (type !== 'Ranking') {
       // The count only means something on a Ranking question, and its input is hidden
       // off one - clear it rather than submit a value the creator can no longer see.
+      group.get('limitRankCount')?.setValue(false);
       group.get('requiredRankCount')?.setValue(null);
     }
 
@@ -279,7 +284,7 @@ export class CreateElectionComponent implements OnInit {
   }
 
   isRankCountLimited(questionIndex: number): boolean {
-    return this.questions.at(questionIndex).get('requiredRankCount')?.value != null;
+    return this.questions.at(questionIndex).get('limitRankCount')?.value === true;
   }
 
   /**
@@ -287,9 +292,14 @@ export class CreateElectionComponent implements OnInit {
    * option count when there are fewer than 3 to rank.
    */
   toggleRankCountLimit(questionIndex: number): void {
-    const control = this.questions.at(questionIndex).get('requiredRankCount');
-    if (!control) return;
-    control.setValue(control.value == null ? Math.min(3, this.rankCountMax(questionIndex)) : null);
+    const group = this.questions.at(questionIndex);
+    const limit = group.get('limitRankCount');
+    const count = group.get('requiredRankCount');
+    if (!limit || !count) return;
+
+    const enabled = !limit.value;
+    limit.setValue(enabled);
+    count.setValue(enabled ? Math.min(3, this.rankCountMax(questionIndex)) : null);
   }
 
   rankCountMax(questionIndex: number): number {
@@ -1053,6 +1063,12 @@ export class CreateElectionComponent implements OnInit {
     const payload = this.form.getRawValue() as any;
     payload.question = payload.questions[0].text;
     payload.options = payload.questions[0].options;
+
+    // limitRankCount only drives the form - the API reads requiredRankCount, where null
+    // already carries "no limit".
+    payload.questions = payload.questions.map(
+      ({ limitRankCount, ...question }: Record<string, unknown>) => question
+    );
 
     // Build invitedAudienceGroups from the groups FormArray.
     // The form groups contain raw {labelId, isExcluded} objects; map to the DTO shape.
