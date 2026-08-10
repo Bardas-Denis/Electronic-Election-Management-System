@@ -66,9 +66,12 @@ export const optionsRequiredForChoiceQuestion: ValidatorFn = (control: AbstractC
 // the control on its own - a count above the option count could never be satisfied.
 export const rankCountWithinOptions: ValidatorFn = (control: AbstractControl): ValidationErrors | null => {
   if (control.get('questionType')?.value !== 'Ranking') return null;
+  if (control.get('limitRankCount')?.value !== true) return null;
   const count = control.get('requiredRankCount')?.value;
-  if (count === null || count === undefined || count === '') return null;
   const options = control.get('options')?.value;
   const optionCount = Array.isArray(options) ? options.length : 0;
+  // An emptied field counts as out of range too - the rule is switched on, so leaving
+  // it blank would submit a limit with no number behind it.
+  if (count === null || count === undefined || count === '') return { rankCountOutOfRange: true };
   return count >= 1 && count <= optionCount ? null : { rankCountOutOfRange: true };
 };
