@@ -435,7 +435,10 @@
     "otherAnswersTitle": "Alte răspunsuri",
     "otherOptionLabel": "Altele",
     "more": "mai multi",
-    "less": "mai puțin"
+    "less": "mai puțin",
+    "simulateRanksLabel": "Simulare puncte (doar primele poziții):",
+    "allRanks": "Toate pozițiile",
+    "topRanks": "Primele {{count}}"
   },
   "errors": {
     "emailAlreadyExists": "Există deja un cont cu acest email.",
