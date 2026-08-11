@@ -295,7 +295,11 @@
     "updateSuccess": "Răspunsul a fost actualizat.",
     "castSuccess": "Votul tău a fost înregistrat.",
     "updateFailed": "Răspunsul nu a putut fi actualizat.",
-    "deleteFailed": "Răspunsul nu a putut fi șters."
+    "deleteFailed": "Răspunsul nu a putut fi șters.",
+    "next": "Următorul",
+    "previous": "Anterior",
+    "submit": "Trimite votul",
+    "navigationTitle": "Navigare vot"
   },
   "declaration": {
     "politicHeader": "Declarație alegător",
