@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Electronic_Election_Management_System.Constants;
 using Electronic_Election_Management_System.Data.Repositories;
 using Electronic_Election_Management_System.DTOs;
@@ -105,15 +106,24 @@ namespace Electronic_Election_Management_System.Services
             ServiceResult<List<ElectionInvitation>> invitationResult;
             if (request.IsClosed)
             {
-                var audienceResult = await ExpandAudienceGroupsAsync(
-                    request.InvitedUserIds,
-                    request.InvitedAudienceGroups);
-                if (!audienceResult.Success)
-                    return ServiceResult<ElectionDto>.Fail(audienceResult.ErrorCode!.Value);
+                List<Guid> targetUserIds;
+                if (request.InvitedUserIds.Count > 0)
+                {
+                    targetUserIds = request.InvitedUserIds.Distinct().ToList();
+                }
+                else
+                {
+                    var audienceResult = await ExpandAudienceGroupsAsync(
+                        request.InvitedUserIds,
+                        request.InvitedAudienceGroups);
+                    if (!audienceResult.Success)
+                        return ServiceResult<ElectionDto>.Fail(audienceResult.ErrorCode!.Value);
+                    targetUserIds = audienceResult.Data!;
+                }
 
                 invitationResult = await BuildInvitationsAsync(
                     Guid.Empty,
-                    audienceResult.Data!,
+                    targetUserIds,
                     request.InvitedEmails,
                     userId);
             }
@@ -135,6 +145,9 @@ namespace Electronic_Election_Management_System.Services
                 IsAnonymous = request.IsAnonymous,
                 IsClosed = request.IsClosed,
                 IsVisible = request.IsVisible,
+                AudienceGroupsSnapshot = (request.IsClosed && request.InvitedAudienceGroups.Count > 0)
+                    ? JsonSerializer.Serialize(request.InvitedAudienceGroups)
+                    : null,
                 StartsAt = request.StartsAt,
                 EndsAt = request.EndsAt,
                 Invitations = invitationResult.Data!
@@ -775,10 +788,13 @@ namespace Electronic_Election_Management_System.Services
             IsVisible = e.IsVisible,
             StartsAt = e.StartsAt,
             EndsAt = e.EndsAt,
-            Options = questions[0].Options,
-            Questions = questions,
-            HasUserVoted = false,
-            IsExpired = DateTime.UtcNow > e.EndsAt
+                Options = questions[0].Options,
+                Questions = questions,
+                AudienceGroups = !string.IsNullOrWhiteSpace(e.AudienceGroupsSnapshot)
+                    ? JsonSerializer.Deserialize<List<AudienceGroupDto>>(e.AudienceGroupsSnapshot)
+                    : null,
+                HasUserVoted = false,
+                IsExpired = DateTime.UtcNow > e.EndsAt
             };
         }
 

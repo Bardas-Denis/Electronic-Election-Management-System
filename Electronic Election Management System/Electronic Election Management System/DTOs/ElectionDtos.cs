@@ -98,6 +98,12 @@ namespace Electronic_Election_Management_System.DTOs
         public List<OptionDto> Options { get; set; } = new();
         public List<ElectionQuestionDto> Questions { get; set; } = new();
 
+        /// <summary>
+        /// Audience group rules saved when creating a closed election.
+        /// Restored in edit mode to preserve group badges and summaries.
+        /// </summary>
+        public List<AudienceGroupDto>? AudienceGroups { get; set; }
+
         
         /// <summary>
         /// Indicates whether the current user has already cast a vote in this election.

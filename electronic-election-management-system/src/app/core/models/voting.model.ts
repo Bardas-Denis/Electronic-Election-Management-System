@@ -55,6 +55,8 @@ export interface ElectionDto {
   // Optional so that stale API responses (missing field) are treated as visible rather
   // than showing a false-positive "Hidden" badge.
   isVisible?: boolean;
+  // Optional audience group rules stored when creating a closed election
+  audienceGroups?: AudienceGroupDto[];
 }
 
 export interface CreateOptionDto {
