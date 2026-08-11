@@ -73,9 +73,13 @@ export class ResultsDashboardComponent implements OnInit, OnDestroy {
   // ca sa afisam mereu cea mai recenta versiune (live daca a venit, altfel snapshot-ul initial)
   displayedResults = computed(() => this.resultsService.liveResults() ?? this.snapshot());
 
+  isFromMyElections = signal(false);
+  rankingFilters = signal<Record<string, number>>({});
+
   private electionId!: string;
 
   ngOnInit(): void {
+    this.isFromMyElections.set(this.route.snapshot.queryParamMap.get('from') === 'my-elections');
     this.electionId = this.route.snapshot.paramMap.get('id')!;
 
     // 1. Snapshot initial prin HTTP, ca dashboard-ul sa nu fie gol la incarcare
@@ -93,16 +97,62 @@ export class ResultsDashboardComponent implements OnInit, OnDestroy {
 
   questionTotal(question: QuestionResultDto): number {
     if (question.questionType === 'Ranking') {
-      return question.results.reduce((sum, opt) => sum + opt.voteCount, 0);
+      return question.results.reduce((sum, opt) => sum + this.getEffectiveVoteCount(opt, question), 0);
     }
     return question.totalVotes;
   }
 
-  sortedResults(question: QuestionResultDto): OptionResultDto[] {
-    if (question.questionType === 'Ranking') {
-      return [...question.results].sort((a, b) => b.voteCount - a.voteCount);
+  onRankingFilterChange(questionId: string, event: Event): void {
+    const value = (event.target as HTMLSelectElement).value;
+    this.rankingFilters.update(current => ({
+      ...current,
+      [questionId]: value ? parseInt(value, 10) : 0
+    }));
+  }
+
+  getRankingDropdownOptions(requiredCount: number): number[] {
+    return Array.from({ length: requiredCount - 1 }, (_, i) => requiredCount - 1 - i);
+  }
+
+  private getRankingPoints(rank: number): number {
+    switch (rank) {
+      case 1: return 12;
+      case 2: return 10;
+      case 3: return 8;
+      case 4: return 7;
+      case 5: return 6;
+      case 6: return 5;
+      case 7: return 4;
+      case 8: return 3;
+      case 9: return 2;
+      case 10: return 1;
+      default: return 0;
     }
-    return question.results;
+  }
+
+  getEffectiveVoteCount(option: OptionResultDto, question: QuestionResultDto): number {
+    const maxRank = this.rankingFilters()[question.questionId];
+    if (!maxRank || !option.rankCounts) {
+      return option.voteCount;
+    }
+
+    let sum = 0;
+    for (const [rankStr, count] of Object.entries(option.rankCounts)) {
+      const rank = Number(rankStr);
+      if (rank <= maxRank) {
+        sum += count * this.getRankingPoints(rank);
+      }
+    }
+    return sum;
+  }
+
+  sortedResults(question: QuestionResultDto): (OptionResultDto & { effectiveVoteCount: number })[] {
+    if (question.questionType === 'Ranking') {
+      return question.results
+        .map(o => ({ ...o, effectiveVoteCount: this.getEffectiveVoteCount(o, question) }))
+        .sort((a, b) => b.effectiveVoteCount - a.effectiveVoteCount);
+    }
+    return question.results.map(o => ({ ...o, effectiveVoteCount: o.voteCount }));
   }
 
   // important: inchide conexiunea SignalR la parasirea paginii
@@ -127,15 +177,15 @@ export class ResultsDashboardComponent implements OnInit, OnDestroy {
   // points: "82% of the winner" compares two candidates, while a share of the
   // total says nothing, since ranking points accumulate independently instead
   // of dividing up a whole the way votes on a Choice question do.
-  percentOfLeader(voteCount: number, question: QuestionResultDto): number {
-    const leader = Math.max(...question.results.map((r) => r.voteCount), 0);
-    return leader > 0 ? Math.round((voteCount / leader) * 100) : 0;
+  percentOfLeader(effectiveVoteCount: number, question: QuestionResultDto): number {
+    const leader = Math.max(...question.results.map((r) => this.getEffectiveVoteCount(r, question)), 0);
+    return leader > 0 ? Math.round((effectiveVoteCount / leader) * 100) : 0;
   }
 
   // true daca aceasta optiune e in frunte (folosit probabil pt highlight in UI)
-  isLeading(voteCount: number, question: QuestionResultDto): boolean {
-    if (question.totalVotes === 0 || voteCount === 0) return false;
-    return voteCount === Math.max(...question.results.map((r) => r.voteCount));
+  isLeading(effectiveVoteCount: number, question: QuestionResultDto): boolean {
+    if (question.totalVotes === 0 || effectiveVoteCount === 0) return false;
+    return effectiveVoteCount === Math.max(...question.results.map((r) => this.getEffectiveVoteCount(r, question)));
   }
 
   sliceKey(questionId: string, optionId: string): string {
