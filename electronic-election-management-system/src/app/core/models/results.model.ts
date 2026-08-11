@@ -8,6 +8,7 @@ export interface OptionResultDto {
   // True for the synthetic entry representing a Choice question's "Other" answers - there is
   // no real option behind it, so the label is replaced with a translated string in the UI.
   isOtherOption?: boolean;
+  rankCounts?: Record<number, number>;
 }
 
 export interface QuestionResultDto {
@@ -16,6 +17,7 @@ export interface QuestionResultDto {
   allowMultipleAnswers: boolean;
   questionType: QuestionType;
   totalVotes: number;
+  requiredRankCount?: number;
   results: OptionResultDto[];
   // Populated only for a 'FreeText' question - the raw submitted answers, with no
   // attribution to who submitted them.

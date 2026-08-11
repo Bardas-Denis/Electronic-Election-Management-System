@@ -33,6 +33,7 @@ namespace Electronic_Election_Management_System.Services
                     Text = q.Text,
                     AllowMultipleAnswers = q.AllowMultipleAnswers,
                     QuestionType = q.QuestionType.ToString(),
+                    RequiredRankCount = q.RequiredRankCount,
                     Results = q.Options.Select(o => new OptionResultDto
                     {
                         OptionId = o.Id,
@@ -40,7 +41,10 @@ namespace Electronic_Election_Management_System.Services
                         ImageDataUrl = o.ImageDataUrl,
                         VoteCount = q.QuestionType == QuestionType.Ranking
                             ? o.Votes.Sum(v => GetRankingPoints(v.Rank))
-                            : o.Votes.Count
+                            : o.Votes.Count,
+                        RankCounts = q.QuestionType == QuestionType.Ranking
+                            ? o.Votes.Where(v => v.Rank.HasValue).GroupBy(v => v.Rank.Value).ToDictionary(g => g.Key, g => g.Count())
+                            : null
                     }).ToList(),
                     // A FreeText question's answers, or a Choice question's "Other" answers.
                     TextAnswers = q.QuestionType == QuestionType.FreeText || q.AllowOtherOption
