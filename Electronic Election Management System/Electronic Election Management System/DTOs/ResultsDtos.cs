@@ -15,6 +15,7 @@ namespace Electronic_Election_Management_System.DTOs
         /// <see cref="OptionId"/> is <see cref="Guid.Empty"/> and the frontend substitutes a
         /// translated label instead of <see cref="Label"/>.</summary>
         public bool IsOtherOption { get; set; }
+        public Dictionary<int, int>? RankCounts { get; set; }
     }
 
     public class QuestionResultDto
@@ -31,6 +32,7 @@ namespace Electronic_Election_Management_System.DTOs
         // this total, and that's expected. For a FreeText question it's simply the number of
         // submitted answers.
         public int TotalVotes { get; set; }
+        public int? RequiredRankCount { get; set; }
         public List<OptionResultDto> Results { get; set; } = new();
         /// <summary>Populated only for a <c>"FreeText"</c> question - the raw submitted answers,
         /// with no attribution to who submitted them (consistent with option tallies never
