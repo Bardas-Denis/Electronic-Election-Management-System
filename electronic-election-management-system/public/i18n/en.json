@@ -298,8 +298,7 @@
     "updateFailed": "Your answer could not be updated.",
     "deleteFailed": "Your answer could not be deleted.",
     "next": "Next",
-     "previous": "Previous",
-    "submit": "Submit vote",
+    "previous": "Previous",
     "navigationTitle": "Vote navigation"
   },
   "declaration": {
