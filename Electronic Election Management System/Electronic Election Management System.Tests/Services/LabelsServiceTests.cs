@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using Electronic_Election_Management_System.Constants;
 using Electronic_Election_Management_System.Data.Repositories;
 using Electronic_Election_Management_System.DTOs;
@@ -19,6 +20,32 @@ public class LabelServiceTests
     public LabelServiceTests()
     {
         _service = new LabelService(_labels, _users, _logger);
+    }
+
+    [Fact]
+    public void CreateLabelRequest_WhenNameOrCategoryExceedsMaxLength_ValidationFails()
+    {
+        var overLongNameRequest = new CreateLabelRequest
+        {
+            Name = new string('a', ValidationRules.LabelNameMaxLength + 1),
+            Category = "Category"
+        };
+        var nameValidationResults = new List<ValidationResult>();
+        var isNameValid = Validator.TryValidateObject(overLongNameRequest, new ValidationContext(overLongNameRequest), nameValidationResults, true);
+
+        isNameValid.Should().BeFalse();
+        nameValidationResults.Should().Contain(r => r.MemberNames.Contains(nameof(CreateLabelRequest.Name)));
+
+        var overLongCategoryRequest = new CreateLabelRequest
+        {
+            Name = "Valid Name",
+            Category = new string('b', ValidationRules.LabelCategoryMaxLength + 1)
+        };
+        var categoryValidationResults = new List<ValidationResult>();
+        var isCategoryValid = Validator.TryValidateObject(overLongCategoryRequest, new ValidationContext(overLongCategoryRequest), categoryValidationResults, true);
+
+        isCategoryValid.Should().BeFalse();
+        categoryValidationResults.Should().Contain(r => r.MemberNames.Contains(nameof(CreateLabelRequest.Category)));
     }
 
     [Fact]
