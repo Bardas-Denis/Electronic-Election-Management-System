@@ -4,6 +4,8 @@ export const INPUT_LIMITS = {
   email: 254,
   password: 128,
   shortText: 100,
+  labelName: 50,
+  labelCategory: 50,
   title: 200,
   question: 500,
   description: 2_000,

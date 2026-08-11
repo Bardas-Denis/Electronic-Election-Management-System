@@ -411,6 +411,7 @@
     "colCreatedAt": "Creat",
     "deleteBtn": "Șterge",
     "nameRequired": "Numele etichetei este obligatoriu.",
+    "lengthExceeded": "Numele sau categoria etichetei depășește lungimea maximă.",
     "createSuccess": "Etichetă creată cu succes.",
     "createFailed": "Nu am putut crea eticheta.",
     "deleteFailed": "Nu am putut șterge eticheta.",

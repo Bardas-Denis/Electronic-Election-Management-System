@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { TranslatePipe } from '@ngx-translate/core';
 import { LabelService } from '../../core/services/label.service';
 import { Label, CreateLabelRequest } from '../../core/models/label.model';
+import { INPUT_LIMITS } from '../../core/validators/input.validators';
 
 @Component({
   selector: 'app-label-management',
@@ -14,6 +15,7 @@ import { Label, CreateLabelRequest } from '../../core/models/label.model';
 })
 export class LabelManagementComponent implements OnInit {
   private labelService = inject(LabelService);
+  readonly INPUT_LIMITS = INPUT_LIMITS;
 
   labels = signal<Label[]>([]);
   isLoading = signal(true);
@@ -61,14 +63,19 @@ export class LabelManagementComponent implements OnInit {
 
   createLabel(): void {
     const name = this.newName().trim();
+    const category = this.newCategory().trim();
     if (!name) {
       this.errorKey.set('labels.nameRequired');
+      return;
+    }
+    if (name.length > INPUT_LIMITS.labelName || category.length > INPUT_LIMITS.labelCategory) {
+      this.errorKey.set('labels.lengthExceeded');
       return;
     }
 
     const request: CreateLabelRequest = {
       name,
-      category: this.newCategory().trim() || null
+      category: category || null
     };
 
     this.isSaving.set(true);

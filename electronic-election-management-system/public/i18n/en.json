@@ -413,6 +413,7 @@
     "colCreatedAt": "Created",
     "deleteBtn": "Delete",
     "nameRequired": "Label name is required.",
+    "lengthExceeded": "Label name or category exceeds maximum length.",
     "createSuccess": "Label created successfully.",
     "createFailed": "Could not create the label.",
     "deleteFailed": "Could not delete the label.",
