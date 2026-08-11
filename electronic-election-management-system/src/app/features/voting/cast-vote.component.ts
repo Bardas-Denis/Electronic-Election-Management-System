@@ -567,6 +567,40 @@ export class CastVoteComponent implements OnInit {
     return 'required-empty';
   }
 
+  if (question.questionType === 'Ranking') {
+    const placedCount = this.rankedOptions()[question.id]?.length ?? 0;
+    const limit = question.requiredRankCount ?? null;
+    if (placedCount > 0 && (limit === null || placedCount === limit)) {
+      return 'answered';
+    }
+    return question.isRequired === false ? 'optional-empty' : 'required-empty';
+  }
+
+  if (question.questionType === 'FreeText') {
+    const text = this.getTextAnswer(question.id);
+    if (text && text.trim().length > 0) {
+      return 'answered';
+    }
+    return question.isRequired === false ? 'optional-empty' : 'required-empty';
+  }
+
+  const textAnswer = this.getTextAnswer(question.id);
+  const hasText = textAnswer && textAnswer.trim().length > 0;
+  
+  const questionObj = this.questions(this.election()!).find((q: any) => q.id === question.id);
+  const hasSelectedNormal = questionObj?.options.some((opt: any) => this.isOptionSelected(question.id, opt.id));
+  const hasSelectedOther = questionObj?.allowOtherOption && this.isOtherSelected(question.id);
+
+  if (hasText || hasSelectedNormal || hasSelectedOther) {
+    return 'answered';
+  }
+
+  if (question.isRequired === false) {
+    return 'optional-empty';
+  }
+
+  return 'required-empty';
+}
   goToResults(): void {
     this.router.navigate(['/elections', this.electionId, 'results']);
   }
