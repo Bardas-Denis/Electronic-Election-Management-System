@@ -547,7 +547,25 @@ export class CastVoteComponent implements OnInit {
       this.currentQuestionIndex.set(index);
     }
   }
+  // Returns the visual state of the question for the bullet in the steps menu
   getQuestionStatus(question: any): 'answered' | 'optional-empty' | 'required-empty' {
+    const textAnswer = this.getTextAnswer(question.id);
+    const hasText = textAnswer && textAnswer.trim().length > 0;
+    
+    const questionObj = this.questions(this.election()!).find((q: any) => q.id === question.id);
+    const hasSelectedNormal = questionObj?.options.some((opt: any) => this.isOptionSelected(question.id, opt.id));
+    const hasSelectedOther = questionObj?.allowOtherOption && this.isOtherSelected(question.id);
+
+    if (hasText || hasSelectedNormal || hasSelectedOther) {
+      return 'answered';
+    }
+
+    if (question.isRequired === false) {
+      return 'optional-empty';
+    }
+
+    return 'required-empty';
+  }
 
   if (question.questionType === 'Ranking') {
     const placedCount = this.rankedOptions()[question.id]?.length ?? 0;
