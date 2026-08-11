@@ -547,7 +547,7 @@ export class CastVoteComponent implements OnInit {
       this.currentQuestionIndex.set(index);
     }
   }
-  // Returnează starea vizuală a întrebării pentru bulina din meniul de pași
+  // Returns the visual state of the question for the bullet in the steps menu
   getQuestionStatus(question: any): 'answered' | 'optional-empty' | 'required-empty' {
     const textAnswer = this.getTextAnswer(question.id);
     const hasText = textAnswer && textAnswer.trim().length > 0;
