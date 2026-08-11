@@ -35,6 +35,7 @@
             [placeholder]="'labels.fieldNamePlaceholder' | translate"
             [ngModel]="newName()"
             (ngModelChange)="newName.set($event)"
+            [attr.maxlength]="INPUT_LIMITS.labelName"
             [disabled]="isSaving()"
             autofocus
           />
@@ -48,6 +49,7 @@
             [placeholder]="'labels.fieldCategoryPlaceholder' | translate"
             [ngModel]="newCategory()"
             (ngModelChange)="newCategory.set($event)"
+            [attr.maxlength]="INPUT_LIMITS.labelCategory"
             [disabled]="isSaving()"
           />
         </div>
@@ -56,7 +58,7 @@
         <button type="button" class="btn-ghost btn-sm" [disabled]="isSaving()" (click)="cancelCreate()">
           {{ 'labels.cancel' | translate }}
         </button>
-        <button type="button" class="btn-primary btn-sm" [disabled]="isSaving() || !newName().trim()" (click)="createLabel()">
+        <button type="button" class="btn-primary btn-sm" [disabled]="isSaving() || !newName().trim() || newName().trim().length > INPUT_LIMITS.labelName || newCategory().trim().length > INPUT_LIMITS.labelCategory" (click)="createLabel()">
           @if (isSaving()) {
             <span class="spinner spinner--sm"></span>
           }
