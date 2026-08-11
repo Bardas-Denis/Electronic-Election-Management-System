@@ -437,7 +437,10 @@
     "otherAnswersTitle": "Other answers",
     "otherOptionLabel": "Other",
     "more": "more",
-    "less": "less"
+    "less": "less",
+    "simulateRanksLabel": "Simulate points (top ranks only):",
+    "allRanks": "All ranks",
+    "topRanks": "Top {{count}}"
   },
   "errors": {
     "emailAlreadyExists": "An account with this email already exists.",
