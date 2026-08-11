@@ -58,6 +58,9 @@ export class CastVoteComponent implements OnInit {
   // Starts true optimistically; loadMyVote() corrects it as soon as the real vote loads.
   canEditVote = signal(true);
 
+  // Current question index for pagination
+  currentQuestionIndex = signal<number>(0);
+
   canSelectOptions = computed(() => {
     const e = this.election();
     if (!e || e.isExpired) return false;
@@ -89,6 +92,27 @@ export class CastVoteComponent implements OnInit {
         allowMultipleAnswers: false, questionType: 'Choice' as const, allowOtherOption: false,
         requiredRankCount: null, options: election.options
       }];
+  }
+
+  // Returns the current question based on index
+  getCurrentQuestion(e: ElectionDto) {
+    const qList = this.questions(e);
+    return qList[this.currentQuestionIndex()];
+  }
+
+  // Navigate to the next question page
+  nextPage(e: ElectionDto): void {
+    const qList = this.questions(e);
+    if (this.currentQuestionIndex() < qList.length - 1) {
+      this.currentQuestionIndex.update(idx => idx + 1);
+    }
+  }
+
+  // Navigate to the previous question page
+  prevPage(): void {
+    if (this.currentQuestionIndex() > 0) {
+      this.currentQuestionIndex.update(idx => idx - 1);
+    }
   }
 
   // Single-answer question: picking an option replaces whatever was selected before.
@@ -515,6 +539,32 @@ export class CastVoteComponent implements OnInit {
       userVoteOptionId: optionId,
       userVoteOptionLabel: this.optionLabelById(optionId) ?? undefined
     });
+  }
+  // Jump directly to a specific question index
+  jumpToQuestion(index: number): void {
+    const e = this.election();
+    if (e && index >= 0 && index < this.questions(e).length) {
+      this.currentQuestionIndex.set(index);
+    }
+  }
+  // Returns the visual state of the question for the bullet in the steps menu
+  getQuestionStatus(question: any): 'answered' | 'optional-empty' | 'required-empty' {
+    const textAnswer = this.getTextAnswer(question.id);
+    const hasText = textAnswer && textAnswer.trim().length > 0;
+    
+    const questionObj = this.questions(this.election()!).find((q: any) => q.id === question.id);
+    const hasSelectedNormal = questionObj?.options.some((opt: any) => this.isOptionSelected(question.id, opt.id));
+    const hasSelectedOther = questionObj?.allowOtherOption && this.isOtherSelected(question.id);
+
+    if (hasText || hasSelectedNormal || hasSelectedOther) {
+      return 'answered';
+    }
+
+    if (question.isRequired === false) {
+      return 'optional-empty';
+    }
+
+    return 'required-empty';
   }
 
   goToResults(): void {
