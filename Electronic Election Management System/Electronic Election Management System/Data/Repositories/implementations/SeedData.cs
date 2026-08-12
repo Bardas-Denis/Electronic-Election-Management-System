@@ -37,6 +37,43 @@ namespace Electronic_Election_Management_System.Data
             await db.SaveChangesAsync();
         }
 
+        public static async Task EnsureScoringSchemesAsync(ElectionDbContext db)
+        {
+            if (await db.ScoringSchemes.AnyAsync(s => s.IsPredefined))
+            {
+                return;
+            }
+
+            db.ScoringSchemes.AddRange(
+                new ScoringScheme
+                {
+                    Id = Guid.Parse("00000000-0000-0000-0000-000000000001"),
+                    Name = "Eurovision",
+                    Points = new List<int> { 12, 10, 8, 7, 6, 5, 4, 3, 2, 1 },
+                    IsLinear = false,
+                    IsPredefined = true
+                },
+                new ScoringScheme
+                {
+                    Id = Guid.Parse("00000000-0000-0000-0000-000000000002"),
+                    Name = "Formula 1",
+                    Points = new List<int> { 25, 18, 15, 12, 10, 8, 6, 4, 2, 1 },
+                    IsLinear = false,
+                    IsPredefined = true
+                },
+                new ScoringScheme
+                {
+                    Id = Guid.Parse("00000000-0000-0000-0000-000000000003"),
+                    Name = "Linear",
+                    Points = new List<int>(),
+                    IsLinear = true,
+                    IsPredefined = true
+                }
+            );
+
+            await db.SaveChangesAsync();
+        }
+
         // Seeds 100 test voters (with UserDetails profiles), a handful of
         // non-role labels, 20 elections (5 expired / 5 upcoming / 10 active,
         // including one closed election and one multi-question survey), and

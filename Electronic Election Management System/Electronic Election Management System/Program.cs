@@ -220,6 +220,7 @@ using (var scope = app.Services.CreateScope())
     }
 
     await SeedData.EnsureAdminUserAsync(db);
+    await SeedData.EnsureScoringSchemesAsync(db);
     if (app.Environment.IsDevelopment())
     {
         await SeedData.EnsureTestDataAsync(db);
