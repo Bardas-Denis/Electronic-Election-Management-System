@@ -26,6 +26,8 @@ namespace Electronic_Election_Management_System.Models
         /// number of points and the scores stay comparable. Null leaves the count open - a voter
         /// ranks as few or as many as they like.</summary>
         public int? RequiredRankCount { get; set; }
+        public Guid? ScoringSchemeId { get; set; }
+        public ScoringScheme? ScoringScheme { get; set; }
         /// <summary>For <see cref="Models.QuestionType.Choice"/> questions, the selectable options.
         /// For <see cref="Models.QuestionType.FreeText"/> questions, optional suggestion chips shown
         /// above the text box - not a restrictive list, voters may type anything.</summary>

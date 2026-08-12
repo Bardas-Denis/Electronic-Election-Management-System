@@ -23,6 +23,7 @@ namespace Electronic_Election_Management_System.Data
         public DbSet<Label> Labels => Set<Label>();
         public DbSet<UserLabel> UserLabels => Set<UserLabel>();
         public DbSet<Notification> Notifications => Set<Notification>();
+        public DbSet<ScoringScheme> ScoringSchemes => Set<ScoringScheme>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -286,6 +287,24 @@ namespace Electronic_Election_Management_System.Data
                 .WithMany(u => u.Notifications)
                 .HasForeignKey(n => n.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<ScoringScheme>()
+                .HasOne(ss => ss.CreatedByUser)
+                .WithMany()
+                .HasForeignKey(ss => ss.CreatedByUserId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            modelBuilder.Entity<ScoringScheme>()
+                .Property(ss => ss.Points)
+                .HasConversion(
+                    v => System.Text.Json.JsonSerializer.Serialize(v, (System.Text.Json.JsonSerializerOptions?)null),
+                    v => System.Text.Json.JsonSerializer.Deserialize<List<int>>(v, (System.Text.Json.JsonSerializerOptions?)null) ?? new List<int>());
+
+            modelBuilder.Entity<ElectionQuestion>()
+                .HasOne(q => q.ScoringScheme)
+                .WithMany()
+                .HasForeignKey(q => q.ScoringSchemeId)
+                .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }
