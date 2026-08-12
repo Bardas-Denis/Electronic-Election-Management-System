@@ -6,6 +6,8 @@ import { TranslateService, TranslatePipe } from '@ngx-translate/core';
 import { forkJoin, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { VotingService } from '../../core/services/voting.service';
+import { ScoringSchemesService } from '../../core/services/scoring-schemes.service';
+import { ScoringSchemeDto } from '../../core/models/scoring-schemes.model';
 import {
   AudienceConditionDto,
   AudienceGroupDto,
@@ -41,6 +43,11 @@ export class CreateElectionComponent implements OnInit {
   private router = inject(Router);
   private route = inject(ActivatedRoute);
   private translate = inject(TranslateService);
+  private scoringSchemesService = inject(ScoringSchemesService);
+
+  scoringSchemes = signal<ScoringSchemeDto[]>([]);
+  scoringSchemesLoading = signal(false);
+  scoringSchemesErrorKey = signal<string | null>(null);
 
   isSubmitting = signal(false);
   isLoading = signal(false);
@@ -122,6 +129,8 @@ export class CreateElectionComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    this.loadScoringSchemes();
+
     this.form.get('type')?.valueChanges.subscribe((type) => {
       this.syncAnonymousState(type);
     });
@@ -240,6 +249,7 @@ export class CreateElectionComponent implements OnInit {
       // empty - which is exactly what happens while retyping a value.
       limitRankCount: [question?.requiredRankCount != null],
       requiredRankCount: [question?.requiredRankCount ?? null],
+      scoringSchemeId: [question?.scoringSchemeId ?? null],
       options: this.fb.array(
         optionGroups,
         [
@@ -1183,6 +1193,26 @@ export class CreateElectionComponent implements OnInit {
 
     await Promise.all(promises);
   }
+
+  private loadScoringSchemes(): void {
+    if (this.scoringSchemesLoading()) return;
+    this.scoringSchemesLoading.set(true);
+    this.scoringSchemesErrorKey.set(null);
+    this.scoringSchemesService.getSchemes().subscribe({
+      next: (schemes) => {
+        this.scoringSchemes.set(schemes);
+        this.scoringSchemesLoading.set(false);
+      },
+      error: () => {
+        this.scoringSchemesErrorKey.set('elections.loadEditFailed');
+        this.scoringSchemesLoading.set(false);
+      }
+    });
+  }
+
+  retryScoringSchemes(): void {
+    this.loadScoringSchemes();
+  }
 }
 
 export function expandAudienceGroups(
@@ -1295,6 +1325,7 @@ export function normalizeEditableQuestions(election: ElectionDto): CreateElectio
       questionType: question.questionType ?? 'Choice',
       allowOtherOption: question.allowOtherOption ?? false,
       requiredRankCount: question.requiredRankCount ?? null,
+      scoringSchemeId: question.scoringSchemeId ?? null,
       options: Array.isArray(question.options) && question.options.length > 0
         ? question.options.map(option => ({
           label: option.label ?? '',
@@ -1318,6 +1349,7 @@ export function normalizeEditableQuestions(election: ElectionDto): CreateElectio
     questionType: 'Choice',
     allowOtherOption: false,
     requiredRankCount: null,
+    scoringSchemeId: null,
     options: (election.options ?? []).map(option => ({
       label: option.label ?? '',
       description: option.description ?? '',

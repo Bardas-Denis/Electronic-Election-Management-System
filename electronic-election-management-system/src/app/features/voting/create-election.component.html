@@ -851,6 +851,7 @@
           </label>
           }
         </div>
+        }
         @if (getQuestionType(questionIndex) === 'Ranking' && isRankCountLimited(questionIndex)) {
         <div class="rank-count-row">
           <input type="number" class="rank-count-input" formControlName="requiredRankCount" min="1"
@@ -865,6 +866,38 @@
         </p>
         }
         }
+        
+        @if (getQuestionType(questionIndex) === 'Ranking') {
+        <div class="field-group scoring-scheme-group" style="margin-top: 1rem;">
+          <label>{{ 'elections.scoringSchemeLabel' | translate }}</label>
+          <p class="field-help">{{ 'elections.scoringSchemeHelp' | translate }}</p>
+          
+          @if (scoringSchemesLoading()) {
+          <div class="inline-state">
+            <span class="spinner"></span>
+            {{ 'elections.loadingScoringSchemes' | translate }}
+          </div>
+          } @else if (scoringSchemesErrorKey()) {
+          <div class="candidate-load-error">
+            <p class="error-text">{{ scoringSchemesErrorKey() | translate }}</p>
+            <button type="button" class="btn-secondary" (click)="retryScoringSchemes()">
+              {{ 'elections.tryAgain' | translate }}
+            </button>
+          </div>
+          } @else {
+          <select formControlName="scoringSchemeId" class="scoring-scheme-select" style="max-width: 400px;">
+            <option [ngValue]="null">{{ 'elections.defaultScoringScheme' | translate }}</option>
+            @for (scheme of scoringSchemes(); track scheme.id) {
+            <option [value]="scheme.id">
+              {{ scheme.name }}
+              @if (scheme.isLinear) { (Linear) } @else { ({{ scheme.points.length }} puncte: {{ scheme.points.join(', ') }}) }
+            </option>
+            }
+          </select>
+          }
+        </div>
+        }
+        
         <input type="text" formControlName="text" maxlength="500"
           [placeholder]="'elections.questionPlaceholder' | translate" />
 
