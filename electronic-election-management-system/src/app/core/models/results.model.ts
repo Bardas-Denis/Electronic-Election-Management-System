@@ -1,4 +1,5 @@
 import { QuestionType } from './voting.model';
+import { ScoringSchemeDto } from './scoring-schemes.model';
 
 export interface OptionResultDto {
   optionId: string;
@@ -18,6 +19,7 @@ export interface QuestionResultDto {
   questionType: QuestionType;
   totalVotes: number;
   requiredRankCount?: number;
+  scoringScheme?: ScoringSchemeDto;
   results: OptionResultDto[];
   // Populated only for a 'FreeText' question - the raw submitted answers, with no
   // attribution to who submitted them.
