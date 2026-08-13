@@ -1,5 +1,6 @@
 using Electronic_Election_Management_System.Configuration;
 using Electronic_Election_Management_System.Data;
+using Electronic_Election_Management_System.Data.DesignTime;
 using Electronic_Election_Management_System.Data.Repositories;
 using Electronic_Election_Management_System.Data.Repositories.implementations;
 using Electronic_Election_Management_System.Hubs;
@@ -36,19 +37,42 @@ try
         .Enrich.FromLogContext());
 
 
-// SQLite connection string with busy_timeout=5000ms.
-// "Default Timeout" (seconds) is mapped by Microsoft.Data.Sqlite todo
-// sqlite3_busy_timeout, applied automatically on every connection opened(not just at startup).
-var sqliteConnectionStringBuilder = new SqliteConnectionStringBuilder(
-    builder.Configuration.GetConnectionString("DefaultConnection"))
-{
-    DefaultTimeout = 5 // 5s = 5000ms busy_timeout
-};
-var sqliteConnectionString = sqliteConnectionStringBuilder.ToString();
+// Determine which database provider to use. Defaults to "Sqlite" when the key is absent.
+var dbProvider = builder.Configuration["Database:Provider"] ?? "Sqlite";
 
-builder.Services.AddDbContext<ElectionDbContext>(options =>
-    options.UseSqlite(sqliteConnectionString)
-);
+if (dbProvider.Equals("Sqlite", StringComparison.OrdinalIgnoreCase))
+{
+    // SQLite connection string with busy_timeout=5000ms.
+    // "Default Timeout" (seconds) is mapped by Microsoft.Data.Sqlite todo
+// sqlite3_busy_timeout, applied automatically on every connection opened(not just at startup).
+    var sqliteConnectionStringBuilder = new SqliteConnectionStringBuilder(
+        builder.Configuration.GetConnectionString("DefaultConnection"))
+    {
+        DefaultTimeout = 5 // 5s = 5000ms busy_timeout
+    };
+    var sqliteConnectionString = sqliteConnectionStringBuilder.ToString();
+
+    builder.Services.AddDbContext<SqliteAppDbContext>(options =>
+        options.UseSqlite(sqliteConnectionString));
+    builder.Services.AddScoped<ElectionDbContext>(sp =>
+        sp.GetRequiredService<SqliteAppDbContext>());
+}
+else if (dbProvider.Equals("Postgres", StringComparison.OrdinalIgnoreCase))
+{
+    var pgConnectionString = builder.Configuration.GetConnectionString("Postgres")
+        ?? throw new InvalidOperationException(
+            "ConnectionStrings:Postgres is required when Database:Provider is set to 'Postgres'.");
+
+    builder.Services.AddDbContext<PostgresAppDbContext>(options =>
+        options.UseNpgsql(pgConnectionString));
+    builder.Services.AddScoped<ElectionDbContext>(sp =>
+        sp.GetRequiredService<PostgresAppDbContext>());
+}
+else
+{
+    throw new InvalidOperationException(
+        $"Unknown Database:Provider value: '{dbProvider}'. Supported values: 'Sqlite', 'Postgres'.");
+}
 
 var jwtOptions = JwtOptions.LoadAndValidate(builder.Configuration);
 builder.Services.AddSingleton(jwtOptions);
@@ -203,20 +227,23 @@ using (var scope = app.Services.CreateScope())
     var db = scope.ServiceProvider.GetRequiredService<ElectionDbContext>();
     db.Database.Migrate();
 
-    // Enable WAL mode
-    db.Database.ExecuteSqlRaw("PRAGMA journal_mode=WAL;");
-    db.Database.ExecuteSqlRaw("PRAGMA busy_timeout=5000;");
+    if (dbProvider.Equals("Sqlite", StringComparison.OrdinalIgnoreCase))
+    {
+        // Enable WAL mode — SQLite-specific; must not run against Postgres.
+        db.Database.ExecuteSqlRaw("PRAGMA journal_mode=WAL;");
+        db.Database.ExecuteSqlRaw("PRAGMA busy_timeout=5000;");
 
-    var connection = db.Database.GetDbConnection();
-    if (connection.State != System.Data.ConnectionState.Open)
-    {
-        await connection.OpenAsync();
-    }
-    using (var checkCmd = connection.CreateCommand())
-    {
-        checkCmd.CommandText = "PRAGMA journal_mode;";
-        var currentJournalMode = (string?)await checkCmd.ExecuteScalarAsync() ?? "unknown";
-        app.Logger.LogInformation("SQLite journal_mode confirmed at startup: {JournalMode}", currentJournalMode);
+        var connection = db.Database.GetDbConnection();
+        if (connection.State != System.Data.ConnectionState.Open)
+        {
+            await connection.OpenAsync();
+        }
+        using (var checkCmd = connection.CreateCommand())
+        {
+            checkCmd.CommandText = "PRAGMA journal_mode;";
+            var currentJournalMode = (string?)await checkCmd.ExecuteScalarAsync() ?? "unknown";
+            app.Logger.LogInformation("SQLite journal_mode confirmed at startup: {JournalMode}", currentJournalMode);
+        }
     }
 
     await SeedData.EnsureAdminUserAsync(db);
