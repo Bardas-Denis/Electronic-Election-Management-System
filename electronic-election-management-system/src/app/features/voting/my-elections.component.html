@@ -106,9 +106,9 @@
         </button>
       }
       @if (election.hasVotes) {
-        <span class="btn-secondary btn-disabled" [title]="'elections.editDisabledTitle' | translate">
-          {{ 'elections.edit' | translate }}
-        </span>
+        <a [routerLink]="['/elections', election.id, 'edit']" class="btn-secondary" [title]="'elections.editDisabledTitle' | translate">
+          {{ 'elections.preview' | translate }}
+        </a>
       } @else {
         <a [routerLink]="['/elections', election.id, 'edit']" class="btn-secondary">{{ 'elections.edit' | translate }}</a>
       }

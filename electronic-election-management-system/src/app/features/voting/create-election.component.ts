@@ -177,7 +177,6 @@ export class CreateElectionComponent implements OnInit {
         if (election.hasVotes) {
           this.form.disable({ emitEvent: false });
           this.isLocked.set(true);
-          this.errorMessageKey.set('elections.lockedByVotes');
         }
 
         // Pre-populate invitation pickers and audience group rules from existing election data
@@ -193,6 +192,11 @@ export class CreateElectionComponent implements OnInit {
         this.isLoading.set(false);
       }
     });
+  }
+
+  // Added method for the back to choices button
+  goBackToMyElections(): void {
+    this.router.navigate(['/elections/mine']);
   }
 
   get questions(): FormArray {
@@ -246,6 +250,7 @@ export class CreateElectionComponent implements OnInit {
    * Sets a question's type and applies the side effects.
    */
   setQuestionType(questionIndex: number, type: QuestionType): void {
+    if (this.isLocked()) return; // Prevents modification in preview
     const group = this.questions.at(questionIndex);
     group.get('questionType')?.setValue(type);
 
@@ -279,6 +284,7 @@ export class CreateElectionComponent implements OnInit {
    * option count when there are fewer than 3 to rank.
    */
   toggleRankCountLimit(questionIndex: number): void {
+    if (this.isLocked()) return;
     const group = this.questions.at(questionIndex);
     const limit = group.get('limitRankCount');
     const count = group.get('requiredRankCount');
@@ -315,29 +321,30 @@ export class CreateElectionComponent implements OnInit {
 
   private syncAnonymousState(type: string | null | undefined): void {
     const anonymousControl = this.form.get('isAnonymous');
-
-    if (!anonymousControl) {
-      return;
-    }
+    if (!anonymousControl) return;
 
     if (type === 'Politic') {
       anonymousControl.setValue(false, { emitEvent: false });
       anonymousControl.disable({ emitEvent: false });
     } else {
-      anonymousControl.enable({ emitEvent: false });
+      if (!this.isLocked()) {
+        anonymousControl.enable({ emitEvent: false });
+      }
     }
   }
 
   addQuestion(): void {
-    if (this.questions.length >= INPUT_LIMITS.maxQuestions) return;
+    if (this.isLocked() || this.questions.length >= INPUT_LIMITS.maxQuestions) return;
     this.questions.push(this.createQuestionGroup());
   }
 
   removeQuestion(index: number): void {
-    if (this.questions.length > 1) this.questions.removeAt(index);
+    if (this.isLocked() || this.questions.length <= 1) return;
+    this.questions.removeAt(index);
   }
 
   addOption(questionIndex: number): void {
+    if (this.isLocked()) return;
     const options = this.questionOptions(questionIndex);
     if (options.length >= INPUT_LIMITS.maxOptionsPerQuestion) return;
     options.push(this.createOptionGroup());
@@ -346,6 +353,7 @@ export class CreateElectionComponent implements OnInit {
   // A Choice question must retain at least two options. The options UI is only
   // ever shown for a Choice question, so this never runs for a FreeText one.
   removeOption(questionIndex: number, optionIndex: number): void {
+    if (this.isLocked()) return;
     const options = this.questionOptions(questionIndex);
     if (options.length > 2) {
       options.removeAt(optionIndex);
@@ -353,6 +361,7 @@ export class CreateElectionComponent implements OnInit {
   }
 
   onOptionImageSelected(event: Event, questionIndex: number, optionIndex: number): void {
+    if (this.isLocked()) return;
     const file = (event.target as HTMLInputElement).files?.[0];
     if (!file) return;
     const allowedTypes = new Set(['image/png', 'image/jpeg', 'image/webp', 'image/gif']);
@@ -367,10 +376,12 @@ export class CreateElectionComponent implements OnInit {
   }
 
   removeOptionImage(questionIndex: number, optionIndex: number): void {
+    if (this.isLocked()) return;
     this.questionOptions(questionIndex).at(optionIndex).get('imageDataUrl')?.setValue('');
   }
 
   addInviteEmail(): void {
+    if (this.isLocked()) return;
     const normalizedEmail = this.inviteEmailControl.value?.trim().toLowerCase() ?? '';
     if (!normalizedEmail || this.inviteEmailControl.invalid) {
       this.inviteEmailControl.markAsTouched();
@@ -387,6 +398,7 @@ export class CreateElectionComponent implements OnInit {
   }
 
   removeInviteEmail(email: string): void {
+    if (this.isLocked()) return;
     const emails = this.invitedEmails().filter(item => item !== email);
     this.invitedEmails.set(emails);
     this.form.controls.invitedEmails.setValue(emails);
@@ -421,6 +433,7 @@ export class CreateElectionComponent implements OnInit {
 
   /** Adds a blank AND-group to the audienceGroups FormArray. */
   addGroup(): void {
+    if (this.isLocked()) return;
     this.audienceGroupsArray.push(this.createGroupArray());
   }
 
@@ -444,6 +457,7 @@ export class CreateElectionComponent implements OnInit {
 
   /** Removes the AND-group at the given index. */
   removeGroup(groupIndex: number): void {
+    if (this.isLocked()) return;
     const group = this.groupConditions(groupIndex);
     const labelIds = (group.value as { labelId: string }[]).map(c => c.labelId).filter(Boolean);
     this.audienceGroupsArray.removeAt(groupIndex);
@@ -469,6 +483,7 @@ export class CreateElectionComponent implements OnInit {
     isExcluded: boolean = false,
     conditionIndex: number = -1
   ): void {
+    if (this.isLocked()) return;
     const group = this.groupConditions(groupIndex);
     const oldLabelId = conditionIndex >= 0 ? group.at(conditionIndex)?.get('labelId')?.value : null;
     const newCondition = this.createConditionGroup(labelId, isExcluded);
@@ -489,6 +504,7 @@ export class CreateElectionComponent implements OnInit {
 
   /** Removes a single condition from a group. Removes the whole group if it becomes empty. */
   removeCondition(groupIndex: number, conditionIndex: number): void {
+    if (this.isLocked()) return;
     const group = this.groupConditions(groupIndex);
     const labelId = group.at(conditionIndex)?.get('labelId')?.value;
     group.removeAt(conditionIndex);
@@ -504,12 +520,14 @@ export class CreateElectionComponent implements OnInit {
 
   /** Toggles the isExcluded flag on a condition chip. */
   toggleConditionExclusion(groupIndex: number, conditionIndex: number): void {
+    if (this.isLocked()) return;
     const ctrl = this.groupConditions(groupIndex).at(conditionIndex).get('isExcluded');
     ctrl?.setValue(!ctrl.value);
   }
 
   /** Opens the condition picker for a given group (conditionIndex -1 = add new). */
   openConditionPickerFor(groupIndex: number, conditionIndex: number): void {
+    if (this.isLocked()) return;
     const current = this.openConditionPicker();
     if (current?.groupIndex === groupIndex && current?.conditionIndex === conditionIndex) {
       this.openConditionPicker.set(null);
@@ -547,11 +565,7 @@ export class CreateElectionComponent implements OnInit {
     const assigned = this.invitationLabels().filter(l => l.userIds?.includes(candidateId));
     const visible = assigned.slice(0, 2);
     const hiddenCount = Math.max(0, assigned.length - 2);
-    return {
-      visible,
-      hiddenCount,
-      all: assigned
-    };
+    return { visible, hiddenCount, all: assigned };
   }
 
   /** Set of candidate user IDs whose labels are currently expanded via click/tap. */
@@ -599,12 +613,14 @@ export class CreateElectionComponent implements OnInit {
   }
 
   restoreExcludedUser(candidateId: string): void {
+    if (this.isLocked()) return;
     const nextExclusions = new Set(this.excludedGroupUserIds());
     nextExclusions.delete(candidateId);
     this.excludedGroupUserIds.set(nextExclusions);
   }
 
   restoreAllExclusions(): void {
+    if (this.isLocked()) return;
     this.excludedGroupUserIds.set(new Set());
   }
 
@@ -776,6 +792,7 @@ export class CreateElectionComponent implements OnInit {
   }
 
   toggleCandidatePicker(): void {
+    if (this.isLocked()) return;
     this.candidatePickerOpen.update(open => !open);
     if (!this.candidatePickerOpen()) {
       this.candidateSearchControl.reset('');
@@ -811,6 +828,7 @@ export class CreateElectionComponent implements OnInit {
   }
 
   toggleInvitationCandidate(candidateId: string, selected?: boolean): void {
+    if (this.isLocked()) return;
     if (selected === undefined) {
       selected = !this.isInvitationCandidateSelected(candidateId);
     }
@@ -839,6 +857,7 @@ export class CreateElectionComponent implements OnInit {
   }
 
   removeInvitationCandidate(candidateId: string): void {
+    if (this.isLocked()) return;
     this.toggleInvitationCandidate(candidateId, false);
   }
 
@@ -849,6 +868,7 @@ export class CreateElectionComponent implements OnInit {
   }
 
   toggleAllInvitationCandidates(): void {
+    if (this.isLocked()) return;
     const visibleCandidates = this.filteredInvitationCandidates();
     const allSelected = this.allInvitationCandidatesSelected();
 
@@ -941,6 +961,7 @@ export class CreateElectionComponent implements OnInit {
 
 
   toggleLabelPicker(): void {
+    if (this.isLocked()) return;
     this.labelPickerOpen.update(open => !open);
     if (!this.labelPickerOpen()) {
       this.labelSearchControl.reset('');
@@ -948,7 +969,7 @@ export class CreateElectionComponent implements OnInit {
   }
 
   removeInvitationLabel(labelId: string): void {
-    // Remove every condition across all groups that references this label.
+    if (this.isLocked()) return;
     const arr = this.audienceGroupsArray;
     for (let gi = arr.length - 1; gi >= 0; gi--) {
       const group = arr.at(gi) as FormArray;
@@ -961,8 +982,6 @@ export class CreateElectionComponent implements OnInit {
     }
     this.cleanExclusionsForLabel(labelId);
   }
-
-
 
   private loadInvitationCandidates(): void {
     if (this.invitationCandidatesLoaded || this.invitationCandidatesLoading()) {
@@ -1033,7 +1052,6 @@ export class CreateElectionComponent implements OnInit {
     if (invitations.length > 0) {
       this.existingInvitations.set(invitations);
 
-      // Email-only invitations → pre-fill the email chips
       const existingEmails = invitations
         .filter(inv => !inv.userId)
         .map(inv => inv.email);
@@ -1041,7 +1059,6 @@ export class CreateElectionComponent implements OnInit {
       this.form.controls.invitedEmails.setValue(existingEmails);
     }
 
-    // Restore audience group rules if present on the election
     if (election.audienceGroups && election.audienceGroups.length > 0) {
       this.audienceGroupsArray.clear();
       for (const group of election.audienceGroups) {
@@ -1093,6 +1110,7 @@ export class CreateElectionComponent implements OnInit {
   }
 
   onSubmit(): void {
+    if (this.isLocked()) return; // Previne trimiterea formularului dacă e blocat
     this.form.markAllAsTouched();
     if (this.form.hasError('invalidDateRange')) {
       this.errorMessageKey.set('errors.invalidDateRange');
@@ -1159,7 +1177,7 @@ export class CreateElectionComponent implements OnInit {
     try {
       payload.startsAt = new Date(payload.startsAt).toISOString();
       payload.endsAt = new Date(payload.endsAt).toISOString();
-    } catch { /* fall back to raw values if parsing fails */ }
+    } catch { /* fall back */ }
 
     if (this.editingElectionId && this.isClosedElection) {
       // Edit mode for a closed election: PUT the details, then diff invitations

@@ -261,7 +261,10 @@
   "groupParticipation": "My Vote",
   "groupType": "Type",
   "groupVisibility": "Visibility",
-  "clearFilters": "Clear filters"
+  "clearFilters": "Clear filters",
+  "preview": "Preview",
+  "backToMyElections": "Back to my elections",
+  "previewHeading": "Preview election (Locked)"
 },
   "vote": {
     "questionOptional": "(optional)",

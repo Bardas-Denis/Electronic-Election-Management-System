@@ -1,935 +1,1008 @@
 <div class="page">
   @if (isLoading()) {
-  <div class="state-block">
-    <span class="spinner"></span>
-    <p>{{ 'elections.loadingOne' | translate }}</p>
-  </div>
+    <div class="state-block">
+      <span class="spinner"></span>
+      <p>{{ 'elections.loadingOne' | translate }}</p>
+    </div>
   }
 
-  <form [formGroup]="form" (ngSubmit)="onSubmit()" class="form-card" [class.hidden]="isLoading()">
-    <h2>{{ (isEditMode() ? 'elections.editHeading' : 'elections.createHeading') | translate }}</h2>
+    <form [formGroup]="form" (ngSubmit)="onSubmit()" class="form-card" [class.hidden]="isLoading()">
 
-    <div class="field-group">
-      <label for="title">{{ 'elections.titleLabel' | translate }}</label>
-      <input id="title" type="text" formControlName="title" maxlength="200"
-        [placeholder]="'elections.titlePlaceholder' | translate" />
-    </div>
+      <!-- Clean Header: Back on the left, Shrink Title on the right -->
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border-color);">
+        <button type="button" class="btn-secondary" (click)="goBackToMyElections()" style="display: inline-flex; align-items: center; gap: 0.4rem; cursor: pointer; padding: 0.4rem 0.8rem; font-size: 0.85rem;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+          {{ 'elections.backToMyElections' | translate }}
+        </button>
 
-    <div class="field-group">
-      <label for="description">{{ 'elections.descriptionLabel' | translate }}</label>
-      <textarea id="description" formControlName="description" maxlength="2000"
-        [placeholder]="'elections.descriptionPlaceholder' | translate"></textarea>
-    </div>
-
-    <div class="field-row">
-      <div class="field-group" style="margin-bottom: 0;">
-        <label for="type">{{ 'elections.typeLabel' | translate }}</label>
-        <select id="type" formControlName="type">
-          <option value="Politic">{{ 'elections.typePolitical' | translate }}</option>
-          <option value="Comercial">{{ 'elections.typeCommercial' | translate }}</option>
-        </select>
+        <span style="font-weight: 600; font-size: 1.1rem; color: var(--text-main, #0f172a);">
+          {{ (isEditMode() ? (isLocked() ? 'elections.previewHeading' : 'elections.editHeading') : 'elections.createHeading') | translate }}
+        </span>
       </div>
 
-      <div class="field-group" style="margin-bottom: 0;">
-        <label>{{ 'elections.privacyLabel' | translate }}</label>
-        <div class="checkbox-field" style="margin-bottom: 0; height: 40px;">
-          <input type="checkbox" id="isAnonymous" formControlName="isAnonymous" [disabled]="isPoliticalElection" />
-          <label for="isAnonymous">{{ 'elections.anonymousVote' | translate }}</label>
-        </div>
+      <!-- Box-ul gri între antet și câmpul Title -->
+      @if (isLocked()) {
+      <div style="text-align: center; justify-content: center; width: 100%; padding: 0.7rem; margin-bottom: 1.5rem; background: var(--bg-subtle, #f8fafc); border: 1px solid var(--border-color, #e2e8f0); border-radius: var(--radius-sm, 6px); font-weight: 500; font-size: 0.9rem; color: var(--text-secondary, #64748b);">
+        {{ 'elections.lockedByVotes' | translate }}
       </div>
-    </div>
-
-    <div class="info-box">
-      @if (isPoliticalElection) {
-      <strong>{{ 'elections.infoPolitical' | translate }}</strong>
-      } @else {
-      <strong>{{ 'elections.infoCommercial' | translate }}</strong>
       }
-    </div>
 
-    <div class="section-divider visibility-section">
-      <h3>{{ 'elections.visibilityLabel' | translate }}</h3>
-      <p>{{ 'elections.visibilityHelp' | translate }}</p>
-    </div>
-
-    <div class="visibility-options">
-      <label class="visibility-option" [class.visibility-option--selected]="!isClosedElection">
-        <input type="radio" formControlName="isClosed" [value]="false" />
-        <span>
-          <strong>{{ 'elections.publicElection' | translate }}</strong>
-          <small>{{ 'elections.publicElectionHelp' | translate }}</small>
-        </span>
-      </label>
-      <label class="visibility-option" [class.visibility-option--selected]="isClosedElection">
-        <input type="radio" formControlName="isClosed" [value]="true" />
-        <span>
-          <strong>{{ 'elections.closedElection' | translate }}</strong>
-          <small>{{ 'elections.privateElectionHelp' | translate }}</small>
-        </span>
-      </label>
-    </div>
-
-    <div class="field-group" style="margin-top: 1rem;">
-      <div class="checkbox-field">
-        <input type="checkbox" id="isVisible" formControlName="isVisible" />
-        <label for="isVisible">{{ 'elections.isVisibleLabel' | translate }}</label>
-      </div>
-      <p class="field-help">{{ 'elections.isVisibleHelp' | translate }}</p>
-    </div>
-
-    @if (isClosedElection && isEditMode()) {
-    <!-- EDIT MODE for a closed election: full invitation management with label-expand diff on save -->
-    <div class="invitation-panel">
-      <div class="invitation-heading">
-        <div class="invitation-heading-row">
-          <h3>{{ 'elections.invitationsTitle' | translate }}</h3>
-          @if (totalUniqueInvitees() > 0) {
-          <span class="invitees-counter">
-            {{ 'elections.totalInviteesCount' | translate: { count: totalUniqueInvitees() } }}
-          </span>
-          }
-        </div>
-        <p>{{ 'elections.privateEditHelp' | translate }}</p>
+      <div class="field-group">
+        <label for="title">{{ 'elections.titleLabel' | translate }}</label>
+        <input id="title" type="text" formControlName="title" maxlength="200"
+               [placeholder]="'elections.titlePlaceholder' | translate" [attr.readonly]="isLocked() ? true : null" />
       </div>
 
       <div class="field-group">
-        <div class="field-group-header">
-          <label>{{ 'elections.labelInviteLabel' | translate }}</label>
-          <button type="button" class="info-guide-trigger" (click)="toggleInfoPopover()"
-            [attr.title]="'elections.infoGuideButtonTitle' | translate"
-            [attr.aria-expanded]="showInfoPopover()">
-            <span class="info-icon">i</span>
-          </button>
-          @if (showInfoPopover()) {
-          <div class="info-popover-card">
-            <div class="info-popover-header">
-              <strong>{{ 'elections.infoGuideTitle' | translate }}</strong>
-              <button type="button" class="info-popover-close" (click)="toggleInfoPopover()">&#215;</button>
-            </div>
-            <ul class="info-popover-list">
-              <li>{{ 'elections.infoGuideAnd' | translate }}</li>
-              <li>{{ 'elections.infoGuideOr' | translate }}</li>
-              <li>{{ 'elections.infoGuideNot' | translate }}</li>
-              <li>{{ 'elections.infoGuideIndividual' | translate }}</li>
-            </ul>
+        <label for="description">{{ 'elections.descriptionLabel' | translate }}</label>
+        <textarea id="description" formControlName="description" maxlength="2000"
+                  [placeholder]="'elections.descriptionPlaceholder' | translate" [attr.readonly]="isLocked() ? true : null"></textarea>
+      </div>
+
+      <div class="field-row">
+        <div class="field-group" style="margin-bottom: 0;">
+          <label for="type">{{ 'elections.typeLabel' | translate }}</label>
+          <select id="type" formControlName="type" [style.pointer-events]="isLocked() ? 'none' : 'auto'">
+            <option value="Politic">{{ 'elections.typePolitical' | translate }}</option>
+            <option value="Comercial">{{ 'elections.typeCommercial' | translate }}</option>
+          </select>
+        </div>
+
+        <div class="field-group" style="margin-bottom: 0;">
+          <label>{{ 'elections.privacyLabel' | translate }}</label>
+          <div class="checkbox-field" style="margin-bottom: 0; height: 40px;" [style.pointer-events]="isLocked() ? 'none' : 'auto'">
+            <input type="checkbox" id="isAnonymous" formControlName="isAnonymous" [disabled]="true" />
+            <label for="isAnonymous">{{ 'elections.anonymousVote' | translate }}</label>
           </div>
-          }
         </div>
-        <p class="field-help">{{ 'elections.labelInviteHelp' | translate }}</p>
-        @if (invitationLabelsLoading()) {
-        <div class="inline-state">
-          <span class="spinner"></span>
-          {{ 'elections.loadingInviteLabels' | translate }}
-        </div>
-        } @else if (invitationLabelsErrorKey()) {
-        <div class="candidate-load-error">
-          <p class="error-text">{{ invitationLabelsErrorKey() | translate }}</p>
-          <button type="button" class="btn-secondary" (click)="retryInvitationLabels()">
-            {{ 'elections.tryAgain' | translate }}
-          </button>
-        </div>
+      </div>
+
+      <div class="info-box">
+        @if (isPoliticalElection) {
+        <strong>{{ 'elections.infoPolitical' | translate }}</strong>
         } @else {
-        @if (audienceSummaryText()) {
-        <div class="audience-summary-card">
-          <div class="audience-summary-header">
-            <span class="summary-badge">{{ 'elections.audienceSummaryLabel' | translate }}</span>
-            @if (excludedGroupUserIds().size > 0) {
-            <span class="summary-exclusions-badge">
-              {{ 'elections.audienceSummaryExclusionsNote' | translate: { count: excludedGroupUserIds().size } }}
+        <strong>{{ 'elections.infoCommercial' | translate }}</strong>
+        }
+      </div>
+
+      <div class="section-divider visibility-section">
+        <h3>{{ 'elections.visibilityLabel' | translate }}</h3>
+        <p>{{ 'elections.visibilityHelp' | translate }}</p>
+      </div>
+
+      <div class="visibility-options" [style.pointer-events]="isLocked() ? 'none' : 'auto'">
+        <label class="visibility-option" [class.visibility-option--selected]="!isClosedElection">
+          <input type="radio" formControlName="isClosed" [value]="false" [disabled]="isLocked()" />
+          <span>
+            <strong>{{ 'elections.publicElection' | translate }}</strong>
+            <small>{{ 'elections.publicElectionHelp' | translate }}</small>
+          </span>
+        </label>
+        <label class="visibility-option" [class.visibility-option--selected]="isClosedElection">
+          <input type="radio" formControlName="isClosed" [value]="true" [disabled]="isLocked()" />
+          <span>
+            <strong>{{ 'elections.closedElection' | translate }}</strong>
+            <small>{{ 'elections.privateElectionHelp' | translate }}</small>
+          </span>
+        </label>
+      </div>
+
+      <div class="field-group" style="margin-top: 1rem;" [style.pointer-events]="isLocked() ? 'none' : 'auto'">
+        <div class="checkbox-field">
+          <input type="checkbox" id="isVisible" formControlName="isVisible" [attr.disabled]="isLocked() ? true : null" />
+          <label for="isVisible">{{ 'elections.isVisibleLabel' | translate }}</label>
+        </div>
+        <p class="field-help">{{ 'elections.isVisibleHelp' | translate }}</p>
+      </div>
+
+      @if (isClosedElection && isEditMode()) {
+      <!-- EDIT MODE for a closed election: full invitation management with label-expand diff on save -->
+      <div class="invitation-panel">
+        <div class="invitation-heading">
+          <div class="invitation-heading-row">
+            <h3>{{ 'elections.invitationsTitle' | translate }}</h3>
+            @if (totalUniqueInvitees() > 0) {
+            <span class="invitees-counter">
+              {{ 'elections.totalInviteesCount' | translate: { count: totalUniqueInvitees() } }}
             </span>
             }
           </div>
-          <p class="summary-formula">{{ audienceSummaryText() }}</p>
+          <p>{{ 'elections.privateEditHelp' | translate }}</p>
         </div>
-        }
-        <!-- Audience group builder -->
-        <div class="audience-groups">
-          @for (group of audienceGroupsArray.controls; track $index; let gi = $index) {
-          @if (gi > 0) {
-          <div class="audience-or-divider"><span>{{ 'elections.orLabel' | translate }}</span></div>
-          }
-          <div class="audience-group-card">
-            <div class="audience-group-header">
-              <span class="group-title">{{ 'elections.groupTitle' | translate: { number: gi + 1 } }}</span>
-              @if (groupCoverage(gi); as cov) {
-              @if (cov.total > 0) {
-              <span class="group-coverage-badge" [class.group-coverage-badge--reduced]="cov.effective < cov.total">
-                @if (cov.effective < cov.total) {
-                {{ 'elections.groupUsersIncluded' | translate: { effective: cov.effective, total: cov.total } }}
-                } @else {
-                {{ 'elections.groupUsersCovered' | translate: { count: cov.total } }}
-                }
-              </span>
-              } @else if (groupConditions(gi).length > 0) {
-              <span class="group-coverage-badge group-coverage-badge--zero">
-                {{ 'elections.groupZeroMatch' | translate }}
-              </span>
-              }
-              }
-              <button type="button" class="btn-remove-group" (click)="removeGroup(gi)"
-                [attr.aria-label]="'elections.removeGroup' | translate">&#215;</button>
+
+        <div class="field-group">
+          <div class="field-group-header">
+            <label>{{ 'elections.labelInviteLabel' | translate }}</label>
+            <button type="button" class="info-guide-trigger" (click)="toggleInfoPopover()"
+                    [attr.title]="'elections.infoGuideButtonTitle' | translate"
+                    [attr.aria-expanded]="showInfoPopover()">
+              <span class="info-icon">i</span>
+            </button>
+            @if (showInfoPopover()) {
+            <div class="info-popover-card">
+              <div class="info-popover-header">
+                <strong>{{ 'elections.infoGuideTitle' | translate }}</strong>
+                <button type="button" class="info-popover-close" (click)="toggleInfoPopover()">&#215;</button>
+              </div>
+              <ul class="info-popover-list">
+                <li>{{ 'elections.infoGuideAnd' | translate }}</li>
+                <li>{{ 'elections.infoGuideOr' | translate }}</li>
+                <li>{{ 'elections.infoGuideNot' | translate }}</li>
+                <li>{{ 'elections.infoGuideIndividual' | translate }}</li>
+              </ul>
             </div>
-            <div class="audience-group-conditions">
-              @for (cond of groupConditions(gi).controls; track $index; let ci = $index) {
-              @if (ci > 0) { <span class="condition-and-sep">{{ 'elections.andLabel' | translate }}</span> }
-              <span class="condition-chip"
-                [class.condition-chip--positive]="!cond.get('isExcluded')?.value"
-                [class.condition-chip--excluded]="cond.get('isExcluded')?.value">
-                <span class="condition-chip__label">
-                  @if (cond.get('isExcluded')?.value) {
-                  <span class="condition-not-badge">- {{ 'elections.mustNotHaveBadge' | translate }}</span>
-                  } @else {
-                  <span class="condition-must-badge">+ {{ 'elections.mustHaveBadge' | translate }}</span>
-                  }
-                  {{ labelById(cond.get('labelId')?.value)?.name ?? cond.get('labelId')?.value }}
-                </span>
-                <button type="button" class="condition-chip__toggle"
-                  (click)="toggleConditionExclusion(gi, ci)"
-                  [attr.title]="(cond.get('isExcluded')?.value ? 'elections.conditionToggleInclude' : 'elections.conditionToggleExclude') | translate">
-                  {{ cond.get('isExcluded')?.value ? '&#10003;' : '&#8856;' }}
-                </button>
-                <button type="button" class="condition-chip__remove"
-                  (click)="removeCondition(gi, ci)"
-                  [attr.aria-label]="'elections.removeCondition' | translate">&#215;</button>
+            }
+          </div>
+          <p class="field-help">{{ 'elections.labelInviteHelp' | translate }}</p>
+          @if (invitationLabelsLoading()) {
+          <div class="inline-state">
+            <span class="spinner"></span>
+            {{ 'elections.loadingInviteLabels' | translate }}
+          </div>
+          } @else if (invitationLabelsErrorKey()) {
+          <div class="candidate-load-error">
+            <p class="error-text">{{ invitationLabelsErrorKey() | translate }}</p>
+            <button type="button" class="btn-secondary" (click)="retryInvitationLabels()">
+              {{ 'elections.tryAgain' | translate }}
+            </button>
+          </div>
+          } @else {
+          @if (audienceSummaryText()) {
+          <div class="audience-summary-card">
+            <div class="audience-summary-header">
+              <span class="summary-badge">{{ 'elections.audienceSummaryLabel' | translate }}</span>
+              @if (excludedGroupUserIds().size > 0) {
+              <span class="summary-exclusions-badge">
+                {{ 'elections.audienceSummaryExclusionsNote' | translate: { count: excludedGroupUserIds().size } }}
               </span>
               }
-              <!-- Add condition button + picker -->
-              <div class="condition-add-wrapper">
-                <button type="button" class="btn-add-condition"
-                  (click)="openConditionPickerFor(gi, -1)">
-                  + {{ 'elections.addCondition' | translate }}
+            </div>
+            <p class="summary-formula">{{ audienceSummaryText() }}</p>
+          </div>
+          }
+          <!-- Audience group builder -->
+          <div class="audience-groups">
+            @for (group of audienceGroupsArray.controls; track $index; let gi = $index) {
+            @if (gi > 0) {
+            <div class="audience-or-divider"><span>{{ 'elections.orLabel' | translate }}</span></div>
+            }
+            <div class="audience-group-card">
+              <div class="audience-group-header">
+                <span class="group-title">{{ 'elections.groupTitle' | translate: { number: gi + 1 } }}</span>
+                @if (groupCoverage(gi); as cov) {
+                @if (cov.total > 0) {
+                <span class="group-coverage-badge" [class.group-coverage-badge--reduced]="cov.effective < cov.total">
+                  @if (cov.effective < cov.total) {
+                  {{ 'elections.groupUsersIncluded' | translate: { effective: cov.effective, total: cov.total } }}
+                  } @else {
+                  {{ 'elections.groupUsersCovered' | translate: { count: cov.total } }}
+                  }
+                </span>
+                } @else if (groupConditions(gi).length > 0) {
+                <span class="group-coverage-badge group-coverage-badge--zero">
+                  {{ 'elections.groupZeroMatch' | translate }}
+                </span>
+                }
+                }
+                @if (!isLocked()) {
+                <button type="button" class="btn-remove-group" (click)="removeGroup(gi)"
+                        [attr.aria-label]="'elections.removeGroup' | translate">
+                  &#215;
                 </button>
-                @if (isConditionPickerOpen(gi, -1)) {
-                <div class="condition-picker-panel">
-                  <input type="search" [formControl]="conditionSearchControl"
-                    [placeholder]="'elections.searchInvitationLabels' | translate" autocomplete="off" />
-                  <div class="condition-picker-list">
-                    @for (label of filteredConditionLabels(); track label.id) {
-                    <button type="button" class="condition-picker-item"
-                      [class.condition-picker-item--selected]="isInvitationLabelSelected(label.id)"
-                      (click)="addConditionToGroup(gi, label.id)">
-                      <strong>{{ label.name }}</strong>
-                      @if (label.category) { <small>{{ label.category }}</small> }
-                      <span class="condition-picker-count">{{ label.userCount }}</span>
-                    </button>
-                    } @empty {
-                    <p class="user-picker-empty">{{ 'elections.noMatchingLabels' | translate }}</p>
+                }
+              </div>
+              <div class="audience-group-conditions">
+                @for (cond of groupConditions(gi).controls; track $index; let ci = $index) {
+                @if (ci > 0) { <span class="condition-and-sep">{{ 'elections.andLabel' | translate }}</span> }
+                <span class="condition-chip"
+                      [class.condition-chip--positive]="!cond.get('isExcluded')?.value"
+                      [class.condition-chip--excluded]="cond.get('isExcluded')?.value">
+                  <span class="condition-chip__label">
+                    @if (cond.get('isExcluded')?.value) {
+                    <span class="condition-not-badge">- {{ 'elections.mustNotHaveBadge' | translate }}</span>
+                    } @else {
+                    <span class="condition-must-badge">+ {{ 'elections.mustHaveBadge' | translate }}</span>
                     }
+                    {{ labelById(cond.get('labelId')?.value)?.name ?? cond.get('labelId')?.value }}
+                  </span>
+                  @if (!isLocked()) {
+                  <button type="button" class="condition-chip__toggle"
+                          (click)="toggleConditionExclusion(gi, ci)"
+                          [attr.title]="(cond.get('isExcluded')?.value ? 'elections.conditionToggleInclude' : 'elections.conditionToggleExclude') | translate">
+                    {{ cond.get('isExcluded')?.value ? '&#10003;' : '&#8856;' }}
+                  </button>
+                  <button type="button" class="condition-chip__remove"
+                          (click)="removeCondition(gi, ci)"
+                          [attr.aria-label]="'elections.removeCondition' | translate">
+                    &#215;
+                  </button>
+                  }
+                </span>
+                }
+                @if (!isLocked()) {
+                <div class="condition-add-wrapper">
+                  <button type="button" class="btn-add-condition"
+                          (click)="openConditionPickerFor(gi, -1)">
+                    + {{ 'elections.addCondition' | translate }}
+                  </button>
+                  @if (isConditionPickerOpen(gi, -1)) {
+                  <div class="condition-picker-panel">
+                    <input type="search" [formControl]="conditionSearchControl"
+                           [placeholder]="'elections.searchInvitationLabels' | translate" autocomplete="off" />
+                    <div class="condition-picker-list">
+                      @for (label of filteredConditionLabels(); track label.id) {
+                      <button type="button" class="condition-picker-item"
+                              [class.condition-picker-item--selected]="isInvitationLabelSelected(label.id)"
+                              (click)="addConditionToGroup(gi, label.id)">
+                        <strong>{{ label.name }}</strong>
+                        @if (label.category) { <small>{{ label.category }}</small> }
+                        <span class="condition-picker-count">{{ label.userCount }}</span>
+                      </button>
+                      } @empty {
+                      <p class="user-picker-empty">{{ 'elections.noMatchingLabels' | translate }}</p>
+                      }
+                    </div>
                   </div>
+                  }
                 </div>
                 }
               </div>
             </div>
+            }
+            @if (!isLocked()) {
+            <button type="button" class="btn-add-group" (click)="addGroup()">
+              + {{ 'elections.addGroup' | translate }}
+            </button>
+            }
+          </div>
+
+          @if (excludedGroupUserIds().size > 0) {
+          <div class="excluded-users-banner">
+            <div class="excluded-users-header">
+              <button type="button" class="btn-toggle-excluded" (click)="toggleExcludedUsersDrawer()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                     [class.rotated]="showExcludedUsersDrawer()">
+                  <polyline points="6 9 12 15 18 9"></polyline>
+                </svg>
+                <strong>{{ 'elections.excludedUsersHeader' | translate }}</strong>
+                <span class="excluded-count-tag">
+                  {{ 'elections.excludedUsersCount' | translate: { count: excludedGroupUserIds().size } }}
+                </span>
+              </button>
+              @if (!isLocked()) {
+              <button type="button" class="btn-restore-all" (click)="restoreAllExclusions()">
+                ↺ {{ 'elections.restoreAllExclusions' | translate }}
+              </button>
+              }
+            </div>
+            @if (showExcludedUsersDrawer()) {
+            <div class="excluded-users-list">
+              @for (user of visibleExcludedUserChips(); track user.id) {
+              <span class="excluded-user-chip">
+                <span class="user-avatar">{{ user.email.charAt(0).toUpperCase() }}</span>
+                <span class="user-email">{{ user.email }}</span>
+                @if (!isLocked()) {
+                <button type="button" class="btn-restore-user" (click)="restoreExcludedUser(user.id)"
+                        [attr.aria-label]="('elections.restoreUser' | translate) + ': ' + user.email">
+                  ↺ {{ 'elections.restoreUser' | translate }}
+                </button>
+                }
+              </span>
+              }
+              @if (hiddenExcludedChipCount() > 0 || showAllExcludedChips()) {
+              <button type="button" class="chips-toggle" (click)="toggleShowAllExcludedChips()">
+                @if (showAllExcludedChips()) {
+                {{ 'elections.showLessChips' | translate }}
+                } @else {
+                +{{ hiddenExcludedChipCount() }} {{ 'elections.moreChips' | translate }}
+                }
+              </button>
+              }
+            </div>
+            }
           </div>
           }
-          <button type="button" class="btn-add-group" (click)="addGroup()">
-            + {{ 'elections.addGroup' | translate }}
-          </button>
+          }
         </div>
 
-        @if (excludedGroupUserIds().size > 0) {
-        <div class="excluded-users-banner">
-          <div class="excluded-users-header">
-            <button type="button" class="btn-toggle-excluded" (click)="toggleExcludedUsersDrawer()">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                [class.rotated]="showExcludedUsersDrawer()">
+        <div class="field-group">
+          <label for="invitedUserIds">{{ 'elections.manualInviteLabel' | translate }}</label>
+          @if (invitationCandidatesLoading()) {
+          <div class="inline-state">
+            <span class="spinner"></span>
+            {{ 'elections.loadingInviteLabels' | translate }}
+          </div>
+          } @else if (invitationCandidatesErrorKey()) {
+          <div class="candidate-load-error">
+            <p class="error-text">{{ invitationCandidatesErrorKey() | translate }}</p>
+            <button type="button" class="btn-secondary" (click)="retryInvitationCandidates()">
+              {{ 'elections.tryAgain' | translate }}
+            </button>
+          </div>
+          } @else if (invitationCandidates().length === 0) {
+          <p class="field-help">{{ 'elections.noRegisteredUsers' | translate }}</p>
+          } @else {
+          <div class="user-picker" #candidateParserRef>
+            <button id="invitedUserIds" type="button" class="user-picker-trigger"
+                    (click)="toggleCandidatePicker()"
+                    [disabled]="isLocked()"
+                    [style.cursor]="isLocked() ? 'default' : 'pointer'"
+                    [attr.aria-expanded]="candidatePickerOpen()" aria-controls="invitation-candidate-panel">
+              <span>
+                @if (selectedInvitationCandidates().length === 0) {
+                {{ 'elections.chooseRegisteredUsers' | translate }}
+                } @else {
+                {{ 'elections.selectedUsersCount' | translate: { count: selectedInvitationCandidates().length } }}
+                }
+              </span>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                   [class.rotated]="candidatePickerOpen()" aria-hidden="true">
                 <polyline points="6 9 12 15 18 9"></polyline>
               </svg>
-              <strong>{{ 'elections.excludedUsersHeader' | translate }}</strong>
-              <span class="excluded-count-tag">
-                {{ 'elections.excludedUsersCount' | translate: { count: excludedGroupUserIds().size } }}
-              </span>
             </button>
-            <button type="button" class="btn-restore-all" (click)="restoreAllExclusions()">
-              ↺ {{ 'elections.restoreAllExclusions' | translate }}
-            </button>
+
+            @if (candidatePickerOpen() && !isLocked()) {
+            <div id="invitation-candidate-panel" class="user-picker-panel">
+              <div class="user-picker-search">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                     aria-hidden="true">
+                  <circle cx="11" cy="11" r="8"></circle>
+                  <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+                <input type="search" [formControl]="candidateSearchControl"
+                       [placeholder]="'elections.searchRegisteredUsers' | translate" autocomplete="off" />
+              </div>
+
+              <div class="user-picker-list">
+                @for (candidate of filteredInvitationCandidates(); track candidate.id) {
+                <div class="user-picker-item"
+                     [class.user-picker-item--selected]="isInvitationCandidateSelected(candidate.id)"
+                     [class.user-picker-item--from-label]="isCandidateFromGroup(candidate.id)"
+                     (click)="toggleInvitationCandidate(candidate.id)">
+                  <span class="user-avatar">{{ candidate.email.charAt(0).toUpperCase() }}</span>
+                  <span class="user-email">{{ candidate.email }}</span>
+
+                  @if (candidateLabels(candidate.id); as cl) {
+                  <div class="user-item-labels"
+                       [class.has-overflow]="cl.hiddenCount > 0"
+                       [class.is-expanded]="isCandidateLabelsExpanded(candidate.id)"
+                       (mousedown)="$event.stopPropagation()"
+                       (click)="onUserItemLabelsClick(candidate.id, cl.hiddenCount > 0, $event)">
+                    <div class="user-item-labels-default">
+                      @for (lbl of cl.visible; track lbl.id) {
+                      <span class="user-item-label-chip">{{ lbl.name }}</span>
+                      }
+                      @if (cl.hiddenCount > 0) {
+                      <span class="user-item-label-more">+{{ cl.hiddenCount }}</span>
+                      }
+                    </div>
+                    @if (cl.hiddenCount > 0) {
+                    <div class="user-item-labels-expanded">
+                      @for (lbl of cl.all; track lbl.id) {
+                      <span class="user-item-label-chip">{{ lbl.name }}</span>
+                      }
+                    </div>
+                    }
+                  </div>
+                  }
+
+                  <input type="checkbox" [checked]="isInvitationCandidateSelected(candidate.id)"
+                         (click)="$event.stopPropagation()"
+                         (change)="toggleInvitationCandidate(candidate.id, $any($event.target).checked)" />
+                </div>
+                } @empty {
+                <p class="user-picker-empty">{{ 'elections.noMatchingUsers' | translate }}</p>
+                }
+              </div>
+
+              <div class="user-picker-footer">
+                <span>{{ 'elections.selectedUsersCount' | translate: { count: selectedInvitationCandidates().length } }}</span>
+                <div class="user-picker-footer-actions">
+                  <button type="button" class="user-picker-select-all" (click)="toggleAllInvitationCandidates()">
+                    {{ (allInvitationCandidatesSelected() ? 'elections.clearSelection' : 'elections.selectAllUsers') | translate }}
+                  </button>
+                  <button type="button" class="user-picker-confirm" (click)="toggleCandidatePicker()">
+                    {{ 'elections.selectUsers' | translate }}
+                  </button>
+                </div>
+              </div>
+            </div>
+            }
           </div>
-          @if (showExcludedUsersDrawer()) {
-          <div class="excluded-users-list">
-            @for (user of visibleExcludedUserChips(); track user.id) {
-            <span class="excluded-user-chip">
-              <span class="user-avatar">{{ user.email.charAt(0).toUpperCase() }}</span>
-              <span class="user-email">{{ user.email }}</span>
-              <button type="button" class="btn-restore-user" (click)="restoreExcludedUser(user.id)"
-                [attr.aria-label]="('elections.restoreUser' | translate) + ': ' + user.email">
-                ↺ {{ 'elections.restoreUser' | translate }}
+
+          @if (selectedInvitationCandidates().length > 0) {
+          <div class="selected-user-chips" [attr.aria-label]="'elections.invitedUsersLabel' | translate">
+            @for (candidate of visibleCandidateChips(); track candidate.id) {
+            <span class="selected-user-chip" [class.selected-user-chip--from-label]="isCandidateFromGroup(candidate.id)">
+              <span class="user-avatar">{{ candidate.email.charAt(0).toUpperCase() }}</span>
+              <span>{{ candidate.email }}</span>
+              @if (!isLocked()) {
+              <button type="button"
+                      (click)="removeInvitationCandidate(candidate.id)"
+                      [attr.aria-label]="('elections.removeInvitation' | translate) + ': ' + candidate.email">
+                &#215;
               </button>
+              }
             </span>
             }
-            @if (hiddenExcludedChipCount() > 0 || showAllExcludedChips()) {
-            <button type="button" class="chips-toggle" (click)="toggleShowAllExcludedChips()">
-              @if (showAllExcludedChips()) {
+            @if (hiddenCandidateChipCount() > 0 || showAllCandidateChips()) {
+            <button type="button" class="chips-toggle" (click)="toggleShowAllCandidateChips()">
+              @if (showAllCandidateChips()) {
               {{ 'elections.showLessChips' | translate }}
               } @else {
-              +{{ hiddenExcludedChipCount() }} {{ 'elections.moreChips' | translate }}
+              +{{ hiddenCandidateChipCount() }} {{ 'elections.moreChips' | translate }}
               }
             </button>
             }
           </div>
           }
-        </div>
-        }
-        }
-      </div>
-
-      <div class="field-group">
-        <label for="invitedUserIds">{{ 'elections.manualInviteLabel' | translate }}</label>
-        @if (invitationCandidatesLoading()) {
-        <div class="inline-state">
-          <span class="spinner"></span>
-          {{ 'elections.loadingInviteCandidates' | translate }}
-        </div>
-        } @else if (invitationCandidatesErrorKey()) {
-        <div class="candidate-load-error">
-          <p class="error-text">{{ invitationCandidatesErrorKey() | translate }}</p>
-          <button type="button" class="btn-secondary" (click)="retryInvitationCandidates()">
-            {{ 'elections.tryAgain' | translate }}
-          </button>
-        </div>
-        } @else if (invitationCandidates().length === 0) {
-        <p class="field-help">{{ 'elections.noRegisteredUsers' | translate }}</p>
-        } @else {
-        <div class="user-picker" #candidatePickerRef>
-          <button id="invitedUserIds" type="button" class="user-picker-trigger" (click)="toggleCandidatePicker()"
-            [attr.aria-expanded]="candidatePickerOpen()" aria-controls="invitation-candidate-panel">
-            <span>
-              @if (selectedInvitationCandidates().length === 0) {
-              {{ 'elections.chooseRegisteredUsers' | translate }}
-              } @else {
-              {{ 'elections.selectedUsersCount' | translate: { count: selectedInvitationCandidates().length } }}
-              }
-            </span>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-              [class.rotated]="candidatePickerOpen()" aria-hidden="true">
-              <polyline points="6 9 12 15 18 9"></polyline>
-            </svg>
-          </button>
-
-          @if (candidatePickerOpen()) {
-          <div id="invitation-candidate-panel" class="user-picker-panel">
-            <div class="user-picker-search">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                aria-hidden="true">
-                <circle cx="11" cy="11" r="8"></circle>
-                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-              </svg>
-              <input type="search" [formControl]="candidateSearchControl"
-                [placeholder]="'elections.searchRegisteredUsers' | translate" autocomplete="off" />
-            </div>
-
-            <div class="user-picker-list">
-              @for (candidate of filteredInvitationCandidates(); track candidate.id) {
-              <div class="user-picker-item"
-                [class.user-picker-item--selected]="isInvitationCandidateSelected(candidate.id)"
-                [class.user-picker-item--from-label]="isCandidateFromGroup(candidate.id)"
-                (click)="toggleInvitationCandidate(candidate.id)">
-                <span class="user-avatar">{{ candidate.email.charAt(0).toUpperCase() }}</span>
-                <span class="user-email">{{ candidate.email }}</span>
-                
-                @if (candidateLabels(candidate.id); as cl) {
-                <div class="user-item-labels"
-                  [class.has-overflow]="cl.hiddenCount > 0"
-                  [class.is-expanded]="isCandidateLabelsExpanded(candidate.id)"
-                  (mousedown)="$event.stopPropagation()"
-                  (click)="onUserItemLabelsClick(candidate.id, cl.hiddenCount > 0, $event)">
-                  <div class="user-item-labels-default">
-                    @for (lbl of cl.visible; track lbl.id) {
-                    <span class="user-item-label-chip">{{ lbl.name }}</span>
-                    }
-                    @if (cl.hiddenCount > 0) {
-                    <span class="user-item-label-more">+{{ cl.hiddenCount }}</span>
-                    }
-                  </div>
-                  @if (cl.hiddenCount > 0) {
-                  <div class="user-item-labels-expanded">
-                    @for (lbl of cl.all; track lbl.id) {
-                    <span class="user-item-label-chip">{{ lbl.name }}</span>
-                    }
-                  </div>
-                  }
-                </div>
-                }
-
-                <input type="checkbox" [checked]="isInvitationCandidateSelected(candidate.id)"
-                  (click)="$event.stopPropagation()"
-                  (change)="toggleInvitationCandidate(candidate.id, $any($event.target).checked)" />
-              </div>
-              } @empty {
-              <p class="user-picker-empty">{{ 'elections.noMatchingUsers' | translate }}</p>
-              }
-            </div>
-
-            <div class="user-picker-footer">
-              <span>{{ 'elections.selectedUsersCount' | translate: { count: selectedInvitationCandidates().length }
-                }}</span>
-              <div class="user-picker-footer-actions">
-                <button type="button" class="user-picker-select-all" (click)="toggleAllInvitationCandidates()">
-                  {{ (allInvitationCandidatesSelected() ? 'elections.clearSelection' : 'elections.selectAllUsers') |
-                  translate }}
-                </button>
-                <button type="button" class="user-picker-confirm" (click)="toggleCandidatePicker()">
-                  {{ 'elections.selectUsers' | translate }}
-                </button>
-              </div>
-            </div>
-          </div>
           }
         </div>
 
-        @if (selectedInvitationCandidates().length > 0) {
-        <div class="selected-user-chips" [attr.aria-label]="'elections.invitedUsersLabel' | translate">
-          @for (candidate of visibleCandidateChips(); track candidate.id) {
-          <span class="selected-user-chip" [class.selected-user-chip--from-label]="isCandidateFromGroup(candidate.id)">
-            <span class="user-avatar">{{ candidate.email.charAt(0).toUpperCase() }}</span>
-            <span>{{ candidate.email }}</span>
-            <button type="button"
-              (click)="removeInvitationCandidate(candidate.id)"
-              [attr.aria-label]="('elections.removeInvitation' | translate) + ': ' + candidate.email">×</button>
-          </span>
-          }
-          @if (hiddenCandidateChipCount() > 0 || showAllCandidateChips()) {
-          <button type="button" class="chips-toggle" (click)="toggleShowAllCandidateChips()">
-            @if (showAllCandidateChips()) {
-            {{ 'elections.showLessChips' | translate }}
-            } @else {
-            +{{ hiddenCandidateChipCount() }} {{ 'elections.moreChips' | translate }}
+        <div class="field-group">
+          <label for="inviteEmailEdit">{{ 'elections.emailInviteLabel' | translate }}</label>
+          <p class="field-help">{{ 'elections.emailInviteHelp' | translate }}</p>
+          <div class="email-invite-row">
+            <input id="inviteEmailEdit" type="email" [formControl]="inviteEmailControl"
+                   [placeholder]="'elections.emailInvitePlaceholder' | translate"
+                   [attr.readonly]="isLocked() ? true : null"
+                   (keydown.enter)="$event.preventDefault(); addInviteEmail()" />
+            @if (!isLocked()) {
+            <button type="button" class="btn-add-email" (click)="addInviteEmail()"
+                    [disabled]="inviteEmailControl.invalid || !inviteEmailControl.value?.trim()">
+              {{ 'elections.addEmail' | translate }}
+            </button>
             }
-          </button>
-          }
-        </div>
-        }
-        }
-      </div>
-
-      <div class="field-group">
-        <label for="inviteEmailEdit">{{ 'elections.emailInviteLabel' | translate }}</label>
-        <p class="field-help">{{ 'elections.emailInviteHelp' | translate }}</p>
-        <div class="email-invite-row">
-          <input id="inviteEmailEdit" type="email" [formControl]="inviteEmailControl"
-            [placeholder]="'elections.emailInvitePlaceholder' | translate"
-            (keydown.enter)="$event.preventDefault(); addInviteEmail()" />
-          <button type="button" class="btn-add-email" (click)="addInviteEmail()"
-            [disabled]="inviteEmailControl.invalid || !inviteEmailControl.value?.trim()">
-            {{ 'elections.addEmail' | translate }}
-          </button>
-        </div>
-        @if (inviteEmailControl.touched && inviteEmailControl.invalid) {
-        <p class="error-text">{{ 'elections.emailInviteInvalid' | translate }}</p>
-        }
-
-        @if (invitedEmails().length > 0) {
-        <div class="email-chips" [attr.aria-label]="'elections.invitedEmailsLabel' | translate">
-          @for (email of invitedEmails(); track email) {
-          <span class="email-chip">
-            {{ email }}
-            <button type="button" (click)="removeInviteEmail(email)"
-              [attr.aria-label]="('elections.removeInvitation' | translate) + ': ' + email">×</button>
-          </span>
-          }
-        </div>
-        }
-      </div>
-    </div>
-    } @else if (isClosedElection) {
-    <!-- CREATE MODE for a closed election: full invitation panel including email invites -->
-    <div class="invitation-panel">
-      <div class="invitation-heading">
-        <div class="invitation-heading-row">
-          <h3>{{ 'elections.invitationsTitle' | translate }}</h3>
-          @if (totalUniqueInvitees() > 0) {
-          <span class="invitees-counter">
-            {{ 'elections.totalInviteesCount' | translate: { count: totalUniqueInvitees() } }}
-          </span>
-          }
-        </div>
-        <p>{{ 'elections.invitationsHelp' | translate }}</p>
-      </div>
-
-      <div class="field-group">
-        <div class="field-group-header">
-          <label>{{ 'elections.labelInviteLabel' | translate }}</label>
-          <button type="button" class="info-guide-trigger" (click)="toggleInfoPopover()"
-            [attr.title]="'elections.infoGuideButtonTitle' | translate"
-            [attr.aria-expanded]="showInfoPopover()">
-            <span class="info-icon">i</span>
-          </button>
-          @if (showInfoPopover()) {
-          <div class="info-popover-card">
-            <div class="info-popover-header">
-              <strong>{{ 'elections.infoGuideTitle' | translate }}</strong>
-              <button type="button" class="info-popover-close" (click)="toggleInfoPopover()">&#215;</button>
-            </div>
-            <ul class="info-popover-list">
-              <li>{{ 'elections.infoGuideAnd' | translate }}</li>
-              <li>{{ 'elections.infoGuideOr' | translate }}</li>
-              <li>{{ 'elections.infoGuideNot' | translate }}</li>
-              <li>{{ 'elections.infoGuideIndividual' | translate }}</li>
-            </ul>
           </div>
+          @if (inviteEmailControl.touched && inviteEmailControl.invalid) {
+          <p class="error-text">{{ 'elections.emailInviteInvalid' | translate }}</p>
           }
-        </div>
-        <p class="field-help">{{ 'elections.labelInviteHelp' | translate }}</p>
-        @if (invitationLabelsLoading()) {
-        <div class="inline-state">
-          <span class="spinner"></span>
-          {{ 'elections.loadingInviteLabels' | translate }}
-        </div>
-        } @else if (invitationLabelsErrorKey()) {
-        <div class="candidate-load-error">
-          <p class="error-text">{{ invitationLabelsErrorKey() | translate }}</p>
-          <button type="button" class="btn-secondary" (click)="retryInvitationLabels()">
-            {{ 'elections.tryAgain' | translate }}
-          </button>
-        </div>
-        } @else {
-        @if (audienceSummaryText()) {
-        <div class="audience-summary-card">
-          <div class="audience-summary-header">
-            <span class="summary-badge">{{ 'elections.audienceSummaryLabel' | translate }}</span>
-            @if (excludedGroupUserIds().size > 0) {
-            <span class="summary-exclusions-badge">
-              {{ 'elections.audienceSummaryExclusionsNote' | translate: { count: excludedGroupUserIds().size } }}
+
+          @if (invitedEmails().length > 0) {
+          <div class="email-chips" [attr.aria-label]="'elections.invitedEmailsLabel' | translate">
+            @for (email of invitedEmails(); track email) {
+            <span class="email-chip">
+              {{ email }}
+              @if (!isLocked()) {
+              <button type="button" (click)="removeInviteEmail(email)"
+                      [attr.aria-label]="('elections.removeInvitation' | translate) + ': ' + email">
+                &#215;
+              </button>
+              }
             </span>
             }
           </div>
-          <p class="summary-formula">{{ audienceSummaryText() }}</p>
-        </div>
-        }
-        <!-- Audience group builder -->
-        <div class="audience-groups">
-          @for (group of audienceGroupsArray.controls; track $index; let gi = $index) {
-          @if (gi > 0) {
-          <div class="audience-or-divider"><span>{{ 'elections.orLabel' | translate }}</span></div>
           }
-          <div class="audience-group-card">
-            <div class="audience-group-header">
-              <span class="group-title">{{ 'elections.groupTitle' | translate: { number: gi + 1 } }}</span>
-              @if (groupCoverage(gi); as cov) {
-              @if (cov.total > 0) {
-              <span class="group-coverage-badge" [class.group-coverage-badge--reduced]="cov.effective < cov.total">
-                @if (cov.effective < cov.total) {
-                {{ 'elections.groupUsersIncluded' | translate: { effective: cov.effective, total: cov.total } }}
-                } @else {
-                {{ 'elections.groupUsersCovered' | translate: { count: cov.total } }}
-                }
-              </span>
-              } @else if (groupConditions(gi).length > 0) {
-              <span class="group-coverage-badge group-coverage-badge--zero">
-                {{ 'elections.groupZeroMatch' | translate }}
-              </span>
-              }
-              }
-              <button type="button" class="btn-remove-group" (click)="removeGroup(gi)"
-                [attr.aria-label]="'elections.removeGroup' | translate">&#215;</button>
+        </div>
+      </div>
+      } @else if (isClosedElection && !isLocked()) {
+      <div class="invitation-panel">
+        <div class="invitation-heading">
+          <div class="invitation-heading-row">
+            <h3>{{ 'elections.invitationsTitle' | translate }}</h3>
+            @if (totalUniqueInvitees() > 0) {
+            <span class="invitees-counter">
+              {{ 'elections.totalInviteesCount' | translate: { count: totalUniqueInvitees() } }}
+            </span>
+            }
+          </div>
+          <p>{{ 'elections.invitationsHelp' | translate }}</p>
+        </div>
+
+        <div class="field-group">
+          <div class="field-group-header">
+            <label>{{ 'elections.labelInviteLabel' | translate }}</label>
+            <button type="button" class="info-guide-trigger" (click)="toggleInfoPopover()"
+                    [attr.title]="'elections.infoGuideButtonTitle' | translate"
+                    [attr.aria-expanded]="showInfoPopover()">
+              <span class="info-icon">i</span>
+            </button>
+            @if (showInfoPopover()) {
+            <div class="info-popover-card">
+              <div class="info-popover-header">
+                <strong>{{ 'elections.infoGuideTitle' | translate }}</strong>
+                <button type="button" class="info-popover-close" (click)="toggleInfoPopover()">&#215;</button>
+              </div>
+              <ul class="info-popover-list">
+                <li>{{ 'elections.infoGuideAnd' | translate }}</li>
+                <li>{{ 'elections.infoGuideOr' | translate }}</li>
+                <li>{{ 'elections.infoGuideNot' | translate }}</li>
+                <li>{{ 'elections.infoGuideIndividual' | translate }}</li>
+              </ul>
             </div>
-            <div class="audience-group-conditions">
-              @for (cond of groupConditions(gi).controls; track $index; let ci = $index) {
-              @if (ci > 0) { <span class="condition-and-sep">{{ 'elections.andLabel' | translate }}</span> }
-              <span class="condition-chip"
-                [class.condition-chip--positive]="!cond.get('isExcluded')?.value"
-                [class.condition-chip--excluded]="cond.get('isExcluded')?.value">
-                <span class="condition-chip__label">
-                  @if (cond.get('isExcluded')?.value) {
-                  <span class="condition-not-badge">- {{ 'elections.mustNotHaveBadge' | translate }}</span>
+            }
+          </div>
+          <p class="field-help">{{ 'elections.labelInviteHelp' | translate }}</p>
+          @if (invitationLabelsLoading()) {
+          <div class="inline-state">
+            <span class="spinner"></span>
+            {{ 'elections.loadingInviteLabels' | translate }}
+          </div>
+          } @else if (invitationLabelsErrorKey()) {
+          <div class="candidate-load-error">
+            <p class="error-text">{{ invitationLabelsErrorKey() | translate }}</p>
+            <button type="button" class="btn-secondary" (click)="retryInvitationLabels()">
+              {{ 'elections.tryAgain' | translate }}
+            </button>
+          </div>
+          } @else {
+          @if (audienceSummaryText()) {
+          <div class="audience-summary-card">
+            <div class="audience-summary-header">
+              <span class="summary-badge">{{ 'elections.audienceSummaryLabel' | translate }}</span>
+              @if (excludedGroupUserIds().size > 0) {
+              <span class="summary-exclusions-badge">
+                {{ 'elections.audienceSummaryExclusionsNote' | translate: { count: excludedGroupUserIds().size } }}
+              </span>
+              }
+            </div>
+            <p class="summary-formula">{{ audienceSummaryText() }}</p>
+          </div>
+          }
+          <!-- Audience group builder -->
+          <div class="audience-groups">
+            @for (group of audienceGroupsArray.controls; track $index; let gi = $index) {
+            @if (gi > 0) {
+            <div class="audience-or-divider"><span>{{ 'elections.orLabel' | translate }}</span></div>
+            }
+            <div class="audience-group-card">
+              <div class="audience-group-header">
+                <span class="group-title">{{ 'elections.groupTitle' | translate: { number: gi + 1 } }}</span>
+                @if (groupCoverage(gi); as cov) {
+                @if (cov.total > 0) {
+                <span class="group-coverage-badge" [class.group-coverage-badge--reduced]="cov.effective < cov.total">
+                  @if (cov.effective < cov.total) {
+                  {{ 'elections.groupUsersIncluded' | translate: { effective: cov.effective, total: cov.total } }}
                   } @else {
-                  <span class="condition-must-badge">+ {{ 'elections.mustHaveBadge' | translate }}</span>
+                  {{ 'elections.groupUsersCovered' | translate: { count: cov.total } }}
                   }
-                  {{ labelById(cond.get('labelId')?.value)?.name ?? cond.get('labelId')?.value }}
                 </span>
-                <button type="button" class="condition-chip__toggle"
-                  (click)="toggleConditionExclusion(gi, ci)"
-                  [attr.title]="(cond.get('isExcluded')?.value ? 'elections.conditionToggleInclude' : 'elections.conditionToggleExclude') | translate">
-                  {{ cond.get('isExcluded')?.value ? '&#10003;' : '&#8856;' }}
-                </button>
-                <button type="button" class="condition-chip__remove"
-                  (click)="removeCondition(gi, ci)"
-                  [attr.aria-label]="'elections.removeCondition' | translate">&#215;</button>
-              </span>
-              }
-              <!-- Add condition button + picker -->
-              <div class="condition-add-wrapper">
-                <button type="button" class="btn-add-condition"
-                  (click)="openConditionPickerFor(gi, -1)">
-                  + {{ 'elections.addCondition' | translate }}
-                </button>
-                @if (isConditionPickerOpen(gi, -1)) {
-                <div class="condition-picker-panel">
-                  <input type="search" [formControl]="conditionSearchControl"
-                    [placeholder]="'elections.searchInvitationLabels' | translate" autocomplete="off" />
-                  <div class="condition-picker-list">
-                    @for (label of filteredConditionLabels(); track label.id) {
-                    <button type="button" class="condition-picker-item"
-                      [class.condition-picker-item--selected]="isInvitationLabelSelected(label.id)"
-                      (click)="addConditionToGroup(gi, label.id)">
-                      <strong>{{ label.name }}</strong>
-                      @if (label.category) { <small>{{ label.category }}</small> }
-                      <span class="condition-picker-count">{{ label.userCount }}</span>
-                    </button>
-                    } @empty {
-                    <p class="user-picker-empty">{{ 'elections.noMatchingLabels' | translate }}</p>
-                    }
-                  </div>
-                </div>
+                } @else if (groupConditions(gi).length > 0) {
+                <span class="group-coverage-badge group-coverage-badge--zero">
+                  {{ 'elections.groupZeroMatch' | translate }}
+                </span>
                 }
+                }
+                <button type="button" class="btn-remove-group" (click)="removeGroup(gi)"
+                        [attr.aria-label]="'elections.removeGroup' | translate">
+                  &#215;
+                </button>
+              </div>
+              <div class="audience-group-conditions">
+                @for (cond of groupConditions(gi).controls; track $index; let ci = $index) {
+                @if (ci > 0) { <span class="condition-and-sep">{{ 'elections.andLabel' | translate }}</span> }
+                <span class="condition-chip"
+                      [class.condition-chip--positive]="!cond.get('isExcluded')?.value"
+                      [class.condition-chip--excluded]="cond.get('isExcluded')?.value">
+                  <span class="condition-chip__label">
+                    @if (cond.get('isExcluded')?.value) {
+                    <span class="condition-not-badge">- {{ 'elections.mustNotHaveBadge' | translate }}</span>
+                    } @else {
+                    <span class="condition-must-badge">+ {{ 'elections.mustHaveBadge' | translate }}</span>
+                    }
+                    {{ labelById(cond.get('labelId')?.value)?.name ?? cond.get('labelId')?.value }}
+                  </span>
+                  <button type="button" class="condition-chip__toggle"
+                          (click)="toggleConditionExclusion(gi, ci)"
+                          [attr.title]="(cond.get('isExcluded')?.value ? 'elections.conditionToggleInclude' : 'elections.conditionToggleExclude') | translate">
+                    {{ cond.get('isExcluded')?.value ? '&#10003;' : '&#8856;' }}
+                  </button>
+                  <button type="button" class="condition-chip__remove"
+                          (click)="removeCondition(gi, ci)"
+                          [attr.aria-label]="'elections.removeCondition' | translate">
+                    &#215;
+                  </button>
+                </span>
+                }
+                <!-- Add condition button + picker -->
+                <div class="condition-add-wrapper">
+                  <button type="button" class="btn-add-condition"
+                          (click)="openConditionPickerFor(gi, -1)">
+                    + {{ 'elections.addCondition' | translate }}
+                  </button>
+                  @if (isConditionPickerOpen(gi, -1)) {
+                  <div class="condition-picker-panel">
+                    <input type="search" [formControl]="conditionSearchControl"
+                           [placeholder]="'elections.searchInvitationLabels' | translate" autocomplete="off" />
+                    <div class="condition-picker-list">
+                      @for (label of filteredConditionLabels(); track label.id) {
+                      <button type="button" class="condition-picker-item"
+                              [class.condition-picker-item--selected]="isInvitationLabelSelected(label.id)"
+                              (click)="addConditionToGroup(gi, label.id)">
+                        <strong>{{ label.name }}</strong>
+                        @if (label.category) { <small>{{ label.category }}</small> }
+                        <span class="condition-picker-count">{{ label.userCount }}</span>
+                      </button>
+                      } @empty {
+                      <p class="user-picker-empty">{{ 'elections.noMatchingLabels' | translate }}</p>
+                      }
+                    </div>
+                  </div>
+                  }
+                </div>
               </div>
             </div>
+            }
+            <button type="button" class="btn-add-group" (click)="addGroup()">
+              + {{ 'elections.addGroup' | translate }}
+            </button>
+          </div>
+
+          @if (excludedGroupUserIds().size > 0) {
+          <div class="excluded-users-banner">
+            <div class="excluded-users-header">
+              <button type="button" class="btn-toggle-excluded" (click)="toggleExcludedUsersDrawer()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                     [class.rotated]="showExcludedUsersDrawer()">
+                  <polyline points="6 9 12 15 18 9"></polyline>
+                </svg>
+                <strong>{{ 'elections.excludedUsersHeader' | translate }}</strong>
+                <span class="excluded-count-tag">
+                  {{ 'elections.excludedUsersCount' | translate: { count: excludedGroupUserIds().size } }}
+                </span>
+              </button>
+              <button type="button" class="btn-restore-all" (click)="restoreAllExclusions()">
+                ↺ {{ 'elections.restoreAllExclusions' | translate }}
+              </button>
+            </div>
+            @if (showExcludedUsersDrawer()) {
+            <div class="excluded-users-list">
+              @for (user of visibleExcludedUserChips(); track user.id) {
+              <span class="excluded-user-chip">
+                <span class="user-avatar">{{ user.email.charAt(0).toUpperCase() }}</span>
+                <span class="user-email">{{ user.email }}</span>
+                <button type="button" class="btn-restore-user" (click)="restoreExcludedUser(user.id)"
+                        [attr.aria-label]="('elections.restoreUser' | translate) + ': ' + user.email">
+                  ↺ {{ 'elections.restoreUser' | translate }}
+                </button>
+              </span>
+              }
+              @if (hiddenExcludedChipCount() > 0 || showAllExcludedChips()) {
+              <button type="button" class="chips-toggle" (click)="toggleShowAllExcludedChips()">
+                @if (showAllExcludedChips()) {
+                {{ 'elections.showLessChips' | translate }}
+                } @else {
+                +{{ hiddenExcludedChipCount() }} {{ 'elections.moreChips' | translate }}
+                }
+              </button>
+              }
+            </div>
+            }
           </div>
           }
-          <button type="button" class="btn-add-group" (click)="addGroup()">
-            + {{ 'elections.addGroup' | translate }}
-          </button>
+          }
         </div>
 
-        @if (excludedGroupUserIds().size > 0) {
-        <div class="excluded-users-banner">
-          <div class="excluded-users-header">
-            <button type="button" class="btn-toggle-excluded" (click)="toggleExcludedUsersDrawer()">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                [class.rotated]="showExcludedUsersDrawer()">
+        <div class="field-group">
+          <label for="invitedUserIds">{{ 'elections.manualInviteLabel' | translate }}</label>
+          @if (invitationCandidatesLoading()) {
+          <div class="inline-state">
+            <span class="spinner"></span>
+            {{ 'elections.loadingInviteCandidates' | translate }}
+          </div>
+          } @else if (invitationCandidatesErrorKey()) {
+          <div class="candidate-load-error">
+            <p class="error-text">{{ invitationCandidatesErrorKey() | translate }}</p>
+            <button type="button" class="btn-secondary" (click)="retryInvitationCandidates()">
+              {{ 'elections.tryAgain' | translate }}
+            </button>
+          </div>
+          } @else if (invitationCandidates().length === 0) {
+          <p class="field-help">{{ 'elections.noRegisteredUsers' | translate }}</p>
+          } @else {
+          <div class="user-picker" #candidatePickerRef [style.pointer-events]="isLocked() ? 'none' : 'auto'" [style.cursor]="isLocked() ? 'default' : 'pointer'">
+            <button id="invitedUserIds" type="button" class="user-picker-trigger" (click)="toggleCandidatePicker()"
+                    [attr.aria-expanded]="candidatePickerOpen()" aria-controls="invitation-candidate-panel">
+              <span>
+                @if (selectedInvitationCandidates().length === 0) {
+                {{ 'elections.chooseRegisteredUsers' | translate }}
+                } @else {
+                {{ 'elections.selectedUsersCount' | translate: { count: selectedInvitationCandidates().length } }}
+                }
+              </span>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                   [class.rotated]="candidatePickerOpen()" aria-hidden="true">
                 <polyline points="6 9 12 15 18 9"></polyline>
               </svg>
-              <strong>{{ 'elections.excludedUsersHeader' | translate }}</strong>
-              <span class="excluded-count-tag">
-                {{ 'elections.excludedUsersCount' | translate: { count: excludedGroupUserIds().size } }}
-              </span>
             </button>
-            <button type="button" class="btn-restore-all" (click)="restoreAllExclusions()">
-              ↺ {{ 'elections.restoreAllExclusions' | translate }}
-            </button>
-          </div>
-          @if (showExcludedUsersDrawer()) {
-          <div class="excluded-users-list">
-            @for (user of visibleExcludedUserChips(); track user.id) {
-            <span class="excluded-user-chip">
-              <span class="user-avatar">{{ user.email.charAt(0).toUpperCase() }}</span>
-              <span class="user-email">{{ user.email }}</span>
-              <button type="button" class="btn-restore-user" (click)="restoreExcludedUser(user.id)"
-                [attr.aria-label]="('elections.restoreUser' | translate) + ': ' + user.email">
-                ↺ {{ 'elections.restoreUser' | translate }}
-              </button>
-            </span>
-            }
-            @if (hiddenExcludedChipCount() > 0 || showAllExcludedChips()) {
-            <button type="button" class="chips-toggle" (click)="toggleShowAllExcludedChips()">
-              @if (showAllExcludedChips()) {
-              {{ 'elections.showLessChips' | translate }}
-              } @else {
-              +{{ hiddenExcludedChipCount() }} {{ 'elections.moreChips' | translate }}
-              }
-            </button>
-            }
-          </div>
-          }
-        </div>
-        }
-        }
-      </div>
 
-      <div class="field-group">
-        <label for="invitedUserIds">{{ 'elections.manualInviteLabel' | translate }}</label>
-        @if (invitationCandidatesLoading()) {
-        <div class="inline-state">
-          <span class="spinner"></span>
-          {{ 'elections.loadingInviteCandidates' | translate }}
-        </div>
-        } @else if (invitationCandidatesErrorKey()) {
-        <div class="candidate-load-error">
-          <p class="error-text">{{ invitationCandidatesErrorKey() | translate }}</p>
-          <button type="button" class="btn-secondary" (click)="retryInvitationCandidates()">
-            {{ 'elections.tryAgain' | translate }}
-          </button>
-        </div>
-        } @else if (invitationCandidates().length === 0) {
-        <p class="field-help">{{ 'elections.noRegisteredUsers' | translate }}</p>
-        } @else {
-        <div class="user-picker" #candidatePickerRef>
-          <button id="invitedUserIds" type="button" class="user-picker-trigger" (click)="toggleCandidatePicker()"
-            [attr.aria-expanded]="candidatePickerOpen()" aria-controls="invitation-candidate-panel">
-            <span>
-              @if (selectedInvitationCandidates().length === 0) {
-              {{ 'elections.chooseRegisteredUsers' | translate }}
-              } @else {
-              {{ 'elections.selectedUsersCount' | translate: { count: selectedInvitationCandidates().length } }}
-              }
-            </span>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-              [class.rotated]="candidatePickerOpen()" aria-hidden="true">
-              <polyline points="6 9 12 15 18 9"></polyline>
-            </svg>
-          </button>
+            @if (candidatePickerOpen() && !isLocked()) {
+            <div id="invitation-candidate-panel" class="user-picker-panel">
+              <div class="user-picker-search">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                     aria-hidden="true">
+                  <circle cx="11" cy="11" r="8"></circle>
+                  <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+                <input type="search" [formControl]="candidateSearchControl"
+                       [placeholder]="'elections.searchRegisteredUsers' | translate" autocomplete="off" />
+              </div>
 
-          @if (candidatePickerOpen()) {
-          <div id="invitation-candidate-panel" class="user-picker-panel">
-            <div class="user-picker-search">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                aria-hidden="true">
-                <circle cx="11" cy="11" r="8"></circle>
-                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-              </svg>
-              <input type="search" [formControl]="candidateSearchControl"
-                [placeholder]="'elections.searchRegisteredUsers' | translate" autocomplete="off" />
-            </div>
+              <div class="user-picker-list">
+                @for (candidate of filteredInvitationCandidates(); track candidate.id) {
+                <div class="user-picker-item"
+                     [class.user-picker-item--selected]="isInvitationCandidateSelected(candidate.id)"
+                     [class.user-picker-item--from-label]="isCandidateFromGroup(candidate.id)"
+                     (click)="toggleInvitationCandidate(candidate.id)">
+                  <span class="user-avatar">{{ candidate.email.charAt(0).toUpperCase() }}</span>
+                  <span class="user-email">{{ candidate.email }}</span>
 
-            <div class="user-picker-list">
-              @for (candidate of filteredInvitationCandidates(); track candidate.id) {
-              <div class="user-picker-item"
-                [class.user-picker-item--selected]="isInvitationCandidateSelected(candidate.id)"
-                [class.user-picker-item--from-label]="isCandidateFromGroup(candidate.id)"
-                (click)="toggleInvitationCandidate(candidate.id)">
-                <span class="user-avatar">{{ candidate.email.charAt(0).toUpperCase() }}</span>
-                <span class="user-email">{{ candidate.email }}</span>
-                
-                @if (candidateLabels(candidate.id); as cl) {
-                <div class="user-item-labels"
-                  [class.has-overflow]="cl.hiddenCount > 0"
-                  [class.is-expanded]="isCandidateLabelsExpanded(candidate.id)"
-                  (mousedown)="$event.stopPropagation()"
-                  (click)="onUserItemLabelsClick(candidate.id, cl.hiddenCount > 0, $event)">
-                  <div class="user-item-labels-default">
-                    @for (lbl of cl.visible; track lbl.id) {
-                    <span class="user-item-label-chip">{{ lbl.name }}</span>
-                    }
+                  @if (candidateLabels(candidate.id); as cl) {
+                  <div class="user-item-labels"
+                       [class.has-overflow]="cl.hiddenCount > 0"
+                       [class.is-expanded]="isCandidateLabelsExpanded(candidate.id)"
+                       (mousedown)="$event.stopPropagation()"
+                       (click)="onUserItemLabelsClick(candidate.id, cl.hiddenCount > 0, $event)">
+                    <div class="user-item-labels-default">
+                      @for (lbl of cl.visible; track lbl.id) {
+                      <span class="user-item-label-chip">{{ lbl.name }}</span>
+                      }
+                      @if (cl.hiddenCount > 0) {
+                      <span class="user-item-label-more">+{{ cl.hiddenCount }}</span>
+                      }
+                    </div>
                     @if (cl.hiddenCount > 0) {
-                    <span class="user-item-label-more">+{{ cl.hiddenCount }}</span>
-                    }
-                  </div>
-                  @if (cl.hiddenCount > 0) {
-                  <div class="user-item-labels-expanded">
-                    @for (lbl of cl.all; track lbl.id) {
-                    <span class="user-item-label-chip">{{ lbl.name }}</span>
+                    <div class="user-item-labels-expanded">
+                      @for (lbl of cl.all; track lbl.id) {
+                      <span class="user-item-label-chip">{{ lbl.name }}</span>
+                      }
+                    </div>
                     }
                   </div>
                   }
+
+                  <input type="checkbox" [checked]="isInvitationCandidateSelected(candidate.id)"
+                         (click)="$event.stopPropagation()"
+                         (change)="toggleInvitationCandidate(candidate.id, $any($event.target).checked)" />
                 </div>
+                } @empty {
+                <p class="user-picker-empty">{{ 'elections.noMatchingUsers' | translate }}</p>
                 }
-
-                <input type="checkbox" [checked]="isInvitationCandidateSelected(candidate.id)"
-                  (click)="$event.stopPropagation()"
-                  (change)="toggleInvitationCandidate(candidate.id, $any($event.target).checked)" />
               </div>
-              } @empty {
-              <p class="user-picker-empty">{{ 'elections.noMatchingUsers' | translate }}</p>
+
+              <div class="user-picker-footer">
+                <span>{{ 'elections.selectedUsersCount' | translate: { count: selectedInvitationCandidates().length } }}</span>
+                <div class="user-picker-footer-actions">
+                  <button type="button" class="user-picker-select-all" (click)="toggleAllInvitationCandidates()">
+                    {{ (allInvitationCandidatesSelected() ? 'elections.clearSelection' : 'elections.selectAllUsers') | translate }}
+                  </button>
+                  <button type="button" class="user-picker-confirm" (click)="toggleCandidatePicker()">
+                    {{ 'elections.selectUsers' | translate }}
+                  </button>
+                </div>
+              </div>
+            </div>
+            }
+          </div>
+
+          @if (selectedInvitationCandidates().length > 0) {
+          <div class="selected-user-chips" [attr.aria-label]="'elections.invitedUsersLabel' | translate">
+            @for (candidate of visibleCandidateChips(); track candidate.id) {
+            <span class="selected-user-chip" [class.selected-user-chip--from-label]="isCandidateFromGroup(candidate.id)">
+              <span class="user-avatar">{{ candidate.email.charAt(0).toUpperCase() }}</span>
+              <span>{{ candidate.email }}</span>
+              @if (!isLocked()) {
+              <button type="button"
+                      (click)="removeInvitationCandidate(candidate.id)"
+                      [attr.aria-label]="('elections.removeInvitation' | translate) + ': ' + candidate.email">
+                &#215;
+              </button>
               }
-            </div>
+            </span>
+            }
+            @if (hiddenCandidateChipCount() > 0 || showAllCandidateChips()) {
+            <button type="button" class="chips-toggle" (click)="toggleShowAllCandidateChips()">
+              @if (showAllCandidateChips()) {
+              {{ 'elections.showLessChips' | translate }}
+              } @else {
+              +{{ hiddenCandidateChipCount() }} {{ 'elections.moreChips' | translate }}
+              }
+            </button>
+            }
+          </div>
+          }
+          }
+        </div>
 
-            <div class="user-picker-footer">
-              <span>{{ 'elections.selectedUsersCount' | translate: { count: selectedInvitationCandidates().length }
-                }}</span>
-              <div class="user-picker-footer-actions">
-                <button type="button" class="user-picker-select-all" (click)="toggleAllInvitationCandidates()">
-                  {{ (allInvitationCandidatesSelected() ? 'elections.clearSelection' : 'elections.selectAllUsers') |
-                  translate }}
-                </button>
-                <button type="button" class="user-picker-confirm" (click)="toggleCandidatePicker()">
-                  {{ 'elections.selectUsers' | translate }}
-                </button>
-              </div>
-            </div>
+        <div class="field-group">
+          <label for="inviteEmailEdit">{{ 'elections.emailInviteLabel' | translate }}</label>
+          <p class="field-help">{{ 'elections.emailInviteHelp' | translate }}</p>
+          <div class="email-invite-row">
+            <input id="inviteEmailEdit" type="email" [formControl]="inviteEmailControl"
+                   [placeholder]="'elections.emailInvitePlaceholder' | translate"
+                   [attr.readonly]="isLocked() ? true : null"
+                   (keydown.enter)="$event.preventDefault(); addInviteEmail()" />
+            @if (!isLocked()) {
+            <button type="button" class="btn-add-email" (click)="addInviteEmail()"
+                    [disabled]="inviteEmailControl.invalid || !inviteEmailControl.value?.trim()">
+              {{ 'elections.addEmail' | translate }}
+            </button>
+            }
+          </div>
+          @if (inviteEmailControl.touched && inviteEmailControl.invalid) {
+          <p class="error-text">{{ 'elections.emailInviteInvalid' | translate }}</p>
+          }
+
+          @if (invitedEmails().length > 0) {
+          <div class="email-chips" [attr.aria-label]="'elections.invitedEmailsLabel' | translate">
+            @for (email of invitedEmails(); track email) {
+            <span class="email-chip">
+              {{ email }}
+              @if (!isLocked()) {
+              <button type="button" (click)="removeInviteEmail(email)"
+                      [attr.aria-label]="('elections.removeInvitation' | translate) + ': ' + email">
+                &#215;
+              </button>
+              }
+            </span>
+            }
           </div>
           }
         </div>
+      </div>
+      }
 
-        @if (selectedInvitationCandidates().length > 0) {
-        <div class="selected-user-chips" [attr.aria-label]="'elections.invitedUsersLabel' | translate">
-          @for (candidate of visibleCandidateChips(); track candidate.id) {
-          <span class="selected-user-chip" [class.selected-user-chip--from-label]="isCandidateFromGroup(candidate.id)">
-            <span class="user-avatar">{{ candidate.email.charAt(0).toUpperCase() }}</span>
-            <span>{{ candidate.email }}</span>
-            <button type="button"
-              (click)="removeInvitationCandidate(candidate.id)"
-              [attr.aria-label]="('elections.removeInvitation' | translate) + ': ' + candidate.email">&#215;</button>
-          </span>
-          }
-          @if (hiddenCandidateChipCount() > 0 || showAllCandidateChips()) {
-          <button type="button" class="chips-toggle" (click)="toggleShowAllCandidateChips()">
-            @if (showAllCandidateChips()) {
-            {{ 'elections.showLessChips' | translate }}
-            } @else {
-            +{{ hiddenCandidateChipCount() }} {{ 'elections.moreChips' | translate }}
+      <div class="field-row">
+        <div class="field-group" style="margin-bottom: 0;">
+          <label for="startsAt">{{ 'elections.startsAtLabel' | translate }}</label>
+          <input id="startsAt" type="datetime-local" formControlName="startsAt" [attr.readonly]="isLocked() ? true : null" />
+        </div>
+
+        <div class="field-group" style="margin-bottom: 0;">
+          <label for="endsAt">{{ 'elections.endsAtLabel' | translate }}</label>
+          <input id="endsAt" type="datetime-local" formControlName="endsAt" [attr.readonly]="isLocked() ? true : null" />
+        </div>
+      </div>
+
+      <div class="section-divider">
+        <h3>{{ 'elections.questionsSectionTitle' | translate }}</h3>
+        <p>{{ 'elections.questionsSectionSubtitle' | translate }}</p>
+      </div>
+
+      <div formArrayName="questions" class="questions-list">
+        @for (question of questions.controls; track $index; let questionIndex = $index) {
+        <section class="question-card" [formGroupName]="questionIndex">
+          <div class="question-card__header">
+            <span class="question-number">{{ 'elections.questionNumber' | translate: { number: questionIndex + 1 } }}</span>
+            @if (questions.length > 1 && !isLocked()) {
+            <button type="button" class="btn-danger" (click)="removeQuestion(questionIndex)"
+                    [attr.aria-label]="'elections.removeQuestion' | translate">
+              &#215;
+            </button>
             }
-          </button>
-          }
-        </div>
-        }
-        }
-      </div>
-
-      <div class="field-group">
-        <label for="inviteEmail">{{ 'elections.emailInviteLabel' | translate }}</label>
-        <p class="field-help">{{ 'elections.emailInviteHelp' | translate }}</p>
-        <div class="email-invite-row">
-          <input id="inviteEmail" type="email" [formControl]="inviteEmailControl"
-            [placeholder]="'elections.emailInvitePlaceholder' | translate"
-            (keydown.enter)="$event.preventDefault(); addInviteEmail()" />
-          <button type="button" class="btn-add-email" (click)="addInviteEmail()"
-            [disabled]="inviteEmailControl.invalid || !inviteEmailControl.value?.trim()">
-            {{ 'elections.addEmail' | translate }}
-          </button>
-        </div>
-        @if (inviteEmailControl.touched && inviteEmailControl.invalid) {
-        <p class="error-text">{{ 'elections.emailInviteInvalid' | translate }}</p>
-        }
-
-        @if (invitedEmails().length > 0) {
-        <div class="email-chips" [attr.aria-label]="'elections.invitedEmailsLabel' | translate">
-          @for (email of invitedEmails(); track email) {
-          <span class="email-chip">
-            {{ email }}
-            <button type="button" (click)="removeInviteEmail(email)"
-              [attr.aria-label]="('elections.removeInvitation' | translate) + ': ' + email">&#215;</button>
-          </span>
-          }
-        </div>
-        }
-      </div>
-    </div>
-    }
-
-
-    <div class="field-row">
-      <div class="field-group" style="margin-bottom: 0;">
-        <label for="startsAt">{{ 'elections.startsAtLabel' | translate }}</label>
-        <input id="startsAt" type="datetime-local" formControlName="startsAt" />
-      </div>
-
-      <div class="field-group" style="margin-bottom: 0;">
-        <label for="endsAt">{{ 'elections.endsAtLabel' | translate }}</label>
-        <input id="endsAt" type="datetime-local" formControlName="endsAt" />
-      </div>
-    </div>
-
-    <div class="section-divider">
-      <h3>{{ 'elections.questionsSectionTitle' | translate }}</h3>
-      <p>{{ 'elections.questionsSectionSubtitle' | translate }}</p>
-    </div>
-
-    <div formArrayName="questions" class="questions-list">
-      @for (question of questions.controls; track $index; let questionIndex = $index) {
-      <section class="question-card" [formGroupName]="questionIndex">
-        <div class="question-card__header">
-          <span class="question-number">{{ 'elections.questionNumber' | translate: { number: questionIndex + 1 }
-            }}</span>
-          @if (questions.length > 1) {
-          <button type="button" class="btn-danger" (click)="removeQuestion(questionIndex)"
-            [attr.aria-label]="'elections.removeQuestion' | translate">×</button>
-          }
-        </div>
-        <div class="question-type-toggle-group">
-          <button type="button" class="question-type-toggle" [class.active]="getQuestionType(questionIndex) === 'Choice'"
-            (click)="setQuestionType(questionIndex, 'Choice')">
-            {{ 'elections.questionTypeChoiceLabel' | translate }}
-          </button>
-          <button type="button" class="question-type-toggle" [class.active]="getQuestionType(questionIndex) === 'Ranking'"
-            (click)="setQuestionType(questionIndex, 'Ranking')">
-            {{ 'elections.questionTypeRankingLabel' | translate }}
-          </button>
-          <button type="button" class="question-type-toggle" [class.active]="getQuestionType(questionIndex) === 'FreeText'"
-            (click)="setQuestionType(questionIndex, 'FreeText')">
-            {{ 'elections.questionTypeFreeTextLabel' | translate }}
-          </button>
-        </div>
-        <div class="question-type-toggles">
-          <label class="question-required-toggle">
-            <input type="checkbox" formControlName="isRequired" />
-            {{ 'elections.questionRequiredLabel' | translate }}
-          </label>
-          @if (getQuestionType(questionIndex) === 'Choice') {
-          <label class="question-required-toggle">
-            <input type="checkbox" formControlName="allowMultipleAnswers" />
-            {{ 'elections.questionMultipleAnswersLabel' | translate }}
-          </label>
-          <label class="question-required-toggle">
-            <input type="checkbox" formControlName="allowOtherOption" />
-            {{ 'elections.questionAllowOtherLabel' | translate }}
-          </label>
-          }
-          @if (getQuestionType(questionIndex) === 'Ranking') {
-          <label class="question-required-toggle">
-            <input type="checkbox" [checked]="isRankCountLimited(questionIndex)"
-              (change)="toggleRankCountLimit(questionIndex)" />
-            {{ 'elections.questionRankCountLabel' | translate }}
-          </label>
-          }
-        </div>
-        @if (getQuestionType(questionIndex) === 'Ranking' && isRankCountLimited(questionIndex)) {
-        <div class="rank-count-row">
-          <input type="number" class="rank-count-input" formControlName="requiredRankCount" min="1"
-            [max]="rankCountMax(questionIndex)" />
-          <span class="rank-count-hint">
-            {{ 'elections.questionRankCountHint' | translate:{ max: rankCountMax(questionIndex) } }}
-          </span>
-        </div>
-        @if (hasRankCountError(questionIndex)) {
-        <p class="error-text">
-          {{ 'elections.questionRankCountError' | translate:{ max: rankCountMax(questionIndex) } }}
-        </p>
-        }
-        }
-        <input type="text" formControlName="text" maxlength="500"
-          [placeholder]="'elections.questionPlaceholder' | translate" />
-
-        @if (getQuestionType(questionIndex) !== 'FreeText') {
-        <p class="question-options-label">{{ 'elections.optionsLabel' | translate }}</p>
-        <div formArrayName="options" class="question-options">
-          @for (option of questionOptions(questionIndex).controls; track $index; let optionIndex = $index) {
-          <div class="option-row option-row--image" [formGroupName]="optionIndex">
-            <div class="option-fields">
-              <input type="text" formControlName="label" maxlength="100"
-                [placeholder]="('elections.optionLabelPlaceholder' | translate) + ' ' + (optionIndex + 1)" />
-              <input type="text" formControlName="description" maxlength="2000"
-                [placeholder]="'elections.optionDescPlaceholder' | translate" />
-            </div>
-            <label class="image-upload">
-              @if (option.get('imageDataUrl')?.value) {
-              <img [src]="option.get('imageDataUrl')?.value" [alt]="option.get('label')?.value" />
-              } @else {
-              <span>＋</span>
-              }
-              <input type="file" accept="image/png,image/jpeg,image/webp,image/gif"
-                (change)="onOptionImageSelected($event, questionIndex, optionIndex)" />
+          </div>
+          <div class="question-type-toggle-group" [style.pointer-events]="isLocked() ? 'none' : 'auto'">
+            <button type="button" class="question-type-toggle" [class.active]="getQuestionType(questionIndex) === 'Choice'"
+                    [disabled]="isLocked()" (click)="!isLocked() && setQuestionType(questionIndex, 'Choice')">
+              {{ 'elections.questionTypeChoiceLabel' | translate }}
+            </button>
+            <button type="button" class="question-type-toggle" [class.active]="getQuestionType(questionIndex) === 'Ranking'"
+                    [disabled]="isLocked()" (click)="!isLocked() && setQuestionType(questionIndex, 'Ranking')">
+              {{ 'elections.questionTypeRankingLabel' | translate }}
+            </button>
+            <button type="button" class="question-type-toggle" [class.active]="getQuestionType(questionIndex) === 'FreeText'"
+                    [disabled]="isLocked()" (click)="!isLocked() && setQuestionType(questionIndex, 'FreeText')">
+              {{ 'elections.questionTypeFreeTextLabel' | translate }}
+            </button>
+          </div>
+          <div class="question-type-toggles" [style.pointer-events]="isLocked() ? 'none' : 'auto'">
+            <label class="question-required-toggle">
+              <input type="checkbox" formControlName="isRequired" [attr.disabled]="isLocked() ? true : null" />
+              {{ 'elections.questionRequiredLabel' | translate }}
             </label>
-            @if (option.get('imageDataUrl')?.value) {
-            <button type="button" class="btn-image-remove"
-              (click)="removeOptionImage(questionIndex, optionIndex)">×</button>
+            @if (getQuestionType(questionIndex) === 'Choice') {
+            <label class="question-required-toggle">
+              <input type="checkbox" formControlName="allowMultipleAnswers" [attr.disabled]="isLocked() ? true : null" />
+              {{ 'elections.questionMultipleAnswersLabel' | translate }}
+            </label>
+            <label class="question-required-toggle">
+              <input type="checkbox" formControlName="allowOtherOption" [attr.disabled]="isLocked() ? true : null" />
+              {{ 'elections.questionAllowOtherLabel' | translate }}
+            </label>
             }
-            @if (questionOptions(questionIndex).length > 2) {
-            <button type="button" class="btn-danger" (click)="removeOption(questionIndex, optionIndex)"
-              [attr.aria-label]="'elections.removeOption' | translate">×</button>
+            @if (getQuestionType(questionIndex) === 'Ranking') {
+            <label class="question-required-toggle">
+              <input type="checkbox" [checked]="isRankCountLimited(questionIndex)"
+                     [attr.disabled]="isLocked() ? true : null"
+                     (change)="!isLocked() && toggleRankCountLimit(questionIndex)" />
+              {{ 'elections.questionRankCountLabel' | translate }}
+            </label>
             }
           </div>
+          @if (getQuestionType(questionIndex) === 'Ranking' && isRankCountLimited(questionIndex)) {
+          <div class="rank-count-row" [style.pointer-events]="isLocked() ? 'none' : 'auto'">
+            <input type="number" class="rank-count-input" formControlName="requiredRankCount" min="1"
+                   [max]="rankCountMax(questionIndex)" [attr.readonly]="isLocked() ? true : null" />
+            <span class="rank-count-hint">
+              {{ 'elections.questionRankCountHint' | translate:{ max: rankCountMax(questionIndex) } }}
+            </span>
+          </div>
+          @if (hasRankCountError(questionIndex)) {
+          <p class="error-text">
+            {{ 'elections.questionRankCountError' | translate:{ max: rankCountMax(questionIndex) } }}
+          </p>
           }
-        </div>
-        <button type="button" class="btn-add-option" (click)="addOption(questionIndex)">
-          + {{ 'elections.addOption' | translate }}
+          }
+          <input type="text" formControlName="text" maxlength="500"
+                 [placeholder]="'elections.questionPlaceholder' | translate" [attr.readonly]="isLocked() ? true : null" />
+
+          @if (getQuestionType(questionIndex) !== 'FreeText') {
+          <p class="question-options-label">{{ 'elections.optionsLabel' | translate }}</p>
+          <div formArrayName="options" class="question-options">
+            @for (option of questionOptions(questionIndex).controls; track $index; let optionIndex = $index) {
+            <div class="option-row option-row--image" [formGroupName]="optionIndex" [style.pointer-events]="isLocked() ? 'none' : 'auto'">
+              <div class="option-fields">
+                <input type="text" formControlName="label" maxlength="100"
+                       [placeholder]="('elections.optionLabelPlaceholder' | translate) + ' ' + (optionIndex + 1)"
+                       [attr.readonly]="isLocked() ? true : null" />
+                <input type="text" formControlName="description" maxlength="2000"
+                       [placeholder]="'elections.optionDescPlaceholder' | translate"
+                       [attr.readonly]="isLocked() ? true : null" />
+              </div>
+              <label class="image-upload" [style.cursor]="isLocked() ? 'default' : 'pointer'">
+                @if (option.get('imageDataUrl')?.value) {
+                <img [src]="option.get('imageDataUrl')?.value" [alt]="option.get('label')?.value" />
+                } @else {
+                <span>＋</span>
+                }
+                @if (!isLocked()) {
+                <input type="file" accept="image/png,image/jpeg,image/webp,image/gif"
+                       (change)="onOptionImageSelected($event, questionIndex, optionIndex)" />
+                }
+              </label>
+              @if (option.get('imageDataUrl')?.value && !isLocked()) {
+              <button type="button" class="btn-image-remove"
+                      (click)="removeOptionImage(questionIndex, optionIndex)">
+                &#215;
+              </button>
+              }
+              @if (questionOptions(questionIndex).length > 2 && !isLocked()) {
+              <button type="button" class="btn-danger" (click)="removeOption(questionIndex, optionIndex)"
+                      [attr.aria-label]="'elections.removeOption' | translate">
+                &#215;
+              </button>
+              }
+            </div>
+            }
+          </div>
+          @if (!isLocked()) {
+          <button type="button" class="btn-add-option" (click)="addOption(questionIndex)">
+            + {{ 'elections.addOption' | translate }}
+          </button>
+          }
+          }
+        </section>
+        }
+      </div>
+      @if (questions.touched && questions.hasError('noRequiredQuestion')) {
+      <p class="error-text">{{ 'elections.atLeastOneRequiredQuestionError' | translate }}</p>
+      }
+
+      @if (!isLocked()) {
+      <button type="button" class="btn-add-question" (click)="addQuestion()">
+        + {{ 'elections.addQuestion' | translate }}
+      </button>
+      }
+
+      @if (errorMessageKey() && !isLocked()) {
+      <p class="error-text">{{ errorMessageKey() | translate }}</p>
+      }
+
+      <div class="form-actions">
+        @if (!isLocked()) {
+        <button type="submit" class="btn-primary" [disabled]="isSubmitting()">
+          @if (isSubmitting()) {
+          <span class="spinner" style="border-color: rgba(255,255,255,0.3); border-top-color: #fff;"></span>
+          }
+          @if (isSubmitting()) {
+          {{ 'elections.submitting' | translate }}
+          } @else if (isEditMode()) {
+          {{ 'elections.submitEdit' | translate }}
+          } @else {
+          {{ 'elections.submitCreate' | translate }}
+          }
         </button>
         }
-      </section>
-      }
-    </div>
-    @if (questions.touched && questions.hasError('noRequiredQuestion')) {
-    <p class="error-text">{{ 'elections.atLeastOneRequiredQuestionError' | translate }}</p>
-    }
-    <button type="button" class="btn-add-question" (click)="addQuestion()">
-      + {{ 'elections.addQuestion' | translate }}
-    </button>
-
-    @if (errorMessageKey()) {
-    <p class="error-text">{{ errorMessageKey() | translate }}</p>
-    }
-
-    <div class="form-actions">
-      <button type="submit" class="btn-primary" [disabled]="isSubmitting() || isLocked()">
-        @if (isSubmitting()) {
-        <span class="spinner" style="border-color: rgba(255,255,255,0.3); border-top-color: #fff;"></span>
-        }
-        @if (isSubmitting()) {
-        {{ 'elections.submitting' | translate }}
-        } @else if (isEditMode()) {
-        {{ 'elections.submitEdit' | translate }}
-        } @else {
-        {{ 'elections.submitCreate' | translate }}
-        }
-      </button>
-    </div>
-  </form>
+      </div>
+    </form>
 </div>

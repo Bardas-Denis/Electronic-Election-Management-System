@@ -260,7 +260,9 @@
     "groupTiming": "Perioadă",
     "groupType": "Tip",
     "groupVisibility": "Vizibilitate",
-    "clearFilters": "Șterge filtrele"
+    "preview": "Previzualizare",
+    "backToMyElections": "Înapoi la alegerile mele",
+  "previewHeading": "Previzualizează alegerea (Blocată)"
   },
   "vote": {
     "questionOptional": "(opțional)",
@@ -281,7 +283,6 @@
     "nonAnonymousLabel": "Vot neanonim.",
     "alreadyVotedBanner": "Ai votat deja la această alegere. Opțiunile sunt blocate.",
     "expiredBanner": "Această alegere s-a încheiat și nu mai acceptă voturi noi. Poți totuși consulta rezultatele înregistrate.",
-    "submit": "Trimite votul",
     "submitting": "Se trimite...",
     "castFailed": "Votul nu a putut fi înregistrat. Poate ai votat deja.",
     "editVote": "Modifică răspunsul",
@@ -298,6 +299,7 @@
     "deleteFailed": "Răspunsul nu a putut fi șters.",
     "next": "Următorul",
     "previous": "Anterior",
+    "submit": "Trimite votul",
     "navigationTitle": "Navigare vot"
   },
   "declaration": {
@@ -439,10 +441,7 @@
     "otherAnswersTitle": "Alte răspunsuri",
     "otherOptionLabel": "Altele",
     "more": "mai multi",
-    "less": "mai puțin",
-    "simulateRanksLabel": "Simulare puncte (doar primele poziții):",
-    "allRanks": "Toate pozițiile",
-    "topRanks": "Primele {{count}}"
+    "less": "mai puțin"
   },
   "errors": {
     "emailAlreadyExists": "Există deja un cont cu acest email.",
