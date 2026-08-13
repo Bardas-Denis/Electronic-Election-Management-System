@@ -85,7 +85,7 @@
     </div>
 
     <div class="election-actions">
-      <a [routerLink]="['/elections', election.id, 'results']" [queryParams]="{ from: 'my-elections' }" class="link-results">
+      <a [routerLink]="['/elections', election.id, 'results']" class="link-results">
         {{ 'elections.liveResults' | translate }}
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="7" y1="17" x2="17" y2="7"></line><polyline points="7 7 17 7 17 17"></polyline></svg>
       </a>
@@ -106,9 +106,9 @@
         </button>
       }
       @if (election.hasVotes) {
-        <span class="btn-secondary btn-disabled" [title]="'elections.editDisabledTitle' | translate">
-          {{ 'elections.edit' | translate }}
-        </span>
+        <a [routerLink]="['/elections', election.id, 'edit']" class="btn-secondary" [title]="'elections.editDisabledTitle' | translate">
+          {{ 'elections.preview' | translate }}
+        </a>
       } @else {
         <a [routerLink]="['/elections', election.id, 'edit']" class="btn-secondary">{{ 'elections.edit' | translate }}</a>
       }
