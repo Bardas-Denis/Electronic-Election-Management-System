@@ -885,15 +885,20 @@
             </button>
           </div>
           } @else {
-          <select formControlName="scoringSchemeId" class="scoring-scheme-select" style="max-width: 400px;">
-            <option [ngValue]="null">{{ 'elections.defaultScoringScheme' | translate }}</option>
-            @for (scheme of scoringSchemes(); track scheme.id) {
-            <option [value]="scheme.id">
-              {{ scheme.name }}
-              @if (scheme.isLinear) { (Linear) } @else { ({{ scheme.points.length }} puncte: {{ scheme.points.join(', ') }}) }
-            </option>
-            }
-          </select>
+          <div style="display: flex; gap: 0.5rem; align-items: center;">
+            <select formControlName="scoringSchemeId" class="scoring-scheme-select" style="max-width: 400px;">
+              <option [ngValue]="null">{{ 'elections.defaultScoringScheme' | translate }}</option>
+              @for (scheme of scoringSchemes(); track scheme.id) {
+              <option [value]="scheme.id">
+                {{ scheme.name }}
+                @if (scheme.isLinear) { (Linear) } @else { ({{ scheme.points.length }} puncte: {{ scheme.points.join(', ') }}) }
+              </option>
+              }
+            </select>
+            <button type="button" class="btn-secondary" style="height: 40px;" (click)="openCreateSchemeModal(questionIndex)">
+              + {{ 'elections.createCustomScheme' | translate }}
+            </button>
+          </div>
           }
         </div>
         }
@@ -965,4 +970,12 @@
       </button>
     </div>
   </form>
+
+  @if (activeQuestionIndexForScheme() !== null) {
+    <app-create-scoring-scheme-modal
+      [existingSchemes]="scoringSchemes()"
+      (created)="onSchemeCreated($event)"
+      (cancelled)="closeCreateSchemeModal()"
+    ></app-create-scoring-scheme-modal>
+  }
 </div>

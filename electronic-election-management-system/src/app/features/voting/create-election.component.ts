@@ -24,16 +24,15 @@ import {
   INPUT_LIMITS,
   optionsRequiredForChoiceQuestion,
   rankCountWithinOptions,
-  trimmedRequired,
-  uniqueOptionLabels
-} from '../../core/validators/input.validators';
+import { trimmedRequired, uniqueOptionLabels } from '../../core/validators/input.validators';
+import { CreateScoringSchemeModalComponent } from './create-scoring-scheme-modal.component';
 
 // This component handles both creation (/elections/new) and editing
 // (/elections/:id/edit).
 @Component({
   selector: 'app-create-election',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, TranslatePipe],
+  imports: [CommonModule, ReactiveFormsModule, TranslatePipe, CreateScoringSchemeModalComponent],
   templateUrl: './create-election.component.html',
   styleUrl: './create-election.component.scss'
 })
@@ -48,6 +47,7 @@ export class CreateElectionComponent implements OnInit {
   scoringSchemes = signal<ScoringSchemeDto[]>([]);
   scoringSchemesLoading = signal(false);
   scoringSchemesErrorKey = signal<string | null>(null);
+  activeQuestionIndexForScheme = signal<number | null>(null);
 
   isSubmitting = signal(false);
   isLoading = signal(false);
@@ -1212,6 +1212,23 @@ export class CreateElectionComponent implements OnInit {
 
   retryScoringSchemes(): void {
     this.loadScoringSchemes();
+  }
+
+  openCreateSchemeModal(questionIndex: number): void {
+    this.activeQuestionIndexForScheme.set(questionIndex);
+  }
+
+  closeCreateSchemeModal(): void {
+    this.activeQuestionIndexForScheme.set(null);
+  }
+
+  onSchemeCreated(scheme: ScoringSchemeDto): void {
+    this.scoringSchemes.update(schemes => [...schemes, scheme]);
+    const index = this.activeQuestionIndexForScheme();
+    if (index !== null) {
+      this.questions.at(index).get('scoringSchemeId')?.setValue(scheme.id);
+    }
+    this.closeCreateSchemeModal();
   }
 }
 
