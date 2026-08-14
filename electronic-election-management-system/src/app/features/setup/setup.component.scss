@@ -1,0 +1,154 @@
+@use '../../features/auth/auth-shared' as *;
+
+// Wider card for the Postgres form
+.setup-card {
+  max-width: 480px;
+}
+
+// Section label
+.section-label {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-top: 0.25rem;
+}
+
+// Provider picker
+.provider-picker {
+  display: flex;
+  gap: 0.625rem;
+  border: none;
+  padding: 0;
+  margin: 0 0 0.25rem;
+}
+
+.provider-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  height: 44px;
+  padding: 0 1rem;
+  font-size: 0.875rem;
+  font-family: inherit;
+  font-weight: 500;
+  color: var(--text-secondary);
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: color var(--transition), background var(--transition), border-color var(--transition);
+
+  &:hover:not(.provider-btn--active) {
+    color: var(--text-primary);
+    border-color: var(--border-focus);
+  }
+}
+
+.provider-btn--active {
+  color: var(--text-primary);
+  background: var(--bg-card);
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 2px var(--bg-card), 0 0 0 3px var(--border-focus);
+}
+
+// Provider note (info banner with less top margin)
+.provider-note {
+  margin-bottom: 0;
+}
+
+// Postgres form
+.pg-form {
+  margin-top: 0.25rem;
+}
+
+// Host + Port side-by-side
+.field-row {
+  display: flex;
+  gap: 0.75rem;
+
+  .field {
+    flex: 1;
+  }
+
+  .field--port {
+    flex: 0 0 90px;
+  }
+}
+
+// Test result banners (tighter margin)
+.test-result {
+  margin-top: -0.25rem;
+}
+
+// Secondary button (outline style for Test)
+.btn-secondary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  height: 40px;
+  padding: 0 1rem;
+  font-size: 0.875rem;
+  font-family: inherit;
+  font-weight: 500;
+  color: var(--text-primary);
+  background: transparent;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: border-color var(--transition), opacity var(--transition);
+
+  &:hover:not(:disabled) {
+    border-color: var(--border-focus);
+  }
+
+  &:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+}
+
+// Dark spinner variant (for the secondary/outline button)
+.spinner--dark {
+  border-color: rgba(17, 17, 17, 0.2);
+  border-top-color: var(--text-primary);
+}
+
+// Centered state card (restarting / timeout)
+.state-centered {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 0.875rem;
+  padding: 1.5rem 0 0.5rem;
+
+  h1 {
+    font-size: 1.25rem;
+  }
+
+  .btn-primary {
+    margin-top: 0.5rem;
+    width: auto;
+    padding: 0 2rem;
+  }
+}
+
+// Large spinner for restarting state
+.spinner--lg {
+  width: 32px;
+  height: 32px;
+  border-width: 3px;
+  border-color: var(--border-color);
+  border-top-color: var(--accent);
+}
+
+// Timeout icon in warning color
+.timeout-icon {
+  color: var(--warning-color);
+}
