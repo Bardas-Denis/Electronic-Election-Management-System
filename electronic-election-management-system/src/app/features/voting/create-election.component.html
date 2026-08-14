@@ -851,7 +851,6 @@
           </label>
           }
         </div>
-        }
         @if (getQuestionType(questionIndex) === 'Ranking' && isRankCountLimited(questionIndex)) {
         <div class="rank-count-row">
           <input type="number" class="rank-count-input" formControlName="requiredRankCount" min="1"
@@ -887,7 +886,6 @@
           } @else {
           <div style="display: flex; gap: 0.5rem; align-items: center;">
             <select formControlName="scoringSchemeId" class="scoring-scheme-select" style="max-width: 400px;">
-              <option [ngValue]="null">{{ 'elections.defaultScoringScheme' | translate }}</option>
               @for (scheme of scoringSchemes(); track scheme.id) {
               <option [value]="scheme.id">
                 {{ scheme.name }}

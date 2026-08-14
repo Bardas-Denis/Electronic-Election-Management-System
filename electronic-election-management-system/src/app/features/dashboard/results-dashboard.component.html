@@ -32,6 +32,18 @@
                   <p class="text-answers-empty">{{ 'results.noTextAnswers' | translate }}</p>
                 }
               } @else if (question.questionType === 'Ranking') {
+                @if (question.scoringScheme) {
+                  <div class="scoring-scheme-info" style="margin-bottom: 1rem; padding: 0.75rem; background: var(--surface-hover, #f3f4f6); border-radius: 6px; font-size: 0.9rem;">
+                    <strong>{{ 'results.scoringScheme' | translate }}:</strong> {{ question.scoringScheme.name }}
+                    <span style="color: var(--text-secondary, #6b7280); margin-left: 0.5rem;">
+                      @if (question.scoringScheme.isLinear) {
+                        ({{ 'results.linearScoring' | translate }})
+                      } @else if (question.scoringScheme.points && question.scoringScheme.points.length > 0) {
+                        ({{ 'results.pointsList' | translate }}: {{ question.scoringScheme.points.join(', ') }})
+                      }
+                    </span>
+                  </div>
+                }
                 @if (isFromMyElections() && question.requiredRankCount && question.requiredRankCount > 1) {
                   <div class="ranking-filter-wrapper" style="margin-bottom: 1rem;">
                     <label [for]="'filter-' + question.questionId">{{ 'results.simulateRanksLabel' | translate }}</label>

@@ -114,20 +114,32 @@ export class ResultsDashboardComponent implements OnInit, OnDestroy {
     return Array.from({ length: requiredCount - 1 }, (_, i) => requiredCount - 1 - i);
   }
 
-  private getRankingPoints(rank: number): number {
-    switch (rank) {
-      case 1: return 12;
-      case 2: return 10;
-      case 3: return 8;
-      case 4: return 7;
-      case 5: return 6;
-      case 6: return 5;
-      case 7: return 4;
-      case 8: return 3;
-      case 9: return 2;
-      case 10: return 1;
-      default: return 0;
+  private getRankingPoints(rank: number, question: QuestionResultDto): number {
+    if (!question.scoringScheme) {
+      switch (rank) {
+        case 1: return 12;
+        case 2: return 10;
+        case 3: return 8;
+        case 4: return 7;
+        case 5: return 6;
+        case 6: return 5;
+        case 7: return 4;
+        case 8: return 3;
+        case 9: return 2;
+        case 10: return 1;
+        default: return 0;
+      }
     }
+
+    if (question.scoringScheme.isLinear) {
+      return Math.max(0, question.results.length - rank + 1);
+    }
+
+    if (question.scoringScheme.points && rank > 0 && rank <= question.scoringScheme.points.length) {
+      return question.scoringScheme.points[rank - 1];
+    }
+
+    return 0;
   }
 
   getEffectiveVoteCount(option: OptionResultDto, question: QuestionResultDto): number {
@@ -140,7 +152,7 @@ export class ResultsDashboardComponent implements OnInit, OnDestroy {
     for (const [rankStr, count] of Object.entries(option.rankCounts)) {
       const rank = Number(rankStr);
       if (rank <= maxRank) {
-        sum += count * this.getRankingPoints(rank);
+        sum += count * this.getRankingPoints(rank, question);
       }
     }
     return sum;

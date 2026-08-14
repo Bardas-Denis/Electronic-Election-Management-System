@@ -16,10 +16,10 @@
 
       <div class="field">
         <label for="startFrom">{{ 'elections.startFromLabel' | translate }}</label>
-        <select id="startFrom" formControlName="startFrom">
+        <select id="startFrom" formControlName="startFrom" (change)="onPresetChange()">
           <option [ngValue]="null">{{ 'elections.startFromEmpty' | translate }}</option>
           @for (scheme of existingSchemes; track scheme.id) {
-            <option [value]="scheme.id">{{ scheme.name }}</option>
+            <option [ngValue]="scheme.id">{{ scheme.name }}</option>
           }
         </select>
       </div>
@@ -29,7 +29,7 @@
         <p class="field-help">{{ 'elections.rankingPointsHelp' | translate }}</p>
         
         <div formArrayName="points" class="points-list">
-          @for (control of pointsArray.controls; track $index; let i = $index) {
+          @for (control of pointsArray.controls; track control; let i = $index) {
             <div class="point-row">
               <span class="point-rank">{{ i + 1 }}</span>
               <input type="number" [formControlName]="i" min="0" class="point-input" />
