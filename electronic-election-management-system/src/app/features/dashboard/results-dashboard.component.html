@@ -45,11 +45,11 @@
                   </div>
                 }
                 @if (isFromMyElections()) {
-                  <div class="simulator-controls" style="margin-bottom: 1rem; display: flex; flex-wrap: wrap; gap: 1rem; align-items: center;">
+                  <div class="simulator-controls">
                     @if (question.requiredRankCount && question.requiredRankCount > 1) {
                       <div class="ranking-filter-wrapper">
                         <label [for]="'filter-' + question.questionId">{{ 'results.simulateRanksLabel' | translate }}</label>
-                        <select [id]="'filter-' + question.questionId" class="ranking-filter" (change)="onRankingFilterChange(question.questionId, $event)" style="margin-left: 0.5rem; padding: 0.25rem;">
+                        <select [id]="'filter-' + question.questionId" class="ranking-filter" (change)="onRankingFilterChange(question.questionId, $event)">
                           <option value="">{{ 'results.allRanks' | translate }}</option>
                           @for (rank of getRankingDropdownOptions(question.requiredRankCount); track rank) {
                             <option [value]="rank">{{ 'results.topRanks' | translate: { count: rank } }}</option>
@@ -60,7 +60,7 @@
 
                     <div class="scoring-simulator-wrapper">
                       <label [for]="'scheme-sim-' + question.questionId">Simulate scheme:</label>
-                      <select [id]="'scheme-sim-' + question.questionId" class="simulator-select" (change)="onSchemeSimulationChange(question, $event)" style="margin-left: 0.5rem; padding: 0.25rem;">
+                      <select [id]="'scheme-sim-' + question.questionId" class="simulator-select" (change)="onSchemeSimulationChange(question, $event)">
                         <option [value]="question.scoringScheme?.id || ''">Original ({{ question.scoringScheme?.name || 'Default' }})</option>
                         @for (scheme of availableSchemes(); track scheme.id) {
                           <option [value]="scheme.id">{{ scheme.name }}</option>
@@ -70,8 +70,8 @@
                   </div>
 
                   @if (simulatedSchemes()[question.questionId]) {
-                    <div class="simulation-warning" style="margin-bottom: 1rem; background-color: #fff3cd; color: #856404; padding: 0.5rem; border-radius: 4px; font-size: 0.9rem; font-weight: 500;">
-                      ⚠ This isn't the original pointing system, this is a simulation!
+                    <div class="simulation-warning">
+                      ⚠️ This isn't the original pointing system, this is a simulation!
                     </div>
                   }
                 }
