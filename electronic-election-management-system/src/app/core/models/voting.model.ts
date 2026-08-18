@@ -22,6 +22,8 @@ export interface ElectionQuestionDto {
   // this many options. Null leaves the count open.
   requiredRankCount: number | null;
   scoringSchemeId?: string;
+  // Question-level image support
+  imageDataUrl?: string;
   // For a 'Choice' question, the selectable options. For a 'FreeText' question,
   // optional suggestion chips - voters may still type anything.
   options: OptionDto[];
@@ -56,6 +58,8 @@ export interface ElectionDto {
   // Optional so that stale API responses (missing field) are treated as visible rather
   // than showing a false-positive "Hidden" badge.
   isVisible?: boolean;
+  // Optional audience group rules stored when creating a closed election
+  audienceGroups?: AudienceGroupDto[];
 }
 
 export interface CreateOptionDto {
@@ -74,6 +78,8 @@ export interface CreateElectionQuestionDto {
   // this many options. Null leaves the count open.
   requiredRankCount: number | null;
   scoringSchemeId?: string;
+  // Question-level image support for creation/editing
+  imageDataUrl?: string;
   options: CreateOptionDto[];
 }
 

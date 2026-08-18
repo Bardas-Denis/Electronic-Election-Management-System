@@ -6,7 +6,7 @@ namespace Electronic_Election_Management_System.Data
 {
     public class ElectionDbContext : DbContext
     {
-        public ElectionDbContext(DbContextOptions<ElectionDbContext> options)
+        public ElectionDbContext(DbContextOptions options)
             : base(options) { }
 
         public DbSet<User> Users => Set<User>();
@@ -148,8 +148,8 @@ namespace Electronic_Election_Management_System.Data
             modelBuilder.Entity<Vote>()
                 .ToTable(t => t.HasCheckConstraint(
                     "CK_Votes_ExactlyOneVoterIdentity",
-                    "((VoteTokenId IS NOT NULL AND UserId IS NULL) " +
-                    "OR (VoteTokenId IS NULL AND UserId IS NOT NULL))"
+                    "((\"VoteTokenId\" IS NOT NULL AND \"UserId\" IS NULL) " +
+                    "OR (\"VoteTokenId\" IS NULL AND \"UserId\" IS NOT NULL))"
                 ));
 
             // A vote is either a Choice-question option pick, or a FreeText-question
@@ -157,8 +157,8 @@ namespace Electronic_Election_Management_System.Data
             modelBuilder.Entity<Vote>()
                 .ToTable(t => t.HasCheckConstraint(
                     "CK_Votes_ExactlyOneAnswerKind",
-                    "((OptionId IS NOT NULL AND QuestionId IS NULL AND AnswerText IS NULL) " +
-                    "OR (OptionId IS NULL AND QuestionId IS NOT NULL AND AnswerText IS NOT NULL))"
+                    "((\"OptionId\" IS NOT NULL AND \"QuestionId\" IS NULL AND \"AnswerText\" IS NULL) " +
+                    "OR (\"OptionId\" IS NULL AND \"QuestionId\" IS NOT NULL AND \"AnswerText\" IS NOT NULL))"
                 ));
 
             // A VoterDeclaration only ever exists for a non-anonymous vote (UserId set, VoteTokenId null).

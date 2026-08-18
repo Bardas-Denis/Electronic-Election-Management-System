@@ -19,11 +19,16 @@ export const authErrorInterceptor: HttpInterceptorFn = (req, next) => {
 
   return next(req).pipe(
     catchError((error) => {
-      if (error.status === 401 && !isAuthEndpoint && authService.isLoggedIn()) {
+      if (error.status === 503 && !router.url.startsWith('/setup')) {
+        authService.logout();
+        router.navigate(['/setup']);
+      } else if (error.status === 401 && !isAuthEndpoint && authService.isLoggedIn()) {
+        const backendReason = error.error?.reason;
+        const uiReason = backendReason === 'revoked' ? 'role-changed' : 'session-expired';
         authService.logout();
 
         if (!router.url.startsWith('/login')) {
-          router.navigate(['/login'], { queryParams: { reason: 'session-expired' } });
+          router.navigate(['/login'], { queryParams: { reason: uiReason } });
         }
       }
 

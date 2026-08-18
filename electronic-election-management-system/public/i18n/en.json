@@ -281,7 +281,10 @@
     "cancel": "Cancel",
     "saving": "Saving...",
     "linearScheme": "Linear",
-    "pointsScheme": "{{count}} points: {{points}}"
+    "pointsScheme": "{{count}} points: {{points}}",
+    "preview": "Preview",
+    "backToMyElections": "Back to my elections",
+    "previewHeading": "Preview election (Locked)"
   },
   "vote": {
     "questionOptional": "(optional)",

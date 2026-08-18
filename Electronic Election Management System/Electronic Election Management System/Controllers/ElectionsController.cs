@@ -80,7 +80,7 @@ namespace Electronic_Election_Management_System.Controllers
         }
 
         /// <summary>
-        /// Create a new election.
+        /// Create a new election. (Supports multi-type questions including FreeText images mapped via DTOs)
         /// </summary>
         /// <param name="request">The election to create.</param>
         [HttpPost]
@@ -94,7 +94,7 @@ namespace Electronic_Election_Management_System.Controllers
         }
 
         /// <summary>
-        /// Update election based on id.
+        /// Update election based on id. (Supports question-level image updates for all question types)
         /// </summary>
         /// <param name="id">The id of the election to update.</param>
         /// <param name="request">The election to update.</param>

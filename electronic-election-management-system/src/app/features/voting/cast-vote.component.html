@@ -1,237 +1,302 @@
 <div class="page">
   @if (election(); as e) {
-  <div class="vote-card">
-    <div class="vote-header">
-      <h2>{{ e.title }}</h2>
-      <p>{{ e.description }}</p>
-      <div class="election-meta">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-          stroke-linecap="round" stroke-linejoin="round">
-          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-          <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-        </svg>
-        {{ (e.isAnonymous ? 'vote.anonymousLabel' : 'vote.nonAnonymousLabel') | translate }}
+  <div class="moodle-quiz-layout">
+    
+    <!-- LEFT SIDE: Vote Navigation Panel -->
+    @if (questions(e).length > 1) {
+    <aside class="quiz-navigation-panel">
+      <h3>{{ 'vote.navigationTitle' | translate }}</h3>
+      <div class="quiz-nav-grid">
+        @for (q of questions(e); track q.id; let idx = $index) {
+          @let status = getQuestionStatus(q);
+          <button type="button" 
+                  class="quiz-nav-block" 
+                  [class.active]="currentQuestionIndex() === idx"
+                  [class.status-answered]="currentQuestionIndex() !== idx && status === 'answered'"
+                  [class.status-required-empty]="currentQuestionIndex() !== idx && status === 'required-empty'"
+                  [class.status-optional-empty]="currentQuestionIndex() !== idx && status === 'optional-empty'"
+                  (click)="jumpToQuestion(idx)">
+            {{ idx + 1 }}
+          </button>
+        }
       </div>
+    </aside>
+    }
+
+    <!-- RIGHT SIDE: Main Voting Card Content (Centered) -->
+    <div class="vote-card moodle-main-content">
+      <div class="vote-header">
+        <h2>{{ e.title }}</h2>
+        <p>{{ e.description }}</p>
+        <div class="election-meta">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+          </svg>
+          {{ (e.isAnonymous ? 'vote.anonymousLabel' : 'vote.nonAnonymousLabel') | translate }}
+        </div>
+        @if (e.isExpired) {
+        <span class="badge badge--expired">{{ 'elections.expired' | translate }}</span>
+        }
+      </div>
+
+      <!-- Already-voted banner + edit-used note -->
+      @if (e.hasUserVoted && !isEditingVote()) {
+      <div class="already-voted-banner">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+          stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="20 6 9 17 4 12"></polyline>
+        </svg>
+        {{ 'vote.alreadyVotedBanner' | translate }}
+        @if (!canEditVote()) {
+        <span class="edit-used-note">{{ 'vote.editUsed' | translate }}</span>
+        }
+      </div>
+      }
+
+      <!-- Edit / Delete action row -->
+      @if (!e.isExpired && canEditVote() && e.hasUserVoted && !isEditingVote()) {
+      <div class="vote-actions">
+        <button type="button" class="btn-secondary" (click)="startEditVote()">
+          {{ 'vote.editVote' | translate }}
+        </button>
+        <button type="button" class="btn-danger" [disabled]="isDeletingVote()" (click)="deleteVote()">
+          {{ (isDeletingVote() ? 'vote.deleting' : 'vote.deleteVote') | translate }}
+        </button>
+      </div>
+      }
+
+      <!-- Editing-mode banner -->
+      @if (isEditingVote()) {
+      <div class="already-voted-banner">
+        {{ 'vote.editingBanner' | translate }}
+      </div>
+      }
+
+      <!-- Expired banner -->
       @if (e.isExpired) {
-      <span class="badge badge--expired">{{ 'elections.expired' | translate }}</span>
+      <div class="error-text">
+        {{ 'vote.expiredBanner' | translate }}
+      </div>
       }
-    </div>
 
-    <!-- Already-voted banner + edit-used note -->
-    @if (e.hasUserVoted && !isEditingVote()) {
-    <div class="already-voted-banner">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-        stroke-linecap="round" stroke-linejoin="round">
-        <polyline points="20 6 9 17 4 12"></polyline>
-      </svg>
-      {{ 'vote.alreadyVotedBanner' | translate }}
-      @if (!canEditVote()) {
-      <span class="edit-used-note">{{ 'vote.editUsed' | translate }}</span>
-      }
-    </div>
-    }
+      <div class="vote-questions">
+        @if (getCurrentQuestion(e); as question) {
+        <section class="vote-question-block">
+          <p class="vote-question">
+            @if (questions(e).length > 1) {
+            <span>{{ currentQuestionIndex() + 1 }}.</span>
+            }
+            {{ question.text }}
+            @if (question.isRequired === false) {
+            <span class="question-optional-badge">{{ 'vote.questionOptional' | translate }}</span>
+            }
+            @if (question.allowMultipleAnswers) {
+            <span class="question-optional-badge">{{ 'vote.questionMultipleAnswers' | translate }}</span>
+            }
+          </p>
 
-    <!-- Edit / Delete action row (only while edit budget remains and election is open) -->
-    @if (!e.isExpired && canEditVote() && e.hasUserVoted && !isEditingVote()) {
-    <div class="vote-actions">
-      <button type="button" class="btn-secondary" (click)="startEditVote()">
-        {{ 'vote.editVote' | translate }}
-      </button>
-      <button type="button" class="btn-danger" [disabled]="isDeletingVote()" (click)="deleteVote()">
-        {{ (isDeletingVote() ? 'vote.deleting' : 'vote.deleteVote') | translate }}
-      </button>
-    </div>
-    }
+          @if (question.questionType === 'FreeText') {
+          <div class="free-text-answer" [class.locked]="!canSelectOptions()">
 
-    <!-- Editing-mode banner -->
-    @if (isEditingVote()) {
-    <div class="already-voted-banner">
-      {{ 'vote.editingBanner' | translate }}
-    </div>
-    }
+            <!-- Centered container with "frame" look and soft shadow - -->
+            @if (question.imageDataUrl || (question.options && question.options.length > 0 && question.options[0].label === 'FreeText_Image' && question.options[0].imageDataUrl)) {
+            <div style="display: flex; justify-content: center; margin-bottom: 1.5rem; padding: 0.5rem; background: var(--bg-subtle, #f8fafc); border-radius: 12px; border: 1px solid var(--border-color, #e2e8f0);">
+              <img [src]="question.imageDataUrl || question.options[0]?.imageDataUrl" alt="Question Image" style="max-width: 100%; max-height: 350px; object-fit: contain; border-radius: 8px; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);" />
+            </div>
+            }
 
-    <!-- Expired banner -->
-    @if (e.isExpired) {
-    <div class="error-text">
-      {{ 'vote.expiredBanner' | translate }}
-    </div>
-    }
 
-    <div class="vote-questions">
-      @for (question of questions(e); track question.id; let questionIndex = $index) {
-      <section class="vote-question-block">
-        <p class="vote-question">
-          @if (questions(e).length > 1) {
-          <span>{{ questionIndex + 1 }}.</span>
-          }
-          {{ question.text }}
-          @if (question.isRequired === false) {
-          <span class="question-optional-badge">{{ 'vote.questionOptional' | translate }}</span>
-          }
-          @if (question.allowMultipleAnswers) {
-          <span class="question-optional-badge">{{ 'vote.questionMultipleAnswers' | translate }}</span>
-          }
-        </p>
-        @if (question.questionType === 'FreeText') {
-        <div class="free-text-answer" [class.locked]="!canSelectOptions()">
-          @if (question.options.length > 0) {
-          <div class="suggestion-list">
+
+            @if (question.options && question.options.length > 0 && question.options[0].label !== 'FreeText_Image') {
+            <div class="suggestion-list">
+              @for (option of question.options; track option.id) {
+              <button type="button" class="suggestion-item" [disabled]="!canSelectOptions()"
+                      (click)="applySuggestion(question.id, option.label)">
+                <span class="option-body">
+                  <span class="option-title">{{ option.label }}</span>
+                </span>
+              </button>
+              }
+            </div>
+            }
+
+            <textarea class="free-text-input" [attr.maxlength]="freeTextAnswerMaxLength" [disabled]="!canSelectOptions()"
+                      [value]="getTextAnswer(question.id)"
+                      (input)="setTextAnswer(question.id, $any($event.target).value)"
+                      [placeholder]="'vote.freeTextPlaceholder' | translate"></textarea>
+            <p class="free-text-counter" style="text-align: right;">{{ getTextAnswer(question.id).length }}/{{ freeTextAnswerMaxLength }}</p>
+          </div>
+          } @else if (question.questionType === 'Ranking') {
+          <div class="ranking-answer" [class.locked]="!canSelectOptions()">
+            <div class="ranking-lists-container">
+              <div class="ranking-list available-options">
+                <h4>{{ 'vote.rankingAvailableLabel' | translate }}</h4>
+                <div
+                  cdkDropList
+                  #availableList="cdkDropList"
+                  [cdkDropListData]="availableRankingOptions()[question.id]"
+                  [cdkDropListConnectedTo]="[rankedList]"
+                  class="drag-list"
+                  (cdkDropListDropped)="dropRankingOption($event, question.id)">
+                  @for (item of availableRankingOptions()[question.id]; track item.id) {
+                  <div class="drag-item" cdkDrag [cdkDragDisabled]="!canSelectOptions()">
+                    @if (item.imageDataUrl) {
+                    <img [src]="item.imageDataUrl" alt="" class="item-img" />
+                    }
+                    <div class="item-details">
+                      <strong>{{ item.label }}</strong>
+                      @if (item.description) {
+                      <span>{{ item.description }}</span>
+                      }
+                    </div>
+                  </div>
+                  }
+                </div>
+              </div>
+
+              <div class="ranking-list my-ranking">
+                <h4>
+                  {{ 'vote.rankingMyRankingLabel' | translate }}
+                  @if (requiredRankCount(question.id); as limit) {
+                  <span class="ranking-counter" [class.is-complete]="rankedCount(question.id) === limit">
+                    {{ 'vote.rankingCounter' | translate:{ placed: rankedCount(question.id), total: limit } }}
+                  </span>
+                  }
+                </h4>
+                <div
+                  cdkDropList
+                  #rankedList="cdkDropList"
+                  [cdkDropListData]="rankedOptions()[question.id]"
+                  [cdkDropListConnectedTo]="[availableList]"
+                  class="drag-list"
+                  (cdkDropListDropped)="dropRankingOption($event, question.id)">
+                  @for (item of rankedOptions()[question.id]; track item.id; let i = $index) {
+                  <div class="drag-item" cdkDrag [cdkDragDisabled]="!canSelectOptions()">
+                    <div class="rank-badge">{{ i + 1 }}</div>
+                    @if (item.imageDataUrl) {
+                    <img [src]="item.imageDataUrl" alt="" class="item-img" />
+                    }
+                    <div class="item-details">
+                      <strong>{{ item.label }}</strong>
+                      @if (item.description) {
+                      <span>{{ item.description }}</span>
+                      }
+                    </div>
+                  </div>
+                  }
+                  @if (!rankedOptions()[question.id] || rankedOptions()[question.id].length === 0) {
+                  <div class="empty-list-placeholder">{{ 'vote.rankingEmptyPlaceholder' | translate }}</div>
+                  }
+                </div>
+              </div>
+            </div>
+          </div>
+          } @else {
+          <div class="options-list" [class.locked]="!canSelectOptions()">
             @for (option of question.options; track option.id) {
-            <button type="button" class="suggestion-item" [disabled]="!canSelectOptions()"
-              (click)="applySuggestion(question.id, option.label)">
+            <button class="option-item" [class.selected]="isOptionSelected(question.id, option.id)"
+              [class.option-item--checkbox]="question.allowMultipleAnswers"
+              [disabled]="!canSelectOptions()"
+              (click)="question.allowMultipleAnswers ? toggleOption(question.id, option.id) : selectOption(question.id, option.id, question.isRequired)">
+              @if (option.imageDataUrl) {
+              <img class="option-image" [src]="option.imageDataUrl" [alt]="option.label" />
+              }
+              <span class="option-radio"><span class="option-radio-dot"></span></span>
               <span class="option-body">
                 <span class="option-title">{{ option.label }}</span>
+                @if (option.description) {
+                <span class="option-description">{{ option.description }}</span>
+                }
+              </span>
+            </button>
+            }
+            @if (question.allowOtherOption) {
+            <button class="option-item" [class.selected]="isOtherSelected(question.id)"
+              [class.option-item--checkbox]="question.allowMultipleAnswers"
+              [disabled]="!canSelectOptions()"
+              (click)="toggleOther(question.id, question.allowMultipleAnswers, question.isRequired)">
+              <span class="option-radio"><span class="option-radio-dot"></span></span>
+              <span class="option-body">
+                <span class="option-title">{{ 'vote.otherOptionLabel' | translate }}</span>
               </span>
             </button>
             }
           </div>
-          }
-          <textarea class="free-text-input" [attr.maxlength]="freeTextAnswerMaxLength" [disabled]="!canSelectOptions()"
-            [value]="getTextAnswer(question.id)"
-            (input)="setTextAnswer(question.id, $any($event.target).value)"
-            [placeholder]="'vote.freeTextPlaceholder' | translate"></textarea>
-          <p class="free-text-counter">{{ getTextAnswer(question.id).length }}/{{ freeTextAnswerMaxLength }}</p>
-        </div>
-        } @else if (question.questionType === 'Ranking') {
-        <div class="ranking-answer" [class.locked]="!canSelectOptions()">
-          <div class="ranking-lists-container">
-            <div class="ranking-list available-options">
-              <h4>{{ 'vote.rankingAvailableLabel' | translate }}</h4>
-              <div
-                cdkDropList
-                #availableList="cdkDropList"
-                [cdkDropListData]="availableRankingOptions()[question.id]"
-                [cdkDropListConnectedTo]="[rankedList]"
-                class="drag-list"
-                (cdkDropListDropped)="dropRankingOption($event, question.id)">
-                @for (item of availableRankingOptions()[question.id]; track item.id) {
-                <div class="drag-item" cdkDrag [cdkDragDisabled]="!canSelectOptions()">
-                  @if (item.imageDataUrl) {
-                  <img [src]="item.imageDataUrl" alt="" class="item-img" />
-                  }
-                  <div class="item-details">
-                    <strong>{{ item.label }}</strong>
-                    @if (item.description) {
-                    <span>{{ item.description }}</span>
-                    }
-                  </div>
-                </div>
-                }
-              </div>
-            </div>
-
-            <div class="ranking-list my-ranking">
-              <h4>
-                {{ 'vote.rankingMyRankingLabel' | translate }}
-                @if (requiredRankCount(question.id); as limit) {
-                <span class="ranking-counter" [class.is-complete]="rankedCount(question.id) === limit">
-                  {{ 'vote.rankingCounter' | translate:{ placed: rankedCount(question.id), total: limit } }}
-                </span>
-                }
-              </h4>
-              <div
-                cdkDropList
-                #rankedList="cdkDropList"
-                [cdkDropListData]="rankedOptions()[question.id]"
-                [cdkDropListConnectedTo]="[availableList]"
-                class="drag-list"
-                (cdkDropListDropped)="dropRankingOption($event, question.id)">
-                @for (item of rankedOptions()[question.id]; track item.id; let i = $index) {
-                <div class="drag-item" cdkDrag [cdkDragDisabled]="!canSelectOptions()">
-                  <div class="rank-badge">{{ i + 1 }}</div>
-                  @if (item.imageDataUrl) {
-                  <img [src]="item.imageDataUrl" alt="" class="item-img" />
-                  }
-                  <div class="item-details">
-                    <strong>{{ item.label }}</strong>
-                    @if (item.description) {
-                    <span>{{ item.description }}</span>
-                    }
-                  </div>
-                </div>
-                }
-                @if (!rankedOptions()[question.id] || rankedOptions()[question.id].length === 0) {
-                <div class="empty-list-placeholder">{{ 'vote.rankingEmptyPlaceholder' | translate }}</div>
-                }
-              </div>
-            </div>
-          </div>
-        </div>
-        } @else {
-        <div class="options-list" [class.locked]="!canSelectOptions()">
-          @for (option of question.options; track option.id) {
-          <button class="option-item" [class.selected]="isOptionSelected(question.id, option.id)"
-            [class.option-item--checkbox]="question.allowMultipleAnswers"
-            [disabled]="!canSelectOptions()"
-            (click)="question.allowMultipleAnswers ? toggleOption(question.id, option.id) : selectOption(question.id, option.id, question.isRequired)">
-            @if (option.imageDataUrl) {
-            <img class="option-image" [src]="option.imageDataUrl" [alt]="option.label" />
+          @if (question.allowOtherOption && isOtherSelected(question.id)) {
+          <div class="free-text-answer other-answer">
+            <textarea class="free-text-input" [attr.maxlength]="otherAnswerMaxLength" [disabled]="!canSelectOptions()"
+              [value]="getTextAnswer(question.id)"
+              (input)="setTextAnswer(question.id, $any($event.target).value)"
+              [placeholder]="'vote.otherPlaceholder' | translate"></textarea>
+            <p class="free-text-counter" style="text-align: right;">{{ getTextAnswer(question.id).length }}/{{ otherAnswerMaxLength }}</p>
+            @if (isOtherAnswerDuplicate(question)) {
+            <p class="error-text">{{ 'vote.otherDuplicatesOption' | translate }}</p>
             }
-            <span class="option-radio"><span class="option-radio-dot"></span></span>
-            <span class="option-body">
-              <span class="option-title">{{ option.label }}</span>
-              @if (option.description) {
-              <span class="option-description">{{ option.description }}</span>
+          </div>
+          }
+          }
+        </section>
+        }
+      </div>
+
+      <!-- Pagination navigation buttons (Previous / Next / Submit) -->
+      <div class="pagination-actions" style="display: flex; gap: 10px; margin-top: 25px; align-items: center; justify-content: space-between;">
+        
+        <!-- Previous Button -->
+        @if (currentQuestionIndex() > 0) {
+        <button type="button" class="btn-secondary" (click)="prevPage()">
+          {{ 'vote.previous' | translate }}
+        </button>
+        } @else {
+        <div></div>
+        }
+
+        <!-- Next Button -->
+        @if (election(); as e) {
+          @if (currentQuestionIndex() < questions(e).length - 1) {
+          <button type="button" class="btn-secondary" (click)="nextPage(e)">
+            {{ 'vote.next' | translate }}
+          </button>
+          }
+        }
+
+        <!-- Submit Button -->
+        @if (!e.isExpired && (!e.hasUserVoted || isEditingVote())) {
+          @if (election(); as e) {
+            @if (currentQuestionIndex() === questions(e).length - 1) {
+            <button class="btn-primary vote-submit" [disabled]="!hasAllAnswers() || isSubmitting() || isDeletingVote()"
+              (click)="submitVote()" style="margin-top: 0; flex: 1;">
+              @if (isSubmitting()) {
+              <span class="spinner"></span>
               }
-            </span>
-          </button>
+              {{ (isSubmitting() ? 'vote.submitting' : (isEditingVote() ? 'vote.updateVote' : 'vote.submit')) | translate }}
+            </button>
+            }
           }
-          @if (question.allowOtherOption) {
-          <button class="option-item" [class.selected]="isOtherSelected(question.id)"
-            [class.option-item--checkbox]="question.allowMultipleAnswers"
-            [disabled]="!canSelectOptions()"
-            (click)="toggleOther(question.id, question.allowMultipleAnswers, question.isRequired)">
-            <span class="option-radio"><span class="option-radio-dot"></span></span>
-            <span class="option-body">
-              <span class="option-title">{{ 'vote.otherOptionLabel' | translate }}</span>
-            </span>
-          </button>
-          }
-        </div>
-        @if (question.allowOtherOption && isOtherSelected(question.id)) {
-        <div class="free-text-answer other-answer">
-          <textarea class="free-text-input" [attr.maxlength]="otherAnswerMaxLength" [disabled]="!canSelectOptions()"
-            [value]="getTextAnswer(question.id)"
-            (input)="setTextAnswer(question.id, $any($event.target).value)"
-            [placeholder]="'vote.otherPlaceholder' | translate"></textarea>
-          <p class="free-text-counter">{{ getTextAnswer(question.id).length }}/{{ otherAnswerMaxLength }}</p>
-          @if (isOtherAnswerDuplicate(question)) {
-          <p class="error-text">{{ 'vote.otherDuplicatesOption' | translate }}</p>
-          }
-        </div>
         }
-        }
-      </section>
+      </div>
+
+      @if (isEditingVote()) {
+      <button type="button" class="btn-ghost vote-cancel-edit" (click)="cancelEditVote()" style="margin-top: 10px; width: 100%;">
+        {{ 'vote.cancelEdit' | translate }}
+      </button>
+      }
+
+      <!-- Error / success feedback -->
+      @if (errorMessageKey()) {
+      <p class="error-text">{{ errorMessageKey() | translate }}</p>
+      }
+      @if (successMessageKey()) {
+      <p class="success-text">{{ successMessageKey() | translate }}</p>
+      }
+
+      @if (e.isExpired) {
+      <button (click)="goToResults()" class="btn-secondary vote-submit">{{ 'vote.seeResults' | translate }}</button>
       }
     </div>
 
-    <!-- Error / success feedback -->
-    @if (errorMessageKey()) {
-    <p class="error-text">{{ errorMessageKey() | translate }}</p>
-    }
-    @if (successMessageKey()) {
-    <p class="success-text">{{ successMessageKey() | translate }}</p>
-    }
-
-    <!-- Submit / Update button -->
-    @if (!e.isExpired && (!e.hasUserVoted || isEditingVote())) {
-    <button class="btn-primary vote-submit" [disabled]="!hasAllAnswers() || isSubmitting() || isDeletingVote()"
-      (click)="submitVote()">
-      @if (isSubmitting()) {
-      <span class="spinner"></span>
-      }
-      {{ (isSubmitting() ? 'vote.submitting' : (isEditingVote() ? 'vote.updateVote' : 'vote.submit')) | translate }}
-    </button>
-    @if (isEditingVote()) {
-    <button type="button" class="btn-ghost vote-cancel-edit" (click)="cancelEditVote()">
-      {{ 'vote.cancelEdit' | translate }}
-    </button>
-    }
-    }
-
-    @if (e.isExpired) {
-    <button (click)="goToResults()" class="btn-secondary vote-submit">{{ 'vote.seeResults' | translate }}</button>
-    }
   </div>
   } @else {
   <div class="state-block">

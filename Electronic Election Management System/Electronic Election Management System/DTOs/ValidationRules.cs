@@ -8,6 +8,8 @@ namespace Electronic_Election_Management_System.DTOs
         public const int EmailMaxLength = 254;
         public const int PasswordMaxLength = 128;
         public const int ShortTextMaxLength = 100;
+        public const int LabelNameMaxLength = 50;
+        public const int LabelCategoryMaxLength = 50;
         public const int TitleMaxLength = 200;
         public const int QuestionMaxLength = 500;
         public const int DescriptionMaxLength = 2_000;

@@ -43,6 +43,12 @@ namespace Electronic_Election_Management_System.Models
         /// </summary>
         public bool IsVisible { get; set; } = true;
 
+        /// <summary>
+        /// JSON snapshot of the audience group rules used when creating a closed election,
+        /// so edit mode can restore and display user groupings.
+        /// </summary>
+        public string? AudienceGroupsSnapshot { get; set; }
+
         public DateTime StartsAt { get; set; }
         public DateTime EndsAt { get; set; }
 

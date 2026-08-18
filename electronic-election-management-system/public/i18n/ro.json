@@ -281,7 +281,10 @@
     "cancel": "Anulează",
     "saving": "Se salvează...",
     "linearScheme": "Liniar",
-    "pointsScheme": "{{count}} puncte: {{points}}"
+    "pointsScheme": "{{count}} puncte: {{points}}",
+    "preview": "Previzualizare",
+    "backToMyElections": "Înapoi la alegerile mele",
+    "previewHeading": "Previzualizează alegerea (Blocată)"
   },
   "vote": {
     "questionOptional": "(opțional)",
@@ -302,7 +305,6 @@
     "nonAnonymousLabel": "Vot neanonim.",
     "alreadyVotedBanner": "Ai votat deja la această alegere. Opțiunile sunt blocate.",
     "expiredBanner": "Această alegere s-a încheiat și nu mai acceptă voturi noi. Poți totuși consulta rezultatele înregistrate.",
-    "submit": "Trimite votul",
     "submitting": "Se trimite...",
     "castFailed": "Votul nu a putut fi înregistrat. Poate ai votat deja.",
     "editVote": "Modifică răspunsul",
@@ -316,7 +318,11 @@
     "updateSuccess": "Răspunsul a fost actualizat.",
     "castSuccess": "Votul tău a fost înregistrat.",
     "updateFailed": "Răspunsul nu a putut fi actualizat.",
-    "deleteFailed": "Răspunsul nu a putut fi șters."
+    "deleteFailed": "Răspunsul nu a putut fi șters.",
+    "next": "Următorul",
+    "previous": "Anterior",
+    "submit": "Trimite votul",
+    "navigationTitle": "Navigare vot"
   },
   "declaration": {
     "politicHeader": "Declarație alegător",
@@ -428,6 +434,7 @@
     "colCreatedAt": "Creat",
     "deleteBtn": "Șterge",
     "nameRequired": "Numele etichetei este obligatoriu.",
+    "lengthExceeded": "Numele sau categoria etichetei depășește lungimea maximă.",
     "createSuccess": "Etichetă creată cu succes.",
     "createFailed": "Nu am putut crea eticheta.",
     "deleteFailed": "Nu am putut șterge eticheta.",
@@ -611,5 +618,44 @@
       "workEmail": "Email muncă",
       "workEmailPlaceholder": "ex: ion.popescu@companie.ro"
     }
+  },
+  "setup": {
+    "heading": "Configurare bază de date",
+    "subtitle": "Alegeți tipul bazei de date și configurați conexiunea înainte de a utiliza aplicația.",
+    "providerLabel": "Tip bază de date",
+    "providerSqlite": "SQLite",
+    "providerPostgres": "PostgreSQL",
+    "sqliteNote": "SQLite este recomandat pentru instalări mici sau pentru testare. Fișierul bazei de date va fi creat automat.",
+    "postgresSection": "Detalii conexiune PostgreSQL",
+    "host": "Server (host)",
+    "hostPlaceholder": "localhost",
+    "hostRequired": "Serverul este obligatoriu.",
+    "port": "Port",
+    "portPlaceholder": "5432",
+    "portRequired": "Portul este obligatoriu.",
+    "portInvalid": "Portul trebuie să fie un număr valid.",
+    "database": "Nume bază de date",
+    "databasePlaceholder": "eems",
+    "databaseRequired": "Numele bazei de date este obligatoriu.",
+    "username": "Utilizator",
+    "usernamePlaceholder": "eems_user",
+    "usernameRequired": "Utilizatorul este obligatoriu.",
+    "password": "Parolă",
+    "passwordPlaceholder": "••••••••",
+    "passwordRequired": "Parola este obligatorie.",
+    "showPassword": "Arată parola",
+    "hidePassword": "Ascunde parola",
+    "testButton": "Testează conexiunea",
+    "testing": "Se testează...",
+    "testSuccess": "Conexiune reușită! Puteți continua.",
+    "saveButton": "Salvează și pornește",
+    "saving": "Se salvează...",
+    "restartingHeading": "Repornire în curs...",
+    "restartingMessage": "Configurația a fost salvată. Aplicația repornire — vă rugăm așteptați.",
+    "timeoutHeading": "Repornire întârziată",
+    "timeoutMessage": "Repornirea durează mai mult decât de obicei. Verificați că serviciul backend a pornit corect, apoi reîncărcați pagina.",
+    "reloadButton": "Reîncarcă pagina",
+    "alreadyConfigured": "Aplicația este deja configurată. Veți fi redirecționat...",
+    "errorUnknown": "A apărut o eroare neașteptată. Verificați jurnalele serverului."
   }
 }

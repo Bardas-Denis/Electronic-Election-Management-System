@@ -36,10 +36,10 @@ namespace Electronic_Election_Management_System.DTOs
     // SYNC: label.model.ts -> CreateLabelRequest
     public class CreateLabelRequest
     {
-        [Required]
-        [MinLength(1)]
+        [Required, NotWhitespace, StringLength(ValidationRules.LabelNameMaxLength)]
         public string Name { get; set; } = string.Empty;
 
+        [StringLength(ValidationRules.LabelCategoryMaxLength)]
         public string? Category { get; set; }
     }
 

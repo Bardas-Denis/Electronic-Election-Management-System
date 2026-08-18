@@ -1,0 +1,253 @@
+<div class="auth-page">
+  <div class="auth-card setup-card">
+
+    <!-- Brand -->
+    <div class="brand">
+      <span class="brand-icon">
+        <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <ellipse cx="12" cy="5" rx="9" ry="3"></ellipse>
+          <path d="M3 5v14c0 1.66 4.03 3 9 3s9-1.34 9-3V5"></path>
+          <path d="M3 12c0 1.66 4.03 3 9 3s9-1.34 9-3"></path>
+        </svg>
+      </span>
+      <span class="brand-name">{{ 'nav.brand' | translate }}</span>
+    </div>
+
+    <!-- FORM STATE -->
+    @if (viewState() === 'form') {
+      <div class="card-header">
+        <h1>{{ 'setup.heading' | translate }}</h1>
+        <p class="subtitle">{{ 'setup.subtitle' | translate }}</p>
+      </div>
+
+      <!-- Already-configured 409 banner -->
+      @if (serverErrorMessage() === 'alreadyConfigured') {
+        <div class="server-info" role="status">
+          <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+          {{ 'setup.alreadyConfigured' | translate }}
+        </div>
+      }
+
+      <!-- Provider picker -->
+      <fieldset class="provider-picker" role="radiogroup" [attr.aria-label]="'setup.providerLabel' | translate">
+        <button
+          type="button"
+          id="provider-sqlite"
+          class="provider-btn"
+          [class.provider-btn--active]="selectedProvider() === 'Sqlite'"
+          (click)="selectProvider('Sqlite')"
+          [attr.aria-pressed]="selectedProvider() === 'Sqlite'"
+        >
+          <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <ellipse cx="12" cy="5" rx="9" ry="3"></ellipse>
+            <path d="M3 5v14c0 1.66 4.03 3 9 3s9-1.34 9-3V5"></path>
+          </svg>
+          {{ 'setup.providerSqlite' | translate }}
+        </button>
+        <button
+          type="button"
+          id="provider-postgres"
+          class="provider-btn"
+          [class.provider-btn--active]="selectedProvider() === 'Postgres'"
+          (click)="selectProvider('Postgres')"
+          [attr.aria-pressed]="selectedProvider() === 'Postgres'"
+        >
+          <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <ellipse cx="12" cy="5" rx="9" ry="3"></ellipse>
+            <path d="M3 5v14c0 1.66 4.03 3 9 3s9-1.34 9-3V5"></path>
+            <path d="M3 12c0 1.66 4.03 3 9 3s9-1.34 9-3"></path>
+          </svg>
+          {{ 'setup.providerPostgres' | translate }}
+        </button>
+      </fieldset>
+
+      <!-- SQLite note -->
+      @if (selectedProvider() === 'Sqlite') {
+        <div class="server-info provider-note" role="note">
+          <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+          {{ 'setup.sqliteNote' | translate }}
+        </div>
+      }
+
+      <!-- Postgres form -->
+      @if (selectedProvider() === 'Postgres') {
+        <p class="section-label">{{ 'setup.postgresSection' | translate }}</p>
+
+        <form [formGroup]="pgForm" (ngSubmit)="onTestConnection()" novalidate class="pg-form">
+
+          <!-- Host + Port row -->
+          <div class="field-row">
+            <div class="field" [class.field--error]="pgForm.controls.host.invalid && pgForm.controls.host.touched">
+              <label for="pg-host">{{ 'setup.host' | translate }}</label>
+              <input
+                id="pg-host"
+                type="text"
+                formControlName="host"
+                [placeholder]="'setup.hostPlaceholder' | translate"
+                autocomplete="off"
+              />
+              @if (pgForm.controls.host.touched && pgForm.controls.host.hasError('required')) {
+                <span class="field-error" role="alert">{{ 'setup.hostRequired' | translate }}</span>
+              }
+            </div>
+
+            <div class="field field--port" [class.field--error]="pgForm.controls.port.invalid && pgForm.controls.port.touched">
+              <label for="pg-port">{{ 'setup.port' | translate }}</label>
+              <input
+                id="pg-port"
+                type="text"
+                formControlName="port"
+                [placeholder]="'setup.portPlaceholder' | translate"
+                autocomplete="off"
+              />
+              @if (pgForm.controls.port.touched && pgForm.controls.port.hasError('required')) {
+                <span class="field-error" role="alert">{{ 'setup.portRequired' | translate }}</span>
+              } @else if (pgForm.controls.port.touched && pgForm.controls.port.hasError('pattern')) {
+                <span class="field-error" role="alert">{{ 'setup.portInvalid' | translate }}</span>
+              }
+            </div>
+          </div>
+
+          <!-- Database -->
+          <div class="field" [class.field--error]="pgForm.controls.database.invalid && pgForm.controls.database.touched">
+            <label for="pg-database">{{ 'setup.database' | translate }}</label>
+            <input
+              id="pg-database"
+              type="text"
+              formControlName="database"
+              [placeholder]="'setup.databasePlaceholder' | translate"
+              autocomplete="off"
+            />
+            @if (pgForm.controls.database.touched && pgForm.controls.database.hasError('required')) {
+              <span class="field-error" role="alert">{{ 'setup.databaseRequired' | translate }}</span>
+            }
+          </div>
+
+          <!-- Username -->
+          <div class="field" [class.field--error]="pgForm.controls.username.invalid && pgForm.controls.username.touched">
+            <label for="pg-username">{{ 'setup.username' | translate }}</label>
+            <input
+              id="pg-username"
+              type="text"
+              formControlName="username"
+              [placeholder]="'setup.usernamePlaceholder' | translate"
+              autocomplete="username"
+            />
+            @if (pgForm.controls.username.touched && pgForm.controls.username.hasError('required')) {
+              <span class="field-error" role="alert">{{ 'setup.usernameRequired' | translate }}</span>
+            }
+          </div>
+
+          <!-- Password -->
+          <div class="field" [class.field--error]="pgForm.controls.password.invalid && pgForm.controls.password.touched">
+            <label for="pg-password">{{ 'setup.password' | translate }}</label>
+            <div class="input-wrapper">
+              <input
+                id="pg-password"
+                [type]="showPassword() ? 'text' : 'password'"
+                formControlName="password"
+                [placeholder]="'setup.passwordPlaceholder' | translate"
+                autocomplete="new-password"
+              />
+              <button
+                type="button"
+                class="toggle-btn"
+                (click)="togglePassword()"
+                [attr.aria-label]="(showPassword() ? 'setup.hidePassword' : 'setup.showPassword') | translate"
+              >
+                @if (showPassword()) {
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
+                } @else {
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                }
+              </button>
+            </div>
+            @if (pgForm.controls.password.touched && pgForm.controls.password.hasError('required')) {
+              <span class="field-error" role="alert">{{ 'setup.passwordRequired' | translate }}</span>
+            }
+          </div>
+
+          <!-- Test connection result -->
+          @if (testPassed() === true) {
+            <div class="server-info test-result" role="status">
+              <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              {{ 'setup.testSuccess' | translate }}
+            </div>
+          }
+          @if (testPassed() === false) {
+            <div class="server-error test-result" role="alert">
+              <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+              {{ testErrorMessage() ?? ('setup.errorUnknown' | translate) }}
+            </div>
+          }
+
+          <!-- Generic server error from save -->
+          @if (serverErrorMessage() && serverErrorMessage() !== 'alreadyConfigured') {
+            <div class="server-error" role="alert">
+              <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+              {{ serverErrorMessage() }}
+            </div>
+          }
+
+          <!-- Test button -->
+          <button type="submit" class="btn-secondary" [disabled]="isTesting() || isSaving()">
+            @if (isTesting()) {
+              <span class="spinner spinner--dark"></span>
+              {{ 'setup.testing' | translate }}
+            } @else {
+              {{ 'setup.testButton' | translate }}
+            }
+          </button>
+        </form>
+      }
+
+      <!-- Generic server error for SQLite save -->
+      @if (selectedProvider() === 'Sqlite' && serverErrorMessage() && serverErrorMessage() !== 'alreadyConfigured') {
+        <div class="server-error" role="alert">
+          <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+          {{ serverErrorMessage() }}
+        </div>
+      }
+
+      <!-- Save button -->
+      <button
+        type="button"
+        id="setup-save-btn"
+        class="btn-primary"
+        [disabled]="isSaving() || isTesting() || (selectedProvider() === 'Postgres' && testPassed() !== true)"
+        (click)="onSave()"
+      >
+        @if (isSaving()) {
+          <span class="spinner"></span>
+          {{ 'setup.saving' | translate }}
+        } @else {
+          {{ 'setup.saveButton' | translate }}
+        }
+      </button>
+    }
+
+    <!-- RESTARTING STATE -->
+    @if (viewState() === 'restarting') {
+      <div class="state-centered">
+        <span class="spinner spinner--lg"></span>
+        <h1>{{ 'setup.restartingHeading' | translate }}</h1>
+        <p class="subtitle">{{ 'setup.restartingMessage' | translate }}</p>
+      </div>
+    }
+
+    <!-- TIMEOUT STATE -->
+    @if (viewState() === 'timeout') {
+      <div class="state-centered">
+        <div class="timeout-icon" aria-hidden="true">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+        </div>
+        <h1>{{ 'setup.timeoutHeading' | translate }}</h1>
+        <p class="subtitle">{{ 'setup.timeoutMessage' | translate }}</p>
+        <button type="button" class="btn-primary" (click)="reloadPage()">
+          {{ 'setup.reloadButton' | translate }}
+        </button>
+      </div>
+    }
+
+  </div>
+</div>

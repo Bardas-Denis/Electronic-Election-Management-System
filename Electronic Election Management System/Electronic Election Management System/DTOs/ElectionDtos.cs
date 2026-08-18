@@ -39,6 +39,8 @@ namespace Electronic_Election_Management_System.DTOs
         /// exactly this many options. Null leaves the count open.</summary>
         public int? RequiredRankCount { get; set; }
         public Guid? ScoringSchemeId { get; set; }
+        // Question-level image support (including FreeText)
+        public string? ImageDataUrl { get; set; }
         /// <summary>For a <c>"Choice"</c> question, the selectable options. For a <c>"FreeText"</c>
         /// question, optional suggestion chips - voters may still type anything.</summary>
         public List<OptionDto> Options { get; set; } = new();
@@ -61,6 +63,9 @@ namespace Electronic_Election_Management_System.DTOs
         /// <c>ElectionService.QuestionsAreValid</c>). Null leaves the count open.</summary>
         public int? RequiredRankCount { get; set; }
         public Guid? ScoringSchemeId { get; set; }
+        // Question-level image validation
+        [StringLength(ValidationRules.ImageDataUrlMaxLength)]
+        public string? ImageDataUrl { get; set; }
         /// <summary>Required to have at least 2 for a <c>"Choice"</c> question (enforced in
         /// <c>ElectionService.QuestionsAreValid</c>, since the requirement depends on
         /// <see cref="QuestionType"/>); optional suggestion chips for a <c>"FreeText"</c> question.</summary>
@@ -100,7 +105,13 @@ namespace Electronic_Election_Management_System.DTOs
         public List<OptionDto> Options { get; set; } = new();
         public List<ElectionQuestionDto> Questions { get; set; } = new();
 
-        
+        /// <summary>
+        /// Audience group rules saved when creating a closed election.
+        /// Restored in edit mode to preserve group badges and summaries.
+        /// </summary>
+        public List<AudienceGroupDto>? AudienceGroups { get; set; }
+
+
         /// <summary>
         /// Indicates whether the current user has already cast a vote in this election.
         /// </summary>
