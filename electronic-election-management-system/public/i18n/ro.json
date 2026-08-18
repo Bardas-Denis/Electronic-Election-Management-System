@@ -279,7 +279,9 @@
     "addRankPoint": "Adaugă poziție",
     "saveScheme": "Salvează sistemul",
     "cancel": "Anulează",
-    "saving": "Se salvează..."
+    "saving": "Se salvează...",
+    "linearScheme": "Liniar",
+    "pointsScheme": "{{count}} puncte: {{points}}"
   },
   "vote": {
     "questionOptional": "(opțional)",

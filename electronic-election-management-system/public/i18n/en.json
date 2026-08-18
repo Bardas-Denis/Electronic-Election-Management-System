@@ -279,7 +279,9 @@
     "addRankPoint": "Add position",
     "saveScheme": "Save scheme",
     "cancel": "Cancel",
-    "saving": "Saving..."
+    "saving": "Saving...",
+    "linearScheme": "Linear",
+    "pointsScheme": "{{count}} points: {{points}}"
   },
   "vote": {
     "questionOptional": "(optional)",

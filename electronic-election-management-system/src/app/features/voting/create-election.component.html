@@ -889,7 +889,7 @@
               @for (scheme of scoringSchemes(); track scheme.id) {
               <option [value]="scheme.id">
                 {{ scheme.name }}
-                @if (scheme.isLinear) { (Linear) } @else { ({{ scheme.points.length }} puncte: {{ scheme.points.join(', ') }}) }
+                @if (scheme.isLinear) { ({{ 'elections.linearScheme' | translate }}) } @else { ({{ 'elections.pointsScheme' | translate: { count: scheme.points.length, points: scheme.points.join(', ') } }}) }
               </option>
               }
             </select>
