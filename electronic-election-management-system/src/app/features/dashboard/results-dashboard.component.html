@@ -45,35 +45,39 @@
                   </div>
                 }
                 @if (isFromMyElections()) {
-                  <div class="simulator-controls">
-                    @if (question.requiredRankCount && question.requiredRankCount > 1) {
-                      <div class="ranking-filter-wrapper">
-                        <label [for]="'filter-' + question.questionId">{{ 'results.simulateRanksLabel' | translate }}</label>
-                        <select [id]="'filter-' + question.questionId" class="ranking-filter" (change)="onRankingFilterChange(question.questionId, $event)">
-                          <option value="">{{ 'results.allRanks' | translate }}</option>
-                          @for (rank of getRankingDropdownOptions(question.requiredRankCount); track rank) {
-                            <option [value]="rank">{{ 'results.topRanks' | translate: { count: rank } }}</option>
+                  <div class="simulator-section">
+                    <div class="simulator-controls">
+                      @if (question.requiredRankCount && question.requiredRankCount > 1) {
+                        <div class="ranking-filter-wrapper">
+                          <label [for]="'filter-' + question.questionId">{{ 'results.simulateRanksLabel' | translate }}</label>
+                          <select [id]="'filter-' + question.questionId" class="ranking-filter" (change)="onRankingFilterChange(question.questionId, $event)">
+                            <option value="">{{ 'results.allRanks' | translate }}</option>
+                            @for (rank of getRankingDropdownOptions(question.requiredRankCount); track rank) {
+                              <option [value]="rank">{{ 'results.topRanks' | translate: { count: rank } }}</option>
+                            }
+                          </select>
+                        </div>
+                      }
+
+                      <div class="scoring-simulator-wrapper">
+                        <label [for]="'scheme-sim-' + question.questionId">Simulate scheme:</label>
+                        <select [id]="'scheme-sim-' + question.questionId" class="simulator-select" (change)="onSchemeSimulationChange(question, $event)">
+                          <option [value]="question.scoringScheme?.id || ''">Original ({{ question.scoringScheme?.name || 'Default' }})</option>
+                          @for (scheme of availableSchemes(); track scheme.id) {
+                            <option [value]="scheme.id">{{ scheme.name }}</option>
                           }
                         </select>
                       </div>
-                    }
+                    </div>
 
-                    <div class="scoring-simulator-wrapper">
-                      <label [for]="'scheme-sim-' + question.questionId">Simulate scheme:</label>
-                      <select [id]="'scheme-sim-' + question.questionId" class="simulator-select" (change)="onSchemeSimulationChange(question, $event)">
-                        <option [value]="question.scoringScheme?.id || ''">Original ({{ question.scoringScheme?.name || 'Default' }})</option>
-                        @for (scheme of availableSchemes(); track scheme.id) {
-                          <option [value]="scheme.id">{{ scheme.name }}</option>
-                        }
-                      </select>
+                    <div class="simulation-warning-placeholder">
+                      @if (simulatedSchemes()[question.questionId]) {
+                        <div class="simulation-warning">
+                          ⚠️ This isn't the original pointing system, this is a simulation!
+                        </div>
+                      }
                     </div>
                   </div>
-
-                  @if (simulatedSchemes()[question.questionId]) {
-                    <div class="simulation-warning">
-                      ⚠️ This isn't the original pointing system, this is a simulation!
-                    </div>
-                  }
                 }
                 <ol class="ranking-list">
                   @for (option of sortedResults(question); track option.optionId; let i = $index) {

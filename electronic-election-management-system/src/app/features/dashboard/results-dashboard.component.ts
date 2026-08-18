@@ -179,14 +179,22 @@ export class ResultsDashboardComponent implements OnInit, OnDestroy {
 
   getEffectiveVoteCount(option: OptionResultDto, question: QuestionResultDto): number {
     const maxRank = this.rankingFilters()[question.questionId];
-    if (!maxRank || !option.rankCounts) {
+    const isSimulated = !!this.simulatedSchemes()[question.questionId];
+
+    // If no filter is applied and we're not simulating, use the backend's pre-calculated total
+    if (!maxRank && !isSimulated) {
+      return option.voteCount;
+    }
+
+    if (!option.rankCounts) {
       return option.voteCount;
     }
 
     let sum = 0;
     for (const [rankStr, count] of Object.entries(option.rankCounts)) {
       const rank = Number(rankStr);
-      if (rank <= maxRank) {
+      // If no maxRank is set, include all ranks
+      if (!maxRank || rank <= maxRank) {
         sum += count * this.getRankingPoints(rank, question);
       }
     }
