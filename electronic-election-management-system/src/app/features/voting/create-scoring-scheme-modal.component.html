@@ -1,0 +1,65 @@
+<div class="modal-backdrop" (click)="onCancel()">
+  <div class="modal-card" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>{{ 'elections.createCustomSchemeHeader' | translate }}</h3>
+      <p>{{ 'elections.createCustomSchemeSubtitle' | translate }}</p>
+    </div>
+
+    <form [formGroup]="form" (ngSubmit)="onConfirm()" novalidate>
+      <div class="field" [class.field--error]="form.get('name')?.invalid && form.get('name')?.touched">
+        <label for="name">{{ 'elections.scoringSchemeNameLabel' | translate }}</label>
+        <input id="name" type="text" formControlName="name" maxlength="100" [placeholder]="'elections.scoringSchemeNamePlaceholder' | translate" />
+        @if (form.get('name')?.touched && form.get('name')?.invalid) {
+          <span class="field-error">{{ 'elections.scoringSchemeNameRequired' | translate }}</span>
+        }
+      </div>
+
+      <div class="field">
+        <label for="startFrom">{{ 'elections.startFromLabel' | translate }}</label>
+        <select id="startFrom" formControlName="startFrom" (change)="onPresetChange()">
+          <option [ngValue]="null">{{ 'elections.startFromEmpty' | translate }}</option>
+          @for (scheme of existingSchemes; track scheme.id) {
+            <option [ngValue]="scheme.id">{{ scheme.name }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="field points-field">
+        <label>{{ 'elections.rankingPointsLabel' | translate }}</label>
+        <p class="field-help">{{ 'elections.rankingPointsHelp' | translate }}</p>
+        
+        <div formArrayName="points" class="points-list">
+          @for (control of pointsArray.controls; track control; let i = $index) {
+            <div class="point-row">
+              <span class="point-rank">{{ i + 1 }}</span>
+              <input type="number" [formControlName]="i" min="0" class="point-input" />
+              @if (pointsArray.length > 1) {
+                <button type="button" class="btn-remove-point" (click)="removeRank(i)" [attr.aria-label]="'elections.removeRank' | translate">&#215;</button>
+              }
+            </div>
+          }
+        </div>
+        
+        <button type="button" class="btn-secondary btn-add-point" (click)="addRank()">
+          + {{ 'elections.addRankPoint' | translate }}
+        </button>
+      </div>
+
+      @if (errorMessage()) {
+        <p class="error-text modal-error">{{ errorMessage() | translate }}</p>
+      }
+
+      <div class="modal-actions">
+        <button type="button" class="btn-secondary" (click)="onCancel()" [disabled]="isSubmitting()">{{ 'elections.cancel' | translate }}</button>
+        <button type="submit" class="btn-primary" [disabled]="isSubmitting()">
+          @if (isSubmitting()) {
+            <span class="spinner"></span>
+            {{ 'elections.saving' | translate }}
+          } @else {
+            {{ 'elections.saveScheme' | translate }}
+          }
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

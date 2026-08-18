@@ -40,12 +40,20 @@ namespace Electronic_Election_Management_System.Services
                         Label = o.Label,
                         ImageDataUrl = o.ImageDataUrl,
                         VoteCount = q.QuestionType == QuestionType.Ranking
-                            ? o.Votes.Sum(v => GetRankingPoints(v.Rank))
+                            ? o.Votes.Sum(v => GetRankingPoints(v.Rank, q.ScoringScheme, q.Options.Count))
                             : o.Votes.Count,
                         RankCounts = q.QuestionType == QuestionType.Ranking
                             ? o.Votes.Where(v => v.Rank.HasValue).GroupBy(v => v.Rank.Value).ToDictionary(g => g.Key, g => g.Count())
                             : null
                     }).ToList(),
+                    ScoringScheme = q.ScoringScheme == null ? null : new ScoringSchemeDto
+                    {
+                        Id = q.ScoringScheme.Id,
+                        Name = q.ScoringScheme.Name,
+                        Points = q.ScoringScheme.Points ?? new List<int>(),
+                        IsLinear = q.ScoringScheme.IsLinear,
+                        IsPredefined = q.ScoringScheme.IsPredefined
+                    },
                     // A FreeText question's answers, or a Choice question's "Other" answers.
                     TextAnswers = q.QuestionType == QuestionType.FreeText || q.AllowOtherOption
                         ? q.Votes.Where(v => v.AnswerText != null).Select(v => v.AnswerText!).ToList()
@@ -131,23 +139,28 @@ namespace Electronic_Election_Management_System.Services
             return await GetResultsAsync(electionId);
         }
 
-        private static int GetRankingPoints(int? rank)
+        private static int GetRankingPoints(int? rank, ScoringScheme? scheme, int optionsCount)
         {
             if (!rank.HasValue) return 0;
-            return rank.Value switch
+            if (scheme == null)
             {
-                1 => 12,
-                2 => 10,
-                3 => 8,
-                4 => 7,
-                5 => 6,
-                6 => 5,
-                7 => 4,
-                8 => 3,
-                9 => 2,
-                10 => 1,
-                _ => 0
-            };
+                return rank.Value switch
+                {
+                    1 => 12, 2 => 10, 3 => 8, 4 => 7, 5 => 6, 6 => 5, 7 => 4, 8 => 3, 9 => 2, 10 => 1, _ => 0
+                };
+            }
+
+            if (scheme.IsLinear)
+            {
+                return Math.Max(0, optionsCount - rank.Value + 1);
+            }
+
+            if (scheme.Points != null && rank.Value > 0 && rank.Value <= scheme.Points.Count)
+            {
+                return scheme.Points[rank.Value - 1];
+            }
+
+            return 0;
         }
     }
 }

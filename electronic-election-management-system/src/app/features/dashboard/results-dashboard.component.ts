@@ -4,7 +4,8 @@ import { TranslatePipe } from '@ngx-translate/core';
 import { ActivatedRoute } from '@angular/router';
 import { ResultsService } from '../../core/services/results.service';
 import { ElectionResultsDto, OptionResultDto, QuestionResultDto } from '../../core/models/results.model';
-
+import { ScoringSchemesService } from '../../core/services/scoring-schemes.service';
+import { ScoringSchemeDto } from '../../core/models/scoring-schemes.model';
 // One pie slice, precomputed from an option's results.
 // `path` is an SVG path `d` attribute (viewBox 0 0 100 100); `isFullCircle`
 // covers the one case a path arc can't express - a single option holding
@@ -43,6 +44,7 @@ interface OptionMeter {
 export class ResultsDashboardComponent implements OnInit, OnDestroy {
   private route = inject(ActivatedRoute);
   private resultsService = inject(ResultsService);
+  private scoringSchemesService = inject(ScoringSchemesService);
 
   readonly pieCenter = 50;
   readonly pieRadius = 42;
@@ -75,12 +77,21 @@ export class ResultsDashboardComponent implements OnInit, OnDestroy {
 
   isFromMyElections = signal(false);
   rankingFilters = signal<Record<string, number>>({});
+  
+  availableSchemes = signal<ScoringSchemeDto[]>([]);
+  simulatedSchemes = signal<Record<string, ScoringSchemeDto>>({});
 
   private electionId!: string;
 
   ngOnInit(): void {
     this.isFromMyElections.set(this.route.snapshot.queryParamMap.get('from') === 'my-elections');
     this.electionId = this.route.snapshot.paramMap.get('id')!;
+
+    if (this.isFromMyElections()) {
+      this.scoringSchemesService.getSchemes().subscribe({
+        next: (schemes) => this.availableSchemes.set(schemes)
+      });
+    }
 
     // 1. Snapshot initial prin HTTP, ca dashboard-ul sa nu fie gol la incarcare
     this.resultsService.getResultsSnapshot(this.electionId).subscribe({
@@ -114,33 +125,77 @@ export class ResultsDashboardComponent implements OnInit, OnDestroy {
     return Array.from({ length: requiredCount - 1 }, (_, i) => requiredCount - 1 - i);
   }
 
-  private getRankingPoints(rank: number): number {
-    switch (rank) {
-      case 1: return 12;
-      case 2: return 10;
-      case 3: return 8;
-      case 4: return 7;
-      case 5: return 6;
-      case 6: return 5;
-      case 7: return 4;
-      case 8: return 3;
-      case 9: return 2;
-      case 10: return 1;
-      default: return 0;
+  onSchemeSimulationChange(question: QuestionResultDto, event: Event): void {
+    const selectedId = (event.target as HTMLSelectElement).value;
+    const originalId = question.scoringScheme?.id;
+
+    if (selectedId === originalId || (!selectedId && !originalId)) {
+      this.simulatedSchemes.update(current => {
+        const next = { ...current };
+        delete next[question.questionId];
+        return next;
+      });
+    } else {
+      const scheme = this.availableSchemes().find(s => s.id === selectedId);
+      if (scheme) {
+        this.simulatedSchemes.update(current => ({
+          ...current,
+          [question.questionId]: scheme
+        }));
+      }
     }
+  }
+
+  private getRankingPoints(rank: number, question: QuestionResultDto): number {
+    const override = this.simulatedSchemes()[question.questionId];
+    const activeScheme = override || question.scoringScheme;
+
+    if (!activeScheme) {
+      switch (rank) {
+        case 1: return 12;
+        case 2: return 10;
+        case 3: return 8;
+        case 4: return 7;
+        case 5: return 6;
+        case 6: return 5;
+        case 7: return 4;
+        case 8: return 3;
+        case 9: return 2;
+        case 10: return 1;
+        default: return 0;
+      }
+    }
+
+    if (activeScheme.isLinear) {
+      return Math.max(0, question.results.length - rank + 1);
+    }
+
+    if (activeScheme.points && rank > 0 && rank <= activeScheme.points.length) {
+      return activeScheme.points[rank - 1];
+    }
+
+    return 0;
   }
 
   getEffectiveVoteCount(option: OptionResultDto, question: QuestionResultDto): number {
     const maxRank = this.rankingFilters()[question.questionId];
-    if (!maxRank || !option.rankCounts) {
+    const isSimulated = !!this.simulatedSchemes()[question.questionId];
+
+    // If no filter is applied and we're not simulating, use the backend's pre-calculated total
+    if (!maxRank && !isSimulated) {
+      return option.voteCount;
+    }
+
+    if (!option.rankCounts) {
       return option.voteCount;
     }
 
     let sum = 0;
     for (const [rankStr, count] of Object.entries(option.rankCounts)) {
       const rank = Number(rankStr);
-      if (rank <= maxRank) {
-        sum += count * this.getRankingPoints(rank);
+      // If no maxRank is set, include all ranks
+      if (!maxRank || rank <= maxRank) {
+        sum += count * this.getRankingPoints(rank, question);
       }
     }
     return sum;

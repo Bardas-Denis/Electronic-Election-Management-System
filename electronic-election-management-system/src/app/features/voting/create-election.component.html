@@ -924,6 +924,43 @@
           }
           }
 
+        @if (getQuestionType(questionIndex) === 'Ranking') {
+        <div class="field-group scoring-scheme-group" style="margin-top: 1rem;">
+          <label>{{ 'elections.scoringSchemeLabel' | translate }}</label>
+          <p class="field-help">{{ 'elections.scoringSchemeHelp' | translate }}</p>
+          
+          @if (scoringSchemesLoading()) {
+          <div class="inline-state">
+            <span class="spinner"></span>
+            {{ 'elections.loadingScoringSchemes' | translate }}
+          </div>
+          } @else if (scoringSchemesErrorKey()) {
+          <div class="candidate-load-error">
+            <p class="error-text">{{ scoringSchemesErrorKey() | translate }}</p>
+            <button type="button" class="btn-secondary" (click)="retryScoringSchemes()">
+              {{ 'elections.tryAgain' | translate }}
+            </button>
+          </div>
+          } @else {
+          <div style="display: flex; gap: 0.5rem; align-items: center;" [style.pointer-events]="isLocked() ? 'none' : 'auto'">
+            <select formControlName="scoringSchemeId" class="scoring-scheme-select" style="max-width: 400px;">
+              @for (scheme of scoringSchemes(); track scheme.id) {
+              <option [value]="scheme.id">
+                {{ scheme.name }}
+                @if (scheme.isLinear) { ({{ 'elections.linearScheme' | translate }}) } @else { ({{ 'elections.pointsScheme' | translate: { count: scheme.points.length, points: scheme.points.join(', ') } }}) }
+              </option>
+              }
+            </select>
+            @if (!isLocked()) {
+            <button type="button" class="btn-secondary" style="height: 40px;" (click)="openCreateSchemeModal(questionIndex)">
+              + {{ 'elections.createCustomScheme' | translate }}
+            </button>
+            }
+          </div>
+          }
+        </div>
+        }
+
          <!-- Question text and free text image upload container -->
           <div style="display: flex; gap: 1rem; align-items: center; margin-top: 0.75rem; margin-bottom: 0.75rem;">
             <input type="text" formControlName="text" maxlength="500"
@@ -1042,4 +1079,12 @@
         }
       </div>
     </form>
-</div>
+  
+    @if (activeQuestionIndexForScheme() !== null) {
+    <app-create-scoring-scheme-modal
+        [existingSchemes]="scoringSchemes()"
+        (created)="onSchemeCreated($event)"
+        (cancelled)="closeCreateSchemeModal()"
+    ></app-create-scoring-scheme-modal>
+    }
+  </div>

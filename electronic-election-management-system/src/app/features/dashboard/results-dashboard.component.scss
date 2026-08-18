@@ -1,4 +1,5 @@
 .results-card {
+  position: relative;
   background: var(--bg-card);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
@@ -98,7 +99,7 @@
   flex-wrap: wrap;
 }
 
-/* ─── Pie chart ───────────────────────────────────────────────────────── */
+/* â”€â”€â”€ Pie chart â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .pie-wrap {
   position: relative;
   width: 148px;
@@ -128,7 +129,7 @@
   filter: brightness(1.1);
 }
 
-/* ─── Option meters (multiple-answer questions) ──────────────────────── */
+/* â”€â”€â”€ Option meters (multiple-answer questions) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .meter-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
@@ -179,7 +180,7 @@
   color: var(--text-secondary);
 }
 
-/* ─── Legend rows ─────────────────────────────────────────────────────── */
+/* â”€â”€â”€ Legend rows â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .result-row {
   display: flex;
   align-items: center;
@@ -325,7 +326,7 @@
   font-size: 0.85rem;
 }
 
-/* ─── "Other" answers row (below the chart, not beside it) ─────────────
+/* â”€â”€â”€ "Other" answers row (below the chart, not beside it) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
    A grid of answer cards showing the first N, then a "+N more" pill that
    expands the rest in place (and turns into "less" to collapse again) -
    same expand pattern as the invite-users picker's "+95 more" chip,
@@ -434,3 +435,47 @@
 }
 
 .result-option-image { width: 68px; height: 54px; object-fit: cover; border-radius: 9px; }
+/* ¦¦¦ Simulator Controls ¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦ */
+.simulator-section {
+  position: absolute;
+  right: -250px;
+  width: 230px;
+  background: var(--bg-card);
+  padding: 1rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  z-index: 10;
+}
+
+.simulator-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  align-items: stretch;
+  margin-bottom: 0.5rem;
+}
+
+.simulator-select, .ranking-filter {
+  margin-left: 0;
+  margin-top: 0.25rem;
+  padding: 0.4rem;
+  width: 100%;
+}
+
+.simulation-warning-placeholder {
+  min-height: 0;
+}
+
+.simulation-warning {
+  margin: 0.5rem 0 0 0;
+  background-color: #fff3cd;
+  color: #856404;
+  padding: 0.5rem;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  display: block;
+  text-align: center;
+}
+

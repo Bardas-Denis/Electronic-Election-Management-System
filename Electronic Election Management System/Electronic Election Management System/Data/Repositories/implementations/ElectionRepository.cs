@@ -83,6 +83,7 @@ namespace Electronic_Election_Management_System.Data.Repositories
             => _db.Elections
                 .Include(e => e.Options)
                     .ThenInclude(o => o.Votes)
+                .Include(e => e.Questions).ThenInclude(q => q.ScoringScheme)
                 .Include(e => e.Questions).ThenInclude(q => q.Options).ThenInclude(o => o.Votes)
                 .Include(e => e.Questions).ThenInclude(q => q.Votes)
                 .FirstOrDefaultAsync(e => e.Id == id);

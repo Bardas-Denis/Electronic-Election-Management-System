@@ -733,9 +733,8 @@ namespace Electronic_Election_Management_System.Services
                     QuestionType = questionType,
                     AllowOtherOption = questionType == QuestionType.Choice && question.AllowOtherOption,
                     RequiredRankCount = questionType == QuestionType.Ranking ? question.RequiredRankCount : null,
-
+                    ScoringSchemeId = questionType == QuestionType.Ranking ? question.ScoringSchemeId : null,
                     ImageDataUrl = question.ImageDataUrl,
-
                     Options = question.Options
                         .Where(option => !string.IsNullOrWhiteSpace(option.Label))
                         .Select(option => new Option
@@ -763,9 +762,8 @@ namespace Electronic_Election_Management_System.Services
                     QuestionType = q.QuestionType.ToString(),
                     AllowOtherOption = q.AllowOtherOption,
                     RequiredRankCount = q.RequiredRankCount,
-
+                    ScoringSchemeId = q.ScoringSchemeId,
                     ImageDataUrl = q.ImageDataUrl,
-
                     Options = q.Options.Select(MapOptionToDto).ToList()
                 })
                 .ToList();

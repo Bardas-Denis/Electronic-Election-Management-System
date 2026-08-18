@@ -111,6 +111,7 @@ try
         builder.Services.AddScoped<IAuditService, AuditService>();
         builder.Services.AddScoped<IVoteService, VoteService>();
         builder.Services.AddScoped<IResultsService, ResultsService>();
+        builder.Services.AddScoped<IScoringSchemeService, ScoringSchemeService>();
         builder.Services.AddScoped<ILabelService, LabelService>();
         builder.Services.AddSingleton<ICnpService, CnpService>();
         builder.Services.AddScoped<IUserNotifier, SignalRUserNotifier>();
@@ -279,6 +280,7 @@ try
         }
 
         await SeedData.EnsureAdminUserAsync(db);
+        await SeedData.EnsureScoringSchemesAsync(db);
         if (app.Environment.IsDevelopment())
         {
             await SeedData.EnsureTestDataAsync(db);

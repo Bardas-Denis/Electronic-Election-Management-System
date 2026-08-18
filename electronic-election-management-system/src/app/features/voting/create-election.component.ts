@@ -6,6 +6,8 @@ import { TranslateService, TranslatePipe } from '@ngx-translate/core';
 import { forkJoin, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { VotingService } from '../../core/services/voting.service';
+import { ScoringSchemesService } from '../../core/services/scoring-schemes.service';
+import { ScoringSchemeDto } from '../../core/models/scoring-schemes.model';
 import {
   AudienceConditionDto,
   AudienceGroupDto,
@@ -25,13 +27,14 @@ import {
   trimmedRequired,
   uniqueOptionLabels
 } from '../../core/validators/input.validators';
+import { CreateScoringSchemeModalComponent } from './create-scoring-scheme-modal.component';
 
 // This component handles both creation (/elections/new) and editing
 // (/elections/:id/edit).
 @Component({
   selector: 'app-create-election',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, TranslatePipe],
+  imports: [CommonModule, ReactiveFormsModule, TranslatePipe, CreateScoringSchemeModalComponent],
   templateUrl: './create-election.component.html',
   styleUrl: './create-election.component.scss'
 })
@@ -41,6 +44,12 @@ export class CreateElectionComponent implements OnInit {
   private router = inject(Router);
   private route = inject(ActivatedRoute);
   private translate = inject(TranslateService);
+  private scoringSchemesService = inject(ScoringSchemesService);
+
+  scoringSchemes = signal<ScoringSchemeDto[]>([]);
+  scoringSchemesLoading = signal(false);
+  scoringSchemesErrorKey = signal<string | null>(null);
+  activeQuestionIndexForScheme = signal<number | null>(null);
 
   isSubmitting = signal(false);
   isLoading = signal(false);
@@ -122,6 +131,8 @@ export class CreateElectionComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    this.loadScoringSchemes();
+
     this.form.get('type')?.valueChanges.subscribe((type) => {
       this.syncAnonymousState(type);
     });
@@ -231,6 +242,7 @@ export class CreateElectionComponent implements OnInit {
       // empty - which is exactly what happens while retyping a value.
       limitRankCount: [question?.requiredRankCount != null],
       requiredRankCount: [question?.requiredRankCount ?? null],
+      scoringSchemeId: [question?.scoringSchemeId ?? null],
       imageDataUrl: [(question as any)?.imageDataUrl ?? ''],
       options: this.fb.array(
         optionGroups,
@@ -258,6 +270,12 @@ export class CreateElectionComponent implements OnInit {
     const sideEffects = freeTextTypeSideEffects(type);
     if (sideEffects) {
       group.patchValue(sideEffects);
+    }
+
+    if (type === 'Ranking' && !group.get('scoringSchemeId')?.value) {
+      if (this.scoringSchemes().length > 0) {
+        group.get('scoringSchemeId')?.setValue(this.scoringSchemes()[0].id);
+      }
     }
 
     if (type === 'FreeText') {
@@ -423,7 +441,7 @@ export class CreateElectionComponent implements OnInit {
     if (!this.invitedEmails().includes(normalizedEmail)) {
       const emails = [...this.invitedEmails(), normalizedEmail];
       this.invitedEmails.set(emails);
-      this.form.controls.invitedEmails.setValue(emails);
+      this.form.controls['invitedEmails'].setValue(emails);
     }
 
     this.inviteEmailControl.reset('');
@@ -433,7 +451,7 @@ export class CreateElectionComponent implements OnInit {
     if (this.isLocked()) return;
     const emails = this.invitedEmails().filter(item => item !== email);
     this.invitedEmails.set(emails);
-    this.form.controls.invitedEmails.setValue(emails);
+    this.form.controls['invitedEmails'].setValue(emails);
   }
 
   filteredInvitationCandidates(): InvitationCandidateDto[] {
@@ -781,7 +799,7 @@ export class CreateElectionComponent implements OnInit {
    * (manual user IDs + group member user IDs) minus individual exclusions (excludedGroupUserIds).
    */
   selectedCandidateIds(): Set<string> {
-    const manualIds = new Set(this.form.controls.invitedUserIds.value ?? []);
+    const manualIds = new Set<string>(this.form.controls['invitedUserIds'].value as string[] ?? []);
     const groupIds = new Set(this.audienceGroupMemberIds());
     const excluded = this.excludedGroupUserIds();
 
@@ -800,7 +818,7 @@ export class CreateElectionComponent implements OnInit {
    * (not manually selected). Used to show a group-badge on the candidate chip.
    */
   isCandidateFromGroup(candidateId: string): boolean {
-    const manualIds = new Set(this.form.controls.invitedUserIds.value ?? []);
+    const manualIds = new Set<string>(this.form.controls['invitedUserIds'].value as string[] ?? []);
     if (manualIds.has(candidateId)) return false;
     return this.audienceGroupMemberIds().includes(candidateId);
   }
@@ -810,7 +828,7 @@ export class CreateElectionComponent implements OnInit {
    * union of manually selected registered users + audience group members + free-text emails minus individual exclusions.
    */
   totalUniqueInvitees(): number {
-    const emailCount = (this.form.controls.invitedEmails.value ?? []).length;
+    const emailCount = (this.form.controls['invitedEmails'].value ?? []).length;
     return this.selectedCandidateIds().size + emailCount;
   }
 
@@ -865,7 +883,7 @@ export class CreateElectionComponent implements OnInit {
       selected = !this.isInvitationCandidateSelected(candidateId);
     }
     const groupIds = new Set(this.audienceGroupMemberIds());
-    const currentManual = this.form.controls.invitedUserIds.value ?? [];
+    const currentManual = this.form.controls['invitedUserIds'].value ?? [];
 
     if (!selected) {
       if (groupIds.has(candidateId)) {
@@ -874,7 +892,7 @@ export class CreateElectionComponent implements OnInit {
         this.excludedGroupUserIds.set(nextExclusions);
       }
       if (currentManual.includes(candidateId)) {
-        this.form.controls.invitedUserIds.setValue(currentManual.filter(id => id !== candidateId));
+        this.form.controls['invitedUserIds'].setValue(currentManual.filter((id: string) => id !== candidateId));
       }
     } else {
       if (this.excludedGroupUserIds().has(candidateId)) {
@@ -883,7 +901,7 @@ export class CreateElectionComponent implements OnInit {
         this.excludedGroupUserIds.set(nextExclusions);
       }
       if (!groupIds.has(candidateId) && !currentManual.includes(candidateId)) {
-        this.form.controls.invitedUserIds.setValue([...currentManual, candidateId]);
+        this.form.controls['invitedUserIds'].setValue([...currentManual, candidateId]);
       }
     }
   }
@@ -1127,8 +1145,8 @@ export class CreateElectionComponent implements OnInit {
   }
 
   private clearInvitations(): void {
-    this.form.controls.invitedUserIds.setValue([]);
-    this.form.controls.invitedEmails.setValue([]);
+    this.form.controls['invitedUserIds'].setValue([]);
+    this.form.controls['invitedEmails'].setValue([]);
     this.audienceGroupsArray.clear();
     this.invitedEmails.set([]);
     this.excludedGroupUserIds.set(new Set());
@@ -1314,6 +1332,51 @@ export class CreateElectionComponent implements OnInit {
 
     await Promise.all(promises);
   }
+
+  private loadScoringSchemes(): void {
+    if (this.scoringSchemesLoading()) return;
+    this.scoringSchemesLoading.set(true);
+    this.scoringSchemesErrorKey.set(null);
+    this.scoringSchemesService.getSchemes().subscribe({
+      next: (schemes) => {
+        this.scoringSchemes.set(schemes);
+        this.scoringSchemesLoading.set(false);
+        for (let i = 0; i < this.questions.length; i++) {
+          const group = this.questions.at(i);
+          if (group.get('questionType')?.value === 'Ranking' && !group.get('scoringSchemeId')?.value) {
+            if (schemes.length > 0) {
+              group.get('scoringSchemeId')?.setValue(schemes[0].id);
+            }
+          }
+        }
+      },
+      error: () => {
+        this.scoringSchemesErrorKey.set('elections.loadEditFailed');
+        this.scoringSchemesLoading.set(false);
+      }
+    });
+  }
+
+  retryScoringSchemes(): void {
+    this.loadScoringSchemes();
+  }
+
+  openCreateSchemeModal(questionIndex: number): void {
+    this.activeQuestionIndexForScheme.set(questionIndex);
+  }
+
+  closeCreateSchemeModal(): void {
+    this.activeQuestionIndexForScheme.set(null);
+  }
+
+  onSchemeCreated(scheme: ScoringSchemeDto): void {
+    this.scoringSchemes.update(schemes => [...schemes, scheme]);
+    const index = this.activeQuestionIndexForScheme();
+    if (index !== null) {
+      this.questions.at(index).get('scoringSchemeId')?.setValue(scheme.id);
+    }
+    this.closeCreateSchemeModal();
+  }
 }
 
 export function expandAudienceGroups(
@@ -1448,7 +1511,7 @@ export function normalizeEditableQuestions(election: ElectionDto): CreateElectio
         questionType: question.questionType ?? 'Choice',
         allowOtherOption: question.allowOtherOption ?? false,
         requiredRankCount: question.requiredRankCount ?? null,
-        
+        scoringSchemeId: question.scoringSchemeId ?? undefined,
         imageDataUrl: recoveredImage,
         options: recoveredOptions
       };
@@ -1462,6 +1525,7 @@ export function normalizeEditableQuestions(election: ElectionDto): CreateElectio
     questionType: 'Choice',
     allowOtherOption: false,
     requiredRankCount: null,
+    scoringSchemeId: undefined,
     imageDataUrl: '',
     options: (election.options ?? []).map(option => ({
       label: option.label ?? '',

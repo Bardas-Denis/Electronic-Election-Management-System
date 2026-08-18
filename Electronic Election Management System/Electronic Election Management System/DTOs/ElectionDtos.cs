@@ -38,6 +38,7 @@ namespace Electronic_Election_Management_System.DTOs
         /// <summary>Only meaningful for a <c>"Ranking"</c> question: when set, a ballot must place
         /// exactly this many options. Null leaves the count open.</summary>
         public int? RequiredRankCount { get; set; }
+        public Guid? ScoringSchemeId { get; set; }
         // Question-level image support (including FreeText)
         public string? ImageDataUrl { get; set; }
         /// <summary>For a <c>"Choice"</c> question, the selectable options. For a <c>"FreeText"</c>
@@ -61,6 +62,7 @@ namespace Electronic_Election_Management_System.DTOs
         /// exactly this many options. Must be between 1 and the option count (enforced in
         /// <c>ElectionService.QuestionsAreValid</c>). Null leaves the count open.</summary>
         public int? RequiredRankCount { get; set; }
+        public Guid? ScoringSchemeId { get; set; }
         // Question-level image validation
         [StringLength(ValidationRules.ImageDataUrlMaxLength)]
         public string? ImageDataUrl { get; set; }

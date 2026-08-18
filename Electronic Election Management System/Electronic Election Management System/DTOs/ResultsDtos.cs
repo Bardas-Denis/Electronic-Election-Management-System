@@ -33,6 +33,7 @@ namespace Electronic_Election_Management_System.DTOs
         // submitted answers.
         public int TotalVotes { get; set; }
         public int? RequiredRankCount { get; set; }
+        public ScoringSchemeDto? ScoringScheme { get; set; }
         public List<OptionResultDto> Results { get; set; } = new();
         /// <summary>Populated only for a <c>"FreeText"</c> question - the raw submitted answers,
         /// with no attribution to who submitted them (consistent with option tallies never
