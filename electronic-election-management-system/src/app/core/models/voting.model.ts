@@ -21,8 +21,8 @@ export interface ElectionQuestionDto {
   // Only meaningful for a 'Ranking' question: when set, a ballot must place exactly
   // this many options. Null leaves the count open.
   requiredRankCount: number | null;
-  // For a 'Choice' question, the selectable options. For a 'FreeText' question,
-  // optional suggestion chips - voters may still type anything.
+  // Question-level image support
+  imageDataUrl?: string;
   options: OptionDto[];
 }
 
@@ -74,6 +74,8 @@ export interface CreateElectionQuestionDto {
   // Only meaningful for a 'Ranking' question: when set, a ballot must place exactly
   // this many options. Null leaves the count open.
   requiredRankCount: number | null;
+  // Question-level image support for creation/editing
+  imageDataUrl?: string;
   options: CreateOptionDto[];
 }
 

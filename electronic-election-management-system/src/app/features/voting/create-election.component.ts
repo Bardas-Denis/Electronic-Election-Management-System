@@ -215,7 +215,7 @@ export class CreateElectionComponent implements OnInit {
     });
   }
 
-  private createQuestionGroup(question?: CreateElectionQuestionDto) {
+ private createQuestionGroup(question?: CreateElectionQuestionDto) {
     const suppliedOptions = question?.options ?? [];
     const optionGroups = suppliedOptions.map(option => this.createOptionGroup(option));
     while (optionGroups.length < 2) optionGroups.push(this.createOptionGroup());
@@ -231,6 +231,7 @@ export class CreateElectionComponent implements OnInit {
       // empty - which is exactly what happens while retyping a value.
       limitRankCount: [question?.requiredRankCount != null],
       requiredRankCount: [question?.requiredRankCount ?? null],
+      imageDataUrl: [(question as any)?.imageDataUrl ?? ''],
       options: this.fb.array(
         optionGroups,
         [
@@ -260,9 +261,18 @@ export class CreateElectionComponent implements OnInit {
     }
 
     if (type === 'FreeText') {
-      // FreeText questions have no options UI at all - drop any Choice/Ranking options
-      // carried over from before the switch instead of submitting them unseen.
-      this.questionOptions(questionIndex).clear();
+      const optionsArray = this.questionOptions(questionIndex);
+      while (optionsArray.length > 0) {
+        optionsArray.removeAt(0);
+      }
+    } else {
+      
+      const optionsArray = this.questionOptions(questionIndex);
+      if (optionsArray.length < 2) {
+        while (optionsArray.length < 2) {
+          optionsArray.push(this.createOptionGroup());
+        }
+      }
     }
 
     if (type !== 'Ranking') {
@@ -378,6 +388,28 @@ export class CreateElectionComponent implements OnInit {
   removeOptionImage(questionIndex: number, optionIndex: number): void {
     if (this.isLocked()) return;
     this.questionOptions(questionIndex).at(optionIndex).get('imageDataUrl')?.setValue('');
+  }
+
+  onQuestionImageSelected(event: Event, questionIndex: number): void {
+    if (this.isLocked()) return;
+    const file = (event.target as HTMLInputElement).files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      // Setăm imaginea direct pe grupul principal al întrebării (nu pe opțiuni)
+      const questionGroup = this.questions.at(questionIndex);
+      questionGroup.get('imageDataUrl')?.setValue(reader.result as string);
+      questionGroup.markAsDirty();
+    };
+    reader.readAsDataURL(file);
+  }
+
+  removeQuestionImage(questionIndex: number): void {
+    if (this.isLocked()) return;
+    const questionGroup = this.questions.at(questionIndex);
+    questionGroup.get('imageDataUrl')?.setValue('');
+    questionGroup.markAsDirty();
   }
 
   addInviteEmail(): void {
@@ -1110,7 +1142,18 @@ export class CreateElectionComponent implements OnInit {
   }
 
   onSubmit(): void {
-    if (this.isLocked()) return; // Previne trimiterea formularului dacă e blocat
+    if (this.isLocked()) return;
+    
+    for (let i = 0; i < this.questions.length; i++) {
+      const qGroup = this.questions.at(i);
+      if (qGroup.get('questionType')?.value === 'FreeText') {
+        const optsArray = qGroup.get('options') as FormArray;
+        while (optsArray.length > 0) {
+          optsArray.removeAt(0);
+        }
+      }
+    }
+
     this.form.markAllAsTouched();
     if (this.form.hasError('invalidDateRange')) {
       this.errorMessageKey.set('errors.invalidDateRange');
@@ -1144,9 +1187,22 @@ export class CreateElectionComponent implements OnInit {
 
     // limitRankCount only drives the form - the API reads requiredRankCount, where null
     // already carries "no limit".
-    payload.questions = payload.questions.map(
-      ({ limitRankCount, ...question }: Record<string, unknown>) => question
-    );
+    payload.questions = payload.questions.map((question: any) => {
+      const { limitRankCount, ...cleanQuestion } = question;
+      
+      if (cleanQuestion.questionType === 'FreeText') {
+        if (cleanQuestion.imageDataUrl) {
+          cleanQuestion.options = [{
+            label: 'FreeText_Image',
+            description: '',
+            imageDataUrl: cleanQuestion.imageDataUrl
+          }];
+        } else {
+          cleanQuestion.options = [];
+        }
+      }
+      return cleanQuestion;
+    });
 
     // Build invitedAudienceGroups from the groups FormArray.
     // The form groups contain raw {labelId, isExcluded} objects; map to the DTO shape.
@@ -1363,14 +1419,10 @@ function toDatetimeLocal(isoDate: string): string {
  */
 export function normalizeEditableQuestions(election: ElectionDto): CreateElectionQuestionDto[] {
   if (Array.isArray(election.questions) && election.questions.length > 0) {
-    return election.questions.map((question, index) => ({
-      text: question.text || (index === 0 ? election.question : '') || '',
-      isRequired: question.isRequired ?? true,
-      allowMultipleAnswers: question.allowMultipleAnswers ?? false,
-      questionType: question.questionType ?? 'Choice',
-      allowOtherOption: question.allowOtherOption ?? false,
-      requiredRankCount: question.requiredRankCount ?? null,
-      options: Array.isArray(question.options) && question.options.length > 0
+    return election.questions.map((question, index) => {
+      let recoveredImage = question.imageDataUrl ?? '';
+      
+      let recoveredOptions = Array.isArray(question.options) && question.options.length > 0
         ? question.options.map(option => ({
           label: option.label ?? '',
           description: option.description ?? '',
@@ -1382,8 +1434,25 @@ export function normalizeEditableQuestions(election: ElectionDto): CreateElectio
             description: option.description ?? '',
             imageDataUrl: option.imageDataUrl ?? ''
           }))
-          : []
-    }));
+          : [];
+
+      if (question.questionType === 'FreeText' && recoveredOptions.length > 0 && recoveredOptions[0].label === 'FreeText_Image') {
+        recoveredImage = recoveredOptions[0].imageDataUrl ?? ''; 
+        recoveredOptions = []; 
+      }
+
+      return {
+        text: question.text || (index === 0 ? election.question : '') || '',
+        isRequired: question.isRequired ?? true,
+        allowMultipleAnswers: question.allowMultipleAnswers ?? false,
+        questionType: question.questionType ?? 'Choice',
+        allowOtherOption: question.allowOtherOption ?? false,
+        requiredRankCount: question.requiredRankCount ?? null,
+        
+        imageDataUrl: recoveredImage,
+        options: recoveredOptions
+      };
+    });
   }
 
   return [{
@@ -1393,6 +1462,7 @@ export function normalizeEditableQuestions(election: ElectionDto): CreateElectio
     questionType: 'Choice',
     allowOtherOption: false,
     requiredRankCount: null,
+    imageDataUrl: '',
     options: (election.options ?? []).map(option => ({
       label: option.label ?? '',
       description: option.description ?? '',

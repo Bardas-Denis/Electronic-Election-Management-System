@@ -322,7 +322,7 @@
           } @else if (invitationCandidates().length === 0) {
           <p class="field-help">{{ 'elections.noRegisteredUsers' | translate }}</p>
           } @else {
-          <div class="user-picker" #candidateParserRef>
+          <div class="user-picker" #candidateParserRef [style.pointer-events]="isLocked() ? 'none' : 'auto'" [style.cursor]="isLocked() ? 'default' : 'pointer'">
             <button id="invitedUserIds" type="button" class="user-picker-trigger"
                     (click)="toggleCandidatePicker()"
                     [disabled]="isLocked()"
@@ -706,7 +706,7 @@
               </svg>
             </button>
 
-            @if (candidatePickerOpen() && !isLocked()) {
+            @if (candidatePickerOpen()) {
             <div id="invitation-candidate-panel" class="user-picker-panel">
               <div class="user-picker-search">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
@@ -923,14 +923,44 @@
           </p>
           }
           }
-          <input type="text" formControlName="text" maxlength="500"
-                 [placeholder]="'elections.questionPlaceholder' | translate" [attr.readonly]="isLocked() ? true : null" />
+
+         <!-- Question text and free text image upload container -->
+          <div style="display: flex; gap: 1rem; align-items: center; margin-top: 0.75rem; margin-bottom: 0.75rem;">
+            <input type="text" formControlName="text" maxlength="500"
+                   [placeholder]="'elections.questionPlaceholder' | translate" [attr.readonly]="isLocked() ? true : null" style="flex: 1; margin-bottom: 0;" />
+
+            @if (getQuestionType(questionIndex) === 'FreeText') {
+               
+              <label class="image-upload" [style.cursor]="isLocked() ? 'default' : 'pointer'" 
+                     style="position: relative; margin-bottom: 0; width: 42px; height: 42px; min-height: 42px; display: flex; align-items: center; justify-content: center;">
+                @if (questions.at(questionIndex).get('imageDataUrl')?.value) {
+                  <img [src]="questions.at(questionIndex).get('imageDataUrl')?.value" alt="Preview" style="max-height: 100%; max-width: 100%; object-fit: cover; border-radius: 4px;" />
+                } @else {
+                  <span style="display: flex; align-items: center; justify-content: center;">＋</span>
+                }
+                
+                @if (!isLocked()) {
+                  <input type="file" accept="image/png,image/jpeg,image/webp,image/gif"
+                         (change)="onQuestionImageSelected($event, questionIndex)" 
+                         style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer;" />
+                }
+              </label>
+
+              @if (questions.at(questionIndex).get('imageDataUrl')?.value && !isLocked()) {
+                <button type="button" class="btn-image-remove"
+                        (click)="removeQuestionImage(questionIndex)">
+                  &#215;
+                </button>
+              }
+            }
+          </div>
 
           @if (getQuestionType(questionIndex) !== 'FreeText') {
           <p class="question-options-label">{{ 'elections.optionsLabel' | translate }}</p>
           <div formArrayName="options" class="question-options">
             @for (option of questionOptions(questionIndex).controls; track $index; let optionIndex = $index) {
             <div class="option-row option-row--image" [formGroupName]="optionIndex" [style.pointer-events]="isLocked() ? 'none' : 'auto'">
+              
               <div class="option-fields">
                 <input type="text" formControlName="label" maxlength="100"
                        [placeholder]="('elections.optionLabelPlaceholder' | translate) + ' ' + (optionIndex + 1)"
@@ -939,23 +969,29 @@
                        [placeholder]="'elections.optionDescPlaceholder' | translate"
                        [attr.readonly]="isLocked() ? true : null" />
               </div>
-              <label class="image-upload" [style.cursor]="isLocked() ? 'default' : 'pointer'">
+              
+            
+              <label class="image-upload" [style.cursor]="isLocked() ? 'default' : 'pointer'" style="position: relative;">
                 @if (option.get('imageDataUrl')?.value) {
                 <img [src]="option.get('imageDataUrl')?.value" [alt]="option.get('label')?.value" />
                 } @else {
                 <span>＋</span>
                 }
+                
                 @if (!isLocked()) {
                 <input type="file" accept="image/png,image/jpeg,image/webp,image/gif"
-                       (change)="onOptionImageSelected($event, questionIndex, optionIndex)" />
+                       (change)="onOptionImageSelected($event, questionIndex, optionIndex)" 
+                       style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer;" />
                 }
               </label>
+
               @if (option.get('imageDataUrl')?.value && !isLocked()) {
               <button type="button" class="btn-image-remove"
                       (click)="removeOptionImage(questionIndex, optionIndex)">
                 &#215;
               </button>
               }
+              
               @if (questionOptions(questionIndex).length > 2 && !isLocked()) {
               <button type="button" class="btn-danger" (click)="removeOption(questionIndex, optionIndex)"
                       [attr.aria-label]="'elections.removeOption' | translate">
@@ -974,6 +1010,7 @@
         </section>
         }
       </div>
+      
       @if (questions.touched && questions.hasError('noRequiredQuestion')) {
       <p class="error-text">{{ 'elections.atLeastOneRequiredQuestionError' | translate }}</p>
       }

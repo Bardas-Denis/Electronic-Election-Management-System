@@ -278,7 +278,7 @@ namespace Electronic_Election_Management_System.Services
                     };
                     await _notifications.AddAsync(notification);
                 }
-                
+
                 if (!string.IsNullOrEmpty(invitation.Email))
                 {
                     string emailMessage = invitation.UserId.HasValue
@@ -442,7 +442,7 @@ namespace Electronic_Election_Management_System.Services
                     Action = AuditAction.ElectionInvitationsAdded.ToDbValue()
                 });
                 await _invitations.SaveChangesAsync();
-                
+
                 _logger.LogInformation("{Count} invitation(s) added to ElectionId {ElectionId} by UserId {UserId}", invitationResult.Data.Count, electionId, userId);
 
                 // Send notifications and emails
@@ -459,13 +459,13 @@ namespace Electronic_Election_Management_System.Services
                         };
                         await _notifications.AddAsync(notification);
                     }
-                    
+
                     if (!string.IsNullOrEmpty(invitation.Email))
                     {
-                        string emailMessage = invitation.UserId.HasValue 
+                        string emailMessage = invitation.UserId.HasValue
                             ? NotificationMessages.InvitationEmailRegistered(election.Title)
                             : NotificationMessages.InvitationEmailUnregistered(election.Title);
-                            
+
                         _ = Task.Run(() => _emailService.SendEmailAsync(
                             invitation.Email,
                             NotificationMessages.ElectionInvitationSubject,
@@ -536,12 +536,12 @@ namespace Electronic_Election_Management_System.Services
                 .ToDictionary(user => user.Email);
 
             var candidates = users.Select(user => new ElectionInvitation
-                {
-                    ElectionId = electionId,
-                    UserId = user.Id,
-                    Email = user.Email,
-                    Method = ElectionInvitationMethod.Manual
-                })
+            {
+                ElectionId = electionId,
+                UserId = user.Id,
+                Email = user.Email,
+                Method = ElectionInvitationMethod.Manual
+            })
                 .Concat(normalizedEmails.Select(email => new ElectionInvitation
                 {
                     ElectionId = electionId,
@@ -733,6 +733,9 @@ namespace Electronic_Election_Management_System.Services
                     QuestionType = questionType,
                     AllowOtherOption = questionType == QuestionType.Choice && question.AllowOtherOption,
                     RequiredRankCount = questionType == QuestionType.Ranking ? question.RequiredRankCount : null,
+
+                    ImageDataUrl = question.ImageDataUrl,
+
                     Options = question.Options
                         .Where(option => !string.IsNullOrWhiteSpace(option.Label))
                         .Select(option => new Option
@@ -760,6 +763,9 @@ namespace Electronic_Election_Management_System.Services
                     QuestionType = q.QuestionType.ToString(),
                     AllowOtherOption = q.AllowOtherOption,
                     RequiredRankCount = q.RequiredRankCount,
+
+                    ImageDataUrl = q.ImageDataUrl,
+
                     Options = q.Options.Select(MapOptionToDto).ToList()
                 })
                 .ToList();
@@ -778,16 +784,16 @@ namespace Electronic_Election_Management_System.Services
 
             return new ElectionDto
             {
-            Id = e.Id,
-            Title = e.Title,
-            Description = e.Description,
-            Question = e.Question,
-            Type = e.Type.ToString(),
-            IsAnonymous = e.IsAnonymous,
-            IsClosed = e.IsClosed,
-            IsVisible = e.IsVisible,
-            StartsAt = e.StartsAt,
-            EndsAt = e.EndsAt,
+                Id = e.Id,
+                Title = e.Title,
+                Description = e.Description,
+                Question = e.Question,
+                Type = e.Type.ToString(),
+                IsAnonymous = e.IsAnonymous,
+                IsClosed = e.IsClosed,
+                IsVisible = e.IsVisible,
+                StartsAt = e.StartsAt,
+                EndsAt = e.EndsAt,
                 Options = questions[0].Options,
                 Questions = questions,
                 AudienceGroups = !string.IsNullOrWhiteSpace(e.AudienceGroupsSnapshot)
