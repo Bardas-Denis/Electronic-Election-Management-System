@@ -10,31 +10,19 @@ namespace Electronic_Election_Management_System.Data
     {
         public static async Task EnsureAdminUserAsync(ElectionDbContext db)
         {
-
+            // Safety-net: the setup wizard creates the admin account during first-run.
+            // This method is kept as a startup check only — it does NOT create a
+            // hardcoded fallback account. If no admin is found after setup something
+            // went wrong and the operator must re-run the setup flow.
             bool anyAdmin = await db.Users.AnyAsync(u => u.Role == UserRole.Admin);
-            if (anyAdmin)
+            if (!anyAdmin)
             {
-                return;
+                // Log a warning but do not create a hardcoded account.
+                // The operator can delete data/dbconfig.json to re-run setup.
+                Console.Error.WriteLine(
+                    "[WARNING] No admin user found in the database. " +
+                    "Remove data/dbconfig.json and restart to re-run the setup wizard.");
             }
-
-            const string adminEmail = "admin@election.local";
-
-
-            bool emailTaken = await db.Users.AnyAsync(u => u.Email == adminEmail);
-            if (emailTaken)
-            {
-                throw new System.InvalidOperationException($"Cannot seed default admin because '{adminEmail}' already exists.");
-            }
-
-            var admin = new User
-            {
-                Email = adminEmail,
-                PasswordHash = PasswordHasher.Hash("Admin123!"),
-                Role = UserRole.Admin
-            };
-
-            db.Users.Add(admin);
-            await db.SaveChangesAsync();
         }
 
         public static async Task EnsureScoringSchemesAsync(ElectionDbContext db)
@@ -88,8 +76,11 @@ namespace Electronic_Election_Management_System.Data
                 return;
             }
 
-            var admin = await db.Users.FirstOrDefaultAsync(u => u.Role == UserRole.Admin)
-                ?? throw new System.InvalidOperationException("Cannot seed test data because no admin user exists. EnsureAdminUserAsync must run successfully first.");
+            var admin = await db.Users.FirstOrDefaultAsync(u => u.Role == UserRole.Admin);
+            if (admin is null)
+            {
+                return;
+            }
 
             var now = DateTime.UtcNow;
             var rng = new Random(20260728);

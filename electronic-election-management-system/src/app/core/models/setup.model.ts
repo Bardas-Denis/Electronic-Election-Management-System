@@ -3,6 +3,8 @@ export type DbProvider = 'Sqlite' | 'Postgres';
 export interface SetupRequest {
   provider: DbProvider;
   connectionString: string;
+  adminEmail?: string;
+  adminPassword?: string;
 }
 
 export interface SetupStatusResponse {

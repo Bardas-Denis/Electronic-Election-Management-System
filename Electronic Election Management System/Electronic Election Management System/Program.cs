@@ -281,10 +281,7 @@ try
 
         await SeedData.EnsureAdminUserAsync(db);
         await SeedData.EnsureScoringSchemesAsync(db);
-        if (app.Environment.IsDevelopment())
-        {
-            await SeedData.EnsureTestDataAsync(db);
-        }
+        await SeedData.EnsureTestDataAsync(db);
     }
 
     // Middleware pipeline - both modes
@@ -310,6 +307,7 @@ try
                 context.Response.ContentType = "application/json";
                 await context.Response.WriteAsJsonAsync(new
                 {
+                    code = "APP_UNCONFIGURED",
                     error = AppUnconfiguredMessage
                 });
                 return;

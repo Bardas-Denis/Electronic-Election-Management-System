@@ -6,26 +6,35 @@ import { Router } from '@angular/router';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AuthService } from '../services/auth.service';
 import { jwtInterceptor } from './jwt.interceptor';
+import { authErrorInterceptor } from './auth-error.interceptor';
 
-describe('jwtInterceptor', () => {
+describe('jwtInterceptor and authErrorInterceptor', () => {
   let httpClient: HttpClient;
   let httpTesting: HttpTestingController;
   let auth: {
     getToken: ReturnType<typeof vi.fn>;
+    isLoggedIn: ReturnType<typeof vi.fn>;
     logout: ReturnType<typeof vi.fn>;
   };
-  let router: { navigate: ReturnType<typeof vi.fn> };
+  let router: {
+    navigate: ReturnType<typeof vi.fn>;
+    url: string;
+  };
 
   beforeEach(() => {
     auth = {
       getToken: vi.fn(() => 'jwt-token'),
+      isLoggedIn: vi.fn(() => true),
       logout: vi.fn()
     };
-    router = { navigate: vi.fn() };
+    router = {
+      navigate: vi.fn(),
+      url: '/elections'
+    };
 
     TestBed.configureTestingModule({
       providers: [
-        provideHttpClient(withInterceptors([jwtInterceptor])),
+        provideHttpClient(withInterceptors([jwtInterceptor, authErrorInterceptor])),
         provideHttpClientTesting(),
         { provide: AuthService, useValue: auth },
         { provide: Router, useValue: router }

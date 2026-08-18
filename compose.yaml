@@ -16,5 +16,21 @@ services:
       timeout: 5s
       retries: 5
 
+  backend:
+    container_name: backend
+    image: eems-backend
+    build:
+      context: "./Electronic Election Management System"
+      dockerfile: "Electronic Election Management System/Dockerfile"
+    restart: unless-stopped
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:8080
+    ports:
+      - "7104:8080"
+    volumes:
+      - backend-data:/app/data
+
 volumes:
   postgres-data:
+  backend-data:

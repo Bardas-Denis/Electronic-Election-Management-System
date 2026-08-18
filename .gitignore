@@ -430,3 +430,17 @@ FodyWeavers.xsd
 *.msix
 *.msm
 *.msp
+
+# JetBrains
+.idea/
+**/.idea/
+*.sln.iml
+_ReSharper*/
+*.DotSettings.user
+
+# Application runtime database config & local data directory
+data/
+**/data/
+dbconfig.json
+**/dbconfig.json
+

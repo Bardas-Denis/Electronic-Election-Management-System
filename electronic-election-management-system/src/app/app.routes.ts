@@ -20,6 +20,7 @@ export const routes: Routes = [
   {
     path: '',
     canActivate: [setupGuard],
+    canActivateChild: [setupGuard],
     children: [
       // Public marketing / front page, also reachable through the Votex brand.
       {

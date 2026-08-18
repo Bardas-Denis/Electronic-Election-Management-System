@@ -1,5 +1,5 @@
 import { Component, inject, OnDestroy, signal } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { AbstractControl, FormBuilder, ReactiveFormsModule, ValidatorFn, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { TranslatePipe } from '@ngx-translate/core';
@@ -12,7 +12,14 @@ type ViewState = 'form' | 'restarting' | 'timeout';
 
 const POLL_INTERVAL_MS = 2500;
 const POLL_TIMEOUT_MS = 60_000;
-const SQLITE_DEFAULT_CS = 'Data Source=election.db';
+const SQLITE_DEFAULT_CS = 'Data Source=data/election.db';
+
+/** Cross-field validator: confirmPassword must match password. */
+const passwordMatchValidator: ValidatorFn = (group: AbstractControl) => {
+  const pw = group.get('adminPassword')?.value;
+  const confirm = group.get('confirmPassword')?.value;
+  return pw === confirm ? null : { passwordsMismatch: true };
+};
 
 @Component({
   selector: 'app-setup',
@@ -31,6 +38,8 @@ export class SetupComponent implements OnDestroy {
   protected readonly isTesting = signal(false);
   protected readonly isSaving = signal(false);
   protected readonly showPassword = signal(false);
+  protected readonly showAdminPassword = signal(false);
+  protected readonly showConfirmPassword = signal(false);
 
   // null = no test done yet | true = passed | false = failed
   protected readonly testPassed = signal<boolean | null>(null);
@@ -44,6 +53,15 @@ export class SetupComponent implements OnDestroy {
     username: ['',          [Validators.required]],
     password: ['',          [Validators.required]]
   });
+
+  protected readonly adminForm = this.fb.nonNullable.group(
+    {
+      adminEmail:    ['', [Validators.required, Validators.email]],
+      adminPassword: ['', [Validators.required, Validators.minLength(8)]],
+      confirmPassword: ['', [Validators.required]]
+    },
+    { validators: passwordMatchValidator }
+  );
 
   private pollSub: Subscription | null = null;
   private timeoutId: ReturnType<typeof setTimeout> | null = null;
@@ -97,13 +115,18 @@ export class SetupComponent implements OnDestroy {
       if (this.pgForm.invalid) return;
     }
 
+    this.adminForm.markAllAsTouched();
+    if (this.adminForm.invalid) return;
+
     this.isSaving.set(true);
     this.serverErrorMessage.set(null);
 
+    const { adminEmail, adminPassword } = this.adminForm.getRawValue();
+
     const req =
       provider === 'Sqlite'
-        ? { provider: 'Sqlite' as DbProvider, connectionString: SQLITE_DEFAULT_CS }
-        : { provider: 'Postgres' as DbProvider, connectionString: this.buildPgConnectionString() };
+        ? { provider: 'Sqlite' as DbProvider, connectionString: SQLITE_DEFAULT_CS, adminEmail, adminPassword }
+        : { provider: 'Postgres' as DbProvider, connectionString: this.buildPgConnectionString(), adminEmail, adminPassword };
 
     this.setupService.save(req).subscribe({
       next: () => {
@@ -164,6 +187,14 @@ export class SetupComponent implements OnDestroy {
 
   protected togglePassword(): void {
     this.showPassword.update((v) => !v);
+  }
+
+  protected toggleAdminPassword(): void {
+    this.showAdminPassword.update((v) => !v);
+  }
+
+  protected toggleConfirmPassword(): void {
+    this.showConfirmPassword.update((v) => !v);
   }
 
   protected reloadPage(): void {

@@ -19,7 +19,7 @@ export const authErrorInterceptor: HttpInterceptorFn = (req, next) => {
 
   return next(req).pipe(
     catchError((error) => {
-      if (error.status === 503 && !router.url.startsWith('/setup')) {
+      if (error.status === 503 && error.error?.code === 'APP_UNCONFIGURED' && !router.url.startsWith('/setup')) {
         authService.logout();
         router.navigate(['/setup']);
       } else if (error.status === 401 && !isAuthEndpoint && authService.isLoggedIn()) {

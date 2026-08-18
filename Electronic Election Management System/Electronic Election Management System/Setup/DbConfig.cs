@@ -19,11 +19,11 @@ public sealed record DbConfig(
 public static class DbConfigStore
 {
     /// <summary>
-    /// Path to the configuration file, resolved relative to the binary output directory.
-    /// In Docker scenarios, mount a volume to this directory so the file survives restarts.
+    /// Path to the configuration file, resolved relative to the current working directory.
+    /// In Docker scenarios, this resolves to /app/data/dbconfig.json which is mounted to the persistent volume.
     /// </summary>
     public static readonly string ConfigFilePath =
-        Path.Combine(AppContext.BaseDirectory, "data", "dbconfig.json");
+        Path.Combine(Directory.GetCurrentDirectory(), "data", "dbconfig.json");
 
     private static readonly JsonSerializerOptions SerializerOptions = new()
     {
