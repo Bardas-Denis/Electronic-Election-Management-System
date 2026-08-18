@@ -4,7 +4,8 @@ import { TranslatePipe } from '@ngx-translate/core';
 import { ActivatedRoute } from '@angular/router';
 import { ResultsService } from '../../core/services/results.service';
 import { ElectionResultsDto, OptionResultDto, QuestionResultDto } from '../../core/models/results.model';
-
+import { ScoringSchemesService } from '../../core/services/scoring-schemes.service';
+import { ScoringSchemeDto } from '../../core/models/scoring-schemes.model';
 // One pie slice, precomputed from an option's results.
 // `path` is an SVG path `d` attribute (viewBox 0 0 100 100); `isFullCircle`
 // covers the one case a path arc can't express - a single option holding
@@ -43,6 +44,7 @@ interface OptionMeter {
 export class ResultsDashboardComponent implements OnInit, OnDestroy {
   private route = inject(ActivatedRoute);
   private resultsService = inject(ResultsService);
+  private scoringSchemesService = inject(ScoringSchemesService);
 
   readonly pieCenter = 50;
   readonly pieRadius = 42;
@@ -75,12 +77,21 @@ export class ResultsDashboardComponent implements OnInit, OnDestroy {
 
   isFromMyElections = signal(false);
   rankingFilters = signal<Record<string, number>>({});
+  
+  availableSchemes = signal<ScoringSchemeDto[]>([]);
+  simulatedSchemes = signal<Record<string, ScoringSchemeDto>>({});
 
   private electionId!: string;
 
   ngOnInit(): void {
     this.isFromMyElections.set(this.route.snapshot.queryParamMap.get('from') === 'my-elections');
     this.electionId = this.route.snapshot.paramMap.get('id')!;
+
+    if (this.isFromMyElections()) {
+      this.scoringSchemesService.getSchemes().subscribe({
+        next: (schemes) => this.availableSchemes.set(schemes)
+      });
+    }
 
     // 1. Snapshot initial prin HTTP, ca dashboard-ul sa nu fie gol la incarcare
     this.resultsService.getResultsSnapshot(this.electionId).subscribe({
@@ -114,8 +125,32 @@ export class ResultsDashboardComponent implements OnInit, OnDestroy {
     return Array.from({ length: requiredCount - 1 }, (_, i) => requiredCount - 1 - i);
   }
 
+  onSchemeSimulationChange(question: QuestionResultDto, event: Event): void {
+    const selectedId = (event.target as HTMLSelectElement).value;
+    const originalId = question.scoringScheme?.id;
+
+    if (selectedId === originalId || (!selectedId && !originalId)) {
+      this.simulatedSchemes.update(current => {
+        const next = { ...current };
+        delete next[question.questionId];
+        return next;
+      });
+    } else {
+      const scheme = this.availableSchemes().find(s => s.id === selectedId);
+      if (scheme) {
+        this.simulatedSchemes.update(current => ({
+          ...current,
+          [question.questionId]: scheme
+        }));
+      }
+    }
+  }
+
   private getRankingPoints(rank: number, question: QuestionResultDto): number {
-    if (!question.scoringScheme) {
+    const override = this.simulatedSchemes()[question.questionId];
+    const activeScheme = override || question.scoringScheme;
+
+    if (!activeScheme) {
       switch (rank) {
         case 1: return 12;
         case 2: return 10;
@@ -131,12 +166,12 @@ export class ResultsDashboardComponent implements OnInit, OnDestroy {
       }
     }
 
-    if (question.scoringScheme.isLinear) {
+    if (activeScheme.isLinear) {
       return Math.max(0, question.results.length - rank + 1);
     }
 
-    if (question.scoringScheme.points && rank > 0 && rank <= question.scoringScheme.points.length) {
-      return question.scoringScheme.points[rank - 1];
+    if (activeScheme.points && rank > 0 && rank <= activeScheme.points.length) {
+      return activeScheme.points[rank - 1];
     }
 
     return 0;
