@@ -547,6 +547,15 @@
   margin-top: 0.25rem;
 }
 
+.question-image {
+  display: block;
+  width: 100%;
+  max-height: 220px;
+  object-fit: cover;
+  border-radius: var(--radius-md);
+  margin-bottom: 0.75rem;
+}
+
 /* Angular CDK Drag and Drop Animations */
 .cdk-drag-preview {
   box-sizing: border-box;

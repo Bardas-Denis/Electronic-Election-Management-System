@@ -13,6 +13,7 @@ namespace Electronic_Election_Management_System.Models
         public Guid ElectionId { get; set; }
         public Election? Election { get; set; }
         public string Text { get; set; } = string.Empty;
+        public string? ImageDataUrl { get; set; }
         public int DisplayOrder { get; set; }
         public bool IsRequired { get; set; } = true;
         public bool AllowMultipleAnswers { get; set; } = false;
