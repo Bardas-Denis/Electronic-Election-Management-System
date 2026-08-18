@@ -279,7 +279,6 @@ try
                 "SQLite journal_mode confirmed at startup: {JournalMode}", currentJournalMode);
         }
 
-        await SeedData.EnsureAdminUserAsync(db);
         await SeedData.EnsureScoringSchemesAsync(db);
         await SeedData.EnsureTestDataAsync(db);
     }

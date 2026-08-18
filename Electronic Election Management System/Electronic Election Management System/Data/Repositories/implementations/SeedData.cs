@@ -4,26 +4,10 @@ using Electronic_Election_Management_System.Services;
 
 namespace Electronic_Election_Management_System.Data
 {
-    // Seeds a default Admin account when the database is empty, so the team
-    // can log into the admin panel immediately without a manual setup step.
+    // Seeds predefined scoring schemes and initial test data when the database is empty.
+    // Administrator accounts are provisioned exclusively through the setup form (POST /api/setup/save).
     public static class SeedData
     {
-        public static async Task EnsureAdminUserAsync(ElectionDbContext db)
-        {
-            // Safety-net: the setup wizard creates the admin account during first-run.
-            // This method is kept as a startup check only — it does NOT create a
-            // hardcoded fallback account. If no admin is found after setup something
-            // went wrong and the operator must re-run the setup flow.
-            bool anyAdmin = await db.Users.AnyAsync(u => u.Role == UserRole.Admin);
-            if (!anyAdmin)
-            {
-                // Log a warning but do not create a hardcoded account.
-                // The operator can delete data/dbconfig.json to re-run setup.
-                Console.Error.WriteLine(
-                    "[WARNING] No admin user found in the database. " +
-                    "Remove data/dbconfig.json and restart to re-run the setup wizard.");
-            }
-        }
 
         public static async Task EnsureScoringSchemesAsync(ElectionDbContext db)
         {
