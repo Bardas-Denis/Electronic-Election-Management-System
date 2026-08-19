@@ -69,3 +69,17 @@ export const setupGuard: CanActivateFn | CanActivateChildFn = () => {
     catchError(() => of(true)) // fail-open: network error, assume configured
   );
 };
+
+// Prevents accessing the first-run setup wizard when the instance is already configured.
+export const alreadyConfiguredGuard: CanActivateFn = () => {
+  const setupService = inject(SetupService);
+  const router = inject(Router);
+
+  return setupService.getStatus().pipe(
+    map(({ configured }) =>
+      configured ? router.createUrlTree(['/login']) : true
+    ),
+    catchError(() => of(router.createUrlTree(['/login'])))
+  );
+};
+
