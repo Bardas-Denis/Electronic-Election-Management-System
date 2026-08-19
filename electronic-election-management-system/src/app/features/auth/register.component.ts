@@ -55,6 +55,10 @@ export class RegisterComponent {
       next: () => this.router.navigate(['/elections']),
       error: (error: HttpErrorResponse) => {
         this.isLoading.set(false);
+        if (error.status === 503 && error.error?.code === 'APP_UNCONFIGURED') {
+          this.router.navigate(['/setup']);
+          return;
+        }
         this.errorMessageKey.set(authErrorMessageKey(error, {
           409: 'errors.emailAlreadyExists'
         }));

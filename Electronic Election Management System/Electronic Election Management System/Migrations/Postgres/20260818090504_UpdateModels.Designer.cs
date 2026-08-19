@@ -3,6 +3,7 @@ using System;
 using Electronic_Election_Management_System.Data.DesignTime;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Electronic_Election_Management_System.Migrations.Postgres
 {
     [DbContext(typeof(PostgresAppDbContext))]
-    partial class PostgresAppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260818090504_UpdateModels")]
+    partial class UpdateModels
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -165,9 +168,6 @@ namespace Electronic_Election_Management_System.Migrations.Postgres
                     b.Property<int?>("RequiredRankCount")
                         .HasColumnType("integer");
 
-                    b.Property<Guid?>("ScoringSchemeId")
-                        .HasColumnType("uuid");
-
                     b.Property<string>("Text")
                         .IsRequired()
                         .HasColumnType("text");
@@ -175,8 +175,6 @@ namespace Electronic_Election_Management_System.Migrations.Postgres
                     b.HasKey("Id");
 
                     b.HasIndex("ElectionId");
-
-                    b.HasIndex("ScoringSchemeId");
 
                     b.ToTable("ElectionQuestions");
                 });
@@ -267,36 +265,6 @@ namespace Electronic_Election_Management_System.Migrations.Postgres
                     b.HasIndex("QuestionId");
 
                     b.ToTable("Options");
-                });
-
-            modelBuilder.Entity("Electronic_Election_Management_System.Models.ScoringScheme", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid?>("CreatedByUserId")
-                        .HasColumnType("uuid");
-
-                    b.Property<bool>("IsLinear")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("IsPredefined")
-                        .HasColumnType("boolean");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("Points")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CreatedByUserId");
-
-                    b.ToTable("ScoringSchemes");
                 });
 
             modelBuilder.Entity("Electronic_Election_Management_System.Models.User", b =>
@@ -626,14 +594,7 @@ namespace Electronic_Election_Management_System.Migrations.Postgres
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Electronic_Election_Management_System.Models.ScoringScheme", "ScoringScheme")
-                        .WithMany()
-                        .HasForeignKey("ScoringSchemeId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
                     b.Navigation("Election");
-
-                    b.Navigation("ScoringScheme");
                 });
 
             modelBuilder.Entity("Electronic_Election_Management_System.Models.Notification", b =>
@@ -663,16 +624,6 @@ namespace Electronic_Election_Management_System.Migrations.Postgres
                     b.Navigation("Election");
 
                     b.Navigation("Question");
-                });
-
-            modelBuilder.Entity("Electronic_Election_Management_System.Models.ScoringScheme", b =>
-                {
-                    b.HasOne("Electronic_Election_Management_System.Models.User", "CreatedByUser")
-                        .WithMany()
-                        .HasForeignKey("CreatedByUserId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.Navigation("CreatedByUser");
                 });
 
             modelBuilder.Entity("Electronic_Election_Management_System.Models.UserDetails", b =>

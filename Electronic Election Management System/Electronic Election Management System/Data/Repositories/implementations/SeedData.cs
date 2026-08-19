@@ -4,38 +4,10 @@ using Electronic_Election_Management_System.Services;
 
 namespace Electronic_Election_Management_System.Data
 {
-    // Seeds a default Admin account when the database is empty, so the team
-    // can log into the admin panel immediately without a manual setup step.
+    // Seeds predefined scoring schemes and initial test data when the database is empty.
+    // Administrator accounts are provisioned exclusively through the setup form (POST /api/setup/save).
     public static class SeedData
     {
-        public static async Task EnsureAdminUserAsync(ElectionDbContext db)
-        {
-
-            bool anyAdmin = await db.Users.AnyAsync(u => u.Role == UserRole.Admin);
-            if (anyAdmin)
-            {
-                return;
-            }
-
-            const string adminEmail = "admin@election.local";
-
-
-            bool emailTaken = await db.Users.AnyAsync(u => u.Email == adminEmail);
-            if (emailTaken)
-            {
-                throw new System.InvalidOperationException($"Cannot seed default admin because '{adminEmail}' already exists.");
-            }
-
-            var admin = new User
-            {
-                Email = adminEmail,
-                PasswordHash = PasswordHasher.Hash("Admin123!"),
-                Role = UserRole.Admin
-            };
-
-            db.Users.Add(admin);
-            await db.SaveChangesAsync();
-        }
 
         public static async Task EnsureScoringSchemesAsync(ElectionDbContext db)
         {
@@ -88,8 +60,11 @@ namespace Electronic_Election_Management_System.Data
                 return;
             }
 
-            var admin = await db.Users.FirstOrDefaultAsync(u => u.Role == UserRole.Admin)
-                ?? throw new System.InvalidOperationException("Cannot seed test data because no admin user exists. EnsureAdminUserAsync must run successfully first.");
+            var admin = await db.Users.FirstOrDefaultAsync(u => u.Role == UserRole.Admin);
+            if (admin is null)
+            {
+                return;
+            }
 
             var now = DateTime.UtcNow;
             var rng = new Random(20260728);

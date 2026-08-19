@@ -24,7 +24,7 @@ namespace Electronic_Election_Management_System.Data.DesignTime
                 .Build();
 
             var connStr = config.GetConnectionString("DefaultConnection")
-                ?? "Data Source=election.db";
+                ?? "Data Source=data/election.db";
 
             var options = new DbContextOptionsBuilder<SqliteAppDbContext>()
                 .UseSqlite(connStr)

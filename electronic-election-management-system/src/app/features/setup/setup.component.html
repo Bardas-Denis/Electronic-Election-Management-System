@@ -201,6 +201,90 @@
         </form>
       }
 
+      <!-- Admin Account section -->
+      <p class="section-label">{{ 'setup.adminSection' | translate }}</p>
+
+      <form [formGroup]="adminForm" novalidate class="admin-form">
+        <!-- Admin Email -->
+        <div class="field" [class.field--error]="adminForm.controls.adminEmail.invalid && adminForm.controls.adminEmail.touched">
+          <label for="admin-email">{{ 'setup.adminEmail' | translate }}</label>
+          <input
+            id="admin-email"
+            type="email"
+            formControlName="adminEmail"
+            [placeholder]="'setup.adminEmailPlaceholder' | translate"
+            autocomplete="email"
+          />
+          @if (adminForm.controls.adminEmail.touched && adminForm.controls.adminEmail.hasError('required')) {
+            <span class="field-error" role="alert">{{ 'setup.adminEmailRequired' | translate }}</span>
+          } @else if (adminForm.controls.adminEmail.touched && adminForm.controls.adminEmail.hasError('email')) {
+            <span class="field-error" role="alert">{{ 'setup.adminEmailInvalid' | translate }}</span>
+          }
+        </div>
+
+        <!-- Admin Password -->
+        <div class="field" [class.field--error]="adminForm.controls.adminPassword.invalid && adminForm.controls.adminPassword.touched">
+          <label for="admin-password">{{ 'setup.adminPassword' | translate }}</label>
+          <div class="input-wrapper">
+            <input
+              id="admin-password"
+              [type]="showAdminPassword() ? 'text' : 'password'"
+              formControlName="adminPassword"
+              [placeholder]="'setup.adminPasswordPlaceholder' | translate"
+              autocomplete="new-password"
+            />
+            <button
+              type="button"
+              class="toggle-btn"
+              (click)="toggleAdminPassword()"
+              [attr.aria-label]="(showAdminPassword() ? 'setup.hidePassword' : 'setup.showPassword') | translate"
+            >
+              @if (showAdminPassword()) {
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
+              } @else {
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+              }
+            </button>
+          </div>
+          @if (adminForm.controls.adminPassword.touched && adminForm.controls.adminPassword.hasError('required')) {
+            <span class="field-error" role="alert">{{ 'setup.adminPasswordRequired' | translate }}</span>
+          } @else if (adminForm.controls.adminPassword.touched && adminForm.controls.adminPassword.hasError('minlength')) {
+            <span class="field-error" role="alert">{{ 'setup.adminPasswordMinLength' | translate }}</span>
+          }
+        </div>
+
+        <!-- Confirm Password -->
+        <div class="field" [class.field--error]="(adminForm.controls.confirmPassword.invalid || adminForm.hasError('passwordsMismatch')) && adminForm.controls.confirmPassword.touched">
+          <label for="admin-confirm-password">{{ 'setup.adminConfirm' | translate }}</label>
+          <div class="input-wrapper">
+            <input
+              id="admin-confirm-password"
+              [type]="showConfirmPassword() ? 'text' : 'password'"
+              formControlName="confirmPassword"
+              [placeholder]="'setup.adminConfirmPlaceholder' | translate"
+              autocomplete="new-password"
+            />
+            <button
+              type="button"
+              class="toggle-btn"
+              (click)="toggleConfirmPassword()"
+              [attr.aria-label]="(showConfirmPassword() ? 'setup.hidePassword' : 'setup.showPassword') | translate"
+            >
+              @if (showConfirmPassword()) {
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
+              } @else {
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+              }
+            </button>
+          </div>
+          @if (adminForm.controls.confirmPassword.touched && adminForm.controls.confirmPassword.hasError('required')) {
+            <span class="field-error" role="alert">{{ 'setup.adminConfirmRequired' | translate }}</span>
+          } @else if (adminForm.controls.confirmPassword.touched && adminForm.hasError('passwordsMismatch')) {
+            <span class="field-error" role="alert">{{ 'setup.adminPasswordsMismatch' | translate }}</span>
+          }
+        </div>
+      </form>
+
       <!-- Generic server error for SQLite save -->
       @if (selectedProvider() === 'Sqlite' && serverErrorMessage() && serverErrorMessage() !== 'alreadyConfigured') {
         <div class="server-error" role="alert">

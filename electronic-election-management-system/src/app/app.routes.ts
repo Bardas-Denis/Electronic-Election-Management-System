@@ -3,15 +3,17 @@ import {
   authGuard,
   adminGuard,
   electionManagerGuard,
-  setupGuard
+  setupGuard,
+  alreadyConfiguredGuard
 } from './core/guards/auth.guard';
 
 // All pages lazy-loaded. authGuard = any logged-in user, adminGuard = Admin only, electionManagerGuard = Admin or ElectionManager.
 // setupGuard wraps every app route and redirects to /setup when the backend is unconfigured.
 export const routes: Routes = [
-  // First-run setup wizard — open to anyone, intentionally outside the setupGuard wrapper.
+  // First-run setup wizard — only accessible when the instance is unconfigured.
   {
     path: 'setup',
+    canActivate: [alreadyConfiguredGuard],
     loadComponent: () =>
       import('./features/setup/setup.component').then((m) => m.SetupComponent)
   },
@@ -20,6 +22,7 @@ export const routes: Routes = [
   {
     path: '',
     canActivate: [setupGuard],
+    canActivateChild: [setupGuard],
     children: [
       // Public marketing / front page, also reachable through the Votex brand.
       {

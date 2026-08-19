@@ -294,11 +294,17 @@ namespace Electronic_Election_Management_System.Data
                 .HasForeignKey(ss => ss.CreatedByUserId)
                 .OnDelete(DeleteBehavior.SetNull);
 
+            var pointsComparer = new Microsoft.EntityFrameworkCore.ChangeTracking.ValueComparer<List<int>>(
+                (c1, c2) => c1 != null && c2 != null ? c1.SequenceEqual(c2) : c1 == c2,
+                c => c == null ? 0 : c.Aggregate(0, (a, v) => HashCode.Combine(a, v.GetHashCode())),
+                c => c == null ? new List<int>() : c.ToList());
+
             modelBuilder.Entity<ScoringScheme>()
                 .Property(ss => ss.Points)
                 .HasConversion(
                     v => System.Text.Json.JsonSerializer.Serialize(v, (System.Text.Json.JsonSerializerOptions?)null),
-                    v => System.Text.Json.JsonSerializer.Deserialize<List<int>>(v, (System.Text.Json.JsonSerializerOptions?)null) ?? new List<int>());
+                    v => System.Text.Json.JsonSerializer.Deserialize<List<int>>(v, (System.Text.Json.JsonSerializerOptions?)null) ?? new List<int>(),
+                    pointsComparer);
 
             modelBuilder.Entity<ElectionQuestion>()
                 .HasOne(q => q.ScoringScheme)

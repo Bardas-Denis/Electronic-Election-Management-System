@@ -62,6 +62,10 @@ export class LoginComponent {
       next: () => this.router.navigate(['/elections']),
       error: (error: HttpErrorResponse) => {
         this.isLoading.set(false);
+        if (error.status === 503 && error.error?.code === 'APP_UNCONFIGURED') {
+          this.router.navigate(['/setup']);
+          return;
+        }
         this.errorMessageKey.set(authErrorMessageKey(error, {
           401: 'errors.invalidCredentials',
           403: 'network.forbidden'
