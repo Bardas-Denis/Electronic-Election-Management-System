@@ -6,7 +6,8 @@ import {
   SetupRequest,
   SetupStatusResponse,
   TestConnectionResponse,
-  SaveResponse
+  SaveResponse,
+  AvailableProvidersResponse
 } from '../models/setup.model';
 
 const SETUP_BASE = `${environment.apiUrl}/setup`;
@@ -18,6 +19,14 @@ export class SetupService {
   /** GET /api/setup/status — always succeeds even in unconfigured mode. */
   getStatus(): Observable<SetupStatusResponse> {
     return this.http.get<SetupStatusResponse>(`${SETUP_BASE}/status`);
+  }
+
+  /**
+   * GET /api/setup/available-providers — which providers to offer as choices.
+   * Deployment-time setting (appsettings.json), separate from the saved config.
+   */
+  getAvailableProviders(): Observable<AvailableProvidersResponse> {
+    return this.http.get<AvailableProvidersResponse>(`${SETUP_BASE}/available-providers`);
   }
 
   /**
