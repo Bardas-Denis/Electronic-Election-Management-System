@@ -33,7 +33,7 @@ public class ResultsServiceTests
         => _users.GetByIdAsync(id).Returns(new User { Id = id, Email = $"{id}@test.com", Role = role });
 
     [Fact]
-    public async Task GetOptionVotersAsync_WhenElectionIsAnonymous_RefusesEvenForAnAdmin()
+    public async Task GetVotersAsync_WhenElectionIsAnonymous_RefusesEvenForAnAdmin()
     {
         var adminId = Guid.NewGuid();
         var election = new Election { Title = "Secret ballot", IsAnonymous = true, CreatedByUserId = adminId };
@@ -42,57 +42,105 @@ public class ResultsServiceTests
         _elections.GetByIdWithOptionsAsync(election.Id).Returns(election);
         GivenUser(adminId, UserRole.Admin);
 
-        var result = await _service.GetOptionVotersAsync(election.Id, option.Id, adminId);
+        var result = await _service.GetVotersAsync(election.Id, null, adminId);
 
         result.Success.Should().BeFalse();
         result.ErrorCode.Should().Be(ErrorCode.VotersHiddenForAnonymousElection);
-        await _votes.DidNotReceive().GetIdentifiedVotesForOptionAsync(Arg.Any<Guid>());
+        await _votes.DidNotReceive().GetIdentifiedVotesForOptionsAsync(Arg.Any<IEnumerable<Guid>>());
     }
 
     [Fact]
-    public async Task GetOptionVotersAsync_WhenRequesterIsNeitherAdminNorCreator_IsRefused()
+    public async Task GetVotersAsync_WhenRequesterIsNeitherAdminNorCreator_IsRefused()
     {
         var (election, option) = ElectionWithOption(Guid.NewGuid());
         var outsiderId = Guid.NewGuid();
         // An ElectionManager, but of somebody else's election.
         GivenUser(outsiderId, UserRole.ElectionManager);
 
-        var result = await _service.GetOptionVotersAsync(election.Id, option.Id, outsiderId);
+        var result = await _service.GetVotersAsync(election.Id, null, outsiderId);
 
         result.Success.Should().BeFalse();
         result.ErrorCode.Should().Be(ErrorCode.NotAuthorizedToViewVoters);
-        await _votes.DidNotReceive().GetIdentifiedVotesForOptionAsync(Arg.Any<Guid>());
+        await _votes.DidNotReceive().GetIdentifiedVotesForOptionsAsync(Arg.Any<IEnumerable<Guid>>());
     }
 
     [Fact]
-    public async Task GetOptionVotersAsync_WhenRequesterCreatedTheElection_ReturnsTheVoters()
+    public async Task GetVotersAsync_WhenRequesterCreatedTheElection_ReturnsTheVoters()
     {
         var creatorId = Guid.NewGuid();
         var (election, option) = ElectionWithOption(creatorId);
         GivenUser(creatorId, UserRole.ElectionManager);
         var voter = new User { Id = Guid.NewGuid(), Email = "voter@test.com" };
-        _votes.GetIdentifiedVotesForOptionAsync(option.Id).Returns(new List<Vote>
+        _votes.GetIdentifiedVotesForOptionsAsync(Arg.Any<IEnumerable<Guid>>()).Returns(new List<Vote>
         {
             new() { OptionId = option.Id, UserId = voter.Id, User = voter }
         });
+        _users.GetUserDetailsForUsersAsync(Arg.Any<IEnumerable<Guid>>())
+            .Returns(new List<UserDetails> { new() { UserId = voter.Id, FullName = "Ana Pop" } });
 
-        var result = await _service.GetOptionVotersAsync(election.Id, option.Id, creatorId);
+        var result = await _service.GetVotersAsync(election.Id, null, creatorId);
 
         result.Success.Should().BeTrue();
-        result.Data.Should().ContainSingle().Which.Email.Should().Be("voter@test.com");
+        var group = result.Data.Should().ContainSingle().Which;
+        group.Label.Should().Be("Alice");
+        group.Voters.Should().ContainSingle().Which.Email.Should().Be("voter@test.com");
+        group.Voters[0].FullName.Should().Be("Ana Pop");
     }
 
     [Fact]
-    public async Task GetOptionVotersAsync_WhenOptionBelongsToAnotherElection_IsNotFound()
+    public async Task GetVotersAsync_PrefersTheNameDeclaredForTheVoteOverTheProfileName()
+    {
+        var creatorId = Guid.NewGuid();
+        var (election, option) = ElectionWithOption(creatorId);
+        GivenUser(creatorId, UserRole.Admin);
+        var voter = new User { Id = Guid.NewGuid(), Email = "voter@test.com" };
+        _votes.GetIdentifiedVotesForOptionsAsync(Arg.Any<IEnumerable<Guid>>()).Returns(new List<Vote>
+        {
+            new()
+            {
+                OptionId = option.Id,
+                UserId = voter.Id,
+                User = voter,
+                VoterDeclaration = new VoterDeclaration { FullName = "Ana Maria Pop" }
+            }
+        });
+        _users.GetUserDetailsForUsersAsync(Arg.Any<IEnumerable<Guid>>())
+            .Returns(new List<UserDetails> { new() { UserId = voter.Id, FullName = "Ana Pop" } });
+
+        var result = await _service.GetVotersAsync(election.Id, null, creatorId);
+
+        result.Data!.Single().Voters.Single().FullName.Should().Be("Ana Maria Pop");
+    }
+
+    [Fact]
+    public async Task GetVotersAsync_WhenNeitherNameExists_LeavesFullNameNull()
+    {
+        var creatorId = Guid.NewGuid();
+        var (election, option) = ElectionWithOption(creatorId);
+        GivenUser(creatorId, UserRole.Admin);
+        var voter = new User { Id = Guid.NewGuid(), Email = "voter@test.com" };
+        _votes.GetIdentifiedVotesForOptionsAsync(Arg.Any<IEnumerable<Guid>>()).Returns(new List<Vote>
+        {
+            new() { OptionId = option.Id, UserId = voter.Id, User = voter }
+        });
+        _users.GetUserDetailsForUsersAsync(Arg.Any<IEnumerable<Guid>>()).Returns(new List<UserDetails>());
+
+        var result = await _service.GetVotersAsync(election.Id, null, creatorId);
+
+        result.Data!.Single().Voters.Single().FullName.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task GetVotersAsync_WhenTheQuestionIsNotPartOfTheElection_IsNotFound()
     {
         var adminId = Guid.NewGuid();
         var (election, _) = ElectionWithOption(adminId);
         GivenUser(adminId, UserRole.Admin);
 
-        var result = await _service.GetOptionVotersAsync(election.Id, Guid.NewGuid(), adminId);
+        var result = await _service.GetVotersAsync(election.Id, Guid.NewGuid(), adminId);
 
         result.IsNotFound.Should().BeTrue();
-        await _votes.DidNotReceive().GetIdentifiedVotesForOptionAsync(Arg.Any<Guid>());
+        await _votes.DidNotReceive().GetIdentifiedVotesForOptionsAsync(Arg.Any<IEnumerable<Guid>>());
     }
 
     [Fact]
