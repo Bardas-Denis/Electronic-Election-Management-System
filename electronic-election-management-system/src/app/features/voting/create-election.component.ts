@@ -27,7 +27,9 @@ import {
   rankCountWithinOptions,
   trimmedRequired,
   uniqueOptionLabels
-} from '../../core/validators/input.validators';
+}
+ 
+from '../../core/validators/input.validators';
 import { CreateScoringSchemeModalComponent } from './create-scoring-scheme-modal.component';
 
 // This component handles both creation (/elections/new) and editing
@@ -35,8 +37,9 @@ import { CreateScoringSchemeModalComponent } from './create-scoring-scheme-modal
 @Component({
   selector: 'app-create-election',
   standalone: true,
-imports: [CommonModule, ReactiveFormsModule, TranslatePipe, CreateScoringSchemeModalComponent, CdkDropList, CdkDrag, CdkDragHandle],  templateUrl: './create-election.component.html',
-  styleUrl: './create-election.component.scss'
+imports: [CommonModule, ReactiveFormsModule, TranslatePipe, CreateScoringSchemeModalComponent, CdkDropList, CdkDrag, CdkDragHandle],
+templateUrl: './create-election.component.html',  
+styleUrl: './create-election.component.scss'
 })
 export class CreateElectionComponent implements OnInit {
   private fb = inject(FormBuilder);
