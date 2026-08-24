@@ -860,26 +860,27 @@
          (cdkDropListDropped)="dropQuestion($event)">
       
       <section *ngFor="let question of questions.controls; let questionIndex = index" 
-               class="question-card" [formGroupName]="questionIndex"
-               [class.question-card--collapsed]="isCollapsed(questionIndex)"
-               cdkDrag [cdkDragDisabled]="isLocked()" cdkDragLockAxis="y"
-               cdkDragBoundary=".questions-list">
+         class="question-card" [formGroupName]="questionIndex"
+         [class.question-card--collapsed]="isCollapsed(questionIndex)"
+         cdkDrag [cdkDragDisabled]="isLocked() || questions.length <= 1" 
+         cdkDragLockAxis="y"
+         cdkDragBoundary=".questions-list">
         
     
         <div class="question-card__header">
-          @if (!isLocked()) {
-          <div class="question-drag-handle"
-               cdkDragHandle
-               tabindex="0"
-               role="button"
-               [attr.aria-label]="'elections.reorderQuestion' | translate"
-               (keydown)="onHandleKeydown($event, questionIndex)">
-            <span class="drag-icon">⠿</span>
-            <span class="question-number">{{ 'elections.questionNumber' | translate: { number: questionIndex + 1 } }}</span>
-          </div>
-          } @else {
-          <span class="question-number">{{ 'elections.questionNumber' | translate: { number: questionIndex + 1 } }}</span>
-          }
+  @if (!isLocked() && questions.length > 1) {
+  <div class="question-drag-handle"
+       cdkDragHandle
+       tabindex="0"
+       role="button"
+       [attr.aria-label]="'elections.reorderQuestion' | translate"
+       (keydown)="onHandleKeydown($event, questionIndex)">
+    <span class="drag-icon">⠿</span>
+    <span class="question-number">{{ 'elections.questionNumber' | translate: { number: questionIndex + 1 } }}</span>
+  </div>
+  } @else {
+  <span class="question-number">{{ 'elections.questionNumber' | translate: { number: questionIndex + 1 } }}</span>
+  }
           
           <button type="button" class="btn-collapse" (click)="toggleCollapse(questionIndex)"
                   [attr.aria-label]="'Toggle question collapse'">
