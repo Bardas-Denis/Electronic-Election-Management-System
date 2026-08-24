@@ -403,18 +403,42 @@
   color: var(--text-muted);
 }
 
+// Card look instead of a flat grey block, shared by both answer lists: the
+// free-text one and the Other-answers one render the same thing, someone's
+// typed answer, so they should not look like two different objects.
+//
+// The left bar stays neutral on purpose: any --series-* colour would falsely
+// imply these answers belong to the pie slice of that colour.
 .text-answer-item {
   display: flex;
-  align-items: baseline;
+  // align-items: stretch on the grid grows a short card to its row's height;
+  // flex-start keeps the text on the first line rather than centring it in the
+  // extra space, so neighbouring cards line up on their first line.
+  align-items: flex-start;
   gap: 0.6rem;
-  padding: 0.65rem 0.85rem;
+  // Extra left padding clears the accent bar.
+  padding: 0.7rem 0.9rem 0.7rem 1rem;
   border: 1px solid var(--border-color);
+  border-left: 3px solid var(--text-muted);
   border-radius: var(--radius-sm);
+  // These sit on a --bg-card panel, so cards keep the subtle fill to read as
+  // distinct tiles - on --bg-card they would be white on white, visible only by
+  // their 1px border. Hover then lifts them to --bg-card.
   background: var(--bg-subtle);
   color: var(--text-primary);
   font-size: 0.875rem;
-  line-height: 1.5;
+  line-height: 1.55;
   overflow-wrap: anywhere;
+  transition:
+    background var(--transition),
+    border-color var(--transition),
+    box-shadow var(--transition);
+
+  &:hover {
+    background: var(--bg-card);
+    border-left-color: var(--text-secondary);
+    box-shadow: var(--shadow-sm);
+  }
 }
 
 .text-answer-text {
@@ -493,34 +517,6 @@
   // two-column grid the second column's markers land in the gap between columns
   // and become visible.
   list-style: none;
-}
-
-// Card look instead of the flat grey block. The left bar stays neutral on
-// purpose: any --series-* colour would falsely imply these answers belong to
-// the pie slice of that colour.
-.other-answers-section .text-answer-item {
-  // The section sits on a --bg-card panel, so cards keep the subtle fill to
-  // read as distinct tiles - on --bg-card they'd be white on white, visible
-  // only by their 1px border. Hover then lifts them to --bg-card.
-  background: var(--bg-subtle);
-  border-left: 3px solid var(--text-muted);
-  padding: 0.7rem 0.9rem 0.7rem 1rem;
-  line-height: 1.55;
-  // align-items: stretch grows a short card to its row's height; without this
-  // the text would centre itself in that extra space instead of staying on the
-  // first line, next to its neighbour's first line.
-  display: flex;
-  align-items: flex-start;
-  transition:
-    background var(--transition),
-    border-color var(--transition),
-    box-shadow var(--transition);
-
-  &:hover {
-    background: var(--bg-card);
-    border-left-color: var(--text-secondary);
-    box-shadow: var(--shadow-sm);
-  }
 }
 
 // Sits under the card grid rather than inline among chips, so it needs its own
