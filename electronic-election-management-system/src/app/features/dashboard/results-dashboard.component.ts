@@ -75,12 +75,18 @@ export class ResultsDashboardComponent implements OnInit, OnDestroy {
 
   // Key of the segment/row currently under the pointer, shared between the
   // pie chart and the legend, so hovering either one also highlights its pair.
-  hoveredSlice = signal<string | null>(null);
+  // Which slice the pointer is over, carried as the pair rather than a joined
+  // key so that "is this hover in my question?" stays a comparison instead of
+  // string surgery.
+  hoveredSlice = signal<{ questionId: string; optionId: string } | null>(null);
 
-  // A slice stays lit after a click, unlike hoveredSlice which only survives
-  // while the pointer is over it. Touch devices have no hover, so without a
-  // sticky selection the legend does nothing at all on a phone.
-  selectedSlice = signal<string | null>(null);
+  // One selection per question, keyed by questionId. A slice stays lit after a
+  // click, unlike hoveredSlice which only survives while the pointer is over it
+  // - touch devices have no hover, so without a sticky selection the legend does
+  // nothing at all on a phone. Per question rather than per page because a
+  // dashboard is read side by side, and picking an answer in one question should
+  // not silently clear what was picked in another.
+  selectedSlices = signal<Record<string, string>>({});
 
   isLoading = signal(true);
   snapshot = signal<ElectionResultsDto | null>(null);
@@ -257,33 +263,53 @@ export class ResultsDashboardComponent implements OnInit, OnDestroy {
     return effectiveVoteCount === Math.max(...question.results.map((r) => this.getEffectiveVoteCount(r, question)));
   }
 
-  // Hovering wins over the sticky selection while it lasts, so moving the
-  // pointer around still previews other slices without losing what was picked.
-  private activeSlice(): string | null {
-    return this.hoveredSlice() ?? this.selectedSlice();
+  hoverSlice(questionId: string, optionId: string): void {
+    this.hoveredSlice.set({ questionId, optionId });
+  }
+
+  clearHover(): void {
+    this.hoveredSlice.set(null);
+  }
+
+  /**
+   * The option this question is currently singled out on. Hovering wins over the
+   * sticky selection while it lasts, so moving the pointer around still previews
+   * other slices without losing what was picked - but only within the question
+   * being hovered, so a pointer in one question leaves the others alone.
+   */
+  private activeOptionFor(questionId: string): string | null {
+    const hovered = this.hoveredSlice();
+    if (hovered !== null && hovered.questionId === questionId) {
+      return hovered.optionId;
+    }
+    return this.selectedSlices()[questionId] ?? null;
   }
 
   isSliceActive(questionId: string, optionId: string): boolean {
-    return this.activeSlice() === this.sliceKey(questionId, optionId);
+    return this.activeOptionFor(questionId) === optionId;
   }
 
-  // The rest of the pie only dims once something is actually singled out.
+  // A question's other slices only dim once something in that question is
+  // actually singled out.
   isSliceDimmed(questionId: string, optionId: string): boolean {
-    const active = this.activeSlice();
-    return active !== null && active !== this.sliceKey(questionId, optionId);
+    const active = this.activeOptionFor(questionId);
+    return active !== null && active !== optionId;
   }
 
   isSliceSelected(questionId: string, optionId: string): boolean {
-    return this.selectedSlice() === this.sliceKey(questionId, optionId);
+    return this.selectedSlices()[questionId] === optionId;
   }
 
   toggleSliceSelection(questionId: string, optionId: string): void {
-    const key = this.sliceKey(questionId, optionId);
-    this.selectedSlice.update((current) => (current === key ? null : key));
-  }
-
-  sliceKey(questionId: string, optionId: string): string {
-    return `${questionId}:${optionId}`;
+    this.selectedSlices.update((current) => {
+      const next = { ...current };
+      if (next[questionId] === optionId) {
+        delete next[questionId];
+      } else {
+        next[questionId] = optionId;
+      }
+      return next;
+    });
   }
 
   isOtherAnswersExpanded(questionId: string): boolean {

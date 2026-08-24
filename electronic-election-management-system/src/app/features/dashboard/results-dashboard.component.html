@@ -140,8 +140,8 @@
                           [class.is-dimmed]="isSliceDimmed(question.questionId, segment.optionId)"
                           [attr.cx]="pieCenter" [attr.cy]="pieCenter" [attr.r]="pieRadius"
                           [style.fill]="segment.colorVar"
-                          (pointerenter)="hoveredSlice.set(sliceKey(question.questionId, segment.optionId))"
-                          (pointerleave)="hoveredSlice.set(null)"
+                          (pointerenter)="hoverSlice(question.questionId, segment.optionId)"
+                          (pointerleave)="clearHover()"
                           (click)="toggleSliceSelection(question.questionId, segment.optionId)"
                         >
                           <title>{{ segment.isOtherOption ? ('results.otherOptionLabel' | translate) : segment.label }}: {{ segment.voteCount }} {{ 'results.votes' | translate }} ({{ segment.percent }}%)</title>
@@ -153,8 +153,8 @@
                           [class.is-dimmed]="isSliceDimmed(question.questionId, segment.optionId)"
                           [attr.d]="segment.path"
                           [style.fill]="segment.colorVar"
-                          (pointerenter)="hoveredSlice.set(sliceKey(question.questionId, segment.optionId))"
-                          (pointerleave)="hoveredSlice.set(null)"
+                          (pointerenter)="hoverSlice(question.questionId, segment.optionId)"
+                          (pointerleave)="clearHover()"
                           (click)="toggleSliceSelection(question.questionId, segment.optionId)"
                         >
                           <title>{{ segment.isOtherOption ? ('results.otherOptionLabel' | translate) : segment.label }}: {{ segment.voteCount }} {{ 'results.votes' | translate }} ({{ segment.percent }}%)</title>
@@ -174,10 +174,10 @@
                       role="button"
                       tabindex="0"
                       [attr.aria-pressed]="isSliceSelected(question.questionId, option.optionId)"
-                      (pointerenter)="hoveredSlice.set(sliceKey(question.questionId, option.optionId))"
-                      (pointerleave)="hoveredSlice.set(null)"
-                      (focus)="hoveredSlice.set(sliceKey(question.questionId, option.optionId))"
-                      (blur)="hoveredSlice.set(null)"
+                      (pointerenter)="hoverSlice(question.questionId, option.optionId)"
+                      (pointerleave)="clearHover()"
+                      (focus)="hoverSlice(question.questionId, option.optionId)"
+                      (blur)="clearHover()"
                       (click)="toggleSliceSelection(question.questionId, option.optionId)"
                       (keydown.enter)="toggleSliceSelection(question.questionId, option.optionId)"
                       (keydown.space)="$event.preventDefault(); toggleSliceSelection(question.questionId, option.optionId)"
