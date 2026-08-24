@@ -136,24 +136,26 @@
                       @if (segment.isFullCircle) {
                         <circle
                           class="pie-segment"
-                          [class.is-hovered]="hoveredSlice() === sliceKey(question.questionId, segment.optionId)"
-                          [class.is-dimmed]="hoveredSlice() !== null && hoveredSlice() !== sliceKey(question.questionId, segment.optionId)"
+                          [class.is-hovered]="isSliceActive(question.questionId, segment.optionId)"
+                          [class.is-dimmed]="isSliceDimmed(question.questionId, segment.optionId)"
                           [attr.cx]="pieCenter" [attr.cy]="pieCenter" [attr.r]="pieRadius"
                           [style.fill]="segment.colorVar"
                           (pointerenter)="hoveredSlice.set(sliceKey(question.questionId, segment.optionId))"
                           (pointerleave)="hoveredSlice.set(null)"
+                          (click)="toggleSliceSelection(question.questionId, segment.optionId)"
                         >
                           <title>{{ segment.isOtherOption ? ('results.otherOptionLabel' | translate) : segment.label }}: {{ segment.voteCount }} {{ 'results.votes' | translate }} ({{ segment.percent }}%)</title>
                         </circle>
                       } @else if (segment.path) {
                         <path
                           class="pie-segment"
-                          [class.is-hovered]="hoveredSlice() === sliceKey(question.questionId, segment.optionId)"
-                          [class.is-dimmed]="hoveredSlice() !== null && hoveredSlice() !== sliceKey(question.questionId, segment.optionId)"
+                          [class.is-hovered]="isSliceActive(question.questionId, segment.optionId)"
+                          [class.is-dimmed]="isSliceDimmed(question.questionId, segment.optionId)"
                           [attr.d]="segment.path"
                           [style.fill]="segment.colorVar"
                           (pointerenter)="hoveredSlice.set(sliceKey(question.questionId, segment.optionId))"
                           (pointerleave)="hoveredSlice.set(null)"
+                          (click)="toggleSliceSelection(question.questionId, segment.optionId)"
                         >
                           <title>{{ segment.isOtherOption ? ('results.otherOptionLabel' | translate) : segment.label }}: {{ segment.voteCount }} {{ 'results.votes' | translate }} ({{ segment.percent }}%)</title>
                         </path>
@@ -167,12 +169,18 @@
                     <div
                       class="result-row"
                       [class.is-leading]="isLeading(option.voteCount, question)"
-                      [class.is-hovered]="hoveredSlice() === sliceKey(question.questionId, option.optionId)"
+                      [class.is-hovered]="isSliceActive(question.questionId, option.optionId)"
+                      [class.is-selected]="isSliceSelected(question.questionId, option.optionId)"
+                      role="button"
                       tabindex="0"
+                      [attr.aria-pressed]="isSliceSelected(question.questionId, option.optionId)"
                       (pointerenter)="hoveredSlice.set(sliceKey(question.questionId, option.optionId))"
                       (pointerleave)="hoveredSlice.set(null)"
                       (focus)="hoveredSlice.set(sliceKey(question.questionId, option.optionId))"
                       (blur)="hoveredSlice.set(null)"
+                      (click)="toggleSliceSelection(question.questionId, option.optionId)"
+                      (keydown.enter)="toggleSliceSelection(question.questionId, option.optionId)"
+                      (keydown.space)="$event.preventDefault(); toggleSliceSelection(question.questionId, option.optionId)"
                     >
                       <span class="result-swatch" [style.background]="'var(--series-' + ((i % 8) + 1) + ')'"></span>
                       @if (option.imageDataUrl) {

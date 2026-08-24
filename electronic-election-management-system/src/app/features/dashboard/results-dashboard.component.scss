@@ -196,6 +196,14 @@
   background: var(--bg-subtle);
 }
 
+// Selection has to read differently from hover: hover is where the pointer
+// happens to be, selection is the answer the reader deliberately singled out
+// and which survives the pointer leaving.
+.result-row.is-selected {
+  background: var(--bg-subtle);
+  box-shadow: inset 2px 0 0 var(--accent);
+}
+
 .result-swatch {
   width: 10px;
   height: 10px;

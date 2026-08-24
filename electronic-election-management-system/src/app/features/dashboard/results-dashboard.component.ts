@@ -77,6 +77,11 @@ export class ResultsDashboardComponent implements OnInit, OnDestroy {
   // pie chart and the legend, so hovering either one also highlights its pair.
   hoveredSlice = signal<string | null>(null);
 
+  // A slice stays lit after a click, unlike hoveredSlice which only survives
+  // while the pointer is over it. Touch devices have no hover, so without a
+  // sticky selection the legend does nothing at all on a phone.
+  selectedSlice = signal<string | null>(null);
+
   isLoading = signal(true);
   snapshot = signal<ElectionResultsDto | null>(null);
 
@@ -250,6 +255,31 @@ export class ResultsDashboardComponent implements OnInit, OnDestroy {
   isLeading(effectiveVoteCount: number, question: QuestionResultDto): boolean {
     if (question.totalVotes === 0 || effectiveVoteCount === 0) return false;
     return effectiveVoteCount === Math.max(...question.results.map((r) => this.getEffectiveVoteCount(r, question)));
+  }
+
+  // Hovering wins over the sticky selection while it lasts, so moving the
+  // pointer around still previews other slices without losing what was picked.
+  private activeSlice(): string | null {
+    return this.hoveredSlice() ?? this.selectedSlice();
+  }
+
+  isSliceActive(questionId: string, optionId: string): boolean {
+    return this.activeSlice() === this.sliceKey(questionId, optionId);
+  }
+
+  // The rest of the pie only dims once something is actually singled out.
+  isSliceDimmed(questionId: string, optionId: string): boolean {
+    const active = this.activeSlice();
+    return active !== null && active !== this.sliceKey(questionId, optionId);
+  }
+
+  isSliceSelected(questionId: string, optionId: string): boolean {
+    return this.selectedSlice() === this.sliceKey(questionId, optionId);
+  }
+
+  toggleSliceSelection(questionId: string, optionId: string): void {
+    const key = this.sliceKey(questionId, optionId);
+    this.selectedSlice.update((current) => (current === key ? null : key));
   }
 
   sliceKey(questionId: string, optionId: string): string {
