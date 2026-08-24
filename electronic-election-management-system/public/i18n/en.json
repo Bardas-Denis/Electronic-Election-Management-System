@@ -622,6 +622,7 @@
     "providerLabel": "Database type",
     "providerSqlite": "SQLite",
     "providerPostgres": "PostgreSQL",
+    "onlyProviderAvailable": "Database: {{provider}}",
     "sqliteNote": "SQLite is recommended for small deployments or testing. The database file will be created automatically.",
     "postgresSection": "PostgreSQL connection details",
     "host": "Host",
