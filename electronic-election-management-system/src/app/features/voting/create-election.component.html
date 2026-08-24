@@ -159,6 +159,7 @@
           <p class="summary-formula">{{ audienceSummaryText() }}</p>
         </div>
         }
+          <!-- Audience group builder -->
         <div class="audience-groups">
           @for (group of audienceGroupsArray.controls; track $index; let gi = $index) {
           @if (gi > 0) {
@@ -537,6 +538,7 @@
           <p class="summary-formula">{{ audienceSummaryText() }}</p>
         </div>
         }
+          <!-- Audience group builder -->
         <div class="audience-groups">
           @for (group of audienceGroupsArray.controls; track $index; let gi = $index) {
           @if (gi > 0) {
@@ -591,6 +593,7 @@
                 </button>
               </span>
               }
+                <!-- Add condition button + picker -->
               <div class="condition-add-wrapper">
                 <button type="button" class="btn-add-condition"
                         (click)="openConditionPickerFor(gi, -1)">
@@ -862,9 +865,7 @@
                cdkDrag [cdkDragDisabled]="isLocked()" cdkDragLockAxis="y"
                cdkDragBoundary=".questions-list">
         
-        <!-- New visible and modern placeholder -->
-        <div *cdkDragPlaceholder class="custom-drag-placeholder"></div>
-
+    
         <div class="question-card__header">
           @if (!isLocked()) {
           <div class="question-drag-handle"
@@ -985,11 +986,13 @@
         </div>
         }
 
+         <!-- Question text and free text image upload container -->
         <div style="display: flex; gap: 1rem; align-items: center; margin-top: 0.75rem; margin-bottom: 0.75rem;">
           <input type="text" formControlName="text" maxlength="500"
                  [placeholder]="'elections.questionPlaceholder' | translate" [attr.readonly]="isLocked() ? true : null" style="flex: 1; margin-bottom: 0;" />
 
           @if (getQuestionType(questionIndex) === 'FreeText') {
+               
             <label class="image-upload" [style.cursor]="isLocked() ? 'default' : 'pointer'" 
                    style="position: relative; margin-bottom: 0; width: 42px; height: 42px; min-height: 42px; display: flex; align-items: center; justify-content: center;">
               @if (questions.at(questionIndex).get('imageDataUrl')?.value) {
@@ -1028,6 +1031,7 @@
                      [placeholder]="'elections.optionDescPlaceholder' | translate"
                      [attr.readonly]="isLocked() ? true : null" />
             </div>
+              
             
             <label class="image-upload" [style.cursor]="isLocked() ? 'default' : 'pointer'" style="position: relative;">
               @if (option.get('imageDataUrl')?.value) {

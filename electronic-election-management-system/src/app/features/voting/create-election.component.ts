@@ -8,7 +8,7 @@ import { catchError } from 'rxjs/operators';
 import { VotingService } from '../../core/services/voting.service';
 import { ScoringSchemesService } from '../../core/services/scoring-schemes.service';
 import { ScoringSchemeDto } from '../../core/models/scoring-schemes.model';
-import { CdkDragDrop, CdkDropList, CdkDrag, CdkDragHandle, CdkDragPlaceholder } from '@angular/cdk/drag-drop';
+import { CdkDragDrop, CdkDropList, CdkDrag, CdkDragHandle } from '@angular/cdk/drag-drop';
 import {
   AudienceConditionDto,
   AudienceGroupDto,
@@ -35,8 +35,7 @@ import { CreateScoringSchemeModalComponent } from './create-scoring-scheme-modal
 @Component({
   selector: 'app-create-election',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, TranslatePipe, CreateScoringSchemeModalComponent, CdkDropList, CdkDrag, CdkDragHandle, CdkDragPlaceholder],
-  templateUrl: './create-election.component.html',
+imports: [CommonModule, ReactiveFormsModule, TranslatePipe, CreateScoringSchemeModalComponent, CdkDropList, CdkDrag, CdkDragHandle],  templateUrl: './create-election.component.html',
   styleUrl: './create-election.component.scss'
 })
 export class CreateElectionComponent implements OnInit {

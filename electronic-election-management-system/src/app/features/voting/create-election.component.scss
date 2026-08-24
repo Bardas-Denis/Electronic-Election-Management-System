@@ -1215,7 +1215,10 @@
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
   background: var(--bg-subtle);
-  transition: padding 0.2s ease, background 0.2s ease;
+  
+  
+  box-sizing: border-box; 
+  width: 100%;
 }
 
 /* Style for collapsed card (Compact / Ranking Mode) */
@@ -1406,32 +1409,55 @@
    ========================================================= */
 
 /* Switch GRID to FLEXBOX to eliminate drag & drop bugs */
+/* 1. List Container */
 .questions-list { 
-  display: flex; 
-  flex-direction: column; 
-  gap: 1rem; 
+  display: block; 
   position: relative;
-  padding: 4px;
-  margin: -4px; 
+  /* Keep extra padding at the bottom so the last question can be dragged easily */
+  padding-bottom: 4rem; 
 }
 
-/* Design for the empty space left by the card */
-.custom-drag-placeholder {
+/* 2. Base Card */
+.question-card {
+  box-sizing: border-box;
+  /* ESSENTIAL: Required for the absolute positioned dashed placeholder to align correctly */
+  position: relative; 
+}
+
+/* =========================================================
+   ANGULAR CDK DRAG & DROP - "HOLOGRAM" DESIGN
+   ========================================================= */
+
+/* 3. Placeholder (The empty space left behind) */
+::ng-deep .cdk-drag-placeholder {
+  /* Hide the original card completely (without collapsing its natural height) */
+  visibility: hidden !important;
+  /* Remove original background and borders so they don't peek through the dashed box */
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* Draw the dashed box as a "hologram" perfectly over the empty space */
+::ng-deep .cdk-drag-placeholder::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  /* Make only this pseudo-element visible! */
+  visibility: visible !important; 
   background: color-mix(in srgb, var(--accent, #3b82f6) 5%, transparent);
   border: 2px dashed color-mix(in srgb, var(--accent, #3b82f6) 40%, transparent);
   border-radius: var(--radius-md, 8px);
-  min-height: 48px;
-  transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
 }
 
+/* 4. The card floating under the mouse (Preview) */
 ::ng-deep .cdk-drag-preview {
   box-sizing: border-box !important;
   border-radius: var(--radius-md, 8px) !important;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15) !important;
   background: var(--bg-card, #ffffff) !important;
   border: 1px solid var(--accent, #3b82f6) !important;
-  margin: 0 !important;
-  z-index: 9999 !important;
+  margin: 0 !important; 
   
   &.question-card--collapsed {
     padding: 0.75rem 1.15rem !important;
@@ -1439,16 +1465,13 @@
       display: none !important;
     }
   }
-  
-  &:not(.question-card--collapsed) {
-    padding: 1.15rem !important;
-  }
 }
 
+/* 5. Smooth rearrangement animations */
 ::ng-deep .cdk-drag-animating {
   transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
 }
 
-::ng-deep .questions-list.cdk-drop-list-dragging .question-card:not(.custom-drag-placeholder) {
+::ng-deep .questions-list.cdk-drop-list-dragging .question-card:not(.cdk-drag-placeholder) {
   transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
 }
