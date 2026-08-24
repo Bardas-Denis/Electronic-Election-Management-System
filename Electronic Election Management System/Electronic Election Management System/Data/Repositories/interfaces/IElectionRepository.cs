@@ -1,30 +1,30 @@
 using Electronic_Election_Management_System.Models;
+using Microsoft.EntityFrameworkCore.Storage;
 
 namespace Electronic_Election_Management_System.Data.Repositories
 {
     public interface IElectionRepository
     {
-        /// <summary>Retrieves all elections including their options.</summary>
+        /// <summary>Spans several repositories via the shared context, so writing an election
+        /// and claiming its images commit as a unit.</summary>
+        Task<IDbContextTransaction> BeginTransactionAsync();
+
         Task<List<Election>> GetAllWithOptionsAsync();
 
-        /// <summary>Retrieves public elections and closed elections accessible to a user.</summary>
         Task<List<Election>> GetVisibleToUserAsync(Guid userId);
 
-        /// <summary>Retrieves all elections created by a specific user, including their options.</summary>
         Task<List<Election>> GetByCreatedByAsync(Guid userId);
 
-        /// <summary>Retrieves an election by its ID, including its options.</summary>
         Task<Election?> GetByIdWithOptionsAsync(Guid id);
         Task<Election?> GetAccessibleByIdWithOptionsAsync(Guid id, Guid userId);
         Task<Election?> GetByIdAsync(Guid id);
 
-        /// <summary>Retrieves an election including its options and each option's votes, for results tallying.</summary>
+        /// <summary>Includes each option's votes, for tallying.</summary>
         Task<Election?> GetByIdWithResultsAsync(Guid id);
         Task<bool> CanUserAccessAsync(Guid electionId, Guid userId);
 
         Task AddAsync(Election election);
         Task AddQuestionsAsync(IEnumerable<ElectionQuestion> questions);
-        /// <summary>Removes a collection of options.</summary>
         void RemoveOptions(IEnumerable<Option> options);
         void RemoveQuestions(IEnumerable<ElectionQuestion> questions);
         void Remove(Election election);

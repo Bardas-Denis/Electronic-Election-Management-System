@@ -17,7 +17,17 @@ namespace Electronic_Election_Management_System.DTOs
         public const int AnswerMaxLength = 150;
         public const int OtherAnswerMaxLength = 50;
         public const int AddressMaxLength = 500;
-        public const int ImageDataUrlMaxLength = 3_000_000;
+        /// <summary>Largest upload accepted by <c>POST /api/images</c>, measured before decoding.</summary>
+        public const int ImageMaxUploadBytes = 5 * 1024 * 1024;
+        /// <summary>Bounds the decoded size, which the byte limit above does not: a few hundred KB
+        /// of compressed data can declare tens of thousands of pixels per side.</summary>
+        public const int ImageMaxPixels = 40_000_000;
+        /// <summary>Longest edge kept when downscaling. A ballot shows the picture a few hundred
+        /// pixels wide at most.</summary>
+        public const int ImageMaxDimension = 1024;
+        public const int ImageWebpQuality = 82;
+        /// <summary>How long an unclaimed upload survives before the startup sweep discards it.</summary>
+        public const int ImageDraftLifetimeHours = 24;
         public const int MaxQuestions = 20;
         public const int MaxOptionsPerQuestion = 50;
         public const int MaxInvitations = 500;

@@ -1,5 +1,6 @@
 using Electronic_Election_Management_System.Models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 
 namespace Electronic_Election_Management_System.Data.Repositories
 {
@@ -11,6 +12,9 @@ namespace Electronic_Election_Management_System.Data.Repositories
         {
             _db = db;
         }
+
+        public Task<IDbContextTransaction> BeginTransactionAsync()
+            => _db.Database.BeginTransactionAsync();
 
         public Task<List<Election>> GetAllWithOptionsAsync()
             => _db.Elections

@@ -163,5 +163,20 @@ namespace Electronic_Election_Management_System.Constants
         /// <summary>One or more of the supplied label IDs do not exist.</summary>
         [JsonStringEnumMemberName("labelNotFound")]
         LabelNotFound,
+
+        // Image Errors
+
+        /// <summary>The upload could not be decoded as an image.</summary>
+        [JsonStringEnumMemberName("invalidImage")]
+        InvalidImage,
+
+        /// <summary>The upload exceeds the accepted file size or pixel dimensions.</summary>
+        [JsonStringEnumMemberName("imageTooLarge")]
+        ImageTooLarge,
+
+        /// <summary>An election referenced an image that does not exist, belongs to someone else,
+        /// or has already been claimed by a different election.</summary>
+        [JsonStringEnumMemberName("invalidImageReference")]
+        InvalidImageReference,
     }
 }

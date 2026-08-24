@@ -38,7 +38,7 @@ namespace Electronic_Election_Management_System.Services
                     {
                         OptionId = o.Id,
                         Label = o.Label,
-                        ImageDataUrl = o.ImageDataUrl,
+                        ImageId = o.ImageId,
                         VoteCount = q.QuestionType == QuestionType.Ranking
                             ? o.Votes.Sum(v => GetRankingPoints(v.Rank, q.ScoringScheme, q.Options.Count))
                             : o.Votes.Count,
@@ -62,9 +62,8 @@ namespace Electronic_Election_Management_System.Services
                 .ToList();
             foreach (var (question, source) in questions.Zip(election.Questions.OrderBy(q => q.DisplayOrder)))
             {
-                // A Choice question's "Other" answers get their own synthetic entry in Results
-                // (same shape as a real option) so the piechart/meter rings account for every
-                // vote instead of only the fixed options - fixes the total-vs-chart mismatch.
+                // "Other" answers get a synthetic entry shaped like a real option, so the charts
+                // account for every vote rather than only the fixed ones.
                 if (source.QuestionType == QuestionType.Choice && source.AllowOtherOption)
                 {
                     question.Results.Add(new OptionResultDto
@@ -108,7 +107,7 @@ namespace Electronic_Election_Management_System.Services
                 {
                     OptionId = o.Id,
                     Label = o.Label,
-                    ImageDataUrl = o.ImageDataUrl,
+                    ImageId = o.ImageId,
                     VoteCount = o.Votes.Count
                 }).ToList();
                 questions.Add(new QuestionResultDto
