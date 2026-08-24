@@ -3,9 +3,10 @@ import { CommonModule } from '@angular/common';
 import { TranslatePipe } from '@ngx-translate/core';
 import { ActivatedRoute } from '@angular/router';
 import { ResultsService } from '../../core/services/results.service';
-import { ElectionResultsDto, OptionResultDto, QuestionResultDto } from '../../core/models/results.model';
+import { ElectionResultsDto, OptionResultDto, OptionVoterDto, OptionVotersDto, QuestionResultDto } from '../../core/models/results.model';
 import { ScoringSchemesService } from '../../core/services/scoring-schemes.service';
 import { ScoringSchemeDto } from '../../core/models/scoring-schemes.model';
+import { AuthService } from '../../core/services/auth.service';
 // One pie slice, precomputed from an option's results.
 // `path` is an SVG path `d` attribute (viewBox 0 0 100 100); `isFullCircle`
 // covers the one case a path arc can't express - a single option holding
@@ -54,6 +55,7 @@ export class ResultsDashboardComponent implements OnInit, OnDestroy {
   private route = inject(ActivatedRoute);
   private resultsService = inject(ResultsService);
   private scoringSchemesService = inject(ScoringSchemesService);
+  private auth = inject(AuthService);
 
   readonly pieCenter = 50;
   readonly pieRadius = 42;
@@ -94,6 +96,18 @@ export class ResultsDashboardComponent implements OnInit, OnDestroy {
   // liveResults vine direct din serviciu (SignalR); folosim computed
   // ca sa afisam mereu cea mai recenta versiune (live daca a venit, altfel snapshot-ul initial)
   displayedResults = computed(() => this.resultsService.liveResults() ?? this.snapshot());
+
+  // How many voters a group shows before collapsing the rest behind "+N more".
+  // Per group rather than across the panel: one global limit would spend itself on
+  // the first answer and leave the last one invisible.
+  readonly voterPreviewCount = 4;
+
+  // Keyed by questionId - each question's panel opens on its own.
+  votersPanelOpen = signal<Record<string, boolean>>({});
+  votersByQuestion = signal<Record<string, OptionVotersDto[]>>({});
+  votersLoading = signal<Record<string, boolean>>({});
+  votersErrorKey = signal<Record<string, string | null>>({});
+  private expandedVoterGroups = signal<ReadonlySet<string>>(new Set());
 
   isFromMyElections = signal(false);
   rankingFilters = signal<Record<string, number>>({});
@@ -261,6 +275,93 @@ export class ResultsDashboardComponent implements OnInit, OnDestroy {
   isLeading(effectiveVoteCount: number, question: QuestionResultDto): boolean {
     if (question.totalVotes === 0 || effectiveVoteCount === 0) return false;
     return effectiveVoteCount === Math.max(...question.results.map((r) => this.getEffectiveVoteCount(r, question)));
+  }
+
+  /**
+   * Whether asking who voted is even on the table. An anonymous election never
+   * gives this up, and among the rest it belongs to the people who own the
+   * election - the server decides that for real, this only keeps the button off
+   * screens where it could never work.
+   */
+  canAskWhoVoted(results: ElectionResultsDto): boolean {
+    return !results.isAnonymous && (this.isFromMyElections() || this.auth.isAdmin());
+  }
+
+  /**
+   * An election with no ElectionQuestion rows of its own still arrives carrying one
+   * question, synthesised by the backend with an all-zero id. Asking the server about
+   * that id gets a 404, so it has to be dropped from the request - without it, the
+   * endpoint answers for the options hanging off the election itself, which is
+   * precisely the shape those elections have.
+   */
+  private realQuestionId(questionId: string): string | undefined {
+    const isPlaceholder = !questionId || questionId === '00000000-0000-0000-0000-000000000000';
+    return isPlaceholder ? undefined : questionId;
+  }
+
+  isVotersPanelOpen(questionId: string): boolean {
+    return this.votersPanelOpen()[questionId] === true;
+  }
+
+  /**
+   * Opens or closes one question's voter panel, fetching on first open only -
+   * identities stay on the server until somebody actually asks for them.
+   */
+  toggleVotersPanel(question: QuestionResultDto): void {
+    const questionId = question.questionId;
+    const opening = !this.isVotersPanelOpen(questionId);
+    this.votersPanelOpen.update((current) => ({ ...current, [questionId]: opening }));
+
+    if (!opening || this.votersByQuestion()[questionId] || this.votersLoading()[questionId]) {
+      return;
+    }
+
+    this.votersLoading.update((current) => ({ ...current, [questionId]: true }));
+    this.votersErrorKey.update((current) => ({ ...current, [questionId]: null }));
+
+    this.resultsService.getVoters(this.electionId, this.realQuestionId(questionId)).subscribe({
+      next: (groups) => {
+        this.votersByQuestion.update((current) => ({ ...current, [questionId]: groups }));
+        this.votersLoading.update((current) => ({ ...current, [questionId]: false }));
+      },
+      error: (err) => {
+        const code = err?.error?.errorCode;
+        this.votersErrorKey.update((current) => ({
+          ...current,
+          [questionId]: code ? `errors.${code}` : 'results.votersLoadFailed'
+        }));
+        this.votersLoading.update((current) => ({ ...current, [questionId]: false }));
+      }
+    });
+  }
+
+  /**
+   * The groups to render: every answer while nothing is selected, otherwise just
+   * the selected one. Filtering here rather than refetching keeps switching
+   * between answers instant.
+   */
+  voterGroupsFor(question: QuestionResultDto): OptionVotersDto[] {
+    const groups = this.votersByQuestion()[question.questionId] ?? [];
+    const selected = this.selectedSlices()[question.questionId];
+    return selected ? groups.filter((group) => group.optionId === selected) : groups;
+  }
+
+  visibleVoters(group: OptionVotersDto): OptionVoterDto[] {
+    return this.isVoterGroupExpanded(group.optionId)
+      ? group.voters
+      : group.voters.slice(0, this.voterPreviewCount);
+  }
+
+  isVoterGroupExpanded(optionId: string): boolean {
+    return this.expandedVoterGroups().has(optionId);
+  }
+
+  toggleVoterGroup(optionId: string): void {
+    this.expandedVoterGroups.update((current) => {
+      const next = new Set(current);
+      next.has(optionId) ? next.delete(optionId) : next.add(optionId);
+      return next;
+    });
   }
 
   hoverSlice(questionId: string, optionId: string): void {

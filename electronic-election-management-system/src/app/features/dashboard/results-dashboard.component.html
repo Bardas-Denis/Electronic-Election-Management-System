@@ -197,6 +197,57 @@
                 </div>
               }
             </div>
+            @if (question.questionType === 'Choice' && canAskWhoVoted(results)) {
+              <div class="voters-section">
+                <button type="button" class="btn-secondary voters-toggle"
+                  [attr.aria-expanded]="isVotersPanelOpen(question.questionId)"
+                  (click)="toggleVotersPanel(question)">
+                  {{ (isVotersPanelOpen(question.questionId) ? 'results.hideVoters' : 'results.showVoters') | translate }}
+                </button>
+
+                @if (isVotersPanelOpen(question.questionId)) {
+                  @if (votersLoading()[question.questionId]) {
+                    <p class="voters-state">{{ 'results.votersLoading' | translate }}</p>
+                  } @else if (votersErrorKey()[question.questionId]; as errorKey) {
+                    <p class="voters-state voters-state--error">{{ errorKey | translate }}</p>
+                  } @else {
+                    <div class="voter-groups">
+                      @for (group of voterGroupsFor(question); track group.optionId) {
+                        <div class="voter-group">
+                          <div class="voter-group-head">
+                            <span class="voter-group-label">{{ group.label }}</span>
+                            <span class="voter-group-count">{{ group.voters.length }}</span>
+                          </div>
+                          @if (group.voters.length === 0) {
+                            <p class="voters-state">{{ 'results.noVotersForOption' | translate }}</p>
+                          } @else {
+                            <div class="voter-grid">
+                              @for (voter of visibleVoters(group); track voter.userId) {
+                                <div class="voter-card">
+                                  <span class="voter-name">{{ voter.fullName ?? voter.email }}</span>
+                                  <span class="voter-email">
+                                    {{ voter.fullName ? voter.email : ('results.voterNoName' | translate) }}
+                                  </span>
+                                </div>
+                              }
+                            </div>
+                            @if (group.voters.length > voterPreviewCount) {
+                              <button type="button" class="text-answers-more" (click)="toggleVoterGroup(group.optionId)">
+                                @if (isVoterGroupExpanded(group.optionId)) {
+                                  {{ 'results.less' | translate }}
+                                } @else {
+                                  +{{ group.voters.length - voterPreviewCount }} {{ 'results.more' | translate }}
+                                }
+                              </button>
+                            }
+                          }
+                        </div>
+                      }
+                    </div>
+                  }
+                }
+              </div>
+            }
             @if (question.questionType !== 'FreeText' && question.textAnswers.length > 0) {
               @let answerGroups = groupedTextAnswers(question);
               <div class="other-answers-section">
