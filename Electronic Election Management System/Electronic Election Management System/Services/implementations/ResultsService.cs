@@ -1,3 +1,4 @@
+using Electronic_Election_Management_System.Constants;
 using Electronic_Election_Management_System.Data.Repositories;
 using Electronic_Election_Management_System.DTOs;
 using Electronic_Election_Management_System.Models;
@@ -8,15 +9,66 @@ namespace Electronic_Election_Management_System.Services
     {
         Task<ElectionResultsDto?> GetResultsAsync(Guid electionId);
         Task<ElectionResultsDto?> GetResultsAsync(Guid electionId, Guid userId);
+        Task<ServiceResult<List<OptionVoterDto>>> GetOptionVotersAsync(Guid electionId, Guid optionId, Guid requestedByUserId);
     }
 
     public class ResultsService : IResultsService
     {
         private readonly IElectionRepository _elections;
+        private readonly IVoteRepository _votes;
+        private readonly IUserRepository _users;
 
-        public ResultsService(IElectionRepository elections)
+        public ResultsService(IElectionRepository elections, IVoteRepository votes, IUserRepository users)
         {
             _elections = elections;
+            _votes = votes;
+            _users = users;
+        }
+
+        /// <summary>
+        /// Who picked one option, for a non-anonymous election only.
+        /// </summary>
+        /// <remarks>
+        /// The anonymity check is not a formality: <c>Vote.VoteTokenId</c> leads to
+        /// <c>VoteToken.UserId</c>, so an anonymous voter *is* reachable in the schema. The vote
+        /// screen promises that identity is never linked to the chosen option, so this refuses
+        /// outright rather than relying on the query to avoid following that link.
+        /// </remarks>
+        public async Task<ServiceResult<List<OptionVoterDto>>> GetOptionVotersAsync(
+            Guid electionId, Guid optionId, Guid requestedByUserId)
+        {
+            var election = await _elections.GetByIdWithOptionsAsync(electionId);
+            if (election is null)
+                return ServiceResult<List<OptionVoterDto>>.NotFound();
+
+            if (election.IsAnonymous)
+                return ServiceResult<List<OptionVoterDto>>.Fail(ErrorCode.VotersHiddenForAnonymousElection);
+
+            var requester = await _users.GetByIdAsync(requestedByUserId);
+
+            // Holding the ElectionManager role elsewhere is not enough - it has to be this
+            // election, so the check is against its creator rather than the role alone.
+            var allowed = requester is not null &&
+                (requester.Role == UserRole.Admin || election.CreatedByUserId == requestedByUserId);
+            if (!allowed)
+                return ServiceResult<List<OptionVoterDto>>.Fail(ErrorCode.NotAuthorizedToViewVoters);
+
+            var optionBelongsHere = election.Options.Any(o => o.Id == optionId) ||
+                election.Questions.Any(q => q.Options.Any(o => o.Id == optionId));
+            if (!optionBelongsHere)
+                return ServiceResult<List<OptionVoterDto>>.NotFound();
+
+            var votes = await _votes.GetIdentifiedVotesForOptionAsync(optionId);
+
+            return ServiceResult<List<OptionVoterDto>>.Ok(votes
+                .Where(v => v.User is not null)
+                .Select(v => new OptionVoterDto
+                {
+                    UserId = v.User!.Id,
+                    Email = v.User.Email,
+                    VotedAt = v.CastAt
+                })
+                .ToList());
         }
 
         public async Task<ElectionResultsDto?> GetResultsAsync(Guid electionId)

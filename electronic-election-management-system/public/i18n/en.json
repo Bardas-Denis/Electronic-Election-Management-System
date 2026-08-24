@@ -477,6 +477,8 @@
     "rankCountMismatch": "You must rank exactly the number of candidates the question asks for.",
     "invalidDateRange": "The end date must be after the start date.",
     "notAuthorizedToEdit": "You are not authorized to edit this election.",
+    "notAuthorizedToViewVoters": "Only an admin or the election's creator can see who voted.",
+    "votersHiddenForAnonymousElection": "This election is anonymous, so who voted for an option cannot be revealed.",
     "electionHasVotes": "You cannot modify the election because it has already been voted on.",
     "notAuthorizedToDelete": "You are not authorized to delete this election.",
     "invalidInvitationEmail": "One or more invitation email addresses are invalid.",

@@ -18,6 +18,18 @@ namespace Electronic_Election_Management_System.DTOs
         public Dictionary<int, int>? RankCounts { get; set; }
     }
 
+    /// <summary>One voter who picked a given option. Only ever returned for a non-anonymous
+    /// election, and only to an Admin or the election's creator - see
+    /// <c>ResultsService.GetOptionVotersAsync</c>. Deliberately kept out of
+    /// <see cref="ElectionResultsDto"/>, which is broadcast over SignalR to every subscriber
+    /// in the election group.</summary>
+    public class OptionVoterDto
+    {
+        public Guid UserId { get; set; }
+        public string Email { get; set; } = string.Empty;
+        public DateTime VotedAt { get; set; }
+    }
+
     public class QuestionResultDto
     {
         public Guid QuestionId { get; set; }
