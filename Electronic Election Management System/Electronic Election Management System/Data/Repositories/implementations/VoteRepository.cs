@@ -56,6 +56,13 @@ namespace Electronic_Election_Management_System.Data.Repositories
                 .Where(v => v.UserId == userId && v.Option!.ElectionId == electionId)
                 .ToListAsync();
 
+        public Task<List<Vote>> GetIdentifiedVotesForOptionsAsync(IEnumerable<Guid> optionIds)
+            => _db.Votes
+                .Include(v => v.User)
+                .Include(v => v.VoterDeclaration)
+                .Where(v => v.OptionId != null && optionIds.Contains(v.OptionId.Value) && v.UserId != null)
+                .ToListAsync();
+
         public Task<VoteToken?> GetVoteTokenWithVotesAsync(Guid userId, Guid electionId)
             => _db.VoteTokens
                 .Include(t => t.Votes)

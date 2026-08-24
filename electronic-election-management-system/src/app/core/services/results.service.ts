@@ -3,7 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import * as signalR from '@microsoft/signalr';
 import { environment } from '../../../environments/environment';
-import { ElectionResultsDto } from '../models/results.model';
+import { ElectionResultsDto, OptionVotersDto } from '../models/results.model';
 import { AuthService } from './auth.service';
 
 @Injectable({ providedIn: 'root' })
@@ -18,6 +18,18 @@ export class ResultsService {
   getResultsSnapshot(electionId: string) {
     return this.http.get<ElectionResultsDto>(
       `${environment.apiUrl}/results/${electionId}`
+    );
+  }
+
+  // Who voted for what, grouped by option. Deliberately a separate call from the
+  // results snapshot: that one is broadcast over SignalR to every subscriber, and
+  // voter identities have no business travelling with it. The server refuses this
+  // for anonymous elections and for anyone who is neither an admin nor the
+  // election's creator, so the answer is authoritative rather than advisory.
+  getVoters(electionId: string, questionId?: string) {
+    const query = questionId ? `?questionId=${encodeURIComponent(questionId)}` : '';
+    return this.http.get<OptionVotersDto[]>(
+      `${environment.apiUrl}/results/${electionId}/voters${query}`
     );
   }
 

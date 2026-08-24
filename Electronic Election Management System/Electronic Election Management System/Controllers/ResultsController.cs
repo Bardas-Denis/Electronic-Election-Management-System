@@ -26,6 +26,24 @@ namespace Electronic_Election_Management_System.Controllers
             return Ok(results);
         }
 
+        /// <summary>
+        /// Who voted for what, grouped by option. Kept off the results payload on purpose - that
+        /// one is broadcast over SignalR to every subscriber in the election group.
+        /// </summary>
+        /// <param name="questionId">Omit for an election whose options hang off the election
+        /// itself rather than off a question.</param>
+        [HttpGet("{electionId:guid}/voters")]
+        public async Task<IActionResult> GetVoters(Guid electionId, [FromQuery] Guid? questionId)
+        {
+            var result = await _resultsService.GetVotersAsync(electionId, questionId, GetCurrentUserId());
+            if (result.Success)
+                return Ok(result.Data);
+
+            return result.IsNotFound
+                ? NotFound(new { errorCode = result.ErrorCode })
+                : BadRequest(new { errorCode = result.ErrorCode });
+        }
+
         private Guid GetCurrentUserId()
             => Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
     }

@@ -196,6 +196,14 @@
   background: var(--bg-subtle);
 }
 
+// Selection has to read differently from hover: hover is where the pointer
+// happens to be, selection is the answer the reader deliberately singled out
+// and which survives the pointer leaving.
+.result-row.is-selected {
+  background: var(--bg-subtle);
+  box-shadow: inset 2px 0 0 var(--accent);
+}
+
 .result-swatch {
   width: 10px;
   height: 10px;
@@ -310,7 +318,95 @@
   padding-right: 0.25rem;
 }
 
+.voters-section {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border-color);
+}
+
+// Sizing and colour come from the global .btn-secondary, so the panel toggle
+// matches every other quiet action in the app instead of inventing its own look.
+.voters-toggle {
+  align-self: flex-start;
+}
+
+.voters-state {
+  margin: 0.6rem 0 0;
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+}
+
+.voters-state--error {
+  color: var(--error-color);
+}
+
+.voter-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+  margin-top: 0.9rem;
+}
+
+.voter-group-head {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.voter-group-label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.voter-group-count {
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-secondary);
+  background: var(--bg-subtle);
+  border-radius: var(--radius-sm);
+  padding: 0.05rem 0.45rem;
+}
+
+.voter-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 0.4rem;
+}
+
+// min-width: 0 so a long address ellipsises instead of stretching its column.
+.voter-card {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: 0.45rem 0.6rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  background: var(--bg-subtle);
+}
+
+.voter-name,
+.voter-email {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.voter-name {
+  font-size: 0.8125rem;
+  color: var(--text-primary);
+}
+
+.voter-email {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
 .text-answer-item {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
   padding: 0.65rem 0.85rem;
   border: 1px solid var(--border-color);
   border-radius: var(--radius-sm);
@@ -319,6 +415,20 @@
   font-size: 0.875rem;
   line-height: 1.5;
   overflow-wrap: anywhere;
+}
+
+.text-answer-text {
+  flex: 1;
+  min-width: 0;
+}
+
+// Only rendered when two or more voters wrote the same thing, so it reads as a
+// multiplier on the answer rather than a rank or a score.
+.text-answer-multiplicity {
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
 }
 
 .text-answers-empty {
