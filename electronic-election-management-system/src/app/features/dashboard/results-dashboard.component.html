@@ -190,17 +190,23 @@
               }
             </div>
             @if (question.questionType !== 'FreeText' && question.textAnswers.length > 0) {
+              @let answerGroups = groupedTextAnswers(question);
               <div class="other-answers-section">
                 <h4 class="other-answers-title">
                   {{ 'results.otherAnswersTitle' | translate }}
                   <span class="other-answers-count">{{ question.textAnswers.length }}</span>
                 </h4>
                 <ul class="text-answers-list">
-                  @for (answer of visibleTextAnswers(question); track $index) {
-                    <li class="text-answer-item">{{ answer }}</li>
+                  @for (group of visibleAnswerGroups(answerGroups, question.questionId); track group.text) {
+                    <li class="text-answer-item">
+                      <span class="text-answer-text">{{ group.text }}</span>
+                      @if (group.count > 1) {
+                        <span class="text-answer-multiplicity">×{{ group.count }}</span>
+                      }
+                    </li>
                   }
                 </ul>
-                @if (question.textAnswers.length > otherAnswersPreviewCount) {
+                @if (answerGroups.length > otherAnswersPreviewCount) {
                   <button
                     type="button"
                     class="text-answers-more"
@@ -209,7 +215,7 @@
                     @if (isOtherAnswersExpanded(question.questionId)) {
                       {{ 'results.less' | translate }}
                     } @else {
-                      +{{ question.textAnswers.length - otherAnswersPreviewCount }} {{ 'results.more' | translate }}
+                      +{{ answerGroups.length - otherAnswersPreviewCount }} {{ 'results.more' | translate }}
                     }
                   </button>
                 }

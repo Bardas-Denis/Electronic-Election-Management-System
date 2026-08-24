@@ -311,6 +311,9 @@
 }
 
 .text-answer-item {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
   padding: 0.65rem 0.85rem;
   border: 1px solid var(--border-color);
   border-radius: var(--radius-sm);
@@ -319,6 +322,20 @@
   font-size: 0.875rem;
   line-height: 1.5;
   overflow-wrap: anywhere;
+}
+
+.text-answer-text {
+  flex: 1;
+  min-width: 0;
+}
+
+// Only rendered when two or more voters wrote the same thing, so it reads as a
+// multiplier on the answer rather than a rank or a score.
+.text-answer-multiplicity {
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
 }
 
 .text-answers-empty {

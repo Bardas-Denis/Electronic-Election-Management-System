@@ -303,16 +303,6 @@ export class ResultsDashboardComponent implements OnInit, OnDestroy {
       : groups.slice(0, this.otherAnswersPreviewCount);
   }
 
-  // The answer cards actually rendered: everything once expanded, otherwise
-  // just the first `otherAnswersPreviewCount` - the remainder is summarized by
-  // the "+N more" button instead of being rendered and hidden, so a question
-  // with hundreds of Other answers doesn't bloat the page.
-  visibleTextAnswers(question: QuestionResultDto): string[] {
-    return this.isOtherAnswersExpanded(question.questionId)
-      ? question.textAnswers
-      : question.textAnswers.slice(0, this.otherAnswersPreviewCount);
-  }
-
   // Turns a multiple-answer question's options into independent rings - one
   // per option, each showing "% of respondents who picked this", since a
   // respondent can pick several and the shares don't sum to a whole circle.
