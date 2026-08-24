@@ -19,3 +19,7 @@ export interface TestConnectionResponse {
 export interface SaveResponse {
   message: string;
 }
+
+export interface AvailableProvidersResponse {
+  providers: DbProvider[];
+}

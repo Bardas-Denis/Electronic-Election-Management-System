@@ -633,6 +633,7 @@
     "providerLabel": "Tip bază de date",
     "providerSqlite": "SQLite",
     "providerPostgres": "PostgreSQL",
+    "onlyProviderAvailable": "Bază de date: {{provider}}",
     "sqliteNote": "SQLite este recomandat pentru instalări mici sau pentru testare. Fișierul bazei de date va fi creat automat.",
     "postgresSection": "Detalii conexiune PostgreSQL",
     "host": "Server (host)",

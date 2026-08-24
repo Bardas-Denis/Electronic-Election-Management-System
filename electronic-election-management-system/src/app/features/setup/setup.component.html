@@ -28,8 +28,11 @@
         </div>
       }
 
-      <!-- Provider picker -->
+      <!-- Provider picker: only shown when there's an actual choice to make (2+ providers
+           enabled via Deployment:AvailableDbProviders in appsettings.json). -->
+      @if (availableProviders().length > 1) {
       <fieldset class="provider-picker" role="radiogroup" [attr.aria-label]="'setup.providerLabel' | translate">
+        @if (availableProviders().includes('Sqlite')) {
         <button
           type="button"
           id="provider-sqlite"
@@ -44,6 +47,8 @@
           </svg>
           {{ 'setup.providerSqlite' | translate }}
         </button>
+        }
+        @if (availableProviders().includes('Postgres')) {
         <button
           type="button"
           id="provider-postgres"
@@ -59,7 +64,14 @@
           </svg>
           {{ 'setup.providerPostgres' | translate }}
         </button>
+        }
       </fieldset>
+      } @else if (availableProviders().length === 1) {
+      <!-- Single provider enabled for this deployment: nothing to choose, just say so. -->
+      <div class="server-info" role="status">
+        {{ 'setup.onlyProviderAvailable' | translate: { provider: (availableProviders()[0] === 'Sqlite' ? ('setup.providerSqlite' | translate) : ('setup.providerPostgres' | translate)) } }}
+      </div>
+      }
 
       <!-- SQLite note -->
       @if (selectedProvider() === 'Sqlite') {
