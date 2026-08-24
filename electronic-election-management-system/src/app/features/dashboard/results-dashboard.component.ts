@@ -34,6 +34,15 @@ interface OptionMeter {
   isOtherOption: boolean;
 }
 
+// One distinct Other answer plus how many voters wrote it. Answers are matched
+// case-insensitively after trimming, the same way the backend refuses an Other
+// answer that duplicates an existing option label, so "Pizza" and "pizza " are
+// one entry rather than two.
+interface TextAnswerGroup {
+  text: string;
+  count: number;
+}
+
 @Component({
   selector: 'app-results-dashboard',
   standalone: true,
@@ -261,6 +270,37 @@ export class ResultsDashboardComponent implements OnInit, OnDestroy {
       }
       return next;
     });
+  }
+
+  // Identical Other answers collapse into a single entry carrying its
+  // multiplicity, so ten voters writing the same thing read as one line with
+  // x10 instead of ten identical lines. Most frequent first, since the count is
+  // the whole reason to group; the first spelling seen wins the label.
+  groupedTextAnswers(question: QuestionResultDto): TextAnswerGroup[] {
+    const groups = new Map<string, TextAnswerGroup>();
+
+    for (const answer of question.textAnswers) {
+      const text = answer.trim();
+      if (!text) continue;
+
+      const key = text.toLocaleLowerCase();
+      const existing = groups.get(key);
+      if (existing) {
+        existing.count++;
+      } else {
+        groups.set(key, { text, count: 1 });
+      }
+    }
+
+    return [...groups.values()].sort((a, b) => b.count - a.count);
+  }
+
+  // Slices the groups the template already computed, rather than regrouping on
+  // every change-detection pass.
+  visibleAnswerGroups(groups: TextAnswerGroup[], questionId: string): TextAnswerGroup[] {
+    return this.isOtherAnswersExpanded(questionId)
+      ? groups
+      : groups.slice(0, this.otherAnswersPreviewCount);
   }
 
   // The answer cards actually rendered: everything once expanded, otherwise
