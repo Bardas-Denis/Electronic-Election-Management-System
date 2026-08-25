@@ -63,6 +63,14 @@ namespace Electronic_Election_Management_System.Data.Repositories
                 .Where(v => v.OptionId != null && optionIds.Contains(v.OptionId.Value) && v.UserId != null)
                 .ToListAsync();
 
+        public Task<List<Vote>> GetIdentifiedTextAnswersForQuestionAsync(Guid questionId)
+            => _db.Votes
+                .Include(v => v.User)
+                .Include(v => v.VoterDeclaration)
+                .Where(v => v.QuestionId == questionId && v.AnswerText != null && v.UserId != null)
+                .OrderBy(v => v.CastAt)
+                .ToListAsync();
+
         public Task<VoteToken?> GetVoteTokenWithVotesAsync(Guid userId, Guid electionId)
             => _db.VoteTokens
                 .Include(t => t.Votes)

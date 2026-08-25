@@ -34,6 +34,18 @@ namespace Electronic_Election_Management_System.DTOs
         public string? FullName { get; set; }
     }
 
+    /// <summary>One typed answer together with who wrote it. The text travels with the author
+    /// rather than being matched back to the results payload by position: that payload sends
+    /// answers as bare strings, so two people writing "Nothing" are indistinguishable there and
+    /// any index-based pairing would silently attach the wrong name.</summary>
+    public class TextAnswerAuthorDto
+    {
+        public string AnswerText { get; set; } = string.Empty;
+        public Guid UserId { get; set; }
+        public string Email { get; set; } = string.Empty;
+        public string? FullName { get; set; }
+    }
+
     /// <summary>The voters behind one option, grouped so that a single request can answer both
     /// "who voted for everything" and "who voted for this one".</summary>
     public class OptionVotersDto

@@ -32,6 +32,135 @@ public class ResultsServiceTests
     private void GivenUser(Guid id, UserRole role)
         => _users.GetByIdAsync(id).Returns(new User { Id = id, Email = $"{id}@test.com", Role = role });
 
+    // A non-anonymous election owned by `creatorId`, holding one free-text question.
+    private (Election Election, ElectionQuestion Question) ElectionWithFreeTextQuestion(
+        Guid creatorId, bool anonymous = false)
+    {
+        var election = new Election { Title = "Retro", IsAnonymous = anonymous, CreatedByUserId = creatorId };
+        var question = new ElectionQuestion
+        {
+            ElectionId = election.Id,
+            Text = "What would you change?",
+            QuestionType = QuestionType.FreeText
+        };
+        election.Questions.Add(question);
+        _elections.GetByIdWithOptionsAsync(election.Id).Returns(election);
+        return (election, question);
+    }
+
+    private static Vote TextAnswerBy(User voter, string text, string? declaredName = null) => new()
+    {
+        AnswerText = text,
+        UserId = voter.Id,
+        User = voter,
+        VoterDeclaration = declaredName is null ? null : new VoterDeclaration { FullName = declaredName }
+    };
+
+    [Fact]
+    public async Task GetTextAnswerAuthorsAsync_WhenElectionIsAnonymous_RefusesEvenForAnAdmin()
+    {
+        var adminId = Guid.NewGuid();
+        var (election, question) = ElectionWithFreeTextQuestion(adminId, anonymous: true);
+        GivenUser(adminId, UserRole.Admin);
+
+        var result = await _service.GetTextAnswerAuthorsAsync(election.Id, question.Id, adminId);
+
+        result.ErrorCode.Should().Be(ErrorCode.VotersHiddenForAnonymousElection);
+        await _votes.DidNotReceive().GetIdentifiedTextAnswersForQuestionAsync(Arg.Any<Guid>());
+    }
+
+    [Fact]
+    public async Task GetTextAnswerAuthorsAsync_WhenRequesterIsNeitherAdminNorCreator_IsRefused()
+    {
+        var (election, question) = ElectionWithFreeTextQuestion(Guid.NewGuid());
+        var outsiderId = Guid.NewGuid();
+        // An ElectionManager, but of somebody else's election.
+        GivenUser(outsiderId, UserRole.ElectionManager);
+
+        var result = await _service.GetTextAnswerAuthorsAsync(election.Id, question.Id, outsiderId);
+
+        result.ErrorCode.Should().Be(ErrorCode.NotAuthorizedToViewVoters);
+        await _votes.DidNotReceive().GetIdentifiedTextAnswersForQuestionAsync(Arg.Any<Guid>());
+    }
+
+    [Fact]
+    public async Task GetTextAnswerAuthorsAsync_WhenQuestionBelongsToAnotherElection_IsNotFound()
+    {
+        var adminId = Guid.NewGuid();
+        var (election, _) = ElectionWithFreeTextQuestion(adminId);
+        GivenUser(adminId, UserRole.Admin);
+
+        var result = await _service.GetTextAnswerAuthorsAsync(election.Id, Guid.NewGuid(), adminId);
+
+        result.IsNotFound.Should().BeTrue();
+        await _votes.DidNotReceive().GetIdentifiedTextAnswersForQuestionAsync(Arg.Any<Guid>());
+    }
+
+    [Fact]
+    public async Task GetTextAnswerAuthorsAsync_KeepsIdenticalAnswersApartWithTheirOwnAuthors()
+    {
+        var creatorId = Guid.NewGuid();
+        var (election, question) = ElectionWithFreeTextQuestion(creatorId);
+        GivenUser(creatorId, UserRole.ElectionManager);
+        var ana = new User { Id = Guid.NewGuid(), Email = "ana@test.com" };
+        var bogdan = new User { Id = Guid.NewGuid(), Email = "bogdan@test.com" };
+        // The whole reason text and author travel together: as bare strings these two
+        // answers are indistinguishable, so nothing could pair them with the right person.
+        _votes.GetIdentifiedTextAnswersForQuestionAsync(question.Id).Returns(new List<Vote>
+        {
+            TextAnswerBy(ana, "Nothing"),
+            TextAnswerBy(bogdan, "Nothing")
+        });
+        _users.GetUserDetailsForUsersAsync(Arg.Any<IEnumerable<Guid>>())
+            .Returns(new List<UserDetails> { new() { UserId = ana.Id, FullName = "Ana Pop" } });
+
+        var result = await _service.GetTextAnswerAuthorsAsync(election.Id, question.Id, creatorId);
+
+        result.Success.Should().BeTrue();
+        result.Data.Should().HaveCount(2);
+        result.Data!.Should().OnlyContain(a => a.AnswerText == "Nothing");
+        result.Data.Should().ContainSingle(a => a.Email == "ana@test.com").Which.FullName.Should().Be("Ana Pop");
+        // No profile and no declaration - the caller falls back to the email.
+        result.Data.Should().ContainSingle(a => a.Email == "bogdan@test.com").Which.FullName.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task GetTextAnswerAuthorsAsync_PrefersTheAccountNameOverTheOneDeclaredForTheVote()
+    {
+        var adminId = Guid.NewGuid();
+        var (election, question) = ElectionWithFreeTextQuestion(adminId);
+        GivenUser(adminId, UserRole.Admin);
+        var voter = new User { Id = Guid.NewGuid(), Email = "voter@test.com" };
+        _votes.GetIdentifiedTextAnswersForQuestionAsync(question.Id).Returns(new List<Vote>
+        {
+            TextAnswerBy(voter, "More tests", declaredName: "Ana Maria Pop")
+        });
+        _users.GetUserDetailsForUsersAsync(Arg.Any<IEnumerable<Guid>>())
+            .Returns(new List<UserDetails> { new() { UserId = voter.Id, FullName = "Ana Pop" } });
+
+        var result = await _service.GetTextAnswerAuthorsAsync(election.Id, question.Id, adminId);
+
+        result.Data!.Single().FullName.Should().Be("Ana Pop");
+    }
+
+    [Fact]
+    public async Task GetTextAnswerAuthorsAsync_FallsBackToTheDeclaredNameWhenTheAccountHasNone()
+    {
+        var adminId = Guid.NewGuid();
+        var (election, question) = ElectionWithFreeTextQuestion(adminId);
+        GivenUser(adminId, UserRole.Admin);
+        var voter = new User { Id = Guid.NewGuid(), Email = "voter@test.com" };
+        _votes.GetIdentifiedTextAnswersForQuestionAsync(question.Id).Returns(new List<Vote>
+        {
+            TextAnswerBy(voter, "More tests", declaredName: "Ana Maria Pop")
+        });
+        _users.GetUserDetailsForUsersAsync(Arg.Any<IEnumerable<Guid>>()).Returns(new List<UserDetails>());
+
+        var result = await _service.GetTextAnswerAuthorsAsync(election.Id, question.Id, adminId);
+
+        result.Data!.Single().FullName.Should().Be("Ana Maria Pop");
+    }
+
     [Fact]
     public async Task GetVotersAsync_WhenElectionIsAnonymous_RefusesEvenForAnAdmin()
     {
@@ -88,7 +217,7 @@ public class ResultsServiceTests
     }
 
     [Fact]
-    public async Task GetVotersAsync_PrefersTheNameDeclaredForTheVoteOverTheProfileName()
+    public async Task GetVotersAsync_PrefersTheAccountNameOverTheOneDeclaredForTheVote()
     {
         var creatorId = Guid.NewGuid();
         var (election, option) = ElectionWithOption(creatorId);
@@ -109,7 +238,7 @@ public class ResultsServiceTests
 
         var result = await _service.GetVotersAsync(election.Id, null, creatorId);
 
-        result.Data!.Single().Voters.Single().FullName.Should().Be("Ana Maria Pop");
+        result.Data!.Single().Voters.Single().FullName.Should().Be("Ana Pop");
     }
 
     [Fact]

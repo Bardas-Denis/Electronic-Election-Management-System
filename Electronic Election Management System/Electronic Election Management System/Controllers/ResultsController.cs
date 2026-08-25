@@ -44,6 +44,22 @@ namespace Electronic_Election_Management_System.Controllers
                 : BadRequest(new { errorCode = result.ErrorCode });
         }
 
+        /// <summary>
+        /// Who wrote each typed answer on one question - a FreeText question's answers, or a
+        /// Choice question's "Other" ones. Text and author come back paired.
+        /// </summary>
+        [HttpGet("{electionId:guid}/questions/{questionId:guid}/text-answers")]
+        public async Task<IActionResult> GetTextAnswerAuthors(Guid electionId, Guid questionId)
+        {
+            var result = await _resultsService.GetTextAnswerAuthorsAsync(electionId, questionId, GetCurrentUserId());
+            if (result.Success)
+                return Ok(result.Data);
+
+            return result.IsNotFound
+                ? NotFound(new { errorCode = result.ErrorCode })
+                : BadRequest(new { errorCode = result.ErrorCode });
+        }
+
         private Guid GetCurrentUserId()
             => Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
     }

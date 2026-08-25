@@ -10,6 +10,7 @@ namespace Electronic_Election_Management_System.Services
         Task<ElectionResultsDto?> GetResultsAsync(Guid electionId);
         Task<ElectionResultsDto?> GetResultsAsync(Guid electionId, Guid userId);
         Task<ServiceResult<List<OptionVotersDto>>> GetVotersAsync(Guid electionId, Guid? questionId, Guid requestedByUserId);
+        Task<ServiceResult<List<TextAnswerAuthorDto>>> GetTextAnswerAuthorsAsync(Guid electionId, Guid questionId, Guid requestedByUserId);
     }
 
     public class ResultsService : IResultsService
@@ -37,21 +38,13 @@ namespace Electronic_Election_Management_System.Services
         public async Task<ServiceResult<List<OptionVotersDto>>> GetVotersAsync(
             Guid electionId, Guid? questionId, Guid requestedByUserId)
         {
-            var election = await _elections.GetByIdWithOptionsAsync(electionId);
-            if (election is null)
-                return ServiceResult<List<OptionVotersDto>>.NotFound();
+            var access = await AuthorizeVoterLookupAsync(electionId, requestedByUserId);
+            if (!access.Success)
+                return access.IsNotFound
+                    ? ServiceResult<List<OptionVotersDto>>.NotFound(access.ErrorCode!.Value)
+                    : ServiceResult<List<OptionVotersDto>>.Fail(access.ErrorCode!.Value);
 
-            if (election.IsAnonymous)
-                return ServiceResult<List<OptionVotersDto>>.Fail(ErrorCode.VotersHiddenForAnonymousElection);
-
-            var requester = await _users.GetByIdAsync(requestedByUserId);
-
-            // Holding the ElectionManager role elsewhere is not enough - it has to be this
-            // election, so the check is against its creator rather than the role alone.
-            var allowed = requester is not null &&
-                (requester.Role == UserRole.Admin || election.CreatedByUserId == requestedByUserId);
-            if (!allowed)
-                return ServiceResult<List<OptionVotersDto>>.Fail(ErrorCode.NotAuthorizedToViewVoters);
+            var election = access.Data!;
 
             // A question id narrows this to that question. Without one we answer for the options
             // hanging off the election itself, which is how the older elections are shaped - they
@@ -70,12 +63,7 @@ namespace Electronic_Election_Management_System.Services
             }
 
             var votes = await _votes.GetIdentifiedVotesForOptionsAsync(options.Select(o => o.Id));
-
-            // One query for every voter's profile rather than one per person.
-            var profileNames = (await _users.GetUserDetailsForUsersAsync(
-                    votes.Where(v => v.UserId.HasValue).Select(v => v.UserId!.Value)))
-                .Where(d => !string.IsNullOrWhiteSpace(d.FullName))
-                .ToDictionary(d => d.UserId, d => d.FullName!.Trim());
+            var profileNames = await ProfileNamesForAsync(votes);
 
             var castByOption = votes
                 .Where(v => v.OptionId.HasValue && v.User is not null)
@@ -92,12 +80,7 @@ namespace Electronic_Election_Management_System.Services
                         {
                             UserId = v.User!.Id,
                             Email = v.User.Email,
-                            // The name declared for this vote wins over the account's: it is what
-                            // the voter put their name to for this election, not whatever the
-                            // profile happens to say today.
-                            FullName = Blank(v.VoterDeclaration?.FullName)
-                                ? profileNames.GetValueOrDefault(v.User.Id)
-                                : v.VoterDeclaration!.FullName!.Trim()
+                            FullName = ResolveVoterName(v, profileNames)
                         })
                         .OrderBy(voter => voter.FullName ?? voter.Email, StringComparer.CurrentCultureIgnoreCase)
                         .ToList()
@@ -105,7 +88,95 @@ namespace Electronic_Election_Management_System.Services
                 .ToList());
         }
 
-        private static bool Blank(string? value) => string.IsNullOrWhiteSpace(value);
+        /// <summary>
+        /// The single gate every "who was behind this" lookup goes through.
+        /// </summary>
+        /// <remarks>
+        /// Kept in one place deliberately: the anonymity refusal is the security-critical rule
+        /// here, and two copies of it in two endpoints are two chances for one to drift. The
+        /// check is not a formality either - <c>Vote.VoteTokenId</c> leads to
+        /// <c>VoteToken.UserId</c>, so an anonymous voter *is* reachable in the schema, and the
+        /// vote screen promises they are not.
+        /// </remarks>
+        private async Task<ServiceResult<Election>> AuthorizeVoterLookupAsync(Guid electionId, Guid requestedByUserId)
+        {
+            var election = await _elections.GetByIdWithOptionsAsync(electionId);
+            if (election is null)
+                return ServiceResult<Election>.NotFound();
+
+            if (election.IsAnonymous)
+                return ServiceResult<Election>.Fail(ErrorCode.VotersHiddenForAnonymousElection);
+
+            var requester = await _users.GetByIdAsync(requestedByUserId);
+
+            // Holding the ElectionManager role elsewhere is not enough - it has to be this
+            // election, so the check is against its creator rather than the role alone.
+            var allowed = requester is not null &&
+                (requester.Role == UserRole.Admin || election.CreatedByUserId == requestedByUserId);
+
+            return allowed
+                ? ServiceResult<Election>.Ok(election)
+                : ServiceResult<Election>.Fail(ErrorCode.NotAuthorizedToViewVoters);
+        }
+
+        /// <summary>
+        /// Every typed answer on one question together with who wrote it, for a non-anonymous
+        /// election only. Text and author travel as a pair rather than being matched back to the
+        /// results payload by position - that payload sends answers as bare strings, so two
+        /// identical answers cannot be told apart there.
+        /// </summary>
+        public async Task<ServiceResult<List<TextAnswerAuthorDto>>> GetTextAnswerAuthorsAsync(
+            Guid electionId, Guid questionId, Guid requestedByUserId)
+        {
+            var access = await AuthorizeVoterLookupAsync(electionId, requestedByUserId);
+            if (!access.Success)
+                return access.IsNotFound
+                    ? ServiceResult<List<TextAnswerAuthorDto>>.NotFound(access.ErrorCode!.Value)
+                    : ServiceResult<List<TextAnswerAuthorDto>>.Fail(access.ErrorCode!.Value);
+
+            if (access.Data!.Questions.All(q => q.Id != questionId))
+                return ServiceResult<List<TextAnswerAuthorDto>>.NotFound();
+
+            var votes = await _votes.GetIdentifiedTextAnswersForQuestionAsync(questionId);
+
+            var profileNames = await ProfileNamesForAsync(votes);
+
+            return ServiceResult<List<TextAnswerAuthorDto>>.Ok(votes
+                .Where(v => v.User is not null)
+                .Select(v => new TextAnswerAuthorDto
+                {
+                    AnswerText = v.AnswerText ?? string.Empty,
+                    UserId = v.User!.Id,
+                    Email = v.User.Email,
+                    FullName = ResolveVoterName(v, profileNames)
+                })
+                .ToList());
+        }
+
+        /// <summary>
+        /// The name to show for a vote: the account's, falling back to whatever was declared for
+        /// the vote itself. The account name is the one the person is known by across the system,
+        /// and it is the only one present on every election - a declaration is only collected on
+        /// Politic ones, and even there it carries the legal name rather than the working one.
+        /// Null when neither exists, and the caller falls back to the email.
+        /// </summary>
+        private static string? ResolveVoterName(Vote vote, IReadOnlyDictionary<Guid, string> profileNames)
+        {
+            var profile = vote.UserId.HasValue ? profileNames.GetValueOrDefault(vote.UserId.Value) : null;
+            if (!string.IsNullOrWhiteSpace(profile))
+                return profile;
+
+            var declared = vote.VoterDeclaration?.FullName;
+            return string.IsNullOrWhiteSpace(declared) ? null : declared.Trim();
+        }
+
+        /// <summary>Profile names for a set of voters, fetched in one query rather than one per
+        /// person, keyed by user id and stripped of blanks.</summary>
+        private async Task<Dictionary<Guid, string>> ProfileNamesForAsync(IEnumerable<Vote> votes)
+            => (await _users.GetUserDetailsForUsersAsync(
+                    votes.Where(v => v.UserId.HasValue).Select(v => v.UserId!.Value)))
+                .Where(d => !string.IsNullOrWhiteSpace(d.FullName))
+                .ToDictionary(d => d.UserId, d => d.FullName!.Trim());
 
         public async Task<ElectionResultsDto?> GetResultsAsync(Guid electionId)
         {
