@@ -297,11 +297,9 @@
         </div>
 
         <!-- Seed Data Checkbox -->
-        <div class="field field-checkbox">
-          <label class="checkbox-label">
-            <input type="checkbox" formControlName="seedData" />
-            <span>{{ 'setup.seedData' | translate }}</span>
-          </label>
+        <div class="checkbox-field">
+          <input type="checkbox" id="seedData" formControlName="seedData" />
+          <label for="seedData">{{ 'setup.seedData' | translate }}</label>
         </div>
       </form>
 

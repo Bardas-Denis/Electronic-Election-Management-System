@@ -675,6 +675,7 @@
     "adminConfirmRequired": "Please confirm the password.",
     "adminPasswordsMismatch": "Passwords do not match.",
     "alreadyConfigured": "The application is already configured. Redirecting…",
-    "errorUnknown": "An unexpected error occurred. Check the server logs for details."
+    "errorUnknown": "An unexpected error occurred. Check the server logs for details.",
+    "seedData": "Seed database with test data"
   }
 }
