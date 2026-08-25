@@ -295,6 +295,14 @@
             <span class="field-error" role="alert">{{ 'setup.adminPasswordsMismatch' | translate }}</span>
           }
         </div>
+
+        <!-- Seed Data Checkbox -->
+        <div class="field field-checkbox">
+          <label class="checkbox-label">
+            <input type="checkbox" formControlName="seedData" />
+            <span>{{ 'setup.seedData' | translate }}</span>
+          </label>
+        </div>
       </form>
 
       <!-- Generic server error for SQLite save -->

@@ -61,7 +61,8 @@ export class SetupComponent implements OnInit, OnDestroy {
     {
       adminEmail:    ['', [Validators.required, Validators.email]],
       adminPassword: ['', [Validators.required, Validators.minLength(8)]],
-      confirmPassword: ['', [Validators.required]]
+      confirmPassword: ['', [Validators.required]],
+      seedData:      [true]
     },
     { validators: passwordMatchValidator }
   );
@@ -141,12 +142,12 @@ export class SetupComponent implements OnInit, OnDestroy {
     this.isSaving.set(true);
     this.serverErrorMessage.set(null);
 
-    const { adminEmail, adminPassword } = this.adminForm.getRawValue();
+    const { adminEmail, adminPassword, seedData } = this.adminForm.getRawValue();
 
     const req =
       provider === 'Sqlite'
-        ? { provider: 'Sqlite' as DbProvider, connectionString: SQLITE_DEFAULT_CS, adminEmail, adminPassword }
-        : { provider: 'Postgres' as DbProvider, connectionString: this.buildPgConnectionString(), adminEmail, adminPassword };
+        ? { provider: 'Sqlite' as DbProvider, connectionString: SQLITE_DEFAULT_CS, adminEmail, adminPassword, seedData }
+        : { provider: 'Postgres' as DbProvider, connectionString: this.buildPgConnectionString(), adminEmail, adminPassword, seedData };
 
     this.setupService.save(req).subscribe({
       next: () => {
