@@ -224,6 +224,7 @@
     "optionsLabel": "Options",
     "addQuestion": "Add another question",
     "removeQuestion": "Remove question",
+    "reorderQuestion": "Reorder question",
     "atLeastOneRequiredQuestionError": "At least one question must be required, so voters always have something they must answer.",
     "optionImageInvalid": "Choose a PNG, JPEG, WEBP or GIF image smaller than 2 MB.",
     "submitCreate": "Create election",
@@ -319,7 +320,10 @@
     "updateSuccess": "Your answer has been updated.",
     "castSuccess": "Your vote has been recorded.",
     "updateFailed": "Your answer could not be updated.",
-    "deleteFailed": "Your answer could not be deleted."
+    "deleteFailed": "Your answer could not be deleted.",
+    "previous": "Previous",
+    "next": "Next",
+    "navigationTitle": "Vote navigation"
   },
   "declaration": {
     "politicHeader": "Voter declaration",
@@ -431,6 +435,7 @@
     "colCreatedAt": "Created",
     "deleteBtn": "Delete",
     "nameRequired": "Label name is required.",
+    "lengthExceeded": "The label name or category is longer than allowed.",
     "createSuccess": "Label created successfully.",
     "createFailed": "Could not create the label.",
     "deleteFailed": "Could not delete the label.",
