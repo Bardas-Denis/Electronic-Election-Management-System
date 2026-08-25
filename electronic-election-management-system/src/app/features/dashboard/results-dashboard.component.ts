@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { TranslatePipe } from '@ngx-translate/core';
 import { ActivatedRoute } from '@angular/router';
 import { ResultsService } from '../../core/services/results.service';
-import { ElectionResultsDto, OptionResultDto, OptionVoterDto, OptionVotersDto, QuestionResultDto } from '../../core/models/results.model';
+import { ElectionResultsDto, OptionResultDto, OptionVoterDto, OptionVotersDto, QuestionResultDto, TextAnswerAuthorDto } from '../../core/models/results.model';
 import { ScoringSchemesService } from '../../core/services/scoring-schemes.service';
 import { ScoringSchemeDto } from '../../core/models/scoring-schemes.model';
 import { AuthService } from '../../core/services/auth.service';
@@ -108,6 +108,13 @@ export class ResultsDashboardComponent implements OnInit, OnDestroy {
   votersLoading = signal<Record<string, boolean>>({});
   votersErrorKey = signal<Record<string, string | null>>({});
   private expandedVoterGroups = signal<ReadonlySet<string>>(new Set());
+
+  // Same shape as the voters panel above, keyed by questionId: who wrote each
+  // typed answer, fetched only when the panel is opened.
+  authorsPanelOpen = signal<Record<string, boolean>>({});
+  authorsByQuestion = signal<Record<string, TextAnswerAuthorDto[]>>({});
+  authorsLoading = signal<Record<string, boolean>>({});
+  authorsErrorKey = signal<Record<string, string | null>>({});
 
   isFromMyElections = signal(false);
   rankingFilters = signal<Record<string, number>>({});
@@ -297,6 +304,55 @@ export class ResultsDashboardComponent implements OnInit, OnDestroy {
   private realQuestionId(questionId: string): string | undefined {
     const isPlaceholder = !questionId || questionId === '00000000-0000-0000-0000-000000000000';
     return isPlaceholder ? undefined : questionId;
+  }
+
+  isAuthorsPanelOpen(questionId: string): boolean {
+    return this.authorsPanelOpen()[questionId] === true;
+  }
+
+  /**
+   * Opens or closes one question's "who wrote what" panel, fetching on first open
+   * only - the answers themselves are already on screen, so the names stay on the
+   * server until somebody asks for them.
+   */
+  toggleAuthorsPanel(question: QuestionResultDto): void {
+    const questionId = question.questionId;
+    const opening = !this.isAuthorsPanelOpen(questionId);
+    this.authorsPanelOpen.update((current) => ({ ...current, [questionId]: opening }));
+
+    if (!opening || this.authorsByQuestion()[questionId] || this.authorsLoading()[questionId]) {
+      return;
+    }
+
+    this.authorsLoading.update((current) => ({ ...current, [questionId]: true }));
+    this.authorsErrorKey.update((current) => ({ ...current, [questionId]: null }));
+
+    this.resultsService.getTextAnswerAuthors(this.electionId, questionId).subscribe({
+      next: (authors) => {
+        this.authorsByQuestion.update((current) => ({ ...current, [questionId]: authors }));
+        this.authorsLoading.update((current) => ({ ...current, [questionId]: false }));
+      },
+      error: (err) => {
+        const code = err?.error?.errorCode;
+        this.authorsErrorKey.update((current) => ({
+          ...current,
+          [questionId]: code ? `errors.${code}` : 'results.votersLoadFailed'
+        }));
+        this.authorsLoading.update((current) => ({ ...current, [questionId]: false }));
+      }
+    });
+  }
+
+  /**
+   * The answers to render with their authors attached, or null to render the
+   * plain ones. Returning the loaded pairs rather than merging names into
+   * `textAnswers` is what keeps the attribution honest: that array holds bare
+   * strings, so two identical answers could not be told apart, and a name would
+   * end up on whichever card happened to sit at the same index.
+   */
+  shownAuthorsFor(questionId: string): TextAnswerAuthorDto[] | null {
+    if (!this.isAuthorsPanelOpen(questionId)) return null;
+    return this.authorsByQuestion()[questionId] ?? null;
   }
 
   isVotersPanelOpen(questionId: string): boolean {

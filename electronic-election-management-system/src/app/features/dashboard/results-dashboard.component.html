@@ -32,8 +32,22 @@
               @if (question.questionType === 'FreeText') {
                 @if (question.textAnswers.length > 0) {
                   <ul class="text-answers-list">
-                    @for (answer of question.textAnswers; track $index) {
-                      <li class="text-answer-item">{{ answer }}</li>
+                    @if (shownAuthorsFor(question.questionId); as authored) {
+                      @for (entry of authored; track $index) {
+                        <li class="text-answer-item authored-answer">
+                          <span class="authored-answer-text">{{ entry.answerText }}</span>
+                          <span class="authored-answer-by">
+                            {{ entry.fullName ?? entry.email }}
+                            @if (entry.fullName) {
+                              <span class="authored-answer-email">{{ entry.email }}</span>
+                            }
+                          </span>
+                        </li>
+                      }
+                    } @else {
+                      @for (answer of question.textAnswers; track $index) {
+                        <li class="text-answer-item">{{ answer }}</li>
+                      }
                     }
                   </ul>
                 } @else {
@@ -197,6 +211,23 @@
                 </div>
               }
             </div>
+            @if (question.questionType === 'FreeText' && question.textAnswers.length > 0 && canAskWhoVoted(results)) {
+              <div class="voters-section">
+                <button type="button" class="btn-secondary voters-toggle"
+                  [attr.aria-expanded]="isAuthorsPanelOpen(question.questionId)"
+                  (click)="toggleAuthorsPanel(question)">
+                  {{ (isAuthorsPanelOpen(question.questionId) ? 'results.hideVoters' : 'results.showVoters') | translate }}
+                </button>
+
+                @if (isAuthorsPanelOpen(question.questionId)) {
+                  @if (authorsLoading()[question.questionId]) {
+                    <p class="voters-state">{{ 'results.votersLoading' | translate }}</p>
+                  } @else if (authorsErrorKey()[question.questionId]; as errorKey) {
+                    <p class="voters-state voters-state--error">{{ errorKey | translate }}</p>
+                  }
+                }
+              </div>
+            }
             @if (question.questionType === 'Choice' && canAskWhoVoted(results)) {
               <div class="voters-section">
                 <button type="button" class="btn-secondary voters-toggle"

@@ -3,7 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import * as signalR from '@microsoft/signalr';
 import { environment } from '../../../environments/environment';
-import { ElectionResultsDto, OptionVotersDto } from '../models/results.model';
+import { ElectionResultsDto, OptionVotersDto, TextAnswerAuthorDto } from '../models/results.model';
 import { AuthService } from './auth.service';
 
 @Injectable({ providedIn: 'root' })
@@ -26,6 +26,16 @@ export class ResultsService {
   // voter identities have no business travelling with it. The server refuses this
   // for anonymous elections and for anyone who is neither an admin nor the
   // election's creator, so the answer is authoritative rather than advisory.
+  // Who wrote each typed answer on one question - a FreeText question's answers,
+  // or a Choice question's "Other" ones. Same access rules as getVoters: refused
+  // for anonymous elections and for anyone who is neither an admin nor the
+  // election's creator.
+  getTextAnswerAuthors(electionId: string, questionId: string) {
+    return this.http.get<TextAnswerAuthorDto[]>(
+      `${environment.apiUrl}/results/${electionId}/questions/${questionId}/text-answers`
+    );
+  }
+
   getVoters(electionId: string, questionId?: string) {
     const query = questionId ? `?questionId=${encodeURIComponent(questionId)}` : '';
     return this.http.get<OptionVotersDto[]>(

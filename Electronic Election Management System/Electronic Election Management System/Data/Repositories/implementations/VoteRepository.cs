@@ -63,6 +63,18 @@ namespace Electronic_Election_Management_System.Data.Repositories
                 .Where(v => v.OptionId != null && optionIds.Contains(v.OptionId.Value) && v.UserId != null)
                 .ToListAsync();
 
+        public Task<List<Vote>> GetIdentifiedTextAnswersForQuestionAsync(Guid questionId)
+            => _db.Votes
+                .Include(v => v.User)
+                .Include(v => v.VoterDeclaration)
+                .Where(v => v.QuestionId == questionId && v.AnswerText != null && v.UserId != null)
+                // Same ordering as the results payload, tiebreaker included: the dashboard swaps
+                // one list for the other when authors are revealed, and any disagreement here
+                // shows up as answers rearranging themselves on screen.
+                .OrderBy(v => v.CastAt)
+                .ThenBy(v => v.Id)
+                .ToListAsync();
+
         public Task<VoteToken?> GetVoteTokenWithVotesAsync(Guid userId, Guid electionId)
             => _db.VoteTokens
                 .Include(t => t.Votes)

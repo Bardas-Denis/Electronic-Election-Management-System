@@ -36,6 +36,17 @@ export interface OptionVoterDto {
   fullName: string | null;
 }
 
+// One typed answer together with who wrote it. Text and author arrive paired
+// because the results payload sends answers as bare strings - two people writing
+// "Nothing" are indistinguishable there, so nothing could match a name to the
+// right card by position.
+export interface TextAnswerAuthorDto {
+  answerText: string;
+  userId: string;
+  email: string;
+  fullName: string | null;
+}
+
 export interface OptionVotersDto {
   optionId: string;
   label: string;
