@@ -5,6 +5,7 @@ export interface SetupRequest {
   connectionString: string;
   adminEmail?: string;
   adminPassword?: string;
+  seedData?: boolean;
 }
 
 export interface SetupStatusResponse {

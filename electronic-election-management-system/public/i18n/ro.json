@@ -679,6 +679,7 @@
     "adminConfirmRequired": "Confirmarea parolei este obligatorie.",
     "adminPasswordsMismatch": "Parolele nu se potrivesc.",
     "alreadyConfigured": "Aplicația este deja configurată. Veți fi redirecționat...",
-    "errorUnknown": "A apărut o eroare neașteptată. Verificați jurnalele serverului."
+    "errorUnknown": "A apărut o eroare neașteptată. Verificați jurnalele serverului.",
+    "seedData": "Populează baza de date cu date de test"
   }
 }

@@ -158,6 +158,14 @@ public sealed class SetupController(
         if (adminError is not null)
             return UnprocessableEntity(new { error = adminError });
 
+        // Seed test data if requested
+        if (request.SeedData)
+        {
+            var seedError = await SeedTestDataAsync(request.Provider, sanitizedCs);
+            if (seedError is not null)
+                return UnprocessableEntity(new { error = seedError });
+        }
+
         // Persist the configuration file using the sanitized connection string
         DbConfigStore.Save(new DbConfig(request.Provider, sanitizedCs));
 
@@ -223,6 +231,34 @@ public sealed class SetupController(
     }
 
     /// <summary>
+    /// Seeds the database with test users, labels, and elections.
+    /// Returns <see langword="null"/> on success or a short error message on failure.
+    /// </summary>
+    private async Task<string?> SeedTestDataAsync(string provider, string connectionString)
+    {
+        try
+        {
+            ElectionDbContext ctx = provider.Equals("Sqlite", StringComparison.OrdinalIgnoreCase)
+                ? new SqliteAppDbContext(
+                    new DbContextOptionsBuilder<SqliteAppDbContext>().UseSqlite(connectionString).Options)
+                : new PostgresAppDbContext(
+                    new DbContextOptionsBuilder<PostgresAppDbContext>().UseNpgsql(connectionString).Options);
+
+            await using (ctx)
+            {
+                await SeedData.EnsureTestDataAsync(ctx);
+            }
+
+            return null; // success
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to seed test data during setup.");
+            return "Failed to seed test data. Check the server logs for details.";
+        }
+    }
+
+    /// <summary>
     /// Builds a temporary, disposable DbContext for the chosen provider and applies
     /// all pending EF Core migrations. Returns <see langword="null"/> on success or
     /// a short error message on failure.
@@ -280,4 +316,5 @@ public sealed record SetupRequest(
     string Provider,
     string ConnectionString,
     string? AdminEmail = null,
-    string? AdminPassword = null);
+    string? AdminPassword = null,
+    bool SeedData = false);

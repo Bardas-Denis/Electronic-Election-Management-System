@@ -280,7 +280,7 @@ try
         }
 
         await SeedData.EnsureScoringSchemesAsync(db);
-        await SeedData.EnsureTestDataAsync(db);
+        // Test data seeding is now handled during setup (SetupController) if opted in.
     }
 
     // Middleware pipeline - both modes
