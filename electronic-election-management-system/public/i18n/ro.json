@@ -224,6 +224,7 @@
     "optionsLabel": "Opțiuni",
     "addQuestion": "Adaugă încă o întrebare",
     "removeQuestion": "Șterge întrebarea",
+    "reorderQuestion": "Mută întrebarea",
     "atLeastOneRequiredQuestionError": "Cel puțin o întrebare trebuie să fie obligatorie, ca alegătorii să aibă mereu la ce să răspundă.",
     "optionImageInvalid": "Alege o imagine PNG, JPEG, WEBP sau GIF mai mică de 2 MB.",
     "submitCreate": "Creează alegerea",
