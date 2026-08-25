@@ -214,8 +214,19 @@ namespace Electronic_Election_Management_System.Services
                         IsPredefined = q.ScoringScheme.IsPredefined
                     },
                     // A FreeText question's answers, or a Choice question's "Other" answers.
+                    // Ordered by when they were cast, and deliberately by the same key the
+                    // text-answer-authors endpoint uses: the dashboard swaps one list for the
+                    // other when the authors are revealed, and without a shared ordering the
+                    // answers would visibly rearrange themselves at that moment.
+                    // The id breaks ties: two answers landing in the same tick would otherwise
+                    // be ordered however the database felt like it, differently in each of the
+                    // two queries, and the list would shuffle on reveal for those rows alone.
                     TextAnswers = q.QuestionType == QuestionType.FreeText || q.AllowOtherOption
-                        ? q.Votes.Where(v => v.AnswerText != null).Select(v => v.AnswerText!).ToList()
+                        ? q.Votes.Where(v => v.AnswerText != null)
+                            .OrderBy(v => v.CastAt)
+                            .ThenBy(v => v.Id)
+                            .Select(v => v.AnswerText!)
+                            .ToList()
                         : new List<string>()
                 })
                 .ToList();
