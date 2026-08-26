@@ -53,6 +53,46 @@ describe('normalizeEditableQuestions', () => {
     expect(result[0].options.map(option => option.label))
       .toEqual(election.options.map(option => option.label));
   });
+
+  it('carries image ids back into the edit form', () => {
+    const election: ElectionDto = {
+      ...baseElection(),
+      question: 'Who should lead?',
+      questions: [{
+        id: 'question-id',
+        text: 'Who should lead?',
+        displayOrder: 0,
+        isRequired: true,
+        allowMultipleAnswers: false,
+        questionType: 'Choice',
+        allowOtherOption: false,
+        requiredRankCount: null,
+        imageId: 'question-image',
+        options: [
+          { id: 'one', label: 'Alice', imageId: 'option-image' },
+          { id: 'two', label: 'Bob' }
+        ]
+      }]
+    };
+
+    const result = normalizeEditableQuestions(election);
+
+    expect(result[0].imageId).toBe('question-image');
+    expect(result[0].options[0].imageId).toBe('option-image');
+    // Absent rather than empty string: the API binds Guid?, which rejects "".
+    expect(result[0].options[1].imageId).toBeNull();
+  });
+
+  it('defaults image ids to null when the election has none', () => {
+    const result = normalizeEditableQuestions({
+      ...baseElection(),
+      question: 'Choose a location',
+      options: [{ id: 'one', label: 'Mountains' }, { id: 'two', label: 'Sea' }]
+    });
+
+    expect(result[0].imageId).toBeNull();
+    expect(result[0].options.every(option => option.imageId === null)).toBe(true);
+  });
 });
 
 // ---------------------------------------------------------------------------

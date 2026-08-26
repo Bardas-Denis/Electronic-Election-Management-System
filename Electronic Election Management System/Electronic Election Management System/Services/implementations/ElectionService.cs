@@ -19,6 +19,7 @@ namespace Electronic_Election_Management_System.Services
         private readonly ILogger<ElectionService> _logger;
         private readonly INotificationRepository _notifications;
         private readonly IEmailService _emailService;
+        private readonly IImageService _images;
 
         public ElectionService(
             IElectionRepository elections,
@@ -29,7 +30,8 @@ namespace Electronic_Election_Management_System.Services
             ILabelRepository labels,
             ILogger<ElectionService> logger,
             INotificationRepository notifications,
-            IEmailService emailService)
+            IEmailService emailService,
+            IImageService images)
         {
             _elections = elections;
             _auditLogs = auditLogs;
@@ -40,6 +42,7 @@ namespace Electronic_Election_Management_System.Services
             _logger = logger;
             _notifications = notifications;
             _emailService = emailService;
+            _images = images;
         }
 
         public async Task<List<ElectionDto>> GetAllAsync(Guid userId)
@@ -94,6 +97,13 @@ namespace Electronic_Election_Management_System.Services
 
             if (request.EndsAt <= request.StartsAt)
                 return ServiceResult<ElectionDto>.Fail(ErrorCode.InvalidDateRange);
+
+            // Checked before anything is written, so a bad reference fails the create outright
+            // rather than leaving a half-built election behind.
+            var imageIds = CollectImageIds(questions);
+            var imagesUsable = await _images.ValidateClaimableAsync(imageIds, userId, electionId: null);
+            if (!imagesUsable.Success)
+                return ServiceResult<ElectionDto>.Fail(imagesUsable.ErrorCode!.Value);
 
             if (!request.IsClosed &&
                 (request.InvitedUserIds.Count > 0 ||
@@ -157,6 +167,10 @@ namespace Electronic_Election_Management_System.Services
             foreach (var invitation in election.Invitations)
                 invitation.ElectionId = election.Id;
 
+            // Claiming has to follow the insert (ElectionId is a foreign key), but a failure in
+            // between would leave the ballot pointing at drafts the sweep deletes a day later.
+            await using var transaction = await _elections.BeginTransactionAsync();
+
             await _elections.AddAsync(election);
             await _auditLogs.AddAsync(new AuditLog
             {
@@ -166,9 +180,13 @@ namespace Electronic_Election_Management_System.Services
             });
             await _elections.SaveChangesAsync();
 
+            if (!await _images.ClaimAsync(imageIds, election.Id))
+                return ServiceResult<ElectionDto>.Fail(ErrorCode.InvalidImageReference);
+
+            await transaction.CommitAsync();
+
             _logger.LogInformation("Election created: {Title} (ElectionId: {ElectionId}, CreatedBy: {UserId})", election.Title, election.Id, userId);
 
-            // Send notifications and emails to invited users
             foreach (var invitation in election.Invitations)
             {
                 if (invitation.UserId.HasValue)
@@ -228,6 +246,16 @@ namespace Electronic_Election_Management_System.Services
             if (await _votes.HasAnyVotesInElectionAsync(election.Id))
                 return ServiceResult<ElectionDto>.Fail(ErrorCode.ElectionHasVotes);
 
+            // After the ownership check, so an outsider gets a permission error rather than a
+            // confusing one about images. The election's own id keeps its existing pictures valid.
+            var imageIds = CollectImageIds(questions);
+            var imagesUsable = await _images.ValidateClaimableAsync(imageIds, userId, electionId: id);
+            if (!imagesUsable.Success)
+                return ServiceResult<ElectionDto>.Fail(imagesUsable.ErrorCode!.Value);
+
+            // Same reasoning as CreateAsync: the rebuilt ballot and its claims must land together.
+            await using var transaction = await _elections.BeginTransactionAsync();
+
             election.Title = request.Title.Trim();
             election.Description = request.Description;
             election.Question = questions[0].Text.Trim();
@@ -245,11 +273,9 @@ namespace Electronic_Election_Management_System.Services
             election.Options.Clear();
             election.Questions.Clear();
 
-            // Must use DbSet.AddRangeAsync instead of election.Questions.Add().
-            // ElectionQuestion.Id = Guid.NewGuid() means new entities already have a
-            // real GUID at construction. Adding via the navigation collection made EF
-            // treat them as Modified (UPDATE) rather than Added (INSERT), causing a
-            // DbUpdateConcurrencyException when the UPDATE hit the now-deleted rows.
+            // Via the DbSet, not the navigation collection: questions are constructed with a
+            // real Id, so EF would treat them as Modified and issue UPDATEs against the rows
+            // just deleted above.
             var newQuestions = BuildQuestions(questions, election.Id);
             await _elections.AddQuestionsAsync(newQuestions);
 
@@ -261,9 +287,16 @@ namespace Electronic_Election_Management_System.Services
             });
             await _elections.SaveChangesAsync();
 
+            if (!await _images.ClaimAsync(imageIds, election.Id))
+                return ServiceResult<ElectionDto>.Fail(ErrorCode.InvalidImageReference);
+
+            // Whatever the edit dropped is now unreachable from any ballot, so it goes with it.
+            await _images.ReleaseUnreferencedAsync(election.Id, imageIds);
+
+            await transaction.CommitAsync();
+
             _logger.LogInformation("Election updated: {ElectionId} by UserId {UserId}", election.Id, userId);
 
-            // Notify invited users about the update
             var invitationsForNotification = await _invitations.GetByElectionAsync(election.Id);
             foreach (var invitation in invitationsForNotification)
             {
@@ -308,7 +341,7 @@ namespace Electronic_Election_Management_System.Services
                 return ServiceResult<bool>.Fail(ErrorCode.NotAuthorizedToDelete);
             }
 
-            // Audit log written before delete so we still have the title.
+            // Before the delete, while the title is still readable.
             await _auditLogs.AddAsync(new AuditLog
             {
                 UserId = userId,
@@ -445,7 +478,6 @@ namespace Electronic_Election_Management_System.Services
 
                 _logger.LogInformation("{Count} invitation(s) added to ElectionId {ElectionId} by UserId {UserId}", invitationResult.Data.Count, electionId, userId);
 
-                // Send notifications and emails
                 foreach (var invitation in invitationResult.Data)
                 {
                     if (invitation.UserId.HasValue)
@@ -565,9 +597,8 @@ namespace Electronic_Election_Management_System.Services
         }
 
         /// <summary>
-        /// Pure, side-effect-free evaluator: resolves an OR-of-AND-groups audience rule
-        /// (with per-condition NOT support) into the flat set of user IDs to invite.
-        /// Each distinct label ID is fetched from the repository exactly once.
+        /// Resolves an OR-of-AND-groups audience rule into the flat set of user IDs to invite.
+        /// Side-effect free; each distinct label is fetched exactly once.
         /// </summary>
         private async Task<ServiceResult<List<Guid>>> ExpandAudienceGroupsAsync(
             IEnumerable<Guid> manuallyInvitedUserIds,
@@ -575,25 +606,21 @@ namespace Electronic_Election_Management_System.Services
         {
             var groups = audienceGroups.ToList();
 
-            // Collect all distinct label IDs referenced across all groups/conditions.
             var referencedLabelIds = groups
                 .SelectMany(g => g.Conditions)
                 .Select(c => c.LabelId)
                 .Distinct()
                 .ToList();
 
-            // Early return when there are no group conditions — behaves like the old
-            // ExpandLabelAudienceAsync empty-list path: manual user IDs only.
+            // No conditions means manual user IDs only.
             if (referencedLabelIds.Count == 0)
                 return ServiceResult<List<Guid>>.Ok(manuallyInvitedUserIds.Distinct().ToList());
 
-            // Validate that every referenced label exists.
             var existingLabels = await _labels.GetByIdsAsync(referencedLabelIds);
             if (existingLabels.Count != referencedLabelIds.Count)
                 return ServiceResult<List<Guid>>.Fail(ErrorCode.LabelNotFound);
 
-            // Fetch each label's user-set exactly once to avoid redundant DB calls when
-            // the same label appears in multiple groups.
+            // Once per label: the same label often appears in several groups.
             var labelUserSets = new Dictionary<Guid, HashSet<Guid>>();
             foreach (var labelId in referencedLabelIds)
             {
@@ -601,14 +628,12 @@ namespace Electronic_Election_Management_System.Services
                 labelUserSets[labelId] = assignments.Select(a => a.UserId).ToHashSet();
             }
 
-            // Evaluate each AND-group and union the results.
             var result = manuallyInvitedUserIds.ToHashSet();
             foreach (var group in groups)
             {
                 var positiveConditions = group.Conditions.Where(c => !c.IsExcluded).ToList();
                 var excludedConditions = group.Conditions.Where(c => c.IsExcluded).ToList();
 
-                // Start with all users that have every positive label (intersection).
                 HashSet<Guid>? candidates = null;
                 foreach (var condition in positiveConditions)
                 {
@@ -622,7 +647,6 @@ namespace Electronic_Election_Management_System.Services
                 if (candidates is null || candidates.Count == 0)
                     continue;
 
-                // Remove users that have any excluded label.
                 foreach (var exclusion in excludedConditions)
                     candidates.ExceptWith(labelUserSets[exclusion.LabelId]);
 
@@ -674,12 +698,10 @@ namespace Electronic_Election_Management_System.Services
                 // A Choice question needs 2+ selectable options; a FreeText question's options
                 // are just optional suggestion chips, so none are required.
                 (questionType == QuestionType.FreeText ||
-                 q.Options.Count(o => !string.IsNullOrWhiteSpace(o.Label)) >= 2) &&
-                q.Options.All(o => IsValidImage(o.ImageDataUrl)));
+                 q.Options.Count(o => !string.IsNullOrWhiteSpace(o.Label)) >= 2));
 
-        // Kept apart from QuestionsAreValid so the caller can report it as its own error: a bad
-        // rank count folded into TooFewOptions would tell the creator to add options they already
-        // have.
+        // Separate from QuestionsAreValid so the caller can report it distinctly: folded into
+        // TooFewOptions it would tell the creator to add options they already have.
         private static bool RankCountsAreValid(IEnumerable<CreateElectionQuestionDto> questions)
             => questions.All(q =>
             {
@@ -691,30 +713,21 @@ namespace Electronic_Election_Management_System.Services
                 return q.RequiredRankCount.Value >= 1 && q.RequiredRankCount.Value <= optionCount;
             });
 
-        private static bool IsValidImage(string? image)
-        {
-            if (string.IsNullOrWhiteSpace(image))
-                return true;
-
-            if (image.Length > ValidationRules.ImageDataUrlMaxLength ||
-                !(image.StartsWith("data:image/png;base64,", StringComparison.OrdinalIgnoreCase) ||
-                  image.StartsWith("data:image/jpeg;base64,", StringComparison.OrdinalIgnoreCase) ||
-                  image.StartsWith("data:image/webp;base64,", StringComparison.OrdinalIgnoreCase) ||
-                  image.StartsWith("data:image/gif;base64,", StringComparison.OrdinalIgnoreCase)))
-            {
-                return false;
-            }
-
-            var separatorIndex = image.IndexOf(',');
-            try
-            {
-                return Convert.FromBase64String(image[(separatorIndex + 1)..]).Length <= 2_000_000;
-            }
-            catch (FormatException)
-            {
-                return false;
-            }
-        }
+        /// <summary>
+        /// Every image the ballot will actually reference. The blank-label filter mirrors
+        /// <see cref="BuildQuestions"/>: claiming an image for an option that gets dropped would
+        /// attach it to nothing.
+        /// </summary>
+        private static List<Guid> CollectImageIds(IEnumerable<CreateElectionQuestionDto> questions)
+            => questions
+                .SelectMany(question => question.Options
+                    .Where(option => !string.IsNullOrWhiteSpace(option.Label))
+                    .Select(option => option.ImageId)
+                    .Append(question.ImageId))
+                .Where(imageId => imageId.HasValue)
+                .Select(imageId => imageId!.Value)
+                .Distinct()
+                .ToList();
 
         private static List<ElectionQuestion> BuildQuestions(
             IEnumerable<CreateElectionQuestionDto> questions,
@@ -734,7 +747,7 @@ namespace Electronic_Election_Management_System.Services
                     AllowOtherOption = questionType == QuestionType.Choice && question.AllowOtherOption,
                     RequiredRankCount = questionType == QuestionType.Ranking ? question.RequiredRankCount : null,
                     ScoringSchemeId = questionType == QuestionType.Ranking ? question.ScoringSchemeId : null,
-                    ImageDataUrl = question.ImageDataUrl,
+                    ImageId = question.ImageId,
                     Options = question.Options
                         .Where(option => !string.IsNullOrWhiteSpace(option.Label))
                         .Select(option => new Option
@@ -742,7 +755,7 @@ namespace Electronic_Election_Management_System.Services
                             ElectionId = electionId ?? Guid.Empty,
                             Label = option.Label.Trim(),
                             Description = option.Description?.Trim(),
-                            ImageDataUrl = option.ImageDataUrl
+                            ImageId = option.ImageId
                         })
                         .ToList()
                 };
@@ -763,7 +776,7 @@ namespace Electronic_Election_Management_System.Services
                     AllowOtherOption = q.AllowOtherOption,
                     RequiredRankCount = q.RequiredRankCount,
                     ScoringSchemeId = q.ScoringSchemeId,
-                    ImageDataUrl = q.ImageDataUrl,
+                    ImageId = q.ImageId,
                     Options = q.Options.Select(MapOptionToDto).ToList()
                 })
                 .ToList();
@@ -807,7 +820,7 @@ namespace Electronic_Election_Management_System.Services
             Id = option.Id,
             Label = option.Label,
             Description = option.Description,
-            ImageDataUrl = option.ImageDataUrl
+            ImageId = option.ImageId
         };
 
         private static ElectionInvitationDto MapInvitationToDto(ElectionInvitation invitation) => new()

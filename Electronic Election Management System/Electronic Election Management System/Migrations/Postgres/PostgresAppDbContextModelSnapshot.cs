@@ -101,6 +101,53 @@ namespace Electronic_Election_Management_System.Migrations.Postgres
                     b.ToTable("Elections");
                 });
 
+            modelBuilder.Entity("Electronic_Election_Management_System.Models.ElectionImage", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("ByteSize")
+                        .HasColumnType("integer");
+
+                    b.Property<byte[]>("Content")
+                        .IsRequired()
+                        .HasColumnType("bytea");
+
+                    b.Property<string>("ContentType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("ElectionId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Height")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Sha256")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<Guid>("UploadedByUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Width")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ElectionId");
+
+                    b.HasIndex("UploadedByUserId");
+
+                    b.ToTable("ElectionImages");
+                });
+
             modelBuilder.Entity("Electronic_Election_Management_System.Models.ElectionInvitation", b =>
                 {
                     b.Property<Guid>("Id")
@@ -155,6 +202,9 @@ namespace Electronic_Election_Management_System.Migrations.Postgres
                     b.Property<string>("ImageDataUrl")
                         .HasColumnType("text");
 
+                    b.Property<Guid?>("ImageId")
+                        .HasColumnType("uuid");
+
                     b.Property<bool>("IsRequired")
                         .HasColumnType("boolean");
 
@@ -175,6 +225,8 @@ namespace Electronic_Election_Management_System.Migrations.Postgres
                     b.HasKey("Id");
 
                     b.HasIndex("ElectionId");
+
+                    b.HasIndex("ImageId");
 
                     b.HasIndex("ScoringSchemeId");
 
@@ -253,6 +305,9 @@ namespace Electronic_Election_Management_System.Migrations.Postgres
                     b.Property<string>("ImageDataUrl")
                         .HasColumnType("text");
 
+                    b.Property<Guid?>("ImageId")
+                        .HasColumnType("uuid");
+
                     b.Property<string>("Label")
                         .IsRequired()
                         .HasColumnType("text");
@@ -263,6 +318,8 @@ namespace Electronic_Election_Management_System.Migrations.Postgres
                     b.HasKey("Id");
 
                     b.HasIndex("ElectionId");
+
+                    b.HasIndex("ImageId");
 
                     b.HasIndex("QuestionId");
 
@@ -600,6 +657,24 @@ namespace Electronic_Election_Management_System.Migrations.Postgres
                     b.Navigation("CreatedByUser");
                 });
 
+            modelBuilder.Entity("Electronic_Election_Management_System.Models.ElectionImage", b =>
+                {
+                    b.HasOne("Electronic_Election_Management_System.Models.Election", "Election")
+                        .WithMany()
+                        .HasForeignKey("ElectionId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.HasOne("Electronic_Election_Management_System.Models.User", "UploadedByUser")
+                        .WithMany()
+                        .HasForeignKey("UploadedByUserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Election");
+
+                    b.Navigation("UploadedByUser");
+                });
+
             modelBuilder.Entity("Electronic_Election_Management_System.Models.ElectionInvitation", b =>
                 {
                     b.HasOne("Electronic_Election_Management_System.Models.Election", "Election")
@@ -626,12 +701,19 @@ namespace Electronic_Election_Management_System.Migrations.Postgres
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("Electronic_Election_Management_System.Models.ElectionImage", "Image")
+                        .WithMany()
+                        .HasForeignKey("ImageId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.HasOne("Electronic_Election_Management_System.Models.ScoringScheme", "ScoringScheme")
                         .WithMany()
                         .HasForeignKey("ScoringSchemeId")
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Election");
+
+                    b.Navigation("Image");
 
                     b.Navigation("ScoringScheme");
                 });
@@ -655,12 +737,19 @@ namespace Electronic_Election_Management_System.Migrations.Postgres
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("Electronic_Election_Management_System.Models.ElectionImage", "Image")
+                        .WithMany()
+                        .HasForeignKey("ImageId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.HasOne("Electronic_Election_Management_System.Models.ElectionQuestion", "Question")
                         .WithMany("Options")
                         .HasForeignKey("QuestionId")
                         .OnDelete(DeleteBehavior.Cascade);
 
                     b.Navigation("Election");
+
+                    b.Navigation("Image");
 
                     b.Navigation("Question");
                 });

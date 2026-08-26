@@ -7,11 +7,19 @@ import { VotingService } from '../../core/services/voting.service';
 import { ElectionDto, VoterDeclarationDto, OptionDto } from '../../core/models/voting.model';
 import { VoterDeclarationModalComponent } from './voter-declaration-modal.component';
 import { INPUT_LIMITS } from '../../core/validators/input.validators';
+import { ElectionImageDirective } from '../../core/directives/election-image.directive';
 
 @Component({
   selector: 'app-cast-vote',
   standalone: true,
-  imports: [CommonModule, VoterDeclarationModalComponent, TranslatePipe, CdkDropList, CdkDrag],
+  imports: [
+    CommonModule,
+    VoterDeclarationModalComponent,
+    TranslatePipe,
+    CdkDropList,
+    CdkDrag,
+    ElectionImageDirective
+  ],
   templateUrl: './cast-vote.component.html',
   styleUrl: './cast-vote.component.scss'
 })

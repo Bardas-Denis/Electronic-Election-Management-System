@@ -226,7 +226,7 @@
     "removeQuestion": "Remove question",
     "reorderQuestion": "Reorder question",
     "atLeastOneRequiredQuestionError": "At least one question must be required, so voters always have something they must answer.",
-    "optionImageInvalid": "Choose a PNG, JPEG, WEBP or GIF image smaller than 2 MB.",
+    "optionImageInvalid": "Choose a PNG, JPEG, WEBP or GIF image smaller than 5 MB.",
     "submitCreate": "Create election",
     "submitEdit": "Save changes",
     "submitting": "Saving...",
@@ -285,7 +285,9 @@
     "pointsScheme": "{{count}} points: {{points}}",
     "preview": "Preview",
     "backToMyElections": "Back to my elections",
-    "previewHeading": "Preview election (Locked)"
+    "previewHeading": "Preview election (Locked)",
+    "optionImageTooLarge": "That image is too large. Pick a smaller file or a lower resolution.",
+    "optionImageUploadFailed": "The image could not be uploaded. Please try again."
   },
   "vote": {
     "questionOptional": "(optional)",
@@ -627,7 +629,6 @@
       "workEmail": "Work email",
       "workEmailPlaceholder": "e.g. john.smith@company.com"
     }
-    
   },
   "setup": {
     "heading": "Database Setup",

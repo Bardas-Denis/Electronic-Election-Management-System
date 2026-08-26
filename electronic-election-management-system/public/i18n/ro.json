@@ -226,7 +226,7 @@
     "removeQuestion": "Șterge întrebarea",
     "reorderQuestion": "Mută întrebarea",
     "atLeastOneRequiredQuestionError": "Cel puțin o întrebare trebuie să fie obligatorie, ca alegătorii să aibă mereu la ce să răspundă.",
-    "optionImageInvalid": "Alege o imagine PNG, JPEG, WEBP sau GIF mai mică de 2 MB.",
+    "optionImageInvalid": "Alege o imagine PNG, JPEG, WEBP sau GIF mai mică de 5 MB.",
     "submitCreate": "Creează alegerea",
     "submitEdit": "Salvează modificările",
     "submitting": "Se salvează...",
@@ -285,7 +285,9 @@
     "pointsScheme": "{{count}} puncte: {{points}}",
     "preview": "Previzualizare",
     "backToMyElections": "Înapoi la alegerile mele",
-    "previewHeading": "Previzualizează alegerea (Blocată)"
+    "previewHeading": "Previzualizează alegerea (Blocată)",
+    "optionImageTooLarge": "Imaginea este prea mare. Alege una mai mică sau cu rezoluție mai redusă.",
+    "optionImageUploadFailed": "Imaginea nu a putut fi încărcată. Încearcă din nou."
   },
   "vote": {
     "questionOptional": "(opțional)",

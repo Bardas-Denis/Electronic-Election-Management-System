@@ -37,9 +37,7 @@ try
         .ReadFrom.Services(services)
         .Enrich.FromLogContext());
 
-    // First-run detection
-    // data/dbconfig.json is the single source of truth for "is the app configured yet".
-    // Its absence means unconfigured.
+    // data/dbconfig.json is the single source of truth for whether the app is configured.
     var dbConfig = DbConfigStore.TryLoad();
     var isConfigured = dbConfig is not null;
 
@@ -55,10 +53,8 @@ try
             "Only the /api/setup/* endpoints are available.");
     }
 
-    // JWT configured in both modes so the auth middleware is always present
     var jwtOptions = JwtOptions.LoadAndValidate(builder.Configuration);
     builder.Services.AddSingleton(jwtOptions);
-    // Database + application services - CONFIGURED MODE ONLY
     if (isConfigured)
     {
         var provider = dbConfig!.Provider;
@@ -66,8 +62,7 @@ try
 
         if (provider.Equals("Sqlite", StringComparison.OrdinalIgnoreCase))
         {
-            // Apply the 5 s busy_timeout at the connection-string level so that it is
-            // picked up by every connection EF Core opens.
+            // Set on the connection string so every connection EF opens inherits it.
             var sqliteConnectionStringBuilder = new SqliteConnectionStringBuilder(connectionString)
             {
                 DefaultTimeout = 5
@@ -88,13 +83,11 @@ try
         }
         else
         {
-            // data/dbconfig.json contains an unknown provider
             throw new InvalidOperationException(
                 $"data/dbconfig.json contains unknown provider '{provider}'. " +
                 "Supported values: 'Sqlite', 'Postgres'.");
         }
 
-        // Repositories
         builder.Services.AddScoped<IUserRepository, UserRepository>();
         builder.Services.AddScoped<IElectionRepository, ElectionRepository>();
         builder.Services.AddScoped<IElectionInvitationRepository, ElectionInvitationRepository>();
@@ -102,8 +95,8 @@ try
         builder.Services.AddScoped<IVoteRepository, VoteRepository>();
         builder.Services.AddScoped<ILabelRepository, LabelRepository>();
         builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
+        builder.Services.AddScoped<IElectionImageRepository, ElectionImageRepository>();
 
-        // Application services
         builder.Services.AddSingleton<ITokenService, TokenService>();
         builder.Services.AddScoped<IAuthService, AuthService>();
         builder.Services.AddScoped<IElectionService, ElectionService>();
@@ -116,9 +109,10 @@ try
         builder.Services.AddSingleton<ICnpService, CnpService>();
         builder.Services.AddScoped<IUserNotifier, SignalRUserNotifier>();
         builder.Services.AddScoped<IEmailService, EmailService>();
+        builder.Services.AddScoped<IImageService, ImageService>();
     }
 
-    // Auth + cross-cutting infrastructure - both modes
+    // Registered in both modes, so the auth middleware is always present.
     builder.Services
         .AddAuthentication(options =>
         {
@@ -139,9 +133,8 @@ try
                 ClockSkew = TimeSpan.FromSeconds(30)
             };
 
-            // SignalR's browser client can't attach an Authorization header to the websocket/SSE
-            // handshake, so it sends the JWT as an "access_token" query param instead
-            // (see accessTokenFactory in results.service.ts). Only trust that for hub requests.
+            // The browser SignalR client cannot set an Authorization header on the handshake,
+            // so it sends the JWT as a query param. Trusted for hub requests only.
             options.Events = new JwtBearerEvents
             {
                 OnMessageReceived = context =>
@@ -155,8 +148,7 @@ try
                     return Task.CompletedTask;
                 },
 
-                // Verify security stamp for every request direct database query to
-                // immediately invalidate JWT tokens after role change.
+                // Checked per request so a role change invalidates existing tokens at once.
                 OnTokenValidated = async context =>
                 {
                     var userIdClaim = context.Principal!.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -187,8 +179,8 @@ try
 
                 OnChallenge = async context =>
                 {
-                    // Suppress the default empty 401 and replace it with a typed JSON body
-                    // so the frontend can distinguish natural expiry from stamp-mismatch revocation.
+                    // Replaces the default empty 401 with a typed body, so the frontend can tell
+                    // expiry apart from revocation.
                     context.HandleResponse();
                     context.Response.StatusCode = StatusCodes.Status401Unauthorized;
                     context.Response.ContentType = "application/json";
@@ -254,7 +246,6 @@ try
 
     var app = builder.Build();
 
-    // Database startup tasks - CONFIGURED MODE ONLY
     if (isConfigured)
     {
         using var scope = app.Services.CreateScope();
@@ -281,9 +272,13 @@ try
 
         await SeedData.EnsureScoringSchemesAsync(db);
         // Test data seeding is now handled during setup (SetupController) if opted in.
+
+        // A creator who abandons the election form leaves an unattached image behind. Sweeping at
+        // startup keeps that bounded without pulling in a scheduler.
+        var imageService = scope.ServiceProvider.GetRequiredService<IImageService>();
+        await imageService.DeleteUnclaimedDraftsAsync();
     }
 
-    // Middleware pipeline - both modes
     app.UseSwagger();
     app.UseSwaggerUI();
     app.UseHttpsRedirection();
@@ -295,8 +290,8 @@ try
         const string AppUnconfiguredMessage =
             "The application has not been configured yet. Complete first-run setup at POST /api/setup/save.";
 
-        // In unconfigured mode, short-circuit non-setup API requests before authentication
-        // or controller dispatch so unsatisfied dependencies and token lookups are never reached.
+        // Short-circuits ahead of authentication and controller dispatch, so unregistered
+        // dependencies and token lookups are never reached.
         app.Use(async (context, next) =>
         {
             if (context.Request.Path.StartsWithSegments("/api") &&
@@ -321,7 +316,6 @@ try
 
     if (isConfigured)
     {
-        // All controllers are available in configured mode.
         app.MapControllers();
         app.MapHub<ResultsHub>("/hubs/results");
         app.MapHub<NotificationsHub>("/hubs/notifications");

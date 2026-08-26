@@ -14,7 +14,9 @@ export const INPUT_LIMITS = {
   maxOptionsPerQuestion: 50,
   // A FreeText question's answer may be longer than a Choice question's "Other" answer.
   freeTextAnswer: 150,
-  otherAnswer: 50
+  otherAnswer: 50,
+  // Mirrors ValidationRules.ImageMaxUploadBytes; the API enforces the same limit.
+  imageMaxUploadBytes: 5 * 1024 * 1024
 } as const;
 
 export function trimmedRequired(control: AbstractControl): ValidationErrors | null {
