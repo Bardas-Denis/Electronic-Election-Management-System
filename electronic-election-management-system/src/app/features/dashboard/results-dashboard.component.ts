@@ -6,6 +6,7 @@ import { ResultsService } from '../../core/services/results.service';
 import { ElectionResultsDto, OptionResultDto, QuestionResultDto } from '../../core/models/results.model';
 import { ScoringSchemesService } from '../../core/services/scoring-schemes.service';
 import { ScoringSchemeDto } from '../../core/models/scoring-schemes.model';
+import { ElectionImageDirective } from '../../core/directives/election-image.directive';
 // One pie slice, precomputed from an option's results.
 // `path` is an SVG path `d` attribute (viewBox 0 0 100 100); `isFullCircle`
 // covers the one case a path arc can't express - a single option holding
@@ -37,7 +38,7 @@ interface OptionMeter {
 @Component({
   selector: 'app-results-dashboard',
   standalone: true,
-  imports: [CommonModule, TranslatePipe],
+  imports: [CommonModule, TranslatePipe, ElectionImageDirective],
   templateUrl: './results-dashboard.component.html',
   styleUrl: './results-dashboard.component.scss'
 })
