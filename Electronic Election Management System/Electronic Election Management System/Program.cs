@@ -271,7 +271,7 @@ try
         }
 
         await SeedData.EnsureScoringSchemesAsync(db);
-        await SeedData.EnsureTestDataAsync(db);
+        // Test data seeding is now handled during setup (SetupController) if opted in.
 
         // A creator who abandons the election form leaves an unattached image behind. Sweeping at
         // startup keeps that bounded without pulling in a scheduler.

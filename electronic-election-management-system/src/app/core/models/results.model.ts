@@ -26,10 +26,38 @@ export interface QuestionResultDto {
   textAnswers: string[];
 }
 
+// One voter behind an option. Only ever sent for a non-anonymous election, to an
+// admin or the election's creator. `fullName` is null for a voter who has neither
+// declared a name for the vote nor filled one into their profile - the email is
+// always there, and names are not unique, so both are shown.
+export interface OptionVoterDto {
+  userId: string;
+  email: string;
+  fullName: string | null;
+}
+
+// One typed answer together with who wrote it. Text and author arrive paired
+// because the results payload sends answers as bare strings - two people writing
+// "Nothing" are indistinguishable there, so nothing could match a name to the
+// right card by position.
+export interface TextAnswerAuthorDto {
+  answerText: string;
+  userId: string;
+  email: string;
+  fullName: string | null;
+}
+
+export interface OptionVotersDto {
+  optionId: string;
+  label: string;
+  voters: OptionVoterDto[];
+}
+
 // Full results snapshot for one election - used by both HTTP and SignalR
 export interface ElectionResultsDto {
   electionId: string;
   title: string;
+  isAnonymous: boolean;
   totalVotes: number;
   results: OptionResultDto[];
   questions: QuestionResultDto[];

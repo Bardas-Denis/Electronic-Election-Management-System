@@ -5,6 +5,7 @@ export interface SetupRequest {
   connectionString: string;
   adminEmail?: string;
   adminPassword?: string;
+  seedData?: boolean;
 }
 
 export interface SetupStatusResponse {
@@ -18,4 +19,8 @@ export interface TestConnectionResponse {
 
 export interface SaveResponse {
   message: string;
+}
+
+export interface AvailableProvidersResponse {
+  providers: DbProvider[];
 }

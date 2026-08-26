@@ -10,6 +10,7 @@ import { ScoringSchemesService } from '../../core/services/scoring-schemes.servi
 import { ElectionImageService } from '../../core/services/election-image.service';
 import { ElectionImageDirective } from '../../core/directives/election-image.directive';
 import { ScoringSchemeDto } from '../../core/models/scoring-schemes.model';
+import { CdkDragDrop, CdkDropList, CdkDrag, CdkDragHandle } from '@angular/cdk/drag-drop';
 import {
   AudienceConditionDto,
   AudienceGroupDto,
@@ -28,7 +29,9 @@ import {
   rankCountWithinOptions,
   trimmedRequired,
   uniqueOptionLabels
-} from '../../core/validators/input.validators';
+}
+ 
+from '../../core/validators/input.validators';
 import { CreateScoringSchemeModalComponent } from './create-scoring-scheme-modal.component';
 
 // This component handles both creation (/elections/new) and editing
@@ -41,7 +44,10 @@ import { CreateScoringSchemeModalComponent } from './create-scoring-scheme-modal
     ReactiveFormsModule,
     TranslatePipe,
     CreateScoringSchemeModalComponent,
-    ElectionImageDirective
+    ElectionImageDirective,
+    CdkDropList,
+    CdkDrag,
+    CdkDragHandle
   ],
   templateUrl: './create-election.component.html',
   styleUrl: './create-election.component.scss'
@@ -86,7 +92,6 @@ export class CreateElectionComponent implements OnInit {
   candidateSearchControl = this.fb.control('');
   labelPickerOpen = signal(false);
   candidatePickerOpen = signal(false);
-  /** When false, only the first CHIP_PREVIEW chips are rendered; toggled by the user. */
   showAllCandidateChips = signal(false);
   showAllExcludedChips = signal(false);
   readonly CHIP_PREVIEW = 5;
@@ -109,6 +114,24 @@ export class CreateElectionComponent implements OnInit {
   // A route ID indicates edit mode.
   private editingElectionId: string | null = null;
   isEditMode = signal(false);
+
+  // ── FUNCȚIONALITATE NOUĂ: Plierea cardurilor (Collapse / Ranking Mode) ──
+  collapsedQuestions = signal<Set<number>>(new Set());
+
+  toggleCollapse(index: number) {
+    const current = new Set(this.collapsedQuestions());
+    if (current.has(index)) {
+      current.delete(index);
+    } else {
+      current.add(index);
+    }
+    this.collapsedQuestions.set(current);
+  }
+
+  isCollapsed(index: number): boolean {
+    return this.collapsedQuestions().has(index);
+  }
+  // --------------------------------------------------------------------------
 
   form = this.fb.group({
     title: ['', [trimmedRequired, Validators.maxLength(INPUT_LIMITS.title)]],
@@ -149,7 +172,6 @@ export class CreateElectionComponent implements OnInit {
     });
     this.form.get('isClosed')?.valueChanges.subscribe((isClosed) => {
       if (isClosed) {
-        // Load candidates/labels in both create and edit mode when closed is toggled on
         this.loadInvitationCandidates();
         this.loadInvitationLabels();
       } else {
@@ -229,6 +251,45 @@ export class CreateElectionComponent implements OnInit {
     return this.questions.at(questionIndex).get('options') as FormArray;
   }
 
+  dropQuestion(event: CdkDragDrop<any>): void {
+    if (this.isLocked() || event.previousIndex === event.currentIndex) return;
+
+    const formGroup = this.questions.at(event.previousIndex);
+    this.questions.removeAt(event.previousIndex);
+    this.questions.insert(event.currentIndex, formGroup);
+    
+    this.questions.updateValueAndValidity();
+  }
+  
+  onHandleKeydown(event: KeyboardEvent, index: number): void {
+    if (this.isLocked()) return;
+
+    if (event.key === 'ArrowUp' && index > 0) {
+      event.preventDefault();
+      const formGroup = this.questions.at(index);
+      this.questions.removeAt(index);
+      this.questions.insert(index - 1, formGroup);
+      this.questions.updateValueAndValidity();
+      this.focusHandleAt(index - 1);
+    } else if (event.key === 'ArrowDown' && index < this.questions.length - 1) {
+      event.preventDefault();
+      const formGroup = this.questions.at(index);
+      this.questions.removeAt(index);
+      this.questions.insert(index + 1, formGroup);
+      this.questions.updateValueAndValidity();
+      this.focusHandleAt(index + 1);
+    }
+  }
+
+  private focusHandleAt(index: number): void {
+    queueMicrotask(() => {
+      const handles = document.querySelectorAll<HTMLElement>('.question-drag-handle');
+      if (handles[index]) {
+        handles[index].focus();
+      }
+    });
+  }
+
   private createOptionGroup(option?: { label?: string; description?: string; imageId?: string | null }) {
     return this.fb.group({
       label: [option?.label ?? '', [trimmedRequired, Validators.maxLength(INPUT_LIMITS.shortText)]],
@@ -237,7 +298,7 @@ export class CreateElectionComponent implements OnInit {
     });
   }
 
- private createQuestionGroup(question?: CreateElectionQuestionDto) {
+  private createQuestionGroup(question?: CreateElectionQuestionDto) {
     const suppliedOptions = question?.options ?? [];
     const optionGroups = suppliedOptions.map(option => this.createOptionGroup(option));
     while (optionGroups.length < 2) optionGroups.push(this.createOptionGroup());
@@ -380,6 +441,9 @@ export class CreateElectionComponent implements OnInit {
   removeQuestion(index: number): void {
     if (this.isLocked() || this.questions.length <= 1) return;
     this.questions.removeAt(index);
+    const currentCollapsed = new Set(this.collapsedQuestions());
+    currentCollapsed.delete(index);
+    this.collapsedQuestions.set(currentCollapsed);
   }
 
   addOption(questionIndex: number): void {
@@ -605,7 +669,6 @@ export class CreateElectionComponent implements OnInit {
     ctrl?.setValue(!ctrl.value);
   }
 
-  /** Opens the condition picker for a given group (conditionIndex -1 = add new). */
   openConditionPickerFor(groupIndex: number, conditionIndex: number): void {
     if (this.isLocked()) return;
     const current = this.openConditionPicker();

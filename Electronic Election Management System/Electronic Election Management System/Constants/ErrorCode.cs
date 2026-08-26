@@ -52,6 +52,14 @@ namespace Electronic_Election_Management_System.Constants
         [JsonStringEnumMemberName("notAuthorizedToEdit")]
         NotAuthorizedToEdit,
 
+        /// <summary>Who voted for an option is only available to an Admin or the election's creator.</summary>
+        [JsonStringEnumMemberName("notAuthorizedToViewVoters")]
+        NotAuthorizedToViewVoters,
+
+        /// <summary>An anonymous election never reveals who voted for what, whoever is asking.</summary>
+        [JsonStringEnumMemberName("votersHiddenForAnonymousElection")]
+        VotersHiddenForAnonymousElection,
+
         /// <summary>You cannot modify the election because it has already been voted on.</summary>
         [JsonStringEnumMemberName("electionHasVotes")]
         ElectionHasVotes,

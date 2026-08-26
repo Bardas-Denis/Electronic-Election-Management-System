@@ -73,13 +73,17 @@ export const setupGuard: CanActivateFn | CanActivateChildFn = () => {
 // Prevents accessing the first-run setup wizard when the instance is already configured.
 export const alreadyConfiguredGuard: CanActivateFn = () => {
   const setupService = inject(SetupService);
+  const authService = inject(AuthService);
   const router = inject(Router);
 
   return setupService.getStatus().pipe(
-    map(({ configured }) =>
-      configured ? router.createUrlTree(['/login']) : true
-    ),
-    catchError(() => of(router.createUrlTree(['/login'])))
+    map(({ configured }) => {
+      if (configured) {
+        return authService.isLoggedIn() ? router.createUrlTree(['/elections']) : router.createUrlTree(['/login']);
+      }
+      return true;
+    }),
+    catchError(() => of(authService.isLoggedIn() ? router.createUrlTree(['/elections']) : router.createUrlTree(['/login'])))
   );
 };
 
