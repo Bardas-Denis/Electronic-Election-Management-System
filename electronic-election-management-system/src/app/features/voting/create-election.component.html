@@ -855,6 +855,7 @@
 
     <!-- Questions list container -->
     <div formArrayName="questions" class="questions-list"
+         style="padding-bottom: 400px; margin-bottom: -400px;" 
          cdkDropList
          [cdkDropListDisabled]="isLocked()"
          (cdkDropListDropped)="dropQuestion($event)">
@@ -862,11 +863,11 @@
       <section *ngFor="let question of questions.controls; let questionIndex = index" 
          class="question-card" [formGroupName]="questionIndex"
          [class.question-card--collapsed]="isCollapsed(questionIndex)"
-         cdkDrag [cdkDragDisabled]="isLocked() || questions.length <= 1" 
+         cdkDrag 
+         [cdkDragDisabled]="isLocked() || questions.length <= 1" 
          cdkDragLockAxis="y"
          cdkDragBoundary=".questions-list">
-        
-    
+
         <div class="question-card__header">
   @if (!isLocked() && questions.length > 1) {
   <div class="question-drag-handle"
@@ -874,7 +875,8 @@
        tabindex="0"
        role="button"
        [attr.aria-label]="'elections.reorderQuestion' | translate"
-       (keydown)="onHandleKeydown($event, questionIndex)">
+       (keydown)="onHandleKeydown($event, questionIndex)"
+       (click)="$event.stopPropagation()">
     <span class="drag-icon">⠿</span>
     <span class="question-number">{{ 'elections.questionNumber' | translate: { number: questionIndex + 1 } }}</span>
   </div>
@@ -1072,36 +1074,38 @@
         }
       </section>
     </div>
-    
-    @if (questions.touched && questions.hasError('noRequiredQuestion')) {
-    <p class="error-text">{{ 'elections.atLeastOneRequiredQuestionError' | translate }}</p>
-    }
 
-    @if (!isLocked()) {
-    <button type="button" class="btn-add-question" (click)="addQuestion()">
-      + {{ 'elections.addQuestion' | translate }}
-    </button>
-    }
+    <div style="position: relative; z-index: 10;">
+      @if (questions.touched && questions.hasError('noRequiredQuestion')) {
+      <p class="error-text">{{ 'elections.atLeastOneRequiredQuestionError' | translate }}</p>
+      }
 
-    @if (errorMessageKey() && !isLocked()) {
-    <p class="error-text">{{ errorMessageKey() | translate }}</p>
-    }
-
-    <div class="form-actions">
       @if (!isLocked()) {
-      <button type="submit" class="btn-primary" [disabled]="isSubmitting()">
-        @if (isSubmitting()) {
-        <span class="spinner" style="border-color: rgba(255,255,255,0.3); border-top-color: #fff;"></span>
-        }
-        @if (isSubmitting()) {
-        {{ 'elections.submitting' | translate }}
-        } @else if (isEditMode()) {
-        {{ 'elections.submitEdit' | translate }}
-        } @else {
-        {{ 'elections.submitCreate' | translate }}
-        }
+      <button type="button" class="btn-add-question" (click)="addQuestion()">
+        + {{ 'elections.addQuestion' | translate }}
       </button>
       }
+
+      @if (errorMessageKey() && !isLocked()) {
+      <p class="error-text">{{ errorMessageKey() | translate }}</p>
+      }
+
+      <div class="form-actions">
+        @if (!isLocked()) {
+        <button type="submit" class="btn-primary" [disabled]="isSubmitting()">
+          @if (isSubmitting()) {
+          <span class="spinner" style="border-color: rgba(255,255,255,0.3); border-top-color: #fff;"></span>
+          }
+          @if (isSubmitting()) {
+          {{ 'elections.submitting' | translate }}
+          } @else if (isEditMode()) {
+          {{ 'elections.submitEdit' | translate }}
+          } @else {
+          {{ 'elections.submitCreate' | translate }}
+          }
+        </button>
+        }
+      </div>
     </div>
   </form>
 
