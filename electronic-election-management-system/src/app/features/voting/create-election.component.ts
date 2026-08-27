@@ -268,7 +268,6 @@ export class CreateElectionComponent implements OnInit {
       
       this.questions.updateValueAndValidity();
       this.focusHandleAt(index - 1);
-      
     } else if (event.key === 'ArrowDown' && index < this.questions.length - 1) {
       event.preventDefault();
       
@@ -283,16 +282,23 @@ export class CreateElectionComponent implements OnInit {
     }
   }
 
+  private focusHandleAt(index: number): void {
+    queueMicrotask(() => {
+      const handles = document.querySelectorAll<HTMLElement>('.question-drag-handle');
+      if (handles[index]) {
+        handles[index].focus();
+      }
+    });
+  }
+  
   private syncCollapsedStateOnMove(oldIndex: number, newIndex: number): void {
     const currentCollapsed = new Set(this.collapsedQuestions());
     const newCollapsed = new Set<number>();
 
     currentCollapsed.forEach(collapsedIndex => {
       if (collapsedIndex === oldIndex) {
-       
         newCollapsed.add(newIndex);
       } else if (oldIndex < newIndex && collapsedIndex > oldIndex && collapsedIndex <= newIndex) {
-        
         newCollapsed.add(collapsedIndex - 1);
       } else if (oldIndex > newIndex && collapsedIndex >= newIndex && collapsedIndex < oldIndex) {
         newCollapsed.add(collapsedIndex + 1);
@@ -302,15 +308,6 @@ export class CreateElectionComponent implements OnInit {
     });
 
     this.collapsedQuestions.set(newCollapsed);
-  }
-
-  private focusHandleAt(index: number): void {
-    queueMicrotask(() => {
-      const handles = document.querySelectorAll<HTMLElement>('.question-drag-handle');
-      if (handles[index]) {
-        handles[index].focus();
-      }
-    });
   }
 
   private createOptionGroup(option?: { label?: string; description?: string; imageDataUrl?: string }) {
@@ -1599,6 +1596,7 @@ export function normalizeEditableQuestions(election: ElectionDto): CreateElectio
         recoveredImage = recoveredOptions[0].imageDataUrl ?? ''; 
         recoveredOptions = []; 
       }
+      
 
       return {
         text: question.text || (index === 0 ? election.question : '') || '',
