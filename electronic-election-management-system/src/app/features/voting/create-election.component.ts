@@ -113,6 +113,11 @@ export class CreateElectionComponent implements OnInit {
     }
     this.collapsedQuestions.set(current);
   }
+  onDragStarted(index: number): void {
+    const current = new Set(this.collapsedQuestions());
+    current.add(index);
+    this.collapsedQuestions.set(current);
+  }
 
   isCollapsed(index: number): boolean {
     return this.collapsedQuestions().has(index);
@@ -244,6 +249,8 @@ export class CreateElectionComponent implements OnInit {
     this.questions.removeAt(event.previousIndex);
     this.questions.insert(event.currentIndex, formGroup);
     
+    this.syncCollapsedStateOnMove(event.previousIndex, event.currentIndex);
+
     this.questions.updateValueAndValidity();
   }
   
@@ -252,19 +259,49 @@ export class CreateElectionComponent implements OnInit {
 
     if (event.key === 'ArrowUp' && index > 0) {
       event.preventDefault();
+      
       const formGroup = this.questions.at(index);
       this.questions.removeAt(index);
       this.questions.insert(index - 1, formGroup);
+      
+      this.syncCollapsedStateOnMove(index, index - 1);
+      
       this.questions.updateValueAndValidity();
       this.focusHandleAt(index - 1);
+      
     } else if (event.key === 'ArrowDown' && index < this.questions.length - 1) {
       event.preventDefault();
+      
       const formGroup = this.questions.at(index);
       this.questions.removeAt(index);
       this.questions.insert(index + 1, formGroup);
+      
+      this.syncCollapsedStateOnMove(index, index + 1);
+      
       this.questions.updateValueAndValidity();
       this.focusHandleAt(index + 1);
     }
+  }
+
+  private syncCollapsedStateOnMove(oldIndex: number, newIndex: number): void {
+    const currentCollapsed = new Set(this.collapsedQuestions());
+    const newCollapsed = new Set<number>();
+
+    currentCollapsed.forEach(collapsedIndex => {
+      if (collapsedIndex === oldIndex) {
+       
+        newCollapsed.add(newIndex);
+      } else if (oldIndex < newIndex && collapsedIndex > oldIndex && collapsedIndex <= newIndex) {
+        
+        newCollapsed.add(collapsedIndex - 1);
+      } else if (oldIndex > newIndex && collapsedIndex >= newIndex && collapsedIndex < oldIndex) {
+        newCollapsed.add(collapsedIndex + 1);
+      } else {
+        newCollapsed.add(collapsedIndex);
+      }
+    });
+
+    this.collapsedQuestions.set(newCollapsed);
   }
 
   private focusHandleAt(index: number): void {

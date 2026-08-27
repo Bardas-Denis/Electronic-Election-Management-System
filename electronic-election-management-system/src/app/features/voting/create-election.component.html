@@ -855,17 +855,19 @@
 
     <!-- Questions list container -->
     <div formArrayName="questions" class="questions-list"
+         style="padding-bottom: 400px; margin-bottom: -400px;" 
          cdkDropList
          [cdkDropListDisabled]="isLocked()"
          (cdkDropListDropped)="dropQuestion($event)">
       
-      <section *ngFor="let question of questions.controls; let questionIndex = index" 
+         <section *ngFor="let question of questions.controls; let questionIndex = index" 
          class="question-card" [formGroupName]="questionIndex"
          [class.question-card--collapsed]="isCollapsed(questionIndex)"
-         cdkDrag [cdkDragDisabled]="isLocked() || questions.length <= 1" 
+         cdkDrag 
+         [cdkDragDisabled]="isLocked() || questions.length <= 1" 
          cdkDragLockAxis="y"
          cdkDragBoundary=".questions-list">
-        
+
     
         <div class="question-card__header">
   @if (!isLocked() && questions.length > 1) {
@@ -874,7 +876,8 @@
        tabindex="0"
        role="button"
        [attr.aria-label]="'elections.reorderQuestion' | translate"
-       (keydown)="onHandleKeydown($event, questionIndex)">
+       (keydown)="onHandleKeydown($event, questionIndex)"
+       (click)="$event.stopPropagation()">
     <span class="drag-icon">⠿</span>
     <span class="question-number">{{ 'elections.questionNumber' | translate: { number: questionIndex + 1 } }}</span>
   </div>
@@ -1072,6 +1075,7 @@
         }
       </section>
     </div>
+    <div style="position: relative; z-index: 10;">
     
     @if (questions.touched && questions.hasError('noRequiredQuestion')) {
     <p class="error-text">{{ 'elections.atLeastOneRequiredQuestionError' | translate }}</p>
@@ -1102,6 +1106,7 @@
         }
       </button>
       }
+    </div>
     </div>
   </form>
 
