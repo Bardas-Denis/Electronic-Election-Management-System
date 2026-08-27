@@ -1,4 +1,4 @@
-import { Component, inject, OnDestroy, signal } from '@angular/core';
+import { Component, inject, OnDestroy, OnInit, signal } from '@angular/core';
 import { AbstractControl, FormBuilder, ReactiveFormsModule, ValidatorFn, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -28,13 +28,16 @@ const passwordMatchValidator: ValidatorFn = (group: AbstractControl) => {
   templateUrl: './setup.component.html',
   styleUrl: './setup.component.scss'
 })
-export class SetupComponent implements OnDestroy {
+export class SetupComponent implements OnInit, OnDestroy {
   private readonly fb = inject(FormBuilder);
   private readonly setupService = inject(SetupService);
   private readonly router = inject(Router);
 
   protected readonly viewState = signal<ViewState>('form');
   protected readonly selectedProvider = signal<DbProvider>('Sqlite');
+  // Optimistic default (both providers) until the deployment config loads, so the
+  // picker doesn't flash empty on first render.
+  protected readonly availableProviders = signal<DbProvider[]>(['Sqlite', 'Postgres']);
   protected readonly isTesting = signal(false);
   protected readonly isSaving = signal(false);
   protected readonly showPassword = signal(false);
@@ -58,13 +61,31 @@ export class SetupComponent implements OnDestroy {
     {
       adminEmail:    ['', [Validators.required, Validators.email]],
       adminPassword: ['', [Validators.required, Validators.minLength(8)]],
-      confirmPassword: ['', [Validators.required]]
+      confirmPassword: ['', [Validators.required]],
+      seedData:      [true]
     },
     { validators: passwordMatchValidator }
   );
 
   private pollSub: Subscription | null = null;
   private timeoutId: ReturnType<typeof setTimeout> | null = null;
+
+  ngOnInit(): void {
+    this.setupService.getAvailableProviders().subscribe({
+      next: ({ providers }) => {
+        if (providers.length === 0) return; // malformed deployment config — keep the optimistic default
+        this.availableProviders.set(providers);
+        // If the current selection isn't offered (or only one option exists), pick the first available one.
+        if (!providers.includes(this.selectedProvider())) {
+          this.selectProvider(providers[0]);
+        }
+      },
+      error: () => {
+        // Deployment config unreachable — keep the optimistic default (both providers)
+        // rather than blocking setup entirely.
+      }
+    });
+  }
 
   // Provider selection
 
@@ -121,12 +142,12 @@ export class SetupComponent implements OnDestroy {
     this.isSaving.set(true);
     this.serverErrorMessage.set(null);
 
-    const { adminEmail, adminPassword } = this.adminForm.getRawValue();
+    const { adminEmail, adminPassword, seedData } = this.adminForm.getRawValue();
 
     const req =
       provider === 'Sqlite'
-        ? { provider: 'Sqlite' as DbProvider, connectionString: SQLITE_DEFAULT_CS, adminEmail, adminPassword }
-        : { provider: 'Postgres' as DbProvider, connectionString: this.buildPgConnectionString(), adminEmail, adminPassword };
+        ? { provider: 'Sqlite' as DbProvider, connectionString: SQLITE_DEFAULT_CS, adminEmail, adminPassword, seedData }
+        : { provider: 'Postgres' as DbProvider, connectionString: this.buildPgConnectionString(), adminEmail, adminPassword, seedData };
 
     this.setupService.save(req).subscribe({
       next: () => {

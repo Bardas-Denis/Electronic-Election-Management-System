@@ -25,6 +25,22 @@ namespace Electronic_Election_Management_System.Data.Repositories
         Task AddVoteAsync(Vote vote);
         Task AddVoterDeclarationAsync(VoterDeclaration declaration);
         Task<List<Vote>> GetUserVotesInElectionAsync(Guid userId, Guid electionId);
+
+        /// <summary>
+        /// Votes cast for any of these options by an identified voter, with the voter and their
+        /// declaration loaded. Matches only on <c>Vote.UserId</c>, so an anonymous election yields
+        /// nothing here even though <c>VoteTokenId</c> could technically be traced back to a user -
+        /// callers must not be able to reach an anonymous voter through this path.
+        /// </summary>
+        Task<List<Vote>> GetIdentifiedVotesForOptionsAsync(IEnumerable<Guid> optionIds);
+
+        /// <summary>
+        /// Typed answers on one question, by an identified voter, with the voter and their
+        /// declaration loaded. Covers both a FreeText question's answers and a Choice question's
+        /// "Other" ones - they are the same rows, distinguished only by the question they hang
+        /// off. Matches on <c>Vote.UserId</c> only, so an anonymous election yields nothing.
+        /// </summary>
+        Task<List<Vote>> GetIdentifiedTextAnswersForQuestionAsync(Guid questionId);
         Task<VoteToken?> GetVoteTokenWithVotesAsync(Guid userId, Guid electionId);
         void RemoveVote(Vote vote);
         void RemoveVotes(IEnumerable<Vote> votes);

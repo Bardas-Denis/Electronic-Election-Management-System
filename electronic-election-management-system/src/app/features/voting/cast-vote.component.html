@@ -101,15 +101,15 @@
           <div class="free-text-answer" [class.locked]="!canSelectOptions()">
 
             <!-- Centered container with "frame" look and soft shadow - -->
-            @if (question.imageDataUrl || (question.options && question.options.length > 0 && question.options[0].label === 'FreeText_Image' && question.options[0].imageDataUrl)) {
+            @if (question.imageId) {
             <div style="display: flex; justify-content: center; margin-bottom: 1.5rem; padding: 0.5rem; background: var(--bg-subtle, #f8fafc); border-radius: 12px; border: 1px solid var(--border-color, #e2e8f0);">
-              <img [src]="question.imageDataUrl || question.options[0]?.imageDataUrl" alt="Question Image" style="max-width: 100%; max-height: 350px; object-fit: contain; border-radius: 8px; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);" />
+              <img [appElectionImage]="question.imageId" alt="Question Image" style="max-width: 100%; max-height: 350px; object-fit: contain; border-radius: 8px; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);" />
             </div>
             }
 
 
 
-            @if (question.options && question.options.length > 0 && question.options[0].label !== 'FreeText_Image') {
+            @if (question.options && question.options.length > 0) {
             <div class="suggestion-list">
               @for (option of question.options; track option.id) {
               <button type="button" class="suggestion-item" [disabled]="!canSelectOptions()"
@@ -142,8 +142,8 @@
                   (cdkDropListDropped)="dropRankingOption($event, question.id)">
                   @for (item of availableRankingOptions()[question.id]; track item.id) {
                   <div class="drag-item" cdkDrag [cdkDragDisabled]="!canSelectOptions()">
-                    @if (item.imageDataUrl) {
-                    <img [src]="item.imageDataUrl" alt="" class="item-img" />
+                    @if (item.imageId) {
+                    <img [appElectionImage]="item.imageId" alt="" class="item-img" />
                     }
                     <div class="item-details">
                       <strong>{{ item.label }}</strong>
@@ -175,8 +175,8 @@
                   @for (item of rankedOptions()[question.id]; track item.id; let i = $index) {
                   <div class="drag-item" cdkDrag [cdkDragDisabled]="!canSelectOptions()">
                     <div class="rank-badge">{{ i + 1 }}</div>
-                    @if (item.imageDataUrl) {
-                    <img [src]="item.imageDataUrl" alt="" class="item-img" />
+                    @if (item.imageId) {
+                    <img [appElectionImage]="item.imageId" alt="" class="item-img" />
                     }
                     <div class="item-details">
                       <strong>{{ item.label }}</strong>
@@ -200,8 +200,8 @@
               [class.option-item--checkbox]="question.allowMultipleAnswers"
               [disabled]="!canSelectOptions()"
               (click)="question.allowMultipleAnswers ? toggleOption(question.id, option.id) : selectOption(question.id, option.id, question.isRequired)">
-              @if (option.imageDataUrl) {
-              <img class="option-image" [src]="option.imageDataUrl" [alt]="option.label" />
+              @if (option.imageId) {
+              <img class="option-image" [appElectionImage]="option.imageId" [alt]="option.label" />
               }
               <span class="option-radio"><span class="option-radio-dot"></span></span>
               <span class="option-body">

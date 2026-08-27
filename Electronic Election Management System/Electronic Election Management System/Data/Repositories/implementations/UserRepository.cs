@@ -64,6 +64,12 @@ namespace Electronic_Election_Management_System.Data.Repositories
         public Task<UserDetails?> GetUserDetailsAsync(Guid userId)
             => _db.UserDetails.FirstOrDefaultAsync(ud => ud.UserId == userId);
 
+        public Task<List<UserDetails>> GetUserDetailsForUsersAsync(IEnumerable<Guid> userIds)
+        {
+            var idList = userIds.Distinct().ToList();
+            return _db.UserDetails.Where(ud => idList.Contains(ud.UserId)).ToListAsync();
+        }
+
         public async Task<UserDetails> SaveUserDetailsAsync(Guid userId, PersonalDetailsDto dto)
         {
             var entity = await _db.UserDetails.FirstOrDefaultAsync(ud => ud.UserId == userId);

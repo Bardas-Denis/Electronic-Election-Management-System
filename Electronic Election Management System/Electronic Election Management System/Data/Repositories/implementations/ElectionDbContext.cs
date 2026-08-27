@@ -24,6 +24,7 @@ namespace Electronic_Election_Management_System.Data
         public DbSet<UserLabel> UserLabels => Set<UserLabel>();
         public DbSet<Notification> Notifications => Set<Notification>();
         public DbSet<ScoringScheme> ScoringSchemes => Set<ScoringScheme>();
+        public DbSet<ElectionImage> ElectionImages => Set<ElectionImage>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -31,10 +32,9 @@ namespace Electronic_Election_Management_System.Data
                 .HasIndex(u => u.Email)
                 .IsUnique();
 
-            // Stored as string ("Admin"/"ElectionManager"/"Voter").
-            // Explicit lambdas are used instead of HasConversion<string>() so that
-            // EF Core does NOT generate a cached switch-case expression that would
-            // break when new enum values are added without a full clean rebuild.
+            // Explicit lambdas rather than HasConversion<string>(): that overload caches a
+            // switch-case expression which breaks when a new enum value is added without a
+            // clean rebuild.
             modelBuilder.Entity<User>()
                 .Property(u => u.Role)
                 .HasConversion(
@@ -65,8 +65,7 @@ namespace Electronic_Election_Management_System.Data
                 .HasForeignKey(i => i.UserId)
                 .OnDelete(DeleteBehavior.SetNull);
 
-            // Restrict: prevents deleting a user who has created elections,
-            // so election ownership/history is never silently lost.
+            // Restrict: election ownership must never be silently lost with the user.
             modelBuilder.Entity<Election>()
                 .HasOne(e => e.CreatedByUser)
                 .WithMany(u => u.ElectionsCreated)
@@ -91,8 +90,7 @@ namespace Electronic_Election_Management_System.Data
                 .HasForeignKey(o => o.QuestionId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            // Stored as string ("Choice"/"FreeText"). Explicit lambdas for the same
-            // reason as User.Role above.
+            // Explicit lambdas for the same reason as User.Role above.
             modelBuilder.Entity<ElectionQuestion>()
                 .Property(q => q.QuestionType)
                 .HasConversion(
@@ -127,8 +125,7 @@ namespace Electronic_Election_Management_System.Data
                 .HasForeignKey(v => v.OptionId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            // Restrict: a VoteToken that has already produced a Vote cannot be deleted
-            // out from under it.
+            // Restrict: a token that already produced a vote cannot be deleted under it.
             modelBuilder.Entity<Vote>()
                 .HasOne(v => v.VoteToken)
                 .WithMany(vt => vt.Votes)
@@ -141,7 +138,7 @@ namespace Electronic_Election_Management_System.Data
                 .HasForeignKey(v => v.UserId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // A VoteToken can be used at most once.
+            // Not unique: a token produces one vote row per question.
             modelBuilder.Entity<Vote>().HasIndex(v => v.VoteTokenId);
 
             // Enforce anonymity: exactly one of (VoteTokenId, UserId) must be set.
@@ -161,8 +158,7 @@ namespace Electronic_Election_Management_System.Data
                     "OR (\"OptionId\" IS NULL AND \"QuestionId\" IS NOT NULL AND \"AnswerText\" IS NOT NULL))"
                 ));
 
-            // A VoterDeclaration only ever exists for a non-anonymous vote (UserId set, VoteTokenId null).
-            // Cascade: deleting the vote removes its declaration too.
+            // Exists only for a non-anonymous vote, and goes when that vote does.
             modelBuilder.Entity<Vote>()
                 .HasOne(v => v.VoterDeclaration)
                 .WithOne(vd => vd.Vote)
@@ -194,27 +190,67 @@ namespace Electronic_Election_Management_System.Data
                 .HasForeignKey(r => r.ElectionId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            // At most one change-budget record per (user, election) - this is what actually
-            // enforces the one-change limit, since it survives the Vote row being deleted.
+            // What actually enforces the one-change limit: unlike the Vote row, this survives
+            // the voter deleting their vote.
             modelBuilder.Entity<VoterChangeRecord>()
                 .HasIndex(r => new { r.UserId, r.ElectionId })
                 .IsUnique();
 
+            // ── Ballot images ────────────────────────────────────────────────────
+            // Must stay above the UTC converter loop, or CreatedAt misses the converter.
+
+            modelBuilder.Entity<ElectionImage>()
+                .Property(i => i.Sha256)
+                .HasMaxLength(64)
+                .IsRequired();
+
+            modelBuilder.Entity<ElectionImage>()
+                .Property(i => i.ContentType)
+                .HasMaxLength(50)
+                .IsRequired();
+
+            modelBuilder.Entity<ElectionImage>()
+                .Property(i => i.Content)
+                .IsRequired();
+
+            // Nullable FK because an image is uploaded before the election exists.
+            modelBuilder.Entity<ElectionImage>()
+                .HasOne(i => i.Election)
+                .WithMany()
+                .HasForeignKey(i => i.ElectionId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Only reaches unclaimed drafts in practice: UserService refuses to delete a user who
+            // has created elections, so claimed images cannot be orphaned this way.
+            modelBuilder.Entity<ElectionImage>()
+                .HasOne(i => i.UploadedByUser)
+                .WithMany()
+                .HasForeignKey(i => i.UploadedByUserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Serves the draft sweep and the release of an edited election's dropped pictures.
+            modelBuilder.Entity<ElectionImage>()
+                .HasIndex(i => i.ElectionId);
+
+            // SetNull, not Cascade: losing an image must never remove the option or question it
+            // illustrates from the ballot.
+            modelBuilder.Entity<Option>()
+                .HasOne(o => o.Image)
+                .WithMany()
+                .HasForeignKey(o => o.ImageId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            modelBuilder.Entity<ElectionQuestion>()
+                .HasOne(q => q.Image)
+                .WithMany()
+                .HasForeignKey(q => q.ImageId)
+                .OnDelete(DeleteBehavior.SetNull);
+
             // ── Force every DateTime to round-trip as UTC ────────────────────────
-            // Postgres columns default to "timestamp without time zone", which
-            // silently drops DateTime.Kind on save. When EF reads a row back,
-            // Kind comes back as Unspecified even though the value (e.g. from
-            // DateTime.UtcNow) really is UTC. System.Text.Json only appends the
-            // "Z" suffix when Kind == Utc, so the API was emitting timestamps
-            // like "2026-09-12T07:27:00" with no timezone marker at all — and
-            // the browser's Date parser treats that as LOCAL time, not UTC.
-            // That's exactly why times were showing ~3 hours off (Romania's
-            // UTC+3 summer offset) instead of being converted correctly.
-            //
-            // This converter tags every DateTime as Kind=Utc on the way out of
-            // the database (and normalizes to UTC on the way in), so the JSON
-            // API always includes "Z" and the frontend converts to local time
-            // correctly.
+            // Postgres stores "timestamp without time zone" and hands Kind back as Unspecified.
+            // System.Text.Json omits the "Z" suffix for anything but Kind=Utc, and the browser
+            // then parses the result as local time - which is how timestamps ended up off by
+            // the local offset. Tagging Kind on the way out restores the suffix.
             var utcConverter = new ValueConverter<DateTime, DateTime>(
                 toDb => toDb.Kind == DateTimeKind.Utc ? toDb : toDb.ToUniversalTime(),
                 fromDb => DateTime.SpecifyKind(fromDb, DateTimeKind.Utc));

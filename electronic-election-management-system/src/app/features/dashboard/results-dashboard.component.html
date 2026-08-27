@@ -21,9 +21,9 @@
             <p class="question-votes">{{ question.totalVotes }} {{ 'results.votes' | translate }}</p>
 
             <!-- Question Image (Displayed only if it exists) -->
-            @if ($any(question).imageDataUrl || ($any(question).options && $any(question).options.length > 0 && $any(question).options[0].label === 'FreeText_Image' && $any(question).options[0].imageDataUrl)) {
+            @if ($any(question).imageId) {
               <div style="display: flex; justify-content: center; margin-top: 1rem; margin-bottom: 1.5rem; padding: 0.5rem; background: var(--bg-subtle, #f8fafc); border-radius: 12px; border: 1px solid var(--border-color, #e2e8f0);">
-                <img [src]="$any(question).imageDataUrl || $any(question).options[0]?.imageDataUrl" alt="Question Image" style="max-width: 100%; max-height: 350px; object-fit: contain; border-radius: 8px; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);" />
+                <img [appElectionImage]="$any(question).imageId" alt="Question Image" style="max-width: 100%; max-height: 350px; object-fit: contain; border-radius: 8px; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);" />
               </div>
             }
             <!-- End Question Image -->
@@ -32,8 +32,22 @@
               @if (question.questionType === 'FreeText') {
                 @if (question.textAnswers.length > 0) {
                   <ul class="text-answers-list">
-                    @for (answer of question.textAnswers; track $index) {
-                      <li class="text-answer-item">{{ answer }}</li>
+                    @if (shownAuthorsFor(question.questionId); as authored) {
+                      @for (entry of authored; track $index) {
+                        <li class="text-answer-item authored-answer">
+                          <span class="authored-answer-text">{{ entry.answerText }}</span>
+                          <span class="authored-answer-by">
+                            {{ entry.fullName ?? entry.email }}
+                            @if (entry.fullName) {
+                              <span class="authored-answer-email">{{ entry.email }}</span>
+                            }
+                          </span>
+                        </li>
+                      }
+                    } @else {
+                      @for (answer of question.textAnswers; track $index) {
+                        <li class="text-answer-item">{{ answer }}</li>
+                      }
                     }
                   </ul>
                 } @else {
@@ -93,8 +107,8 @@
                       <span class="ranking-position">{{ i + 1 }}</span>
                       <div class="ranking-content">
                         <div class="ranking-label">
-                          @if (option.imageDataUrl) {
-                            <img class="result-option-image" [src]="option.imageDataUrl" [alt]="option.label" />
+                          @if (option.imageId) {
+                            <img class="result-option-image" [appElectionImage]="option.imageId" [alt]="option.label" />
                           }
                           <span>{{ option.label }}</span>
                         </div>
@@ -136,24 +150,26 @@
                       @if (segment.isFullCircle) {
                         <circle
                           class="pie-segment"
-                          [class.is-hovered]="hoveredSlice() === sliceKey(question.questionId, segment.optionId)"
-                          [class.is-dimmed]="hoveredSlice() !== null && hoveredSlice() !== sliceKey(question.questionId, segment.optionId)"
+                          [class.is-hovered]="isSliceActive(question.questionId, segment.optionId)"
+                          [class.is-dimmed]="isSliceDimmed(question.questionId, segment.optionId)"
                           [attr.cx]="pieCenter" [attr.cy]="pieCenter" [attr.r]="pieRadius"
                           [style.fill]="segment.colorVar"
-                          (pointerenter)="hoveredSlice.set(sliceKey(question.questionId, segment.optionId))"
-                          (pointerleave)="hoveredSlice.set(null)"
+                          (pointerenter)="hoverSlice(question.questionId, segment.optionId)"
+                          (pointerleave)="clearHover()"
+                          (click)="toggleSliceSelection(question.questionId, segment.optionId)"
                         >
                           <title>{{ segment.isOtherOption ? ('results.otherOptionLabel' | translate) : segment.label }}: {{ segment.voteCount }} {{ 'results.votes' | translate }} ({{ segment.percent }}%)</title>
                         </circle>
                       } @else if (segment.path) {
                         <path
                           class="pie-segment"
-                          [class.is-hovered]="hoveredSlice() === sliceKey(question.questionId, segment.optionId)"
-                          [class.is-dimmed]="hoveredSlice() !== null && hoveredSlice() !== sliceKey(question.questionId, segment.optionId)"
+                          [class.is-hovered]="isSliceActive(question.questionId, segment.optionId)"
+                          [class.is-dimmed]="isSliceDimmed(question.questionId, segment.optionId)"
                           [attr.d]="segment.path"
                           [style.fill]="segment.colorVar"
-                          (pointerenter)="hoveredSlice.set(sliceKey(question.questionId, segment.optionId))"
-                          (pointerleave)="hoveredSlice.set(null)"
+                          (pointerenter)="hoverSlice(question.questionId, segment.optionId)"
+                          (pointerleave)="clearHover()"
+                          (click)="toggleSliceSelection(question.questionId, segment.optionId)"
                         >
                           <title>{{ segment.isOtherOption ? ('results.otherOptionLabel' | translate) : segment.label }}: {{ segment.voteCount }} {{ 'results.votes' | translate }} ({{ segment.percent }}%)</title>
                         </path>
@@ -167,16 +183,22 @@
                     <div
                       class="result-row"
                       [class.is-leading]="isLeading(option.voteCount, question)"
-                      [class.is-hovered]="hoveredSlice() === sliceKey(question.questionId, option.optionId)"
+                      [class.is-hovered]="isSliceActive(question.questionId, option.optionId)"
+                      [class.is-selected]="isSliceSelected(question.questionId, option.optionId)"
+                      role="button"
                       tabindex="0"
-                      (pointerenter)="hoveredSlice.set(sliceKey(question.questionId, option.optionId))"
-                      (pointerleave)="hoveredSlice.set(null)"
-                      (focus)="hoveredSlice.set(sliceKey(question.questionId, option.optionId))"
-                      (blur)="hoveredSlice.set(null)"
+                      [attr.aria-pressed]="isSliceSelected(question.questionId, option.optionId)"
+                      (pointerenter)="hoverSlice(question.questionId, option.optionId)"
+                      (pointerleave)="clearHover()"
+                      (focus)="hoverSlice(question.questionId, option.optionId)"
+                      (blur)="clearHover()"
+                      (click)="toggleSliceSelection(question.questionId, option.optionId)"
+                      (keydown.enter)="toggleSliceSelection(question.questionId, option.optionId)"
+                      (keydown.space)="$event.preventDefault(); toggleSliceSelection(question.questionId, option.optionId)"
                     >
                       <span class="result-swatch" [style.background]="'var(--series-' + ((i % 8) + 1) + ')'"></span>
-                      @if (option.imageDataUrl) {
-                        <img class="result-option-image" [src]="option.imageDataUrl" [alt]="option.label" />
+                      @if (option.imageId) {
+                        <img class="result-option-image" [appElectionImage]="option.imageId" [alt]="option.label" />
                       }
                       <div class="result-content">
                         <div class="result-label">
@@ -189,18 +211,92 @@
                 </div>
               }
             </div>
+            @if (question.questionType === 'FreeText' && question.textAnswers.length > 0 && canAskWhoVoted(results)) {
+              <div class="voters-section">
+                <button type="button" class="btn-secondary voters-toggle"
+                  [attr.aria-expanded]="isAuthorsPanelOpen(question.questionId)"
+                  (click)="toggleAuthorsPanel(question)">
+                  {{ (isAuthorsPanelOpen(question.questionId) ? 'results.hideVoters' : 'results.showVoters') | translate }}
+                </button>
+
+                @if (isAuthorsPanelOpen(question.questionId)) {
+                  @if (authorsLoading()[question.questionId]) {
+                    <p class="voters-state">{{ 'results.votersLoading' | translate }}</p>
+                  } @else if (authorsErrorKey()[question.questionId]; as errorKey) {
+                    <p class="voters-state voters-state--error">{{ errorKey | translate }}</p>
+                  }
+                }
+              </div>
+            }
+            @if (question.questionType === 'Choice' && canAskWhoVoted(results)) {
+              <div class="voters-section">
+                <button type="button" class="btn-secondary voters-toggle"
+                  [attr.aria-expanded]="isVotersPanelOpen(question.questionId)"
+                  (click)="toggleVotersPanel(question)">
+                  {{ (isVotersPanelOpen(question.questionId) ? 'results.hideVoters' : 'results.showVoters') | translate }}
+                </button>
+
+                @if (isVotersPanelOpen(question.questionId)) {
+                  @if (votersLoading()[question.questionId]) {
+                    <p class="voters-state">{{ 'results.votersLoading' | translate }}</p>
+                  } @else if (votersErrorKey()[question.questionId]; as errorKey) {
+                    <p class="voters-state voters-state--error">{{ errorKey | translate }}</p>
+                  } @else {
+                    <div class="voter-groups">
+                      @for (group of voterGroupsFor(question); track group.optionId) {
+                        <div class="voter-group">
+                          <div class="voter-group-head">
+                            <span class="voter-group-label">{{ group.label }}</span>
+                            <span class="voter-group-count">{{ group.voters.length }}</span>
+                          </div>
+                          @if (group.voters.length === 0) {
+                            <p class="voters-state">{{ 'results.noVotersForOption' | translate }}</p>
+                          } @else {
+                            <div class="voter-grid">
+                              @for (voter of visibleVoters(group); track voter.userId) {
+                                <div class="voter-card">
+                                  <span class="voter-name">{{ voter.fullName ?? voter.email }}</span>
+                                  <span class="voter-email">
+                                    {{ voter.fullName ? voter.email : ('results.voterNoName' | translate) }}
+                                  </span>
+                                </div>
+                              }
+                            </div>
+                            @if (group.voters.length > voterPreviewCount) {
+                              <button type="button" class="text-answers-more" (click)="toggleVoterGroup(group.optionId)">
+                                @if (isVoterGroupExpanded(group.optionId)) {
+                                  {{ 'results.less' | translate }}
+                                } @else {
+                                  +{{ group.voters.length - voterPreviewCount }} {{ 'results.more' | translate }}
+                                }
+                              </button>
+                            }
+                          }
+                        </div>
+                      }
+                    </div>
+                  }
+                }
+              </div>
+            }
             @if (question.questionType !== 'FreeText' && question.textAnswers.length > 0) {
+              @let answerGroups = groupedTextAnswers(question);
               <div class="other-answers-section">
                 <h4 class="other-answers-title">
                   {{ 'results.otherAnswersTitle' | translate }}
                   <span class="other-answers-count">{{ question.textAnswers.length }}</span>
                 </h4>
                 <ul class="text-answers-list">
-                  @for (answer of visibleTextAnswers(question); track $index) {
-                    <li class="text-answer-item">{{ answer }}</li>
+                  @for (group of visibleAnswerGroups(answerGroups, question.questionId); track group.text) {
+                    <li class="text-answer-item">
+                      <span class="text-answer-text">{{ group.text }}</span>
+                      @if (group.count > 1) {
+                        <span class="text-answer-multiplicity">×{{ group.count }}</span>
+                      }
+                    </li>
                   }
                 </ul>
-                @if (question.textAnswers.length > otherAnswersPreviewCount) {
+                @if (answerGroups.length > otherAnswersPreviewCount) {
                   <button
                     type="button"
                     class="text-answers-more"
@@ -209,7 +305,7 @@
                     @if (isOtherAnswersExpanded(question.questionId)) {
                       {{ 'results.less' | translate }}
                     } @else {
-                      +{{ question.textAnswers.length - otherAnswersPreviewCount }} {{ 'results.more' | translate }}
+                      +{{ answerGroups.length - otherAnswersPreviewCount }} {{ 'results.more' | translate }}
                     }
                   </button>
                 }

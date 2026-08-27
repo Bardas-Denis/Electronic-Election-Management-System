@@ -5,7 +5,17 @@ export interface OptionDto {
   id: string;
   label: string;
   description?: string;
-  imageDataUrl?: string;
+  imageId?: string;
+}
+
+// SYNC: ImageUploadResultDto — what POST /api/images returns. Dimensions are those of the
+// re-encoded image, which may differ from the file that was picked.
+export interface ImageUploadResultDto {
+  id: string;
+  width: number;
+  height: number;
+  byteSize: number;
+  contentType: string;
 }
 
 export interface ElectionQuestionDto {
@@ -22,8 +32,8 @@ export interface ElectionQuestionDto {
   // this many options. Null leaves the count open.
   requiredRankCount: number | null;
   scoringSchemeId?: string;
-  // Question-level image support
-  imageDataUrl?: string;
+  // Every question type, including FreeText.
+  imageId?: string;
   // For a 'Choice' question, the selectable options. For a 'FreeText' question,
   // optional suggestion chips - voters may still type anything.
   options: OptionDto[];
@@ -65,7 +75,7 @@ export interface ElectionDto {
 export interface CreateOptionDto {
   label: string;
   description?: string;
-  imageDataUrl?: string;
+  imageId?: string | null;
 }
 
 export interface CreateElectionQuestionDto {
@@ -78,8 +88,7 @@ export interface CreateElectionQuestionDto {
   // this many options. Null leaves the count open.
   requiredRankCount: number | null;
   scoringSchemeId?: string;
-  // Question-level image support for creation/editing
-  imageDataUrl?: string;
+  imageId?: string | null;
   options: CreateOptionDto[];
 }
 

@@ -224,8 +224,9 @@
     "optionsLabel": "Options",
     "addQuestion": "Add another question",
     "removeQuestion": "Remove question",
+    "reorderQuestion": "Reorder question",
     "atLeastOneRequiredQuestionError": "At least one question must be required, so voters always have something they must answer.",
-    "optionImageInvalid": "Choose a PNG, JPEG, WEBP or GIF image smaller than 2 MB.",
+    "optionImageInvalid": "Choose a PNG, JPEG, WEBP or GIF image smaller than 5 MB.",
     "submitCreate": "Create election",
     "submitEdit": "Save changes",
     "submitting": "Saving...",
@@ -284,7 +285,9 @@
     "pointsScheme": "{{count}} points: {{points}}",
     "preview": "Preview",
     "backToMyElections": "Back to my elections",
-    "previewHeading": "Preview election (Locked)"
+    "previewHeading": "Preview election (Locked)",
+    "optionImageTooLarge": "That image is too large. Pick a smaller file or a lower resolution.",
+    "optionImageUploadFailed": "The image could not be uploaded. Please try again."
   },
   "vote": {
     "questionOptional": "(optional)",
@@ -319,7 +322,10 @@
     "updateSuccess": "Your answer has been updated.",
     "castSuccess": "Your vote has been recorded.",
     "updateFailed": "Your answer could not be updated.",
-    "deleteFailed": "Your answer could not be deleted."
+    "deleteFailed": "Your answer could not be deleted.",
+    "previous": "Previous",
+    "next": "Next",
+    "navigationTitle": "Vote navigation"
   },
   "declaration": {
     "politicHeader": "Voter declaration",
@@ -431,6 +437,7 @@
     "colCreatedAt": "Created",
     "deleteBtn": "Delete",
     "nameRequired": "Label name is required.",
+    "lengthExceeded": "The label name or category is longer than allowed.",
     "createSuccess": "Label created successfully.",
     "createFailed": "Could not create the label.",
     "deleteFailed": "Could not delete the label.",
@@ -457,6 +464,12 @@
     "points": "pts",
     "noTextAnswers": "No answers yet.",
     "otherAnswersTitle": "Other answers",
+    "showVoters": "Show who voted",
+    "hideVoters": "Hide who voted",
+    "votersLoading": "Loading voters...",
+    "votersLoadFailed": "Could not load the voters.",
+    "noVotersForOption": "Nobody chose this answer.",
+    "voterNoName": "no name on file",
     "otherOptionLabel": "Other",
     "more": "more",
     "less": "less",
@@ -477,6 +490,8 @@
     "rankCountMismatch": "You must rank exactly the number of candidates the question asks for.",
     "invalidDateRange": "The end date must be after the start date.",
     "notAuthorizedToEdit": "You are not authorized to edit this election.",
+    "notAuthorizedToViewVoters": "Only an admin or the election's creator can see who voted.",
+    "votersHiddenForAnonymousElection": "This election is anonymous, so who voted for an option cannot be revealed.",
     "electionHasVotes": "You cannot modify the election because it has already been voted on.",
     "notAuthorizedToDelete": "You are not authorized to delete this election.",
     "invalidInvitationEmail": "One or more invitation email addresses are invalid.",
@@ -614,7 +629,6 @@
       "workEmail": "Work email",
       "workEmailPlaceholder": "e.g. john.smith@company.com"
     }
-    
   },
   "setup": {
     "heading": "Database Setup",
@@ -622,6 +636,7 @@
     "providerLabel": "Database type",
     "providerSqlite": "SQLite",
     "providerPostgres": "PostgreSQL",
+    "onlyProviderAvailable": "Database: {{provider}}",
     "sqliteNote": "SQLite is recommended for small deployments or testing. The database file will be created automatically.",
     "postgresSection": "PostgreSQL connection details",
     "host": "Host",
@@ -666,6 +681,7 @@
     "adminConfirmRequired": "Please confirm the password.",
     "adminPasswordsMismatch": "Passwords do not match.",
     "alreadyConfigured": "The application is already configured. Redirecting…",
-    "errorUnknown": "An unexpected error occurred. Check the server logs for details."
+    "errorUnknown": "An unexpected error occurred. Check the server logs for details.",
+    "seedData": "Seed database with test data"
   }
 }

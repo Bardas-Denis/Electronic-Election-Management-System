@@ -29,6 +29,10 @@ namespace Electronic_Election_Management_System.Data.Repositories
         /// <summary>Returns the user-details profile.</summary>
         Task<UserDetails?> GetUserDetailsAsync(Guid userId);
 
+        /// <summary>Profile details for several users at once, so a list of voters costs one
+        /// query rather than one per person.</summary>
+        Task<List<UserDetails>> GetUserDetailsForUsersAsync(IEnumerable<Guid> userIds);
+
         /// <summary>Saves the user-details profile.</summary>
         Task<UserDetails> SaveUserDetailsAsync(Guid userId, PersonalDetailsDto dto);
     }

@@ -52,6 +52,14 @@ namespace Electronic_Election_Management_System.Constants
         [JsonStringEnumMemberName("notAuthorizedToEdit")]
         NotAuthorizedToEdit,
 
+        /// <summary>Who voted for an option is only available to an Admin or the election's creator.</summary>
+        [JsonStringEnumMemberName("notAuthorizedToViewVoters")]
+        NotAuthorizedToViewVoters,
+
+        /// <summary>An anonymous election never reveals who voted for what, whoever is asking.</summary>
+        [JsonStringEnumMemberName("votersHiddenForAnonymousElection")]
+        VotersHiddenForAnonymousElection,
+
         /// <summary>You cannot modify the election because it has already been voted on.</summary>
         [JsonStringEnumMemberName("electionHasVotes")]
         ElectionHasVotes,
@@ -163,5 +171,20 @@ namespace Electronic_Election_Management_System.Constants
         /// <summary>One or more of the supplied label IDs do not exist.</summary>
         [JsonStringEnumMemberName("labelNotFound")]
         LabelNotFound,
+
+        // Image Errors
+
+        /// <summary>The upload could not be decoded as an image.</summary>
+        [JsonStringEnumMemberName("invalidImage")]
+        InvalidImage,
+
+        /// <summary>The upload exceeds the accepted file size or pixel dimensions.</summary>
+        [JsonStringEnumMemberName("imageTooLarge")]
+        ImageTooLarge,
+
+        /// <summary>An election referenced an image that does not exist, belongs to someone else,
+        /// or has already been claimed by a different election.</summary>
+        [JsonStringEnumMemberName("invalidImageReference")]
+        InvalidImageReference,
     }
 }

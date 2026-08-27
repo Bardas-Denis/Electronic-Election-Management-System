@@ -5,6 +5,7 @@ using Electronic_Election_Management_System.Models;
 using Electronic_Election_Management_System.Services;
 using Electronic_Election_Management_System.Services.interfaces;
 using FluentAssertions;
+using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
 
@@ -22,6 +23,7 @@ public class ElectionServiceTests
     private readonly ILogger<ElectionService> _logger = Substitute.For<ILogger<ElectionService>>();
     private readonly INotificationRepository _notifications = Substitute.For<INotificationRepository>();
     private readonly IEmailService _emailService = Substitute.For<IEmailService>();
+    private readonly IImageService _images = Substitute.For<IImageService>();
     private readonly ElectionService _service;
     private readonly Guid _creatorId = Guid.NewGuid();
 
@@ -31,6 +33,12 @@ public class ElectionServiceTests
         _users.GetByIdsAsync(Arg.Any<IEnumerable<Guid>>())
             .Returns(callInfo => callInfo.Arg<IEnumerable<Guid>>().Select(id => new User { Id = id, Email = $"user{id}@example.com" }).ToList());
         _invitations.GetByElectionAsync(Arg.Any<Guid>()).Returns([]);
+        // Images are accepted by default; the tests that care override this.
+        _images.ValidateClaimableAsync(
+                Arg.Any<IReadOnlyCollection<Guid>>(), Arg.Any<Guid>(), Arg.Any<Guid?>())
+            .Returns(ServiceResult<bool>.Ok(true));
+        _images.ClaimAsync(Arg.Any<IReadOnlyCollection<Guid>>(), Arg.Any<Guid>()).Returns(true);
+        _elections.BeginTransactionAsync().Returns(Substitute.For<IDbContextTransaction>());
         _service = new ElectionService(
             _elections,
             _auditLogs,
@@ -40,7 +48,8 @@ public class ElectionServiceTests
             _labels,
             _logger,
             _notifications,
-            _emailService);
+            _emailService,
+            _images);
     }
 
     [Fact]
@@ -533,6 +542,148 @@ public class ElectionServiceTests
         election.Title.Should().Be("Updated title");
         await _elections.Received(1).AddQuestionsAsync(Arg.Any<IEnumerable<ElectionQuestion>>());
         await _elections.Received(1).SaveChangesAsync();
+    }
+
+    // -------------------------------------------------------------------------
+    // Ballot images
+    // -------------------------------------------------------------------------
+
+    [Fact]
+    public async Task CreateAsync_WithImages_MapsIdsOntoQuestionsAndOptions()
+    {
+        var questionImage = Guid.NewGuid();
+        var optionImage = Guid.NewGuid();
+        var request = RequestWithImages(questionImage, optionImage);
+
+        Election? saved = null;
+        await _elections.AddAsync(Arg.Do<Election>(election => saved = election));
+
+        var result = await _service.CreateAsync(request, _creatorId);
+
+        result.Success.Should().BeTrue();
+        saved!.Questions.Single().ImageId.Should().Be(questionImage);
+        saved.Questions.Single().Options.First().ImageId.Should().Be(optionImage);
+    }
+
+    [Fact]
+    public async Task CreateAsync_WithImages_ClaimsThemOnlyAfterTheElectionIsSaved()
+    {
+        var questionImage = Guid.NewGuid();
+        var optionImage = Guid.NewGuid();
+        var request = RequestWithImages(questionImage, optionImage);
+
+        var result = await _service.CreateAsync(request, _creatorId);
+
+        result.Success.Should().BeTrue();
+        // ElectionImage.ElectionId is a foreign key, so claiming before the insert would fail.
+        Received.InOrder(() =>
+        {
+            _elections.SaveChangesAsync();
+            _images.ClaimAsync(
+                Arg.Is<IReadOnlyCollection<Guid>>(ids =>
+                    ids.Contains(questionImage) && ids.Contains(optionImage)),
+                Arg.Any<Guid>());
+        });
+    }
+
+    [Fact]
+    public async Task CreateAsync_WhenAnImageIsNotClaimable_FailsBeforePersistence()
+    {
+        _images.ValidateClaimableAsync(
+                Arg.Any<IReadOnlyCollection<Guid>>(), Arg.Any<Guid>(), Arg.Any<Guid?>())
+            .Returns(ServiceResult<bool>.Fail(ErrorCode.InvalidImageReference));
+
+        var result = await _service.CreateAsync(
+            RequestWithImages(Guid.NewGuid(), Guid.NewGuid()), _creatorId);
+
+        result.ErrorCode.Should().Be(ErrorCode.InvalidImageReference);
+        await _elections.DidNotReceive().AddAsync(Arg.Any<Election>());
+        await _images.DidNotReceive().ClaimAsync(Arg.Any<IReadOnlyCollection<Guid>>(), Arg.Any<Guid>());
+    }
+
+    [Fact]
+    public async Task CreateAsync_IgnoresImagesOnOptionsThatAreDroppedForHavingNoLabel()
+    {
+        // A blank-labelled option never reaches the ballot, so its picture must not be claimed.
+        var strandedImage = Guid.NewGuid();
+        var request = ValidCreateRequest();
+        request.Questions =
+        [
+            new CreateElectionQuestionDto
+            {
+                Text = "Who should represent the board?",
+                QuestionType = nameof(QuestionType.Choice),
+                Options =
+                [
+                    new CreateOptionDto { Label = "Alice" },
+                    new CreateOptionDto { Label = "Bob" },
+                    new CreateOptionDto { Label = "   ", ImageId = strandedImage }
+                ]
+            }
+        ];
+
+        var result = await _service.CreateAsync(request, _creatorId);
+
+        result.Success.Should().BeTrue();
+        await _images.Received().ValidateClaimableAsync(
+            Arg.Is<IReadOnlyCollection<Guid>>(ids => !ids.Contains(strandedImage)),
+            _creatorId,
+            null);
+    }
+
+    [Fact]
+    public async Task UpdateAsync_ClaimsReferencedImagesAndDropsTheRest()
+    {
+        var election = OpenElection();
+        _elections.GetByIdWithOptionsAsync(election.Id).Returns(election);
+        _votes.HasAnyVotesInElectionAsync(election.Id).Returns(false);
+
+        var keptImage = Guid.NewGuid();
+        var request = ValidUpdateRequest();
+        request.Questions =
+        [
+            new CreateElectionQuestionDto
+            {
+                Text = "Who should represent the board?",
+                QuestionType = nameof(QuestionType.Choice),
+                Options =
+                [
+                    new CreateOptionDto { Label = "Alice", ImageId = keptImage },
+                    new CreateOptionDto { Label = "Bob" }
+                ]
+            }
+        ];
+
+        var result = await _service.UpdateAsync(election.Id, request, election.CreatedByUserId);
+
+        result.Success.Should().BeTrue();
+        // The election's own pictures stay acceptable on a re-save.
+        await _images.Received().ValidateClaimableAsync(
+            Arg.Any<IReadOnlyCollection<Guid>>(), election.CreatedByUserId, election.Id);
+        // Anything the edit no longer references is removed.
+        await _images.Received(1).ReleaseUnreferencedAsync(
+            election.Id,
+            Arg.Is<IReadOnlyCollection<Guid>>(ids => ids.Count == 1 && ids.Contains(keptImage)));
+    }
+
+    private static CreateElectionRequest RequestWithImages(Guid questionImage, Guid optionImage)
+    {
+        var request = ValidCreateRequest();
+        request.Questions =
+        [
+            new CreateElectionQuestionDto
+            {
+                Text = "Who should represent the board?",
+                QuestionType = nameof(QuestionType.Choice),
+                ImageId = questionImage,
+                Options =
+                [
+                    new CreateOptionDto { Label = "Alice", ImageId = optionImage },
+                    new CreateOptionDto { Label = "Bob" }
+                ]
+            }
+        ];
+        return request;
     }
 
     // -------------------------------------------------------------------------

@@ -9,7 +9,8 @@ namespace Electronic_Election_Management_System.DTOs
         public Guid Id { get; set; } = Guid.Empty;
         public string Label { get; set; } = string.Empty;
         public string? Description { get; set; }
-        public string? ImageDataUrl { get; set; }
+        /// <summary>Fetch the picture itself from <c>GET /api/images/{id}</c>.</summary>
+        public Guid? ImageId { get; set; }
     }
 
     // SYNC: voting.model.ts -> OptionCreateDto
@@ -19,8 +20,9 @@ namespace Electronic_Election_Management_System.DTOs
         public string Label { get; set; } = string.Empty;
         [StringLength(ValidationRules.DescriptionMaxLength)]
         public string? Description { get; set; }
-        [StringLength(ValidationRules.ImageDataUrlMaxLength)]
-        public string? ImageDataUrl { get; set; }
+        /// <summary>An id from <c>POST /api/images</c>. Must belong to the caller and be
+        /// unattached, or already belong to the election being edited.</summary>
+        public Guid? ImageId { get; set; }
     }
 
     public class ElectionQuestionDto
@@ -39,8 +41,8 @@ namespace Electronic_Election_Management_System.DTOs
         /// exactly this many options. Null leaves the count open.</summary>
         public int? RequiredRankCount { get; set; }
         public Guid? ScoringSchemeId { get; set; }
-        // Question-level image support (including FreeText)
-        public string? ImageDataUrl { get; set; }
+        /// <summary>The question's illustration, for every question type including FreeText.</summary>
+        public Guid? ImageId { get; set; }
         /// <summary>For a <c>"Choice"</c> question, the selectable options. For a <c>"FreeText"</c>
         /// question, optional suggestion chips - voters may still type anything.</summary>
         public List<OptionDto> Options { get; set; } = new();
@@ -63,9 +65,9 @@ namespace Electronic_Election_Management_System.DTOs
         /// <c>ElectionService.QuestionsAreValid</c>). Null leaves the count open.</summary>
         public int? RequiredRankCount { get; set; }
         public Guid? ScoringSchemeId { get; set; }
-        // Question-level image validation
-        [StringLength(ValidationRules.ImageDataUrlMaxLength)]
-        public string? ImageDataUrl { get; set; }
+        /// <summary>An id from <c>POST /api/images</c>, validated in <c>ElectionService</c>
+        /// together with the options' images.</summary>
+        public Guid? ImageId { get; set; }
         /// <summary>Required to have at least 2 for a <c>"Choice"</c> question (enforced in
         /// <c>ElectionService.QuestionsAreValid</c>, since the requirement depends on
         /// <see cref="QuestionType"/>); optional suggestion chips for a <c>"FreeText"</c> question.</summary>
@@ -95,38 +97,24 @@ namespace Electronic_Election_Management_System.DTOs
         public string Type { get; set; } = string.Empty;
         public bool IsAnonymous { get; set; }
         public bool IsClosed { get; set; }
-        /// <summary>
-        /// False while the owner has not yet published ("started") the election.
-        /// Invisible elections are hidden from voters' listing and cannot accept votes.
-        /// </summary>
+        /// <summary>False until the owner publishes the election; hidden from voters until then.</summary>
         public bool IsVisible { get; set; } = true;
         public DateTime StartsAt { get; set; }
         public DateTime EndsAt { get; set; }
         public List<OptionDto> Options { get; set; } = new();
         public List<ElectionQuestionDto> Questions { get; set; } = new();
 
-        /// <summary>
-        /// Audience group rules saved when creating a closed election.
-        /// Restored in edit mode to preserve group badges and summaries.
-        /// </summary>
+        /// <summary>Restored in edit mode so group badges and summaries survive a re-open.</summary>
         public List<AudienceGroupDto>? AudienceGroups { get; set; }
 
 
-        /// <summary>
-        /// Indicates whether the current user has already cast a vote in this election.
-        /// </summary>
+        /// <summary>Whether the current user has already voted.</summary>
         public bool HasUserVoted { get; set; } = false;
 
-        /// <summary>
-        /// True once <see cref="EndsAt"/> has passed. Expired elections no longer accept new votes,
-        /// but their previously registered votes and results remain fully accessible.
-        /// </summary>
+        /// <summary>Past <see cref="EndsAt"/>: no new votes, but results stay accessible.</summary>
         public bool IsExpired { get; set; } = false;
 
-        /// <summary>
-        /// True once at least one vote has been cast in this election (by anyone). Once true, the
-        /// election can no longer be edited — only viewed, results checked, or deleted.
-        /// </summary>
+        /// <summary>Once true the election can only be viewed or deleted, no longer edited.</summary>
         public bool HasVotes { get; set; } = false;
     }
 
@@ -167,10 +155,7 @@ namespace Electronic_Election_Management_System.DTOs
         /// <summary>When true, only the creator and invited users can discover or access the election.</summary>
         public bool IsClosed { get; set; }
 
-        /// <summary>
-        /// When false, the election is hidden from voters until the owner explicitly calls the Start (publish) action.
-        /// Defaults to true so creating an election without specifying this field makes it immediately visible.
-        /// </summary>
+        /// <summary>False hides the election until the owner publishes it. Defaults to true.</summary>
         public bool IsVisible { get; set; } = true;
 
         /// <summary>Existing accounts to invite directly when the closed election is created.</summary>
@@ -181,10 +166,8 @@ namespace Electronic_Election_Management_System.DTOs
         [Required, MaxLength(ValidationRules.MaxInvitations)]
         public List<string> InvitedEmails { get; set; } = new();
 
-        /// <summary>
-        /// Audience rule: an OR of AND-groups. Each group's conditions are ANDed together;
-        /// IsExcluded conditions apply a NOT. Expanded into individual invitations at creation time.
-        /// </summary>
+        /// <summary>An OR of AND-groups, with IsExcluded applying a NOT. Expanded into individual
+        /// invitations at creation time.</summary>
         [Required, MaxLength(ValidationRules.MaxAudienceGroups)]
         public List<AudienceGroupDto> InvitedAudienceGroups { get; set; } = new();
 
@@ -193,9 +176,8 @@ namespace Electronic_Election_Management_System.DTOs
         /// <summary>The date and time when the election closes. Must be strictly after <see cref="StartsAt"/>.</summary>
         public DateTime EndsAt { get; set; }
 
-        /// <summary>The options for this election, used only when <see cref="Questions"/> is
-        /// empty (legacy single-question elections). Minimum-count requirements depend on
-        /// question type and are enforced in <c>ElectionService.QuestionsAreValid</c>.</summary>
+        /// <summary>Legacy single-question elections only, used when <see cref="Questions"/> is
+        /// empty. Minimum counts are enforced in <c>ElectionService.QuestionsAreValid</c>.</summary>
         [Required, MaxLength(ValidationRules.MaxOptionsPerQuestion)]
         public List<CreateOptionDto> Options { get; set; } = new();
         [Required, MaxLength(ValidationRules.MaxQuestions)]
@@ -260,9 +242,8 @@ namespace Electronic_Election_Management_System.DTOs
         }
     }
 
-    // SYNC: voting.model.ts -> CreateElectionRequest (reused for PUT).
-    // Invitation collections are used during creation only; later invitation
-    // changes go through the dedicated invitations endpoints.
+    // SYNC: voting.model.ts -> CreateElectionRequest (reused for PUT). The invitation
+    // collections apply at creation only; later changes go through the invitations endpoints.
     public class UpdateElectionRequest : CreateElectionRequest
     {
     }

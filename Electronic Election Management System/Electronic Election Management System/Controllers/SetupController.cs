@@ -18,15 +18,19 @@ namespace Electronic_Election_Management_System.Controllers;
 [AllowAnonymous]
 public sealed class SetupController(
     ILogger<SetupController> logger,
-    IHostApplicationLifetime lifetime) : ControllerBase
+    IHostApplicationLifetime lifetime,
+    IConfiguration configuration) : ControllerBase
 {
-    private const string AlreadyConfiguredMessage = 
+    /// <summary>Providers offered when appsettings.json has no (or an empty) Deployment:AvailableDbProviders list.</summary>
+    private static readonly string[] DefaultAvailableProviders = ["Sqlite", "Postgres"];
+
+    private const string AlreadyConfiguredMessage =
         "The application is already configured. Remove data/dbconfig.json manually to reconfigure.";
-    private const string UnknownProviderFormat = 
+    private const string UnknownProviderFormat =
         "Unknown provider '{0}'. Supported values: Sqlite, Postgres.";
-    private const string MigrationFailedMessage = 
+    private const string MigrationFailedMessage =
         "Database migration failed. The connection was reachable, but the schema could not be applied. Check the server logs for details.";
-    private const string SetupSuccessMessage = 
+    private const string SetupSuccessMessage =
         "Configuration saved. The server is restarting — please wait a moment and then refresh the application.";
     private const string AdminEmailRequiredMessage = "Admin email is required.";
     private const string AdminEmailInvalidMessage = "Admin email is not a valid email address.";
@@ -43,6 +47,24 @@ public sealed class SetupController(
     public IActionResult GetStatus()
     {
         return Ok(new { configured = DbConfigStore.Exists() });
+    }
+
+    // GET /api/setup/available-providers
+
+    /// <summary>
+    /// Returns which database providers should be offered as choices on the setup screen.
+    /// Controlled by <c>Deployment:AvailableDbProviders</c> in appsettings.json - a deployment-time
+    /// setting, separate from <c>data/dbconfig.json</c> (which records what was actually chosen).
+    /// Falls back to offering both providers if the section is missing or empty.
+    /// </summary>
+    /// <returns><c>{ "providers": ["Sqlite", "Postgres"] }</c></returns>
+    [HttpGet("available-providers")]
+    public IActionResult GetAvailableProviders()
+    {
+        var configured = configuration.GetSection("Deployment:AvailableDbProviders").Get<string[]>();
+        var providers = configured is { Length: > 0 } ? configured : DefaultAvailableProviders;
+
+        return Ok(new { providers });
     }
 
     // POST /api/setup/test-connection
@@ -136,6 +158,14 @@ public sealed class SetupController(
         if (adminError is not null)
             return UnprocessableEntity(new { error = adminError });
 
+        // Seed test data if requested
+        if (request.SeedData)
+        {
+            var seedError = await SeedTestDataAsync(request.Provider, sanitizedCs);
+            if (seedError is not null)
+                return UnprocessableEntity(new { error = seedError });
+        }
+
         // Persist the configuration file using the sanitized connection string
         DbConfigStore.Save(new DbConfig(request.Provider, sanitizedCs));
 
@@ -201,6 +231,34 @@ public sealed class SetupController(
     }
 
     /// <summary>
+    /// Seeds the database with test users, labels, and elections.
+    /// Returns <see langword="null"/> on success or a short error message on failure.
+    /// </summary>
+    private async Task<string?> SeedTestDataAsync(string provider, string connectionString)
+    {
+        try
+        {
+            ElectionDbContext ctx = provider.Equals("Sqlite", StringComparison.OrdinalIgnoreCase)
+                ? new SqliteAppDbContext(
+                    new DbContextOptionsBuilder<SqliteAppDbContext>().UseSqlite(connectionString).Options)
+                : new PostgresAppDbContext(
+                    new DbContextOptionsBuilder<PostgresAppDbContext>().UseNpgsql(connectionString).Options);
+
+            await using (ctx)
+            {
+                await SeedData.EnsureTestDataAsync(ctx);
+            }
+
+            return null; // success
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to seed test data during setup.");
+            return "Failed to seed test data. Check the server logs for details.";
+        }
+    }
+
+    /// <summary>
     /// Builds a temporary, disposable DbContext for the chosen provider and applies
     /// all pending EF Core migrations. Returns <see langword="null"/> on success or
     /// a short error message on failure.
@@ -258,4 +316,5 @@ public sealed record SetupRequest(
     string Provider,
     string ConnectionString,
     string? AdminEmail = null,
-    string? AdminPassword = null);
+    string? AdminPassword = null,
+    bool SeedData = false);
