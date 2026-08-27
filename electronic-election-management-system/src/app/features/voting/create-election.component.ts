@@ -1622,12 +1622,6 @@ export function normalizeEditableQuestions(election: ElectionDto): CreateElectio
           }))
           : [];
 
-      if (question.questionType === 'FreeText' && recoveredOptions.length > 0 && recoveredOptions[0].label === 'FreeText_Image') {
-        recoveredImage = recoveredOptions[0].imageDataUrl ?? ''; 
-        recoveredOptions = []; 
-      }
-      
-
       return {
         text: question.text || (index === 0 ? election.question : '') || '',
         isRequired: question.isRequired ?? true,

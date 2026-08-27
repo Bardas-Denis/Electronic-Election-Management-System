@@ -868,6 +868,7 @@
          cdkDragLockAxis="y"
          cdkDragBoundary=".questions-list">
 
+    
         <div class="question-card__header">
   @if (!isLocked() && questions.length > 1) {
   <div class="question-drag-handle"
@@ -998,8 +999,8 @@
                
             <label class="image-upload" [style.cursor]="isLocked() ? 'default' : 'pointer'" 
                    style="position: relative; margin-bottom: 0; width: 42px; height: 42px; min-height: 42px; display: flex; align-items: center; justify-content: center;">
-              @if (questions.at(questionIndex).get('imageId')?.value) {
-                <img [appElectionImage]="questions.at(questionIndex).get('imageId')?.value" alt="Preview" style="max-height: 100%; max-width: 100%; object-fit: cover; border-radius: 4px;" />
+              @if (questions.at(questionIndex).get('imageDataUrl')?.value) {
+                <img [src]="questions.at(questionIndex).get('imageDataUrl')?.value" alt="Preview" style="max-height: 100%; max-width: 100%; object-fit: cover; border-radius: 4px;" />
               } @else {
                 <span style="display: flex; align-items: center; justify-content: center;">＋</span>
               }
@@ -1011,7 +1012,7 @@
               }
             </label>
 
-            @if (questions.at(questionIndex).get('imageId')?.value && !isLocked()) {
+            @if (questions.at(questionIndex).get('imageDataUrl')?.value && !isLocked()) {
               <button type="button" class="btn-image-remove"
                       (click)="removeQuestionImage(questionIndex)">
                 &#215;
@@ -1037,8 +1038,8 @@
               
             
             <label class="image-upload" [style.cursor]="isLocked() ? 'default' : 'pointer'" style="position: relative;">
-              @if (option.get('imageId')?.value) {
-              <img [appElectionImage]="option.get('imageId')?.value" [alt]="option.get('label')?.value" />
+              @if (option.get('imageDataUrl')?.value) {
+              <img [src]="option.get('imageDataUrl')?.value" [alt]="option.get('label')?.value" />
               } @else {
               <span>＋</span>
               }
@@ -1050,7 +1051,7 @@
               }
             </label>
 
-            @if (option.get('imageId')?.value && !isLocked()) {
+            @if (option.get('imageDataUrl')?.value && !isLocked()) {
             <button type="button" class="btn-image-remove"
                     (click)="removeOptionImage(questionIndex, optionIndex)">
               &#215;
