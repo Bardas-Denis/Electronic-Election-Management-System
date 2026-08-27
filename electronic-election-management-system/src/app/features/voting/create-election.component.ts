@@ -1,14 +1,12 @@
-import { ChangeDetectorRef, Component, OnInit, inject, signal, ElementRef, HostListener, ViewChild } from '@angular/core';
+import { Component, OnInit, inject, signal, ElementRef, HostListener, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { AbstractControl, FormBuilder, FormArray, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, FormArray, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { TranslateService, TranslatePipe } from '@ngx-translate/core';
 import { forkJoin, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { VotingService } from '../../core/services/voting.service';
 import { ScoringSchemesService } from '../../core/services/scoring-schemes.service';
-import { ElectionImageService } from '../../core/services/election-image.service';
-import { ElectionImageDirective } from '../../core/directives/election-image.directive';
 import { ScoringSchemeDto } from '../../core/models/scoring-schemes.model';
 import { CdkDragDrop, CdkDropList, CdkDrag, CdkDragHandle } from '@angular/cdk/drag-drop';
 import {
@@ -39,18 +37,9 @@ import { CreateScoringSchemeModalComponent } from './create-scoring-scheme-modal
 @Component({
   selector: 'app-create-election',
   standalone: true,
-  imports: [
-    CommonModule,
-    ReactiveFormsModule,
-    TranslatePipe,
-    CreateScoringSchemeModalComponent,
-    ElectionImageDirective,
-    CdkDropList,
-    CdkDrag,
-    CdkDragHandle
-  ],
-  templateUrl: './create-election.component.html',
-  styleUrl: './create-election.component.scss'
+imports: [CommonModule, ReactiveFormsModule, TranslatePipe, CreateScoringSchemeModalComponent, CdkDropList, CdkDrag, CdkDragHandle],
+templateUrl: './create-election.component.html',  
+styleUrl: './create-election.component.scss'
 })
 export class CreateElectionComponent implements OnInit {
   private fb = inject(FormBuilder);
@@ -59,8 +48,6 @@ export class CreateElectionComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private translate = inject(TranslateService);
   private scoringSchemesService = inject(ScoringSchemesService);
-  private images = inject(ElectionImageService);
-  private changeDetector = inject(ChangeDetectorRef);
 
   scoringSchemes = signal<ScoringSchemeDto[]>([]);
   scoringSchemesLoading = signal(false);
@@ -68,7 +55,6 @@ export class CreateElectionComponent implements OnInit {
   activeQuestionIndexForScheme = signal<number | null>(null);
 
   isSubmitting = signal(false);
-  isUploadingImage = signal(false);
   isLoading = signal(false);
   /** Translation key for inline errors — resolved via | translate in the template. */
   errorMessageKey = signal<string | null>(null);
@@ -324,11 +310,11 @@ export class CreateElectionComponent implements OnInit {
     this.collapsedQuestions.set(newCollapsed);
   }
 
-  private createOptionGroup(option?: { label?: string; description?: string; imageId?: string | null }) {
+  private createOptionGroup(option?: { label?: string; description?: string; imageDataUrl?: string }) {
     return this.fb.group({
       label: [option?.label ?? '', [trimmedRequired, Validators.maxLength(INPUT_LIMITS.shortText)]],
       description: [option?.description ?? '', Validators.maxLength(INPUT_LIMITS.description)],
-      imageId: [option?.imageId ?? null]
+      imageDataUrl: [option?.imageDataUrl ?? '']
     });
   }
 
@@ -349,7 +335,7 @@ export class CreateElectionComponent implements OnInit {
       limitRankCount: [question?.requiredRankCount != null],
       requiredRankCount: [question?.requiredRankCount ?? null],
       scoringSchemeId: [question?.scoringSchemeId ?? null],
-      imageId: [question?.imageId ?? null],
+      imageDataUrl: [(question as any)?.imageDataUrl ?? ''],
       options: this.fb.array(
         optionGroups,
         [
@@ -498,64 +484,44 @@ export class CreateElectionComponent implements OnInit {
   }
 
   onOptionImageSelected(event: Event, questionIndex: number, optionIndex: number): void {
-    const control = this.questionOptions(questionIndex).at(optionIndex).get('imageId');
-    this.uploadInto(event, control);
+    if (this.isLocked()) return;
+    const file = (event.target as HTMLInputElement).files?.[0];
+    if (!file) return;
+    const allowedTypes = new Set(['image/png', 'image/jpeg', 'image/webp', 'image/gif']);
+    if (!allowedTypes.has(file.type) || file.size > 2_000_000) {
+      this.errorMessageKey.set('elections.optionImageInvalid');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => this.questionOptions(questionIndex).at(optionIndex)
+      .get('imageDataUrl')?.setValue(reader.result as string);
+    reader.readAsDataURL(file);
   }
 
   removeOptionImage(questionIndex: number, optionIndex: number): void {
     if (this.isLocked()) return;
-    this.questionOptions(questionIndex).at(optionIndex).get('imageId')?.setValue(null);
+    this.questionOptions(questionIndex).at(optionIndex).get('imageDataUrl')?.setValue('');
   }
 
   onQuestionImageSelected(event: Event, questionIndex: number): void {
-    const questionGroup = this.questions.at(questionIndex);
-    this.uploadInto(event, questionGroup.get('imageId'), () => questionGroup.markAsDirty());
+    if (this.isLocked()) return;
+    const file = (event.target as HTMLInputElement).files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const questionGroup = this.questions.at(questionIndex);
+      questionGroup.get('imageDataUrl')?.setValue(reader.result as string);
+      questionGroup.markAsDirty();
+    };
+    reader.readAsDataURL(file);
   }
 
   removeQuestionImage(questionIndex: number): void {
     if (this.isLocked()) return;
     const questionGroup = this.questions.at(questionIndex);
-    questionGroup.get('imageId')?.setValue(null);
+    questionGroup.get('imageDataUrl')?.setValue('');
     questionGroup.markAsDirty();
-  }
-
-  // The picked file is uploaded straight away and only its id is kept in the form, so saving
-  // the election sends identifiers rather than image data.
-  private uploadInto(event: Event, control: AbstractControl | null, onDone?: () => void): void {
-    const input = event.target as HTMLInputElement;
-    const file = input.files?.[0];
-    // Clearing the input lets the same file be picked again after a failed upload.
-    input.value = '';
-
-    if (this.isLocked() || !file || !control) return;
-
-    const allowedTypes = new Set(['image/png', 'image/jpeg', 'image/webp', 'image/gif']);
-    if (!allowedTypes.has(file.type) || file.size > INPUT_LIMITS.imageMaxUploadBytes) {
-      this.errorMessageKey.set('elections.optionImageInvalid');
-      return;
-    }
-
-    this.isUploadingImage.set(true);
-    this.errorMessageKey.set(null);
-    this.images.upload(file).subscribe({
-      next: (result) => {
-        control.setValue(result.id);
-        onDone?.();
-        this.isUploadingImage.set(false);
-        // The app is zoneless and the template reads the id off the form rather than a signal,
-        // so nothing would repaint the preview without this.
-        this.changeDetector.markForCheck();
-      },
-      error: (response) => {
-        this.errorMessageKey.set(
-          response?.error?.errorCode === 'imageTooLarge'
-            ? 'elections.optionImageTooLarge'
-            : 'elections.optionImageUploadFailed'
-        );
-        this.isUploadingImage.set(false);
-        this.changeDetector.markForCheck();
-      }
-    });
   }
 
   addInviteEmail(): void {
@@ -1334,16 +1300,18 @@ export class CreateElectionComponent implements OnInit {
     // already carries "no limit".
     payload.questions = payload.questions.map((question: any) => {
       const { limitRankCount, ...cleanQuestion } = question;
-
+      
       if (cleanQuestion.questionType === 'FreeText') {
-        cleanQuestion.options = [];
+        if (cleanQuestion.imageDataUrl) {
+          cleanQuestion.options = [{
+            label: 'FreeText_Image',
+            description: '',
+            imageDataUrl: cleanQuestion.imageDataUrl
+          }];
+        } else {
+          cleanQuestion.options = [];
+        }
       }
-      // The API binds Guid?, which rejects the empty string an untouched control holds.
-      cleanQuestion.imageId = cleanQuestion.imageId || null;
-      cleanQuestion.options = cleanQuestion.options.map((option: any) => ({
-        ...option,
-        imageId: option.imageId || null
-      }));
       return cleanQuestion;
     });
 
@@ -1607,20 +1575,27 @@ function toDatetimeLocal(isoDate: string): string {
  */
 export function normalizeEditableQuestions(election: ElectionDto): CreateElectionQuestionDto[] {
   if (Array.isArray(election.questions) && election.questions.length > 0) {
-    return election.questions.map((question, index) => {
-      const recoveredOptions = Array.isArray(question.options) && question.options.length > 0
-        ? question.options.map(option => ({
+    return election.questions.map((question: any, index) => {
+      let recoveredImage = question.imageDataUrl ?? question.imageId ?? '';
+      
+      let recoveredOptions = Array.isArray(question.options) && question.options.length > 0
+        ? question.options.map((option: any) => ({
           label: option.label ?? '',
           description: option.description ?? '',
-          imageId: option.imageId ?? null
+          imageDataUrl: option.imageDataUrl ?? option.imageId ?? ''
         }))
         : index === 0
-          ? (election.options ?? []).map(option => ({
+          ? (election.options ?? []).map((option: any) => ({
             label: option.label ?? '',
             description: option.description ?? '',
-            imageId: option.imageId ?? null
+            imageDataUrl: option.imageDataUrl ?? option.imageId ?? ''
           }))
           : [];
+
+      if (question.questionType === 'FreeText' && recoveredOptions.length > 0 && recoveredOptions[0].label === 'FreeText_Image') {
+        recoveredImage = recoveredOptions[0].imageDataUrl ?? ''; 
+        recoveredOptions = []; 
+      }
 
       return {
         text: question.text || (index === 0 ? election.question : '') || '',
@@ -1630,9 +1605,9 @@ export function normalizeEditableQuestions(election: ElectionDto): CreateElectio
         allowOtherOption: question.allowOtherOption ?? false,
         requiredRankCount: question.requiredRankCount ?? null,
         scoringSchemeId: question.scoringSchemeId ?? undefined,
-        imageId: question.imageId ?? null,
+        imageDataUrl: recoveredImage,
         options: recoveredOptions
-      };
+      } as unknown as CreateElectionQuestionDto;
     });
   }
 
@@ -1644,11 +1619,11 @@ export function normalizeEditableQuestions(election: ElectionDto): CreateElectio
     allowOtherOption: false,
     requiredRankCount: null,
     scoringSchemeId: undefined,
-    imageId: null,
-    options: (election.options ?? []).map(option => ({
+    imageDataUrl: '',
+    options: (election.options ?? []).map((option: any) => ({
       label: option.label ?? '',
       description: option.description ?? '',
-      imageId: option.imageId ?? null
+      imageDataUrl: option.imageDataUrl ?? option.imageId ?? ''
     }))
-  }];
+  } as unknown as CreateElectionQuestionDto];
 }
