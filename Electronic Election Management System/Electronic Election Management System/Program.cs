@@ -1,6 +1,5 @@
 using Electronic_Election_Management_System.Configuration;
 using Electronic_Election_Management_System.Data;
-using Electronic_Election_Management_System.Data.DesignTime;
 using Electronic_Election_Management_System.Data.Repositories;
 using Electronic_Election_Management_System.Data.Repositories.implementations;
 using Electronic_Election_Management_System.Hubs;
@@ -11,7 +10,6 @@ using Electronic_Election_Management_System.Services.interfaces;
 using Electronic_Election_Management_System.Services.implementations;
 using Electronic_Election_Management_System.Setup;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
@@ -56,39 +54,31 @@ try
 
     var jwtOptions = JwtOptions.LoadAndValidate(builder.Configuration);
     builder.Services.AddSingleton(jwtOptions);
-    builder.Services.AddPlugins(builder.Configuration);
+    // Read before the database is configured: the provider that knows how to reach it is itself
+    // a plugin, so it has to be in hand first.
+    var pluginHost = builder.Services.AddPlugins(builder.Configuration);
+
+    IDatabaseProvider? databaseProvider = null;
+
     if (isConfigured)
     {
-        var provider = dbConfig!.Provider;
-        var connectionString = dbConfig.ConnectionString;
+        var providerKey = dbConfig!.Provider;
 
-        if (provider.Equals("Sqlite", StringComparison.OrdinalIgnoreCase))
+        if (!pluginHost.TryGet(providerKey, out databaseProvider))
         {
-            // Set on the connection string so every connection EF opens inherits it.
-            var sqliteConnectionStringBuilder = new SqliteConnectionStringBuilder(connectionString)
-            {
-                DefaultTimeout = 5
-            };
-            var sqliteCs = sqliteConnectionStringBuilder.ToString();
-
-            builder.Services.AddDbContext<SqliteAppDbContext>(options =>
-                options.UseSqlite(sqliteCs));
-            builder.Services.AddScoped<ElectionDbContext>(sp =>
-                sp.GetRequiredService<SqliteAppDbContext>());
-        }
-        else if (provider.Equals("Postgres", StringComparison.OrdinalIgnoreCase))
-        {
-            builder.Services.AddDbContext<PostgresAppDbContext>(options =>
-                options.UseNpgsql(connectionString));
-            builder.Services.AddScoped<ElectionDbContext>(sp =>
-                sp.GetRequiredService<PostgresAppDbContext>());
-        }
-        else
-        {
+            // No fallback exists for a database. Refusing to start names the missing piece;
+            // carrying on would fail later, further from the cause.
+            var installed = pluginHost.GetAll<IDatabaseProvider>().Select(p => p.Key).ToList();
             throw new InvalidOperationException(
-                $"data/dbconfig.json contains unknown provider '{provider}'. " +
-                "Supported values: 'Sqlite', 'Postgres'.");
+                $"data/dbconfig.json is configured for '{providerKey}', but no database provider " +
+                $"plugin with that key is installed. Installed providers: " +
+                $"{(installed.Count > 0 ? string.Join(", ", installed) : "none")}.");
         }
+
+        var connectionString = databaseProvider.PrepareConnectionString(dbConfig.ConnectionString);
+
+        builder.Services.AddDbContext<ElectionDbContext>(options =>
+            databaseProvider.Configure(options, connectionString));
 
         builder.Services.AddScoped<IUserRepository, UserRepository>();
         builder.Services.AddScoped<IElectionRepository, ElectionRepository>();
@@ -254,23 +244,9 @@ try
         var db = scope.ServiceProvider.GetRequiredService<ElectionDbContext>();
         db.Database.Migrate();
 
-        if (dbConfig!.Provider.Equals("Sqlite", StringComparison.OrdinalIgnoreCase))
-        {
-            // Enable WAL mode — SQLite-specific; must not run against Postgres.
-            db.Database.ExecuteSqlRaw("PRAGMA journal_mode=WAL;");
-            db.Database.ExecuteSqlRaw("PRAGMA busy_timeout=5000;");
-
-            var connection = db.Database.GetDbConnection();
-            if (connection.State != System.Data.ConnectionState.Open)
-            {
-                await connection.OpenAsync();
-            }
-            using var checkCmd = connection.CreateCommand();
-            checkCmd.CommandText = "PRAGMA journal_mode;";
-            var currentJournalMode = (string?)await checkCmd.ExecuteScalarAsync() ?? "unknown";
-            app.Logger.LogInformation(
-                "SQLite journal_mode confirmed at startup: {JournalMode}", currentJournalMode);
-        }
+        // Whatever this engine needs once the schema is in place - SQLite sets its journal mode
+        // here, Postgres does nothing.
+        await databaseProvider!.OnDatabaseReadyAsync(db, app.Logger);
 
         await SeedData.EnsureScoringSchemesAsync(db);
         await app.UsePluginsAsync(db);

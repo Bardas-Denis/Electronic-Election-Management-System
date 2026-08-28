@@ -30,4 +30,20 @@ public interface IDatabaseProvider : IPlugin
     /// Runs once after migrations have been applied, for setup only this engine needs.
     /// </summary>
     Task OnDatabaseReadyAsync(ElectionDbContext db, ILogger logger);
+
+    /// <summary>
+    /// Validates a connection string typed into the setup form and returns a sanitised copy.
+    /// </summary>
+    /// <remarks>
+    /// This is a trust boundary, not a convenience: the value arrives from an anonymous request.
+    /// Implementations are expected to constrain it - keeping a SQLite path inside the data
+    /// directory, whitelisting the parameters a server connection may carry.
+    /// </remarks>
+    bool TrySanitizeConnectionString(string rawConnectionString, out string sanitized, out string? error);
+
+    /// <summary>
+    /// Probes the connection without writing anything or touching the schema.
+    /// </summary>
+    /// <returns>Null on success, or a short reason fit to show a user. Never raw exception text.</returns>
+    Task<string?> TestConnectionAsync(string connectionString, ILogger logger);
 }

@@ -1,4 +1,6 @@
 using System.Reflection;
+using System.Runtime.Loader;
+using System.Text.Json;
 using Electronic_Election_Management_System.PluginContracts;
 
 namespace Electronic_Election_Management_System.Plugins;
@@ -68,17 +70,40 @@ public sealed class PluginHost : IPluginHost
         }
 
         var discovered = new List<IPlugin>();
+        var dependencies = DependencyAssemblyNames(directory);
+        var resolver = new PluginAssemblyResolver();
+
+        // Every plugin's dependencies must be resolvable before any plugin is loaded: one of them
+        // may already need another's files while its own types are being built.
+        foreach (var candidate in Directory.GetFiles(directory, "*.dll", SearchOption.TopDirectoryOnly))
+        {
+            resolver.Register(candidate);
+        }
 
         foreach (var file in Directory.GetFiles(directory, "*.dll", SearchOption.TopDirectoryOnly))
         {
+            var simpleName = Path.GetFileNameWithoutExtension(file);
+
+            // A plugin brings its own dependencies, so most of this folder is not plugins. Anything
+            // another plugin declares as a dependency is skipped: reflecting over it achieves
+            // nothing and, for a framework assembly resolved elsewhere, throws while doing it.
+            if (!File.Exists(Path.ChangeExtension(file, ".deps.json")) &&
+                dependencies.Contains(simpleName))
+            {
+                _logger.LogDebug("Skipping {File}: declared as a dependency of another plugin.", file);
+                continue;
+            }
+
             // A plugin ships with its own dependencies, so the folder holds far more than
             // plugins. Anything the host must own is skipped outright: loading it here would
             // create a second copy of a type that crosses the boundary, and every plugin using
             // it would then be rejected with no error raised anywhere. Everything else is
             // inspected and simply yields no plugin types.
-            if (PluginLoadContext.SharedAssemblies.Contains(Path.GetFileNameWithoutExtension(file)))
+            // Anything the host already has loaded is its own; reflecting over a second copy
+            // achieves nothing and throws while doing it.
+            if (AssemblyLoadContext.Default.Assemblies.Any(a => a.GetName().Name == simpleName))
             {
-                _logger.LogDebug("Skipping {File}: the host owns this assembly.", file);
+                _logger.LogDebug("Skipping {File}: the host already owns this assembly.", file);
                 continue;
             }
 
@@ -106,6 +131,38 @@ public sealed class PluginHost : IPluginHost
         _logger.LogInformation("Loaded {Count} plugin(s).", _plugins.Count);
     }
 
+    /// <summary>
+    /// Every assembly name any plugin in the folder declares as a dependency of its own.
+    /// </summary>
+    private HashSet<string> DependencyAssemblyNames(string directory)
+    {
+        var names = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var depsFile in Directory.GetFiles(directory, "*.deps.json", SearchOption.TopDirectoryOnly))
+        {
+            try
+            {
+                using var document = JsonDocument.Parse(File.ReadAllBytes(depsFile));
+                if (!document.RootElement.TryGetProperty("libraries", out var libraries)) continue;
+
+                foreach (var library in libraries.EnumerateObject())
+                {
+                    // Entries are "Name/Version"; the plugin itself appears here too, which is why
+                    // a file with its own deps.json is never skipped.
+                    var slash = library.Name.IndexOf('/');
+                    names.Add(slash < 0 ? library.Name : library.Name[..slash]);
+                }
+            }
+            catch (Exception ex)
+            {
+                // A malformed file costs nothing worse than a noisier scan.
+                _logger.LogDebug(ex, "Could not read {File} while listing plugin dependencies.", depsFile);
+            }
+        }
+
+        return names;
+    }
+
     private List<IPlugin> CreatePluginsFrom(string file)
     {
         var plugins = new List<IPlugin>();
@@ -113,7 +170,7 @@ public sealed class PluginHost : IPluginHost
         Assembly assembly;
         try
         {
-            assembly = new PluginLoadContext(file).LoadFromAssemblyPath(file);
+            assembly = AssemblyLoadContext.Default.LoadFromAssemblyPath(file);
         }
         catch (Exception ex)
         {

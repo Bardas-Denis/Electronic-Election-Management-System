@@ -1,18 +1,24 @@
-using Electronic_Election_Management_System.Setup;
+using Eems.Providers.Postgres;
+using Eems.Providers.Sqlite;
 using Npgsql;
 using Xunit;
 
 namespace Electronic_Election_Management_System.Tests.Setup;
 
-public class SetupConnectionTesterTests
+public class ConnectionStringSanitisingTests
 {
+    // The sanitisers moved out of the application and into the provider plugins, but they still
+    // guard the same trust boundary: a connection string typed into the anonymous setup form.
+    private static readonly SqliteDatabaseProvider Sqlite = new();
+    private static readonly PostgresDatabaseProvider Postgres = new();
+
     [Theory]
     [InlineData("Data Source=data/election.db")]
     [InlineData("Data Source=data/subdir/custom.db")]
     public void TrySanitizeConnectionString_ValidSqlitePath_Succeeds(string inputCs)
     {
-        var valid = SetupConnectionTester.TrySanitizeConnectionString(
-            "Sqlite", inputCs, out var sanitized, out var error);
+        var valid = Sqlite.TrySanitizeConnectionString(
+            inputCs, out var sanitized, out var error);
 
         Assert.True(valid);
         Assert.Null(error);
@@ -29,8 +35,8 @@ public class SetupConnectionTesterTests
     [InlineData("")]
     public void TrySanitizeConnectionString_InvalidOrEscapingSqlitePath_Fails(string inputCs)
     {
-        var valid = SetupConnectionTester.TrySanitizeConnectionString(
-            "Sqlite", inputCs, out var sanitized, out var error);
+        var valid = Sqlite.TrySanitizeConnectionString(
+            inputCs, out var sanitized, out var error);
 
         Assert.False(valid);
         Assert.NotNull(error);
@@ -42,8 +48,8 @@ public class SetupConnectionTesterTests
     {
         var rawCs = "Host=localhost;Port=5432;Database=election_db;Username=postgres;Password=supersecret";
 
-        var valid = SetupConnectionTester.TrySanitizeConnectionString(
-            "Postgres", rawCs, out var sanitized, out var error);
+        var valid = Postgres.TrySanitizeConnectionString(
+            rawCs, out var sanitized, out var error);
 
         Assert.True(valid);
         Assert.Null(error);
@@ -62,8 +68,8 @@ public class SetupConnectionTesterTests
         var smuggledCs = "Host=db.internal;Port=5432;Database=elections;Username=pguser;Password=pass123;" +
                          "Trust Server Certificate=true;SSL Mode=Disable;SearchPath=malicious;Command Timeout=999";
 
-        var valid = SetupConnectionTester.TrySanitizeConnectionString(
-            "Postgres", smuggledCs, out var sanitized, out var error);
+        var valid = Postgres.TrySanitizeConnectionString(
+            smuggledCs, out var sanitized, out var error);
 
         Assert.True(valid);
         Assert.Null(error);
@@ -89,8 +95,8 @@ public class SetupConnectionTesterTests
     [InlineData("", "required")]
     public void TrySanitizeConnectionString_MissingOrInvalidPostgresFields_Fails(string invalidCs, string expectedErrorSubstring)
     {
-        var valid = SetupConnectionTester.TrySanitizeConnectionString(
-            "Postgres", invalidCs, out var sanitized, out var error);
+        var valid = Postgres.TrySanitizeConnectionString(
+            invalidCs, out var sanitized, out var error);
 
         Assert.False(valid);
         Assert.NotNull(error);

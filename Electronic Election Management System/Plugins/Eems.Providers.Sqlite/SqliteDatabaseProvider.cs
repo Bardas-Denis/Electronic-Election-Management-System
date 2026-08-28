@@ -66,4 +66,119 @@ public sealed class SqliteDatabaseProvider : IDatabaseProvider
 
         logger.LogInformation("SQLite journal_mode confirmed at startup: {JournalMode}", journalMode);
     }
+
+    private const string SqliteFailedMessage =
+        "Could not open the SQLite database. Check that the path is writable and the connection "
+        + "string is valid.";
+
+    public bool TrySanitizeConnectionString(
+        string rawConnectionString,
+        out string sanitized,
+        out string? error)
+    {
+        sanitized = string.Empty;
+        if (string.IsNullOrWhiteSpace(rawConnectionString))
+        {
+            error = "SQLite connection string is required.";
+            return false;
+        }
+
+        try
+        {
+            var builder = new SqliteConnectionStringBuilder(rawConnectionString);
+            if (string.IsNullOrWhiteSpace(builder.DataSource))
+            {
+                error = "SQLite Data Source (database path) is required.";
+                return false;
+            }
+
+            if (builder.DataSource.Equals(":memory:", StringComparison.OrdinalIgnoreCase) ||
+                builder.DataSource.StartsWith("file:", StringComparison.OrdinalIgnoreCase))
+            {
+                error = "In-memory or URI SQLite databases are not supported for persistent setup.";
+                return false;
+            }
+
+            var allowedDataDir = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), "data"));
+            var targetFullPath = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), builder.DataSource));
+
+            var allowedPrefix = allowedDataDir.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar) +
+                                Path.DirectorySeparatorChar;
+
+            if (!targetFullPath.StartsWith(allowedPrefix, StringComparison.OrdinalIgnoreCase) &&
+                !targetFullPath.Equals(allowedDataDir, StringComparison.OrdinalIgnoreCase))
+            {
+                error = "SQLite database path must reside within the 'data' directory.";
+                return false;
+            }
+
+            var cleanBuilder = new SqliteConnectionStringBuilder
+            {
+                DataSource = builder.DataSource,
+                Mode = SqliteOpenMode.ReadWriteCreate
+            };
+
+            sanitized = cleanBuilder.ConnectionString;
+            error = null;
+            return true;
+        }
+        catch (Exception)
+        {
+            error = "Invalid SQLite connection string format.";
+            return false;
+        }
+    }
+
+    public async Task<string?> TestConnectionAsync(string connectionString, ILogger logger)
+    {
+        string? createdFilePath = null;
+        try
+        {
+            var builder = new SqliteConnectionStringBuilder(connectionString);
+            if (!string.IsNullOrWhiteSpace(builder.DataSource) &&
+                !builder.DataSource.Equals(":memory:", StringComparison.OrdinalIgnoreCase) &&
+                !builder.DataSource.StartsWith("file:", StringComparison.OrdinalIgnoreCase))
+            {
+                var fullPath = Path.GetFullPath(builder.DataSource);
+                if (!File.Exists(fullPath))
+                {
+                    createdFilePath = fullPath;
+                }
+
+                var dir = Path.GetDirectoryName(fullPath);
+                if (!string.IsNullOrEmpty(dir))
+                {
+                    Directory.CreateDirectory(dir);
+                }
+            }
+
+            await using var conn = new SqliteConnection(connectionString);
+            await conn.OpenAsync();
+            await conn.CloseAsync();
+            return null; // success
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex,
+                "SQLite connection probe failed. ConnectionString length: {Len}",
+                connectionString.Length);
+
+            return SqliteFailedMessage;
+        }
+        finally
+        {
+            if (createdFilePath is not null && File.Exists(createdFilePath))
+            {
+                try
+                {
+                    SqliteConnection.ClearAllPools();
+                    File.Delete(createdFilePath);
+                }
+                catch (Exception cleanupEx)
+                {
+                    logger.LogDebug(cleanupEx, "Failed to clean up probe file {Path}", createdFilePath);
+                }
+            }
+        }
+    }
 }

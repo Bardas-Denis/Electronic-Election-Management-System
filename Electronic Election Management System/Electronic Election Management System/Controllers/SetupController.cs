@@ -1,5 +1,5 @@
 using Electronic_Election_Management_System.Data;
-using Electronic_Election_Management_System.Data.DesignTime;
+using Electronic_Election_Management_System.Plugins;
 using Electronic_Election_Management_System.Models;
 using Electronic_Election_Management_System.Services;
 using Electronic_Election_Management_System.Setup;
@@ -19,15 +19,13 @@ namespace Electronic_Election_Management_System.Controllers;
 public sealed class SetupController(
     ILogger<SetupController> logger,
     IHostApplicationLifetime lifetime,
-    IConfiguration configuration) : ControllerBase
+    IPluginHost plugins) : ControllerBase
 {
-    /// <summary>Providers offered when appsettings.json has no (or an empty) Deployment:AvailableDbProviders list.</summary>
-    private static readonly string[] DefaultAvailableProviders = ["Sqlite", "Postgres"];
 
     private const string AlreadyConfiguredMessage =
         "The application is already configured. Remove data/dbconfig.json manually to reconfigure.";
     private const string UnknownProviderFormat =
-        "Unknown provider '{0}'. Supported values: Sqlite, Postgres.";
+        "Unknown provider '{0}'. Installed providers: {1}.";
     private const string MigrationFailedMessage =
         "Database migration failed. The connection was reachable, but the schema could not be applied. Check the server logs for details.";
     private const string SetupSuccessMessage =
@@ -53,16 +51,14 @@ public sealed class SetupController(
 
     /// <summary>
     /// Returns which database providers should be offered as choices on the setup screen.
-    /// Controlled by <c>Deployment:AvailableDbProviders</c> in appsettings.json - a deployment-time
-    /// setting, separate from <c>data/dbconfig.json</c> (which records what was actually chosen).
-    /// Falls back to offering both providers if the section is missing or empty.
+    /// Comes from the plugin folder: a database the application can actually reach is one whose
+    /// provider assembly is installed. Deleting that assembly removes the option.
     /// </summary>
     /// <returns><c>{ "providers": ["Sqlite", "Postgres"] }</c></returns>
     [HttpGet("available-providers")]
     public IActionResult GetAvailableProviders()
     {
-        var configured = configuration.GetSection("Deployment:AvailableDbProviders").Get<string[]>();
-        var providers = configured is { Length: > 0 } ? configured : DefaultAvailableProviders;
+        var providers = plugins.GetAll<IDatabaseProvider>().Select(p => p.Key).ToArray();
 
         return Ok(new { providers });
     }
@@ -82,17 +78,16 @@ public sealed class SetupController(
             return Conflict(new { error = AlreadyConfiguredMessage });
         }
 
-        if (!IsValidProvider(request.Provider, out var providerError))
+        if (!TryGetProvider(request.Provider, out var provider, out var providerError))
             return BadRequest(new { success = false, error = providerError });
 
-        if (!SetupConnectionTester.TrySanitizeConnectionString(
-                request.Provider, request.ConnectionString, out var sanitizedCs, out var validationError))
+        if (!provider.TrySanitizeConnectionString(
+                request.ConnectionString, out var sanitizedCs, out var validationError))
         {
             return BadRequest(new { success = false, error = validationError });
         }
 
-        var error = await SetupConnectionTester.TestAsync(
-            request.Provider, sanitizedCs, logger);
+        var error = await provider.TestConnectionAsync(sanitizedCs, logger);
 
         if (error is not null)
             return Ok(new { success = false, error });
@@ -117,11 +112,11 @@ public sealed class SetupController(
             return Conflict(new { error = AlreadyConfiguredMessage });
         }
 
-        if (!IsValidProvider(request.Provider, out var providerError))
+        if (!TryGetProvider(request.Provider, out var provider, out var providerError))
             return BadRequest(new { error = providerError });
 
-        if (!SetupConnectionTester.TrySanitizeConnectionString(
-                request.Provider, request.ConnectionString, out var sanitizedCs, out var validationError))
+        if (!provider.TrySanitizeConnectionString(
+                request.ConnectionString, out var sanitizedCs, out var validationError))
         {
             return BadRequest(new { error = validationError });
         }
@@ -141,19 +136,18 @@ public sealed class SetupController(
             return BadRequest(new { error = AdminPasswordTooShortMessage });
 
         // Re-validate via a live connection before committing anything to disk.
-        var connectionError = await SetupConnectionTester.TestAsync(
-            request.Provider, sanitizedCs, logger);
+        var connectionError = await provider.TestConnectionAsync(sanitizedCs, logger);
 
         if (connectionError is not null)
             return UnprocessableEntity(new { error = connectionError });
 
         // Apply migrations so the schema is ready before the app restarts.
-        var migrationError = await ApplyMigrationsAsync(request.Provider, sanitizedCs);
+        var migrationError = await ApplyMigrationsAsync(provider, sanitizedCs);
         if (migrationError is not null)
             return UnprocessableEntity(new { error = migrationError });
 
         // Create the admin user directly in the newly migrated database.
-        var adminError = await CreateAdminUserAsync(request.Provider, sanitizedCs,
+        var adminError = await CreateAdminUserAsync(provider, sanitizedCs,
             request.AdminEmail.Trim().ToLowerInvariant(), request.AdminPassword);
         if (adminError is not null)
             return UnprocessableEntity(new { error = adminError });
@@ -161,7 +155,7 @@ public sealed class SetupController(
         // Seed test data if requested
         if (request.SeedData)
         {
-            var seedError = await SeedTestDataAsync(request.Provider, sanitizedCs);
+            var seedError = await SeedTestDataAsync(provider, sanitizedCs);
             if (seedError is not null)
                 return UnprocessableEntity(new { error = seedError });
         }
@@ -181,17 +175,28 @@ public sealed class SetupController(
 
     // Helpers
 
-    private static bool IsValidProvider(string provider, out string error)
+    private bool TryGetProvider(string provider, out IDatabaseProvider databaseProvider, out string error)
     {
-        if (provider.Equals("Sqlite", StringComparison.OrdinalIgnoreCase) ||
-            provider.Equals("Postgres", StringComparison.OrdinalIgnoreCase))
+        if (plugins.TryGet(provider, out databaseProvider))
         {
             error = string.Empty;
             return true;
         }
 
-        error = string.Format(UnknownProviderFormat, provider);
+        var installed = plugins.GetAll<IDatabaseProvider>().Select(p => p.Key).ToList();
+        error = string.Format(UnknownProviderFormat, provider,
+            installed.Count > 0 ? string.Join(", ", installed) : "none");
         return false;
+    }
+
+    /// <summary>
+    /// A short-lived context on a database that is not the one this process was configured with.
+    /// </summary>
+    private static ElectionDbContext OpenContext(IDatabaseProvider provider, string connectionString)
+    {
+        var options = new DbContextOptionsBuilder<ElectionDbContext>();
+        provider.Configure(options, connectionString);
+        return new ElectionDbContext(options.Options);
     }
 
     /// <summary>
@@ -199,15 +204,11 @@ public sealed class SetupController(
     /// Returns <see langword="null"/> on success or a short error message on failure.
     /// </summary>
     private async Task<string?> CreateAdminUserAsync(
-        string provider, string connectionString, string email, string password)
+        IDatabaseProvider provider, string connectionString, string email, string password)
     {
         try
         {
-            ElectionDbContext ctx = provider.Equals("Sqlite", StringComparison.OrdinalIgnoreCase)
-                ? new SqliteAppDbContext(
-                    new DbContextOptionsBuilder<SqliteAppDbContext>().UseSqlite(connectionString).Options)
-                : new PostgresAppDbContext(
-                    new DbContextOptionsBuilder<PostgresAppDbContext>().UseNpgsql(connectionString).Options);
+            var ctx = OpenContext(provider, connectionString);
 
             await using (ctx)
             {
@@ -234,15 +235,12 @@ public sealed class SetupController(
     /// Seeds the database with test users, labels, and elections.
     /// Returns <see langword="null"/> on success or a short error message on failure.
     /// </summary>
-    private async Task<string?> SeedTestDataAsync(string provider, string connectionString)
+    private async Task<string?> SeedTestDataAsync(
+        IDatabaseProvider provider, string connectionString)
     {
         try
         {
-            ElectionDbContext ctx = provider.Equals("Sqlite", StringComparison.OrdinalIgnoreCase)
-                ? new SqliteAppDbContext(
-                    new DbContextOptionsBuilder<SqliteAppDbContext>().UseSqlite(connectionString).Options)
-                : new PostgresAppDbContext(
-                    new DbContextOptionsBuilder<PostgresAppDbContext>().UseNpgsql(connectionString).Options);
+            var ctx = OpenContext(provider, connectionString);
 
             await using (ctx)
             {
@@ -263,36 +261,15 @@ public sealed class SetupController(
     /// all pending EF Core migrations. Returns <see langword="null"/> on success or
     /// a short error message on failure.
     /// </summary>
-    private async Task<string?> ApplyMigrationsAsync(string provider, string connectionString)
+    private async Task<string?> ApplyMigrationsAsync(
+        IDatabaseProvider provider, string connectionString)
     {
         try
         {
-            if (provider.Equals("Sqlite", StringComparison.OrdinalIgnoreCase))
-            {
-                var builder = new Microsoft.Data.Sqlite.SqliteConnectionStringBuilder(connectionString);
-                if (!string.IsNullOrWhiteSpace(builder.DataSource))
-                {
-                    var dir = Path.GetDirectoryName(builder.DataSource);
-                    if (!string.IsNullOrEmpty(dir))
-                    {
-                        Directory.CreateDirectory(dir);
-                    }
-                }
-
-                var options = new DbContextOptionsBuilder<SqliteAppDbContext>()
-                    .UseSqlite(connectionString)
-                    .Options;
-                await using var ctx = new SqliteAppDbContext(options);
-                await ctx.Database.MigrateAsync();
-            }
-            else
-            {
-                var options = new DbContextOptionsBuilder<PostgresAppDbContext>()
-                    .UseNpgsql(connectionString)
-                    .Options;
-                await using var ctx = new PostgresAppDbContext(options);
-                await ctx.Database.MigrateAsync();
-            }
+            // PrepareConnectionString is what creates a SQLite file's directory; without it the
+            // very first connection fails on a fresh install.
+            await using var ctx = OpenContext(provider, provider.PrepareConnectionString(connectionString));
+            await ctx.Database.MigrateAsync();
 
             return null; // success
         }
