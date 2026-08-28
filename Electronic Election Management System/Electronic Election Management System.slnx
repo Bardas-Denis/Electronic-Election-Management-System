@@ -4,4 +4,6 @@
   <Project Path="Electronic Election Management System.Data/Electronic Election Management System.Data.csproj" />
   <Project Path="Electronic Election Management System.PluginContracts/Electronic Election Management System.PluginContracts.csproj" />
   <Project Path="Plugins/Eems.Plugins.Exponential/Eems.Plugins.Exponential.csproj" />
+  <Project Path="Plugins/Eems.Providers.Sqlite/Eems.Providers.Sqlite.csproj" />
+  <Project Path="Plugins/Eems.Providers.Postgres/Eems.Providers.Postgres.csproj" />
 </Solution>

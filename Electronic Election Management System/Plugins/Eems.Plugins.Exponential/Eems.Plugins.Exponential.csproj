@@ -10,9 +10,10 @@
     <!-- Private/ExcludeAssets keep Eems.PluginContracts.dll out of this project's output. The
          host supplies the contract; a second copy on disk breaks type identity at load time and
          the plugin would be skipped without any error being raised. -->
-    <ProjectReference Include="..\..\Electronic Election Management System.PluginContracts\Electronic Election Management System.PluginContracts.csproj"
-                      Private="false"
-                      ExcludeAssets="runtime" />
+    <ProjectReference Include="..\..\Electronic Election Management System.PluginContracts\Electronic Election Management System.PluginContracts.csproj">
+      <Private>false</Private>
+      <ExcludeAssets>runtime</ExcludeAssets>
+    </ProjectReference>
   </ItemGroup>
 
   <!-- Developer convenience only: drops the built plugin where the API will look for it. -->

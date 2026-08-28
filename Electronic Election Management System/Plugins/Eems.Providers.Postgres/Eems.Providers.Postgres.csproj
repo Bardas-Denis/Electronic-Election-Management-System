@@ -1,0 +1,68 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <!-- A library does not copy its NuGet assemblies to the output. A plugin must:
+         it is loaded from a folder, not resolved against the host's dependency graph. -->
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.3" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.9">
+      <PrivateAssets>all</PrivateAssets>
+      <!-- Tooling only, for dotnet ef. Without trimming this to build assets the whole
+           scaffolding chain - Roslyn, MSBuild, Humanizer - lands in the plugin folder. -->
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The host owns these. A copy in the plugin folder would define a second set of the types
+         that cross the boundary, and the provider would be rejected with no error raised. -->
+    <ProjectReference Include="..\..\Electronic Election Management System.Data\Electronic Election Management System.Data.csproj">
+      <Private>false</Private>
+      <ExcludeAssets>runtime</ExcludeAssets>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Electronic Election Management System.PluginContracts\Electronic Election Management System.PluginContracts.csproj">
+      <Private>false</Private>
+      <ExcludeAssets>runtime</ExcludeAssets>
+    </ProjectReference>
+  </ItemGroup>
+
+  <!-- Developer convenience: drops the plugin and its dependencies where the API looks for them.
+       The whole output is copied, not just the assembly, because a provider brings its own
+       packages and they must travel with it. -->
+  <Target Name="CopyToHostPluginFolder" AfterTargets="Build" Condition="'$(Configuration)' == 'Debug'">
+    <PropertyGroup>
+      <HostPluginDir>$(MSBuildThisFileDirectory)..\..\Electronic Election Management System\bin\$(Configuration)\$(TargetFramework)\plugins\</HostPluginDir>
+    </PropertyGroup>
+    <ItemGroup>
+      <!-- Two families are filtered out. Private=false does not actually keep a
+           ProjectReference out of the output, so the host's own assemblies go first. The rest is
+           the EF Design tooling chain - Roslyn, MSBuild, Humanizer - which dotnet ef needs at
+           design time and which has no business beside a running plugin. -->
+      <PluginFiles Include="$(TargetDir)**\*"
+                   Exclude="$(TargetDir)**\*.pdb;
+                            $(TargetDir)Electronic Election Management System.*.dll;
+                            $(TargetDir)Microsoft.EntityFrameworkCore.Design.dll;
+                            $(TargetDir)Microsoft.CodeAnalysis*.dll;
+                            $(TargetDir)Microsoft.Build*.dll;
+                            $(TargetDir)Microsoft.VisualStudio.*.dll;
+                            $(TargetDir)System.Composition.*.dll;
+                            $(TargetDir)System.CodeDom.dll;
+                            $(TargetDir)Mono.TextTemplating.dll;
+                            $(TargetDir)Newtonsoft.Json.dll;
+                            $(TargetDir)Humanizer.dll;
+                            $(TargetDir)BuildHost-*\**\*" />
+    </ItemGroup>
+    <MakeDir Directories="$(HostPluginDir)" />
+    <Copy SourceFiles="@(PluginFiles)"
+          DestinationFiles="@(PluginFiles->'$(HostPluginDir)%(RecursiveDir)%(Filename)%(Extension)')"
+          SkipUnchangedFiles="true" />
+  </Target>
+
+</Project>
