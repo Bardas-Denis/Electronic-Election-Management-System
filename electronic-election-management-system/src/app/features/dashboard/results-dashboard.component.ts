@@ -131,7 +131,9 @@ export class ResultsDashboardComponent implements OnInit, OnDestroy {
 
     if (this.isFromMyElections()) {
       this.scoringSchemesService.getSchemes().subscribe({
-        next: (schemes) => this.availableSchemes.set(schemes)
+        // A plugin's points come from backend code the browser cannot run, so simulating
+        // one locally would score every rank 0. Such schemes stay out of the simulator.
+        next: (schemes) => this.availableSchemes.set(schemes.filter(s => !s.pluginKey))
       });
     }
 

@@ -1,6 +1,7 @@
 <Solution>
   <Project Path="Electronic Election Management System/Electronic Election Management System.csproj" />
   <Project Path="Electronic Election Management System.Tests/Electronic Election Management System.Tests.csproj" />
-  <Project Path="Eems.PluginContracts/Eems.PluginContracts.csproj" />
-  <Project Path="SamplePlugins/Eems.Plugins.Exponential/Eems.Plugins.Exponential.csproj" />
+  <Project Path="Electronic Election Management System.Data/Electronic Election Management System.Data.csproj" />
+  <Project Path="Electronic Election Management System.PluginContracts/Electronic Election Management System.PluginContracts.csproj" />
+  <Project Path="Plugins/Eems.Plugins.Exponential/Eems.Plugins.Exponential.csproj" />
 </Solution>

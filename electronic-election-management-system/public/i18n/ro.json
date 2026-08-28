@@ -282,6 +282,7 @@
     "cancel": "Anulează",
     "saving": "Se salvează...",
     "linearScheme": "Liniar",
+    "pluginScheme": "calculat de plugin",
     "pointsScheme": "{{count}} puncte: {{points}}",
     "preview": "Previzualizare",
     "backToMyElections": "Înapoi la alegerile mele",

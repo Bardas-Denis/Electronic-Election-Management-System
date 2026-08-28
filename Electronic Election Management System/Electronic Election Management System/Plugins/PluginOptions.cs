@@ -1,3 +1,4 @@
+
 namespace Electronic_Election_Management_System.Plugins;
 
 /// <summary>

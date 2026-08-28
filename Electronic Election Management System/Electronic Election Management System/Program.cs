@@ -56,7 +56,7 @@ try
 
     var jwtOptions = JwtOptions.LoadAndValidate(builder.Configuration);
     builder.Services.AddSingleton(jwtOptions);
-    builder.Services.AddScoringPlugins(builder.Configuration);
+    builder.Services.AddPlugins(builder.Configuration);
     if (isConfigured)
     {
         var provider = dbConfig!.Provider;
@@ -273,7 +273,7 @@ try
         }
 
         await SeedData.EnsureScoringSchemesAsync(db);
-        await app.UseScoringPluginsAsync(db);
+        await app.UsePluginsAsync(db);
         // Test data seeding is now handled during setup (SetupController) if opted in.
 
         // A creator who abandons the election form leaves an unattached image behind. Sweeping at

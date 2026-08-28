@@ -282,6 +282,7 @@
     "cancel": "Cancel",
     "saving": "Saving...",
     "linearScheme": "Linear",
+    "pluginScheme": "computed by plugin",
     "pointsScheme": "{{count}} points: {{points}}",
     "preview": "Preview",
     "backToMyElections": "Back to my elections",

@@ -15,7 +15,7 @@ public class ResultsServiceTests
     private readonly IVoteRepository _votes = Substitute.For<IVoteRepository>();
     private readonly IUserRepository _users = Substitute.For<IUserRepository>();
     // No plugin is registered by default, so every scheme here takes the built-in path.
-    private readonly IScoringPluginRegistry _plugins = Substitute.For<IScoringPluginRegistry>();
+    private readonly IPluginHost _plugins = Substitute.For<IPluginHost>();
     private readonly ResultsService _service;
 
     public ResultsServiceTests()

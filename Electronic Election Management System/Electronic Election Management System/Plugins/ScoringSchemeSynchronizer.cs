@@ -1,3 +1,5 @@
+using Electronic_Election_Management_System.PluginContracts;
+using Electronic_Election_Management_System.Plugins;
 using Electronic_Election_Management_System.Data;
 using Electronic_Election_Management_System.Models;
 using Microsoft.EntityFrameworkCore;
@@ -11,13 +13,13 @@ namespace Electronic_Election_Management_System.Plugins;
 public static class ScoringSchemeSynchronizer
 {
     public static async Task SyncAsync(
-        ElectionDbContext db, IScoringPluginRegistry registry, ILogger logger)
+        ElectionDbContext db, IPluginHost host, ILogger logger)
     {
         var pluginSchemes = await db.ScoringSchemes
             .Where(s => s.PluginKey != null)
             .ToListAsync();
 
-        foreach (var plugin in registry.Plugins)
+        foreach (var plugin in host.GetAll<IScoringPlugin>())
         {
             var row = pluginSchemes.FirstOrDefault(s => s.PluginKey == plugin.Key);
 
@@ -42,7 +44,8 @@ public static class ScoringSchemeSynchronizer
 
         // Rows outlive their plugin: questions pointing at them keep a valid foreign key, so
         // nothing fails loudly on its own. This line is the only warning anyone gets.
-        foreach (var orphan in pluginSchemes.Where(s => !registry.TryGet(s.PluginKey!, out _)))
+        foreach (var orphan in pluginSchemes
+                     .Where(s => !host.TryGet<IScoringPlugin>(s.PluginKey!, out _)))
         {
             logger.LogError(
                 "Scoring scheme {Name} ({Id}) needs plugin {Key}, which is not loaded. Ranked "

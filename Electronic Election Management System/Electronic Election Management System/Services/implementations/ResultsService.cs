@@ -2,8 +2,8 @@ using Electronic_Election_Management_System.Constants;
 using Electronic_Election_Management_System.Data.Repositories;
 using Electronic_Election_Management_System.DTOs;
 using Electronic_Election_Management_System.Models;
+using Electronic_Election_Management_System.PluginContracts;
 using Electronic_Election_Management_System.Plugins;
-using Eems.PluginContracts;
 
 namespace Electronic_Election_Management_System.Services
 {
@@ -20,14 +20,14 @@ namespace Electronic_Election_Management_System.Services
         private readonly IElectionRepository _elections;
         private readonly IVoteRepository _votes;
         private readonly IUserRepository _users;
-        private readonly IScoringPluginRegistry _plugins;
+        private readonly IPluginHost _plugins;
         private readonly ILogger<ResultsService> _logger;
 
         public ResultsService(
             IElectionRepository elections,
             IVoteRepository votes,
             IUserRepository users,
-            IScoringPluginRegistry plugins,
+            IPluginHost plugins,
             ILogger<ResultsService> logger)
         {
             _elections = elections;
@@ -226,7 +226,8 @@ namespace Electronic_Election_Management_System.Services
                     {
                         Id = q.ScoringScheme.Id,
                         Name = q.ScoringScheme.Name,
-                        Points = q.ScoringScheme.Points ?? new List<int>(),
+                        Points = MaterializeRankingPoints(
+                            q.ScoringScheme, scorers[q.Id], q.Options.Count),
                         IsLinear = q.ScoringScheme.IsLinear,
                         IsPredefined = q.ScoringScheme.IsPredefined,
                         PluginKey = q.ScoringScheme.PluginKey
@@ -341,7 +342,7 @@ namespace Electronic_Election_Management_System.Services
                 return rank => GetRankingPoints(rank, scheme, optionsCount);
             }
 
-            if (!_plugins.TryGet(key, out var plugin))
+            if (!_plugins.TryGet<IScoringPlugin>(key, out var plugin))
             {
                 // Linear keeps the ranking order meaningful. Scoring everything 0 would render the
                 // election as a perfect tie, which reads as a result rather than as a fault.
@@ -376,6 +377,25 @@ namespace Electronic_Election_Management_System.Services
                     return 0;
                 }
             };
+        }
+
+        /// <summary>
+        /// The points table the client can read off directly, one entry per rank.
+        /// </summary>
+        /// <remarks>
+        /// A plugin's points live in code the browser cannot run, yet the results dashboard
+        /// recomputes totals locally whenever a rank filter is applied. Sending the evaluated
+        /// table keeps that arithmetic right without teaching the frontend what a plugin is.
+        /// </remarks>
+        private static List<int> MaterializeRankingPoints(
+            ScoringScheme scheme, Func<int?, int> scorer, int optionsCount)
+        {
+            if (scheme.PluginKey is not { Length: > 0 })
+            {
+                return scheme.Points ?? new List<int>();
+            }
+
+            return Enumerable.Range(1, optionsCount).Select(rank => scorer(rank)).ToList();
         }
 
         private static int GetRankingPoints(int? rank, ScoringScheme? scheme, int optionsCount)

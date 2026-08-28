@@ -1,4 +1,4 @@
-using Eems.PluginContracts;
+using Electronic_Election_Management_System.PluginContracts;
 
 namespace Eems.Plugins.Exponential;
 

@@ -4,8 +4,8 @@
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <RootNamespace>Eems.PluginContracts</RootNamespace>
-    <AssemblyName>Eems.PluginContracts</AssemblyName>
+    <RootNamespace>Electronic_Election_Management_System.PluginContracts</RootNamespace>
+    <AssemblyName>Electronic Election Management System.PluginContracts</AssemblyName>
   </PropertyGroup>
 
 </Project>

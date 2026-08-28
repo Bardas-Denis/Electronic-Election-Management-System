@@ -1,4 +1,4 @@
-namespace Eems.PluginContracts;
+namespace Electronic_Election_Management_System.PluginContracts;
 
 /// <summary>
 /// Everything a scoring plugin is allowed to see about a single ranked vote.
