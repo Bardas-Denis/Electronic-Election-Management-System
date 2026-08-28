@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Private/ExcludeAssets keep Eems.PluginContracts.dll out of this project's output. The
+         host supplies the contract; a second copy on disk breaks type identity at load time and
+         the plugin would be skipped without any error being raised. -->
+    <ProjectReference Include="..\..\Eems.PluginContracts\Eems.PluginContracts.csproj"
+                      Private="false"
+                      ExcludeAssets="runtime" />
+  </ItemGroup>
+
+  <!-- Developer convenience only: drops the built plugin where the API will look for it. -->
+  <Target Name="CopyToHostPluginFolder" AfterTargets="Build" Condition="'$(Configuration)' == 'Debug'">
+    <PropertyGroup>
+      <HostPluginDir>$(MSBuildThisFileDirectory)..\..\Electronic Election Management System\bin\$(Configuration)\$(TargetFramework)\plugins\</HostPluginDir>
+    </PropertyGroup>
+    <MakeDir Directories="$(HostPluginDir)" />
+    <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(HostPluginDir)" />
+  </Target>
+
+</Project>

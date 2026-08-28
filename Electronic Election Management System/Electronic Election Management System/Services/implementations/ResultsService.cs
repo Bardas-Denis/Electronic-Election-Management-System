@@ -2,6 +2,8 @@ using Electronic_Election_Management_System.Constants;
 using Electronic_Election_Management_System.Data.Repositories;
 using Electronic_Election_Management_System.DTOs;
 using Electronic_Election_Management_System.Models;
+using Electronic_Election_Management_System.Plugins;
+using Eems.PluginContracts;
 
 namespace Electronic_Election_Management_System.Services
 {
@@ -18,12 +20,21 @@ namespace Electronic_Election_Management_System.Services
         private readonly IElectionRepository _elections;
         private readonly IVoteRepository _votes;
         private readonly IUserRepository _users;
+        private readonly IScoringPluginRegistry _plugins;
+        private readonly ILogger<ResultsService> _logger;
 
-        public ResultsService(IElectionRepository elections, IVoteRepository votes, IUserRepository users)
+        public ResultsService(
+            IElectionRepository elections,
+            IVoteRepository votes,
+            IUserRepository users,
+            IScoringPluginRegistry plugins,
+            ILogger<ResultsService> logger)
         {
             _elections = elections;
             _votes = votes;
             _users = users;
+            _plugins = plugins;
+            _logger = logger;
         }
 
         /// <summary>
@@ -184,8 +195,14 @@ namespace Electronic_Election_Management_System.Services
             if (election is null)
                 return null;
 
-            var questions = election.Questions
-                .OrderBy(q => q.DisplayOrder)
+            // One scorer per question, resolved before any ballot is counted: a missing or
+            // misbehaving plugin then costs a single log line rather than one per vote per option.
+            var orderedQuestions = election.Questions.OrderBy(q => q.DisplayOrder).ToList();
+            var scorers = orderedQuestions.ToDictionary(
+                q => q.Id,
+                q => ResolveRankingScorer(q.ScoringScheme, q.Options.Count));
+
+            var questions = orderedQuestions
                 .Select(q => new QuestionResultDto
                 {
                     QuestionId = q.Id,
@@ -199,7 +216,7 @@ namespace Electronic_Election_Management_System.Services
                         Label = o.Label,
                         ImageId = o.ImageId,
                         VoteCount = q.QuestionType == QuestionType.Ranking
-                            ? o.Votes.Sum(v => GetRankingPoints(v.Rank, q.ScoringScheme, q.Options.Count))
+                            ? o.Votes.Sum(v => scorers[q.Id](v.Rank))
                             : o.Votes.Count,
                         RankCounts = q.QuestionType == QuestionType.Ranking
                             ? o.Votes.Where(v => v.Rank.HasValue).GroupBy(v => v.Rank.Value).ToDictionary(g => g.Key, g => g.Count())
@@ -211,7 +228,8 @@ namespace Electronic_Election_Management_System.Services
                         Name = q.ScoringScheme.Name,
                         Points = q.ScoringScheme.Points ?? new List<int>(),
                         IsLinear = q.ScoringScheme.IsLinear,
-                        IsPredefined = q.ScoringScheme.IsPredefined
+                        IsPredefined = q.ScoringScheme.IsPredefined,
+                        PluginKey = q.ScoringScheme.PluginKey
                     },
                     // A FreeText question's answers, or a Choice question's "Other" answers.
                     // Ordered by when they were cast, and deliberately by the same key the
@@ -307,6 +325,57 @@ namespace Electronic_Election_Management_System.Services
                 return null;
 
             return await GetResultsAsync(electionId);
+        }
+
+        /// <summary>
+        /// Picks the points function for one ranked question, once, before any ballot is counted.
+        /// </summary>
+        /// <remarks>
+        /// A scheme carrying a <see cref="ScoringScheme.PluginKey"/> defers to that plugin; every
+        /// other scheme keeps the built-in behaviour untouched.
+        /// </remarks>
+        private Func<int?, int> ResolveRankingScorer(ScoringScheme? scheme, int optionsCount)
+        {
+            if (scheme?.PluginKey is not { Length: > 0 } key)
+            {
+                return rank => GetRankingPoints(rank, scheme, optionsCount);
+            }
+
+            if (!_plugins.TryGet(key, out var plugin))
+            {
+                // Linear keeps the ranking order meaningful. Scoring everything 0 would render the
+                // election as a perfect tie, which reads as a result rather than as a fault.
+                _logger.LogWarning(
+                    "Scoring scheme {Scheme} needs plugin {Key}, which is not loaded. "
+                    + "Falling back to linear scoring.", scheme!.Name, key);
+
+                return rank => rank.HasValue ? Math.Max(0, optionsCount - rank.Value + 1) : 0;
+            }
+
+            var faulted = false;
+            return rank =>
+            {
+                if (!rank.HasValue) return 0;
+
+                try
+                {
+                    return plugin.GetPoints(
+                        new RankingContext { Rank = rank.Value, OptionsCount = optionsCount });
+                }
+                catch (Exception ex)
+                {
+                    // Plugin code is not ours; one throwing must not take down the results page.
+                    if (!faulted)
+                    {
+                        faulted = true;
+                        _logger.LogError(ex,
+                            "Scoring plugin {Key} threw while scoring a rank; counting it as 0.",
+                            key);
+                    }
+
+                    return 0;
+                }
+            };
         }
 
         private static int GetRankingPoints(int? rank, ScoringScheme? scheme, int optionsCount)

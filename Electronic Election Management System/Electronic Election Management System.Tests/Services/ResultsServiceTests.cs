@@ -1,8 +1,10 @@
 using Electronic_Election_Management_System.Constants;
 using Electronic_Election_Management_System.Data.Repositories;
 using Electronic_Election_Management_System.Models;
+using Electronic_Election_Management_System.Plugins;
 using Electronic_Election_Management_System.Services;
 using FluentAssertions;
+using Microsoft.Extensions.Logging;
 using NSubstitute;
 
 namespace Electronic_Election_Management_System.Tests.Services;
@@ -12,11 +14,14 @@ public class ResultsServiceTests
     private readonly IElectionRepository _elections = Substitute.For<IElectionRepository>();
     private readonly IVoteRepository _votes = Substitute.For<IVoteRepository>();
     private readonly IUserRepository _users = Substitute.For<IUserRepository>();
+    // No plugin is registered by default, so every scheme here takes the built-in path.
+    private readonly IScoringPluginRegistry _plugins = Substitute.For<IScoringPluginRegistry>();
     private readonly ResultsService _service;
 
     public ResultsServiceTests()
     {
-        _service = new ResultsService(_elections, _votes, _users);
+        _service = new ResultsService(
+            _elections, _votes, _users, _plugins, Substitute.For<ILogger<ResultsService>>());
     }
 
     // Builds a non-anonymous election owned by `creatorId` holding one option.

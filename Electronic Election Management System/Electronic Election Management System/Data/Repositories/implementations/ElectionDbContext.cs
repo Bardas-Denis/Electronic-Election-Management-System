@@ -342,6 +342,16 @@ namespace Electronic_Election_Management_System.Data
                     v => System.Text.Json.JsonSerializer.Deserialize<List<int>>(v, (System.Text.Json.JsonSerializerOptions?)null) ?? new List<int>(),
                     pointsComparer);
 
+            modelBuilder.Entity<ScoringScheme>()
+                .Property(ss => ss.PluginKey)
+                .HasMaxLength(100);
+
+            // Keeps the startup plugin sync idempotent: a second run cannot add a duplicate row
+            // for the same plugin. Multiple NULLs stay legal on both providers.
+            modelBuilder.Entity<ScoringScheme>()
+                .HasIndex(ss => ss.PluginKey)
+                .IsUnique();
+
             modelBuilder.Entity<ElectionQuestion>()
                 .HasOne(q => q.ScoringScheme)
                 .WithMany()

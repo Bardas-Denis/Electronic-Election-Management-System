@@ -5,6 +5,7 @@ using Electronic_Election_Management_System.Data.Repositories;
 using Electronic_Election_Management_System.Data.Repositories.implementations;
 using Electronic_Election_Management_System.Hubs;
 using Electronic_Election_Management_System.Models;
+using Electronic_Election_Management_System.Plugins;
 using Electronic_Election_Management_System.Services;
 using Electronic_Election_Management_System.Services.interfaces;
 using Electronic_Election_Management_System.Services.implementations;
@@ -55,6 +56,7 @@ try
 
     var jwtOptions = JwtOptions.LoadAndValidate(builder.Configuration);
     builder.Services.AddSingleton(jwtOptions);
+    builder.Services.AddScoringPlugins(builder.Configuration);
     if (isConfigured)
     {
         var provider = dbConfig!.Provider;
@@ -271,6 +273,7 @@ try
         }
 
         await SeedData.EnsureScoringSchemesAsync(db);
+        await app.UseScoringPluginsAsync(db);
         // Test data seeding is now handled during setup (SetupController) if opted in.
 
         // A creator who abandons the election form leaves an unattached image behind. Sweeping at

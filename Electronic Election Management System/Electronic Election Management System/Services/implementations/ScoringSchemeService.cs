@@ -53,7 +53,8 @@ namespace Electronic_Election_Management_System.Services.implementations
             Name = s.Name,
             Points = s.Points ?? new List<int>(),
             IsLinear = s.IsLinear,
-            IsPredefined = s.IsPredefined
+            IsPredefined = s.IsPredefined,
+            PluginKey = s.PluginKey
         };
     }
 }

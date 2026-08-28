@@ -23,6 +23,12 @@ namespace Electronic_Election_Management_System.Models
         /// Predefined schemes cannot be edited or deleted by normal users.
         /// </summary>
         public bool IsPredefined { get; set; }
+
+        /// <summary>
+        /// Set when the points come from a scoring plugin instead of <see cref="Points"/> /
+        /// <see cref="IsLinear"/>. Holds the plugin's Key. Null for the built-in schemes.
+        /// </summary>
+        public string? PluginKey { get; set; }
         
         public Guid? CreatedByUserId { get; set; }
         public User? CreatedByUser { get; set; }

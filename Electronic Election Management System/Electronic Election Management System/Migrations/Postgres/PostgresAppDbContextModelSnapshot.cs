@@ -345,6 +345,10 @@ namespace Electronic_Election_Management_System.Migrations.Postgres
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<string>("PluginKey")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
                     b.Property<string>("Points")
                         .IsRequired()
                         .HasColumnType("text");
@@ -352,6 +356,9 @@ namespace Electronic_Election_Management_System.Migrations.Postgres
                     b.HasKey("Id");
 
                     b.HasIndex("CreatedByUserId");
+
+                    b.HasIndex("PluginKey")
+                        .IsUnique();
 
                     b.ToTable("ScoringSchemes");
                 });
