@@ -36,6 +36,29 @@ namespace Electronic_Election_Management_System.Data.Repositories
         /// </summary>
         Task<List<GeographicNode>> GetChildrenAsync(Guid parentId);
 
+        /// <summary>
+        /// True when a sibling under <paramref name="parentId"/> already carries this name,
+        /// ignoring <paramref name="excludeId"/> so a rename can keep its own name.
+        /// Mirrors the unique index on (ParentId, Name), turning a database failure into an error.
+        /// </summary>
+        Task<bool> NameTakenUnderParentAsync(Guid? parentId, string name, Guid? excludeId);
+
+        /// <summary>
+        /// True when <paramref name="candidateId"/> sits anywhere below <paramref name="nodeId"/>.
+        /// Walking up from the candidate is what stops a move from closing a loop.
+        /// </summary>
+        Task<bool> IsDescendantOfAsync(Guid nodeId, Guid candidateId);
+
+        /// <summary>How many users carry this label.</summary>
+        Task<int> CountUsersWithLabelAsync(Guid labelId);
+
+        /// <summary>
+        /// Moves every user from one label to another and returns how many were touched. A user
+        /// who already carries the destination simply loses the source, because (UserId, LabelId)
+        /// is the primary key and a second copy would fail the insert.
+        /// </summary>
+        Task<int> ReassignUserLabelsAsync(Guid fromLabelId, Guid toLabelId);
+
         /// <summary>Returns a label by id, or null if not found.</summary>
         Task<Label?> GetByIdAsync(Guid id);
 

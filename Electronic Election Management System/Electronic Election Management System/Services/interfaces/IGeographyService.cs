@@ -19,5 +19,17 @@ namespace Electronic_Election_Management_System.Services
         /// outside the geographic tree.
         /// </summary>
         Task<ServiceResult<List<GeographicNodeDto>>> GetChildrenAsync(Guid parentId);
+
+        /// <summary>
+        /// Adds a node under an existing one. Localities are not seeded, so this is how a country
+        /// gets the towns an election actually needs.
+        /// </summary>
+        Task<ServiceResult<GeographicNodeDto>> CreateChildAsync(Guid parentId, string name);
+
+        /// <summary>
+        /// Renames a node in place. The code is untouched, so anything already pointing at this
+        /// node keeps pointing at it.
+        /// </summary>
+        Task<ServiceResult<GeographicNodeDto>> RenameAsync(Guid id, string name);
     }
 }

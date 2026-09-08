@@ -175,6 +175,21 @@ namespace Electronic_Election_Management_System.Constants
         /// <summary>The label still has children in the geographic tree; empty it first.</summary>
         [JsonStringEnumMemberName("labelHasChildren")]
         LabelHasChildren,
+        /// <summary>A sibling under the same parent already carries this name.</summary>
+        [JsonStringEnumMemberName("labelNameTakenUnderParent")]
+        LabelNameTakenUnderParent,
+
+        /// <summary>A country is always a root, and a root is always a country.</summary>
+        [JsonStringEnumMemberName("countryCannotBeMoved")]
+        CountryCannotBeMoved,
+
+        /// <summary>The chosen parent sits below the node being moved, which would close a loop.</summary>
+        [JsonStringEnumMemberName("circularLabelParent")]
+        CircularLabelParent,
+
+        /// <summary>Users hold this country label and there is no parent to move them up to.</summary>
+        [JsonStringEnumMemberName("labelHasUsersAndNoParent")]
+        LabelHasUsersAndNoParent,
 
         // Image Errors
 

@@ -1,4 +1,5 @@
 using System;
+using System.ComponentModel.DataAnnotations;
 
 namespace Electronic_Election_Management_System.DTOs
 {
@@ -15,5 +16,33 @@ namespace Electronic_Election_Management_System.DTOs
         public string? Code { get; set; }
         public string? Category { get; set; }
         public bool HasChildren { get; set; }
+    }
+
+    // SYNC: geography.model.ts -> CreateGeographicNodeRequest
+    /// <summary>
+    /// Adds a node under an existing one. The category is derived from the parent rather than
+    /// supplied: a country's child is a subdivision, anything deeper is a locality.
+    /// </summary>
+    public class CreateGeographicNodeRequest
+    {
+        [Required]
+        public Guid ParentId { get; set; }
+
+        [Required, NotWhitespace, StringLength(ValidationRules.LabelNameMaxLength)]
+        public string Name { get; set; } = string.Empty;
+    }
+
+    // SYNC: geography.model.ts -> RenameGeographicNodeRequest
+    public class RenameGeographicNodeRequest
+    {
+        [Required, NotWhitespace, StringLength(ValidationRules.LabelNameMaxLength)]
+        public string Name { get; set; } = string.Empty;
+    }
+
+    // SYNC: geography.model.ts -> MoveGeographicNodeRequest
+    public class MoveGeographicNodeRequest
+    {
+        [Required]
+        public Guid ParentId { get; set; }
     }
 }

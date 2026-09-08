@@ -33,6 +33,68 @@ namespace Electronic_Election_Management_System.Data.Repositories
                 .Select(l => new GeographicNode(l.Id, l.Name, l.Code, l.Category, l.Children.Any()))
                 .ToListAsync();
 
+        public Task<bool> NameTakenUnderParentAsync(Guid? parentId, string name, Guid? excludeId)
+            => _db.Labels.AnyAsync(l =>
+                l.ParentId == parentId &&
+                l.Name.ToLower() == name.ToLower() &&
+                (excludeId == null || l.Id != excludeId));
+
+        public async Task<bool> IsDescendantOfAsync(Guid nodeId, Guid candidateId)
+        {
+            // Walks up from the candidate. The visited set is not defensive tidiness: if the tree
+            // is ever left with a loop, an unguarded walk here would never return.
+            var visited = new HashSet<Guid>();
+            var currentId = (Guid?)candidateId;
+
+            while (currentId is not null && visited.Add(currentId.Value))
+            {
+                if (currentId.Value == nodeId)
+                    return true;
+
+                currentId = await _db.Labels
+                    .Where(l => l.Id == currentId)
+                    .Select(l => l.ParentId)
+                    .FirstOrDefaultAsync();
+            }
+
+            return false;
+        }
+
+        public Task<int> CountUsersWithLabelAsync(Guid labelId)
+            => _db.UserLabels.CountAsync(ul => ul.LabelId == labelId);
+
+        public async Task<int> ReassignUserLabelsAsync(Guid fromLabelId, Guid toLabelId)
+        {
+            var links = await _db.UserLabels.Where(ul => ul.LabelId == fromLabelId).ToListAsync();
+            if (links.Count == 0)
+                return 0;
+
+            var userIds = links.Select(l => l.UserId).ToList();
+            var alreadyThere = await _db.UserLabels
+                .Where(ul => ul.LabelId == toLabelId && userIds.Contains(ul.UserId))
+                .Select(ul => ul.UserId)
+                .ToListAsync();
+            var skip = alreadyThere.ToHashSet();
+
+            _db.UserLabels.RemoveRange(links);
+
+            // AssignedAt is carried over rather than reset: it records when the user declared
+            // where they live, and moving the node up does not change when they said it.
+            var moved = links
+                .Where(l => !skip.Contains(l.UserId))
+                .Select(l => new UserLabel
+                {
+                    UserId = l.UserId,
+                    LabelId = toLabelId,
+                    AssignedBy = l.AssignedBy,
+                    AssignedAt = l.AssignedAt
+                })
+                .ToList();
+
+            await _db.UserLabels.AddRangeAsync(moved);
+            return links.Count;
+        }
+
         public Task<List<GeographicNode>> GetChildrenAsync(Guid parentId)
             => _db.Labels
                 .Where(l => l.ParentId == parentId)

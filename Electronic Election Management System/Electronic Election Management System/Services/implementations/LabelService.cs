@@ -81,6 +81,22 @@ namespace Electronic_Election_Management_System.Services
             if (await _labels.HasChildrenAsync(id))
                 return ServiceResult<bool>.Fail(ErrorCode.LabelHasChildren);
 
+            // A user attached to a geographic node moves up to its parent instead of losing the
+            // region outright: someone who lived in a commune still lives in the county above it.
+            // UserLabels cascades on delete, so without this they would silently end up with no
+            // region and only discover it when a regional election refused their vote.
+            if (LabelCategories.IsGeographic(label.Category) &&
+                await _labels.CountUsersWithLabelAsync(id) > 0)
+            {
+                if (label.ParentId is null)
+                    return ServiceResult<bool>.Fail(ErrorCode.LabelHasUsersAndNoParent);
+
+                var moved = await _labels.ReassignUserLabelsAsync(id, label.ParentId.Value);
+                _logger.LogInformation(
+                    "Moved {Count} user(s) from label {LabelId} up to its parent {ParentId} before deletion.",
+                    moved, id, label.ParentId.Value);
+            }
+
             _labels.Remove(label);
             await _labels.SaveChangesAsync();
 

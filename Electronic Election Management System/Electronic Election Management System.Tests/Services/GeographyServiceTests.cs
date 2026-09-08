@@ -104,4 +104,146 @@ public class GeographyServiceTests
         result.Success.Should().BeTrue();
         result.Data.Should().BeEmpty();
     }
+
+    // --- CreateChildAsync ---
+
+    [Fact]
+    public async Task CreateChildAsync_UnderACountry_MakesASubdivision()
+    {
+        var romania = Geo("Romania", LabelCategories.Country);
+        _labels.GetByIdAsync(romania.Id).Returns(romania);
+
+        var result = await _service.CreateChildAsync(romania.Id, "Cluj");
+
+        result.Success.Should().BeTrue();
+        result.Data!.Category.Should().Be(LabelCategories.Subdivision);
+        result.Data.Code.Should().BeNull("nodes added by hand have no ISO code");
+        await _labels.Received(1).AddAsync(Arg.Is<Label>(l => l.ParentId == romania.Id));
+    }
+
+    [Fact]
+    public async Task CreateChildAsync_UnderASubdivision_MakesALocality()
+    {
+        var cluj = Geo("Cluj", LabelCategories.Subdivision);
+        _labels.GetByIdAsync(cluj.Id).Returns(cluj);
+
+        var result = await _service.CreateChildAsync(cluj.Id, "Floresti");
+
+        result.Data!.Category.Should().Be(LabelCategories.Locality);
+    }
+
+    [Fact]
+    public async Task CreateChildAsync_TrimsTheName()
+    {
+        var romania = Geo("Romania", LabelCategories.Country);
+        _labels.GetByIdAsync(romania.Id).Returns(romania);
+
+        var result = await _service.CreateChildAsync(romania.Id, "   Cluj   ");
+
+        result.Data!.Name.Should().Be("Cluj");
+        await _labels.Received(1).NameTakenUnderParentAsync(romania.Id, "Cluj", null);
+    }
+
+    [Fact]
+    public async Task CreateChildAsync_WhenParentIsUnknown_ReturnsNotFound()
+    {
+        var id = Guid.NewGuid();
+        _labels.GetByIdAsync(id).Returns((Label?)null);
+
+        var result = await _service.CreateChildAsync(id, "Cluj");
+
+        result.IsNotFound.Should().BeTrue();
+        await _labels.DidNotReceive().AddAsync(Arg.Any<Label>());
+    }
+
+    [Fact]
+    public async Task CreateChildAsync_WhenParentIsNotGeographic_ReturnsNotFound()
+    {
+        var hr = new Label { Id = Guid.NewGuid(), Name = "HR", Category = "Department" };
+        _labels.GetByIdAsync(hr.Id).Returns(hr);
+
+        var result = await _service.CreateChildAsync(hr.Id, "Cluj");
+
+        result.IsNotFound.Should().BeTrue();
+        await _labels.DidNotReceive().AddAsync(Arg.Any<Label>());
+    }
+
+    [Fact]
+    public async Task CreateChildAsync_WhenASiblingAlreadyHasTheName_Fails()
+    {
+        // Mirrors the unique index on (ParentId, Name): without this the insert would surface
+        // as a database failure and a 500.
+        var romania = Geo("Romania", LabelCategories.Country);
+        _labels.GetByIdAsync(romania.Id).Returns(romania);
+        _labels.NameTakenUnderParentAsync(romania.Id, "Cluj", null).Returns(true);
+
+        var result = await _service.CreateChildAsync(romania.Id, "Cluj");
+
+        result.Success.Should().BeFalse();
+        result.ErrorCode.Should().Be(ErrorCode.LabelNameTakenUnderParent);
+        await _labels.DidNotReceive().AddAsync(Arg.Any<Label>());
+    }
+
+    // --- RenameAsync ---
+
+    [Fact]
+    public async Task RenameAsync_ChangesTheNameAndKeepsTheCode()
+    {
+        var cluj = Geo("Cluj", LabelCategories.Subdivision, "RO-CJ");
+        _labels.GetByIdAsync(cluj.Id).Returns(cluj);
+
+        var result = await _service.RenameAsync(cluj.Id, "Cluj-Napoca");
+
+        result.Success.Should().BeTrue();
+        result.Data!.Name.Should().Be("Cluj-Napoca");
+        result.Data.Code.Should().Be("RO-CJ", "a rename must not break what points at the node");
+        await _labels.Received(1).SaveChangesAsync();
+    }
+
+    [Fact]
+    public async Task RenameAsync_ToItsOwnCurrentName_IsAllowed()
+    {
+        // The clash check excludes the node itself, otherwise saving an untouched form fails.
+        var cluj = Geo("Cluj", LabelCategories.Subdivision);
+        _labels.GetByIdAsync(cluj.Id).Returns(cluj);
+        _labels.NameTakenUnderParentAsync(cluj.ParentId, "Cluj", cluj.Id).Returns(false);
+
+        var result = await _service.RenameAsync(cluj.Id, "Cluj");
+
+        result.Success.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task RenameAsync_WhenASiblingAlreadyHasTheName_Fails()
+    {
+        var cluj = Geo("Cluj", LabelCategories.Subdivision);
+        _labels.GetByIdAsync(cluj.Id).Returns(cluj);
+        _labels.NameTakenUnderParentAsync(cluj.ParentId, "Timis", cluj.Id).Returns(true);
+
+        var result = await _service.RenameAsync(cluj.Id, "Timis");
+
+        result.ErrorCode.Should().Be(ErrorCode.LabelNameTakenUnderParent);
+        await _labels.DidNotReceive().SaveChangesAsync();
+    }
+
+    [Fact]
+    public async Task RenameAsync_WhenLabelIsNotGeographic_ReturnsNotFound()
+    {
+        var hr = new Label { Id = Guid.NewGuid(), Name = "HR", Category = "Department" };
+        _labels.GetByIdAsync(hr.Id).Returns(hr);
+
+        var result = await _service.RenameAsync(hr.Id, "HR2");
+
+        result.IsNotFound.Should().BeTrue();
+        await _labels.DidNotReceive().SaveChangesAsync();
+    }
+
+    private static Label Geo(string name, string category, string? code = null) => new()
+    {
+        Id = Guid.NewGuid(),
+        Name = name,
+        Category = category,
+        Code = code,
+        ParentId = category == LabelCategories.Country ? null : Guid.NewGuid()
+    };
 }

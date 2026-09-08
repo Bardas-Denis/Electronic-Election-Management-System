@@ -519,6 +519,10 @@
     "labelNameAlreadyExists": "Există deja o etichetă cu acest nume.",
     "labelNotFound": "Eticheta solicitată nu a fost găsită.",
     "labelHasChildren": "Eticheta are subdiviziuni. Șterge-le pe acelea întâi.",
+    "labelNameTakenUnderParent": "Există deja un nod cu acest nume sub același părinte.",
+    "countryCannotBeMoved": "O țară rămâne întotdeauna la primul nivel și nu poate fi mutată.",
+    "circularLabelParent": "Nu poți muta un nod sub unul dintre descendenții lui.",
+    "labelHasUsersAndNoParent": "Utilizatori au această țară și nu există un nivel superior la care să fie mutați.",
     "unknown": "A apărut o eroare neașteptată. Încearcă din nou."
   },
   "network": {
