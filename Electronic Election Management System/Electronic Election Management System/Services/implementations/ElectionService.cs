@@ -417,7 +417,7 @@ namespace Electronic_Election_Management_System.Services
 
         public async Task<List<InvitationLabelDto>> GetInvitationLabelsAsync(Guid userId)
         {
-            var labels = await _labels.GetAllAsync();
+            var labels = await _labels.GetAssignableAsync();
             var result = new List<InvitationLabelDto>();
 
             foreach (var label in labels)

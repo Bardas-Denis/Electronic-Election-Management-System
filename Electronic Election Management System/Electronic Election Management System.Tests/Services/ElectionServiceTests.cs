@@ -355,7 +355,7 @@ public class ElectionServiceTests
     {
         var label = new Label { Name = "Engineering", Category = "Department" };
         var otherUser = new User { Email = "other@example.com" };
-        _labels.GetAllAsync().Returns([label]);
+        _labels.GetAssignableAsync().Returns([label]);
         _labels.GetUsersWithLabelAsync(label.Id).Returns(
         [
             CreateUserLabel(otherUser, label),

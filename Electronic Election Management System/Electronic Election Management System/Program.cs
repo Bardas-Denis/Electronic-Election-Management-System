@@ -1,5 +1,6 @@
 using Electronic_Election_Management_System.Configuration;
 using Electronic_Election_Management_System.Data;
+using Electronic_Election_Management_System.Geo;
 using Electronic_Election_Management_System.Data.DesignTime;
 using Electronic_Election_Management_System.Data.Repositories;
 using Electronic_Election_Management_System.Data.Repositories.implementations;
@@ -271,6 +272,9 @@ try
         }
 
         await SeedData.EnsureScoringSchemesAsync(db);
+        // The geographic label tree backs regional elections. Seeded once, from a file next to
+        // the binary; an empty or missing file leaves the tree empty rather than failing boot.
+        await GeoLabelSeeder.EnsureSeededAsync(db, app.Logger, app.Environment.ContentRootPath);
         // Test data seeding is now handled during setup (SetupController) if opted in.
 
         // A creator who abandons the election form leaves an unattached image behind. Sweeping at

@@ -518,6 +518,7 @@
     "userHasDependentRecords": "This user cannot be deleted because other records still reference them.",
     "labelNameAlreadyExists": "A label with this name already exists.",
     "labelNotFound": "The requested label was not found.",
+    "labelHasChildren": "The label still has subdivisions. Remove those first.",
     "unknown": "An unexpected error occurred. Please try again."
   },
   "network": {

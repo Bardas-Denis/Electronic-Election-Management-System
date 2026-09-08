@@ -1,3 +1,4 @@
+using Electronic_Election_Management_System.Constants;
 using Electronic_Election_Management_System.Models;
 using Microsoft.EntityFrameworkCore;
 using Electronic_Election_Management_System.Services;
@@ -174,7 +175,10 @@ namespace Electronic_Election_Management_System.Data
             // ------------------------------------------------------------
             // 2. Labels (no role-type labels - department/geography only) + UserLabels
             // ------------------------------------------------------------
-            bool anyLabels = await db.Labels.AnyAsync();
+            // Only the assignable labels count here. The geographic tree is seeded separately and
+            // always present, so a plain AnyAsync() would skip this block on every fresh install.
+            bool anyLabels = await db.Labels
+                .AnyAsync(l => l.Category == null || !LabelCategories.Geographic.Contains(l.Category));
             List<Label> labels;
             if (!anyLabels)
             {

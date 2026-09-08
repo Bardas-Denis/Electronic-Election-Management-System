@@ -9,8 +9,15 @@ namespace Electronic_Election_Management_System.Data.Repositories
     {
         // --- Label CRUD ---
 
-        /// <summary>Returns all labels ordered by name.</summary>
-        Task<List<Label>> GetAllAsync();
+        /// <summary>
+        /// Labels an administrator can hand out by name — employers, interests, departments.
+        /// Excludes the geographic tree, which is thousands of nodes and is browsed level by
+        /// level rather than listed flat. See <c>LabelCategories</c>.
+        /// </summary>
+        Task<List<Label>> GetAssignableAsync();
+
+        /// <summary>True when other labels point at this one as their parent.</summary>
+        Task<bool> HasChildrenAsync(Guid id);
 
         /// <summary>Returns a label by id, or null if not found.</summary>
         Task<Label?> GetByIdAsync(Guid id);

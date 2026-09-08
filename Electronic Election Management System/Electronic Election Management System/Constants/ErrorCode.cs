@@ -172,6 +172,10 @@ namespace Electronic_Election_Management_System.Constants
         [JsonStringEnumMemberName("labelNotFound")]
         LabelNotFound,
 
+        /// <summary>The label still has children in the geographic tree; empty it first.</summary>
+        [JsonStringEnumMemberName("labelHasChildren")]
+        LabelHasChildren,
+
         // Image Errors
 
         /// <summary>The upload could not be decoded as an image.</summary>

@@ -518,6 +518,7 @@
     "userHasDependentRecords": "Acest utilizator nu poate fi șters deoarece alte înregistrări îl referențiază.",
     "labelNameAlreadyExists": "Există deja o etichetă cu acest nume.",
     "labelNotFound": "Eticheta solicitată nu a fost găsită.",
+    "labelHasChildren": "Eticheta are subdiviziuni. Șterge-le pe acelea întâi.",
     "unknown": "A apărut o eroare neașteptată. Încearcă din nou."
   },
   "network": {

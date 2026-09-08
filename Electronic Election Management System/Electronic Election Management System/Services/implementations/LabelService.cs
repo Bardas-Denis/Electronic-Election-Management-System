@@ -45,7 +45,7 @@ namespace Electronic_Election_Management_System.Services
 
         public async Task<List<LabelDto>> GetAllLabelsAsync()
         {
-            var labels = await _labels.GetAllAsync();
+            var labels = await _labels.GetAssignableAsync();
             return labels.Select(ToDto).ToList();
         }
 
@@ -75,6 +75,11 @@ namespace Electronic_Election_Management_System.Services
             var label = await _labels.GetByIdAsync(id);
             if (label is null)
                 return ServiceResult<bool>.NotFound(ErrorCode.LabelNotFound);
+
+            // The foreign key is Restrict, so deleting a parent would surface as a database
+            // failure and a 500. Checking first turns it into an error the client can show.
+            if (await _labels.HasChildrenAsync(id))
+                return ServiceResult<bool>.Fail(ErrorCode.LabelHasChildren);
 
             _labels.Remove(label);
             await _labels.SaveChangesAsync();

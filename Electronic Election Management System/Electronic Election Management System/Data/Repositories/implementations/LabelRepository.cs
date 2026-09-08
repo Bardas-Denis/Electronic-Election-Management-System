@@ -1,3 +1,4 @@
+using Electronic_Election_Management_System.Constants;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,8 +17,14 @@ namespace Electronic_Election_Management_System.Data.Repositories
             _db = db;
         }
 
-        public Task<List<Label>> GetAllAsync()
-            => _db.Labels.OrderBy(l => l.Name).ToListAsync();
+        public Task<List<Label>> GetAssignableAsync()
+            => _db.Labels
+                .Where(l => l.Category == null || !LabelCategories.Geographic.Contains(l.Category))
+                .OrderBy(l => l.Name)
+                .ToListAsync();
+
+        public Task<bool> HasChildrenAsync(Guid id)
+            => _db.Labels.AnyAsync(l => l.ParentId == id);
 
         public Task<Label?> GetByIdAsync(Guid id)
             => _db.Labels.FirstOrDefaultAsync(l => l.Id == id);
@@ -29,7 +36,9 @@ namespace Electronic_Election_Management_System.Data.Repositories
         }
 
         public Task<bool> ExistsByNameAsync(string name)
-            => _db.Labels.AnyAsync(l => l.Name.ToLower() == name.ToLower());
+            => _db.Labels.AnyAsync(l =>
+                (l.Category == null || !LabelCategories.Geographic.Contains(l.Category)) &&
+                l.Name.ToLower() == name.ToLower());
 
         public async Task AddAsync(Label label)
             => await _db.Labels.AddAsync(label);

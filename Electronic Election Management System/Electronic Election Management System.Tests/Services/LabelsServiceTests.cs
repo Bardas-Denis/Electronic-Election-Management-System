@@ -59,7 +59,7 @@ public class LabelServiceTests
             Category = "Employer",
             CreatedAt = createdAt
         };
-        _labels.GetAllAsync().Returns([label]);
+        _labels.GetAssignableAsync().Returns([label]);
 
         var result = await _service.GetAllLabelsAsync();
 
@@ -128,6 +128,23 @@ public class LabelServiceTests
         result.Success.Should().BeFalse();
         result.IsNotFound.Should().BeTrue();
         result.ErrorCode.Should().Be(ErrorCode.LabelNotFound);
+        _labels.DidNotReceive().Remove(Arg.Any<Label>());
+        await _labels.DidNotReceive().SaveChangesAsync();
+    }
+
+    [Fact]
+    public async Task DeleteLabelAsync_WhenLabelHasChildren_ReturnsLabelHasChildren()
+    {
+        // The self-referencing foreign key is Restrict, so letting this through would surface
+        // as a database failure and a 500 rather than something the client can show.
+        var country = new Label { Id = Guid.NewGuid(), Name = "Romania" };
+        _labels.GetByIdAsync(country.Id).Returns(country);
+        _labels.HasChildrenAsync(country.Id).Returns(true);
+
+        var result = await _service.DeleteLabelAsync(country.Id);
+
+        result.Success.Should().BeFalse();
+        result.ErrorCode.Should().Be(ErrorCode.LabelHasChildren);
         _labels.DidNotReceive().Remove(Arg.Any<Label>());
         await _labels.DidNotReceive().SaveChangesAsync();
     }
