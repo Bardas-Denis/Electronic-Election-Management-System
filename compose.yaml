@@ -26,6 +26,9 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: Production
       ASPNETCORE_URLS: http://+:8080
+      # The database provider is a plugin, so loading has to be on for the app to reach any
+      # database at all. Double underscore is how .NET maps Plugins:Enabled to an env var.
+      Plugins__Enabled: "true"
     ports:
       - "7104:8080"
     volumes:

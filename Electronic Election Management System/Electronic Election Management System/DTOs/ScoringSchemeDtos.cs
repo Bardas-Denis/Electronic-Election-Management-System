@@ -11,6 +11,9 @@ namespace Electronic_Election_Management_System.DTOs
         public List<int> Points { get; set; } = new();
         public bool IsLinear { get; set; }
         public bool IsPredefined { get; set; }
+
+        /// <summary>Non-null when the points are produced by a scoring plugin.</summary>
+        public string? PluginKey { get; set; }
     }
 
     public class CreateScoringSchemeDto

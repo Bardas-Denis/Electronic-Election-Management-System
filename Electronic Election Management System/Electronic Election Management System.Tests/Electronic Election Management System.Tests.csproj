@@ -29,6 +29,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Electronic Election Management System\Electronic Election Management System.csproj" />
+    <ProjectReference Include="..\Plugins\Eems.Providers.Sqlite\Eems.Providers.Sqlite.csproj" />
+    <ProjectReference Include="..\Plugins\Eems.Providers.Postgres\Eems.Providers.Postgres.csproj" />
   </ItemGroup>
 
 </Project>

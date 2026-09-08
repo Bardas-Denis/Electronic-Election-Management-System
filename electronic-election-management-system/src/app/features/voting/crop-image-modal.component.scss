@@ -1,0 +1,287 @@
+.modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.4);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(4px);
+  animation: fadeIn 0.2s ease-out;
+}
+
+.modal-card {
+  background-color: var(--bg-card);
+  border-radius: var(--radius-lg);
+  width: 90%;
+  max-width: 420px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  display: flex;
+  flex-direction: column;
+  animation: slideUp 0.2s ease-out;
+}
+
+.modal-header {
+  padding: 1.5rem 1.5rem 1rem;
+  border-bottom: 1px solid var(--border-color);
+
+  h3 {
+    margin: 0 0 0.5rem 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  p {
+    margin: 0;
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+  }
+}
+
+.crop-body {
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+// The whole photo is always visible here, letterboxed to fit - it's the
+// selection square on top of it that moves and resizes, never the photo itself.
+.crop-stage {
+  position: relative;
+  width: min(320px, 70vw);
+  height: min(320px, 70vw);
+  overflow: hidden;
+  border-radius: var(--radius-md);
+  background: var(--bg-subtle);
+
+  &__overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.35);
+  }
+}
+
+.crop-photo {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  max-width: none; // override the app-wide `img { max-width: 100% }` reset
+  -webkit-user-drag: none;
+  user-select: none;
+  pointer-events: none; // dragging happens on the selection square, not the photo
+}
+
+// The selection square. Its box-shadow is the "spotlight": a shadow spread wide
+// enough to fill the entire (overflow-hidden) stage dims everything outside the
+// square's own edges, without needing a separate mask element.
+.crop-box {
+  position: absolute;
+  box-sizing: border-box;
+  border: 2px solid #fff;
+  border-radius: 2px;
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.55);
+  cursor: grab;
+  touch-action: none; // otherwise a touchscreen intercepts the drag before we see it
+
+  &:active {
+    cursor: grabbing;
+  }
+}
+
+.zoom-control {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+
+  label {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+  }
+
+  input[type='range'] {
+    // --- Reset ---------------------------------------------------------------
+    // styles.scss:203 styles *every* input with a border, radius, horizontal
+    // padding, card background and a focus halo. All of that has to come off a
+    // slider explicitly: the padding in particular used to inset the track by
+    // 12px per side, which broke the edge alignment below.
+    -webkit-appearance: none;
+    appearance: none;
+    display: block;
+    border: none;
+    padding: 0;
+    background: transparent; // the visible bar is the track pseudo-element
+    box-shadow: none;
+    outline: none;
+    cursor: pointer;
+
+    // --- Geometry ------------------------------------------------------------
+    // A range knob's travel is inset from each end by half its own width, so it
+    // never quite reaches the track's edges - and how big that is depends on the
+    // browser/OS theme. Drawing the knob ourselves (a fixed 22px circle in both
+    // engines) makes the inset a known, exact 11px, so widening the input by 22px
+    // and pulling it back with a matching -11px margin lands the knob flush with
+    // the visible edges at min/max, everywhere.
+    // Keep this size in sync with ZOOM_KNOB_RADIUS_PX in the component.
+    width: calc(100% + 22px);
+    margin: 0 -11px;
+    height: 22px;
+
+    // Filled (left of the knob) vs unfilled, bound from the component as a
+    // gradient. It lives on the track pseudo-element, not on the input itself,
+    // so it paints only the 8px bar rather than the whole control box. Chrome
+    // and Safari have no ::-moz-range-progress equivalent, so this custom
+    // property is the standard cross-browser way to do a filled track.
+    // The fallback keeps the bar visible before the first binding runs.
+    --zoom-fill: var(--border-color);
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    // Keyboard focus stays visible, but as a halo on the knob rather than the
+    // app-wide rectangle around the whole control.
+    &:focus-visible {
+      border-color: transparent;
+      box-shadow: none;
+    }
+
+    &::-webkit-slider-runnable-track {
+      height: 8px;
+      border: none;
+      border-radius: 999px;
+      background: var(--zoom-fill);
+    }
+
+    &::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 22px;
+      height: 22px;
+      margin-top: -7px; // Chrome needs this to centre the knob on the track
+      border-radius: 50%;
+      background: #fff;
+      border: 1px solid var(--border-color);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+      cursor: pointer;
+    }
+
+    &:focus-visible::-webkit-slider-thumb {
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25), 0 0 0 3px rgba(17, 17, 17, 0.25);
+    }
+
+    &::-moz-range-track {
+      height: 8px;
+      border: none;
+      border-radius: 999px;
+      background: var(--zoom-fill);
+    }
+
+    &::-moz-range-thumb {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: #fff;
+      border: 1px solid var(--border-color);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+      cursor: pointer;
+    }
+
+    &:focus-visible::-moz-range-thumb {
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25), 0 0 0 3px rgba(17, 17, 17, 0.25);
+    }
+
+    &::-moz-focus-outer {
+      border: 0; // Firefox draws its own dotted ring on the knob otherwise
+    }
+  }
+}
+
+.modal-error {
+  margin: 0 1.5rem 1rem;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding: 1rem 1.5rem 1.5rem;
+  border-top: 1px solid var(--border-color);
+}
+
+// Local overrides: the shared global buttons are 38px tall, below the 44px minimum
+// touch target this modal's Confirm/Cancel actions should meet.
+.btn-primary,
+.btn-secondary {
+  height: 44px;
+  padding: 0 1.25rem;
+  border-radius: var(--radius-md);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+.btn-primary {
+  background-color: var(--accent);
+  color: white;
+  border: none;
+
+  &:hover:not(:disabled) {
+    background-color: var(--accent-hover);
+  }
+}
+
+.btn-secondary {
+  background-color: transparent;
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+
+  &:hover:not(:disabled) {
+    background-color: var(--bg-subtle);
+  }
+}
+
+.spinner {
+  display: inline-block;
+  width: 1rem;
+  height: 1rem;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: white;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(10px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}

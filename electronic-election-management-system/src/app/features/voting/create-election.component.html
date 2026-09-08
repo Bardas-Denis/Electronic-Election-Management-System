@@ -976,7 +976,7 @@
               @for (scheme of scoringSchemes(); track scheme.id) {
               <option [value]="scheme.id">
                 {{ scheme.name }}
-                @if (scheme.isLinear) { ({{ 'elections.linearScheme' | translate }}) } @else { ({{ 'elections.pointsScheme' | translate: { count: scheme.points.length, points: scheme.points.join(', ') } }}) }
+                @if (scheme.pluginKey) { ({{ 'elections.pluginScheme' | translate }}) } @else if (scheme.isLinear) { ({{ 'elections.linearScheme' | translate }}) } @else { ({{ 'elections.pointsScheme' | translate: { count: scheme.points.length, points: scheme.points.join(', ') } }}) }
               </option>
               }
             </select>
@@ -999,20 +999,20 @@
                
             <label class="image-upload" [style.cursor]="isLocked() ? 'default' : 'pointer'" 
                    style="position: relative; margin-bottom: 0; width: 42px; height: 42px; min-height: 42px; display: flex; align-items: center; justify-content: center;">
-              @if (questions.at(questionIndex).get('imageDataUrl')?.value) {
-                <img [src]="questions.at(questionIndex).get('imageDataUrl')?.value" alt="Preview" style="max-height: 100%; max-width: 100%; object-fit: cover; border-radius: 4px;" />
+              @if (questions.at(questionIndex).get('imageId')?.value) {
+                <img [appElectionImage]="questions.at(questionIndex).get('imageId')?.value" alt="Preview" style="max-height: 100%; max-width: 100%; object-fit: cover; border-radius: 4px;" />
               } @else {
                 <span style="display: flex; align-items: center; justify-content: center;">＋</span>
               }
-              
+
               @if (!isLocked()) {
                 <input type="file" accept="image/png,image/jpeg,image/webp,image/gif"
-                       (change)="onQuestionImageSelected($event, questionIndex)" 
+                       (change)="onQuestionImageSelected($event, questionIndex)"
                        style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer;" />
               }
             </label>
 
-            @if (questions.at(questionIndex).get('imageDataUrl')?.value && !isLocked()) {
+            @if (questions.at(questionIndex).get('imageId')?.value && !isLocked()) {
               <button type="button" class="btn-image-remove"
                       (click)="removeQuestionImage(questionIndex)">
                 &#215;
@@ -1038,20 +1038,20 @@
               
             
             <label class="image-upload" [style.cursor]="isLocked() ? 'default' : 'pointer'" style="position: relative;">
-              @if (option.get('imageDataUrl')?.value) {
-              <img [src]="option.get('imageDataUrl')?.value" [alt]="option.get('label')?.value" />
+              @if (option.get('imageId')?.value) {
+              <img [appElectionImage]="option.get('imageId')?.value" [alt]="option.get('label')?.value" />
               } @else {
               <span>＋</span>
               }
-              
+
               @if (!isLocked()) {
               <input type="file" accept="image/png,image/jpeg,image/webp,image/gif"
-                     (change)="onOptionImageSelected($event, questionIndex, optionIndex)" 
+                     (change)="onOptionImageSelected($event, questionIndex, optionIndex)"
                      style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer;" />
               }
             </label>
 
-            @if (option.get('imageDataUrl')?.value && !isLocked()) {
+            @if (option.get('imageId')?.value && !isLocked()) {
             <button type="button" class="btn-image-remove"
                     (click)="removeOptionImage(questionIndex, optionIndex)">
               &#215;
@@ -1116,5 +1116,13 @@
       (created)="onSchemeCreated($event)"
       (cancelled)="closeCreateSchemeModal()"
   ></app-create-scoring-scheme-modal>
+  }
+
+  @if (cropTarget(); as target) {
+  <app-crop-image-modal
+      [file]="target.file"
+      (uploaded)="onImageCropped(target, $event)"
+      (cancelled)="closeCropModal()"
+  ></app-crop-image-modal>
   }
 </div>
