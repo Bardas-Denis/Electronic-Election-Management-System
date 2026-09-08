@@ -1,0 +1,78 @@
+<div class="modal-backdrop" (click)="onCancel()">
+  <div class="modal-card" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>{{ 'elections.cropImageHeader' | translate }}</h3>
+      <p>{{ 'elections.cropImageSubtitle' | translate }}</p>
+    </div>
+
+    <div class="crop-body">
+      <div #stage class="crop-stage" (wheel)="onWheel($event)">
+        @if (objectUrl(); as url) {
+          <img
+            #photo
+            class="crop-photo"
+            [src]="url"
+            draggable="false"
+            alt=""
+            (load)="onPhotoLoad($event)"
+            [style.width.px]="displayedWidth()"
+            [style.height.px]="displayedHeight()"
+          />
+
+          @if (boxSize() > 0) {
+            <div
+              class="crop-box"
+              [style.left.px]="boxLeftPx()"
+              [style.top.px]="boxTopPx()"
+              [style.width.px]="boxSizePx()"
+              [style.height.px]="boxSizePx()"
+              (pointerdown)="onPointerDown($event)"
+              (pointermove)="onPointerMove($event)"
+              (pointerup)="onPointerUp($event)"
+              (pointercancel)="onPointerUp($event)"
+            ></div>
+          }
+        }
+
+        @if (isUploading()) {
+          <div class="crop-stage__overlay">
+            <span class="spinner"></span>
+          </div>
+        }
+      </div>
+
+      <div class="zoom-control">
+        <label for="cropZoomSlider">{{ 'elections.zoomSliderLabel' | translate }}</label>
+        <input
+          id="cropZoomSlider"
+          type="range"
+          [min]="MIN_ZOOM"
+          [max]="MAX_ZOOM"
+          step="0.01"
+          [value]="zoom()"
+          [disabled]="isUploading()"
+          [style.--zoom-fill]="zoomTrackBackground()"
+          (input)="onZoomSlider($event)"
+        />
+      </div>
+    </div>
+
+    @if (errorMessageKey()) {
+      <p class="error-text modal-error">{{ errorMessageKey() | translate }}</p>
+    }
+
+    <div class="modal-actions">
+      <button type="button" class="btn-secondary" (click)="onCancel()" [disabled]="isUploading()">
+        {{ 'elections.cancel' | translate }}
+      </button>
+      <button type="button" class="btn-primary" (click)="onConfirm()" [disabled]="isUploading()">
+        @if (isUploading()) {
+          <span class="spinner"></span>
+          {{ 'elections.uploadingImage' | translate }}
+        } @else {
+          {{ 'elections.cropConfirm' | translate }}
+        }
+      </button>
+    </div>
+  </div>
+</div>

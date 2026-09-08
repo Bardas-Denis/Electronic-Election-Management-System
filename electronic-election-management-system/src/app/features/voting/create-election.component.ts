@@ -15,6 +15,7 @@ import {
   CreateElectionQuestionDto,
   ElectionDto,
   ElectionInvitationDto,
+  ImageUploadResultDto,
   InvitationCandidateDto,
   InvitationLabelDto,
   QuestionType
@@ -28,16 +29,24 @@ import {
   trimmedRequired,
   uniqueOptionLabels
 }
- 
+
 from '../../core/validators/input.validators';
 import { CreateScoringSchemeModalComponent } from './create-scoring-scheme-modal.component';
+import { CropImageModalComponent } from './crop-image-modal.component';
+import { ElectionImageDirective } from '../../core/directives/election-image.directive';
+
+// Which image picker the crop modal is currently servicing, and the raw file it
+// picked up - the modal itself uploads it and reports back which control to fill.
+type CropTarget =
+  | { kind: 'question'; questionIndex: number; file: File }
+  | { kind: 'option'; questionIndex: number; optionIndex: number; file: File };
 
 // This component handles both creation (/elections/new) and editing
 // (/elections/:id/edit).
 @Component({
   selector: 'app-create-election',
   standalone: true,
-imports: [CommonModule, ReactiveFormsModule, TranslatePipe, CreateScoringSchemeModalComponent, CdkDropList, CdkDrag, CdkDragHandle],
+imports: [CommonModule, ReactiveFormsModule, TranslatePipe, CreateScoringSchemeModalComponent, CropImageModalComponent, ElectionImageDirective, CdkDropList, CdkDrag, CdkDragHandle],
 templateUrl: './create-election.component.html',  
 styleUrl: './create-election.component.scss'
 })
@@ -53,6 +62,10 @@ export class CreateElectionComponent implements OnInit {
   scoringSchemesLoading = signal(false);
   scoringSchemesErrorKey = signal<string | null>(null);
   activeQuestionIndexForScheme = signal<number | null>(null);
+
+  // Which picture the crop modal is currently open for, if any - mirrors
+  // activeQuestionIndexForScheme's "null closes it" pattern.
+  cropTarget = signal<CropTarget | null>(null);
 
   isSubmitting = signal(false);
   isLoading = signal(false);
@@ -310,11 +323,12 @@ export class CreateElectionComponent implements OnInit {
     this.collapsedQuestions.set(newCollapsed);
   }
 
-  private createOptionGroup(option?: { label?: string; description?: string; imageDataUrl?: string }) {
+  private createOptionGroup(option?: { label?: string; description?: string; imageId?: string | null }) {
     return this.fb.group({
       label: [option?.label ?? '', [trimmedRequired, Validators.maxLength(INPUT_LIMITS.shortText)]],
       description: [option?.description ?? '', Validators.maxLength(INPUT_LIMITS.description)],
-      imageDataUrl: [option?.imageDataUrl ?? '']
+      // Null rather than '': the API binds Guid?, which rejects "".
+      imageId: [option?.imageId ?? null]
     });
   }
 
@@ -335,7 +349,8 @@ export class CreateElectionComponent implements OnInit {
       limitRankCount: [question?.requiredRankCount != null],
       requiredRankCount: [question?.requiredRankCount ?? null],
       scoringSchemeId: [question?.scoringSchemeId ?? null],
-      imageDataUrl: [(question as any)?.imageDataUrl ?? ''],
+      // Null rather than '': the API binds Guid?, which rejects "".
+      imageId: [question?.imageId ?? null],
       options: this.fb.array(
         optionGroups,
         [
@@ -483,45 +498,66 @@ export class CreateElectionComponent implements OnInit {
     }
   }
 
+  // Shared by both pickers: same accepted types, and the same size limit the
+  // backend enforces (ValidationRules.ImageMaxUploadBytes, mirrored client-side
+  // as INPUT_LIMITS.imageMaxUploadBytes) so a rejection here always matches one there.
+  private isValidImageFile(file: File): boolean {
+    const allowedTypes = new Set(['image/png', 'image/jpeg', 'image/webp', 'image/gif']);
+    return allowedTypes.has(file.type) && file.size <= INPUT_LIMITS.imageMaxUploadBytes;
+  }
+
   onOptionImageSelected(event: Event, questionIndex: number, optionIndex: number): void {
     if (this.isLocked()) return;
-    const file = (event.target as HTMLInputElement).files?.[0];
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    input.value = ''; // allows re-picking the same file after cancelling the crop
     if (!file) return;
-    const allowedTypes = new Set(['image/png', 'image/jpeg', 'image/webp', 'image/gif']);
-    if (!allowedTypes.has(file.type) || file.size > 2_000_000) {
+    if (!this.isValidImageFile(file)) {
       this.errorMessageKey.set('elections.optionImageInvalid');
       return;
     }
-    const reader = new FileReader();
-    reader.onload = () => this.questionOptions(questionIndex).at(optionIndex)
-      .get('imageDataUrl')?.setValue(reader.result as string);
-    reader.readAsDataURL(file);
+    this.cropTarget.set({ kind: 'option', questionIndex, optionIndex, file });
   }
 
   removeOptionImage(questionIndex: number, optionIndex: number): void {
     if (this.isLocked()) return;
-    this.questionOptions(questionIndex).at(optionIndex).get('imageDataUrl')?.setValue('');
+    // Null rather than '': the API binds Guid?, which rejects "".
+    this.questionOptions(questionIndex).at(optionIndex).get('imageId')?.setValue(null);
   }
 
   onQuestionImageSelected(event: Event, questionIndex: number): void {
     if (this.isLocked()) return;
-    const file = (event.target as HTMLInputElement).files?.[0];
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    input.value = '';
     if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = () => {
-      const questionGroup = this.questions.at(questionIndex);
-      questionGroup.get('imageDataUrl')?.setValue(reader.result as string);
-      questionGroup.markAsDirty();
-    };
-    reader.readAsDataURL(file);
+    if (!this.isValidImageFile(file)) {
+      this.errorMessageKey.set('elections.optionImageInvalid');
+      return;
+    }
+    this.cropTarget.set({ kind: 'question', questionIndex, file });
   }
 
   removeQuestionImage(questionIndex: number): void {
     if (this.isLocked()) return;
     const questionGroup = this.questions.at(questionIndex);
-    questionGroup.get('imageDataUrl')?.setValue('');
+    questionGroup.get('imageId')?.setValue(null);
     questionGroup.markAsDirty();
+  }
+
+  // The crop modal uploads the cropped picture itself and hands back the real
+  // imageId - fill in whichever control opened it, then close the modal.
+  onImageCropped(target: CropTarget, result: ImageUploadResultDto): void {
+    const control = target.kind === 'question'
+      ? this.questions.at(target.questionIndex).get('imageId')
+      : this.questionOptions(target.questionIndex).at(target.optionIndex).get('imageId');
+    control?.setValue(result.id);
+    control?.markAsDirty();
+    this.cropTarget.set(null);
+  }
+
+  closeCropModal(): void {
+    this.cropTarget.set(null);
   }
 
   addInviteEmail(): void {
@@ -1300,18 +1336,6 @@ export class CreateElectionComponent implements OnInit {
     // already carries "no limit".
     payload.questions = payload.questions.map((question: any) => {
       const { limitRankCount, ...cleanQuestion } = question;
-      
-      if (cleanQuestion.questionType === 'FreeText') {
-        if (cleanQuestion.imageDataUrl) {
-          cleanQuestion.options = [{
-            label: 'FreeText_Image',
-            description: '',
-            imageDataUrl: cleanQuestion.imageDataUrl
-          }];
-        } else {
-          cleanQuestion.options = [];
-        }
-      }
       return cleanQuestion;
     });
 
@@ -1576,26 +1600,19 @@ function toDatetimeLocal(isoDate: string): string {
 export function normalizeEditableQuestions(election: ElectionDto): CreateElectionQuestionDto[] {
   if (Array.isArray(election.questions) && election.questions.length > 0) {
     return election.questions.map((question: any, index) => {
-      let recoveredImage = question.imageDataUrl ?? question.imageId ?? '';
-      
-      let recoveredOptions = Array.isArray(question.options) && question.options.length > 0
+      const recoveredOptions = Array.isArray(question.options) && question.options.length > 0
         ? question.options.map((option: any) => ({
           label: option.label ?? '',
           description: option.description ?? '',
-          imageDataUrl: option.imageDataUrl ?? option.imageId ?? ''
+          imageId: option.imageId ?? null
         }))
         : index === 0
           ? (election.options ?? []).map((option: any) => ({
             label: option.label ?? '',
             description: option.description ?? '',
-            imageDataUrl: option.imageDataUrl ?? option.imageId ?? ''
+            imageId: option.imageId ?? null
           }))
           : [];
-
-      if (question.questionType === 'FreeText' && recoveredOptions.length > 0 && recoveredOptions[0].label === 'FreeText_Image') {
-        recoveredImage = recoveredOptions[0].imageDataUrl ?? ''; 
-        recoveredOptions = []; 
-      }
 
       return {
         text: question.text || (index === 0 ? election.question : '') || '',
@@ -1605,9 +1622,10 @@ export function normalizeEditableQuestions(election: ElectionDto): CreateElectio
         allowOtherOption: question.allowOtherOption ?? false,
         requiredRankCount: question.requiredRankCount ?? null,
         scoringSchemeId: question.scoringSchemeId ?? undefined,
-        imageDataUrl: recoveredImage,
+        // Null rather than '': the API binds Guid?, which rejects "".
+        imageId: question.imageId ?? null,
         options: recoveredOptions
-      } as unknown as CreateElectionQuestionDto;
+      } as CreateElectionQuestionDto;
     });
   }
 
@@ -1619,11 +1637,11 @@ export function normalizeEditableQuestions(election: ElectionDto): CreateElectio
     allowOtherOption: false,
     requiredRankCount: null,
     scoringSchemeId: undefined,
-    imageDataUrl: '',
+    imageId: null,
     options: (election.options ?? []).map((option: any) => ({
       label: option.label ?? '',
       description: option.description ?? '',
-      imageDataUrl: option.imageDataUrl ?? option.imageId ?? ''
+      imageId: option.imageId ?? null
     }))
-  } as unknown as CreateElectionQuestionDto];
+  } as CreateElectionQuestionDto];
 }
