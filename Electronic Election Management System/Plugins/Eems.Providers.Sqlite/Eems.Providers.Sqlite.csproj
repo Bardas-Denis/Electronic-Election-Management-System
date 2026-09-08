@@ -34,36 +34,7 @@
     </ProjectReference>
   </ItemGroup>
 
-  <!-- Developer convenience: drops the plugin and its dependencies where the API looks for them.
-       The whole output is copied, not just the assembly, because a provider needs its own
-       packages and SQLite needs its native library beside them. -->
-  <Target Name="CopyToHostPluginFolder" AfterTargets="Build" Condition="'$(Configuration)' == 'Debug'">
-    <PropertyGroup>
-      <HostPluginDir>$(MSBuildThisFileDirectory)..\..\Electronic Election Management System\bin\$(Configuration)\$(TargetFramework)\plugins\</HostPluginDir>
-    </PropertyGroup>
-    <ItemGroup>
-      <!-- Two families are filtered out. Private=false does not actually keep a
-           ProjectReference out of the output, so the host's own assemblies go first. The rest is
-           the EF Design tooling chain - Roslyn, MSBuild, Humanizer - which dotnet ef needs at
-           design time and which has no business beside a running plugin. -->
-      <PluginFiles Include="$(TargetDir)**\*"
-                   Exclude="$(TargetDir)**\*.pdb;
-                            $(TargetDir)Electronic Election Management System.*.dll;
-                            $(TargetDir)Microsoft.EntityFrameworkCore.Design.dll;
-                            $(TargetDir)Microsoft.CodeAnalysis*.dll;
-                            $(TargetDir)Microsoft.Build*.dll;
-                            $(TargetDir)Microsoft.VisualStudio.*.dll;
-                            $(TargetDir)System.Composition.*.dll;
-                            $(TargetDir)System.CodeDom.dll;
-                            $(TargetDir)Mono.TextTemplating.dll;
-                            $(TargetDir)Newtonsoft.Json.dll;
-                            $(TargetDir)Humanizer.dll;
-                            $(TargetDir)BuildHost-*\**\*" />
-    </ItemGroup>
-    <MakeDir Directories="$(HostPluginDir)" />
-    <Copy SourceFiles="@(PluginFiles)"
-          DestinationFiles="@(PluginFiles->'$(HostPluginDir)%(RecursiveDir)%(Filename)%(Extension)')"
-          SkipUnchangedFiles="true" />
-  </Target>
+  <!-- The Debug-time copy into the host's plugin folder lives in Plugins/Directory.Build.targets,
+       shared by every plugin project. -->
 
 </Project>

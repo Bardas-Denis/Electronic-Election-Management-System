@@ -113,13 +113,13 @@ public sealed class PostgresDatabaseProvider : IDatabaseProvider
 
     /// <summary>
     /// Attempts to open a live connection to the database described by
-    /// <paramref name="provider"/> and <paramref name="connectionString"/>.
+    /// <paramref name="connectionString"/>.
     /// </summary>
-    /// <param name="provider">
-    /// Case-insensitive provider name — <c>"Sqlite"</c> or <c>"Postgres"</c>.
-    /// </param>
-    /// <param name="connectionString">Provider-specific connection string.</param>
-
+    /// <param name="connectionString">PostgreSQL connection string.</param>
+    /// <param name="logger">Receives the failure detail, which never includes the credentials.</param>
+    /// <returns>
+    /// <c>null</c> when the connection succeeded, otherwise a message safe to show the caller.
+    /// </returns>
     public async Task<string?> TestConnectionAsync(string connectionString, ILogger logger)
     {
         try

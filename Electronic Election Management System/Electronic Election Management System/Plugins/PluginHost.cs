@@ -95,12 +95,10 @@ public sealed class PluginHost : IPluginHost
             }
 
             // A plugin ships with its own dependencies, so the folder holds far more than
-            // plugins. Anything the host must own is skipped outright: loading it here would
-            // create a second copy of a type that crosses the boundary, and every plugin using
-            // it would then be rejected with no error raised anywhere. Everything else is
+            // plugins. Anything the host already owns is skipped outright: a second copy of a
+            // type that crosses the boundary breaks type identity, and every plugin using it
+            // would then be rejected with no error raised anywhere. Everything else is
             // inspected and simply yields no plugin types.
-            // Anything the host already has loaded is its own; reflecting over a second copy
-            // achieves nothing and throws while doing it.
             if (AssemblyLoadContext.Default.Assemblies.Any(a => a.GetName().Name == simpleName))
             {
                 _logger.LogDebug("Skipping {File}: the host already owns this assembly.", file);

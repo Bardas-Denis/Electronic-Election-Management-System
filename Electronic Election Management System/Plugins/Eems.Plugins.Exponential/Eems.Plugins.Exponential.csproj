@@ -16,13 +16,7 @@
     </ProjectReference>
   </ItemGroup>
 
-  <!-- Developer convenience only: drops the built plugin where the API will look for it. -->
-  <Target Name="CopyToHostPluginFolder" AfterTargets="Build" Condition="'$(Configuration)' == 'Debug'">
-    <PropertyGroup>
-      <HostPluginDir>$(MSBuildThisFileDirectory)..\..\Electronic Election Management System\bin\$(Configuration)\$(TargetFramework)\plugins\</HostPluginDir>
-    </PropertyGroup>
-    <MakeDir Directories="$(HostPluginDir)" />
-    <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(HostPluginDir)" />
-  </Target>
+  <!-- The Debug-time copy into the host's plugin folder lives in Plugins/Directory.Build.targets,
+       shared by every plugin project. -->
 
 </Project>

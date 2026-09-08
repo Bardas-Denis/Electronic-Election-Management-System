@@ -32,7 +32,11 @@ RUN dotnet publish "./Electronic Election Management System.csproj" -c $BUILD_CO
 # loader scans rather than into the application's own output. Without the two providers the
 # container has no way to reach a database and refuses to start.
 WORKDIR /src
-RUN for p in Plugins/Eems.Providers.Sqlite Plugins/Eems.Providers.Postgres Plugins/Eems.Plugins.Exponential; do \
+# set -e is load-bearing: a sh for-loop reports only its last iteration's exit code, so without it
+# a failed provider publish would leave the layer green and ship an image whose missing provider
+# only surfaces as a startup failure on the customer's machine.
+RUN set -e; \
+    for p in Plugins/Eems.Providers.Sqlite Plugins/Eems.Providers.Postgres Plugins/Eems.Plugins.Exponential; do \
         dotnet publish "$p" -c $BUILD_CONFIGURATION -o /app/publish/plugins /p:UseAppHost=false; \
     done
 

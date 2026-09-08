@@ -1,0 +1,43 @@
+<Project>
+
+  <!-- Imported automatically by every project under Plugins/. The copy step lived in all three
+       plugin .csproj files verbatim, exclude list and all, so a fix to it had to be made three
+       times and the copies were free to drift apart. -->
+
+  <!-- Developer convenience: drops the built plugin and its dependencies where the API looks for
+       them. The whole output is copied, not just the assembly, because a plugin is loaded from a
+       folder rather than resolved against the host's dependency graph - it has to bring its own
+       packages, and SQLite additionally needs its native library sitting beside them. Release
+       builds are left alone: the container publishes each plugin explicitly (see Dockerfile). -->
+  <Target Name="CopyToHostPluginFolder" AfterTargets="Build" Condition="'$(Configuration)' == 'Debug'">
+    <PropertyGroup>
+      <HostPluginDir>$(MSBuildThisFileDirectory)..\Electronic Election Management System\bin\$(Configuration)\$(TargetFramework)\plugins\</HostPluginDir>
+    </PropertyGroup>
+    <ItemGroup>
+      <!-- Two families are filtered out. Private=false does not actually keep a ProjectReference
+           out of the output, so the host's own assemblies go first: a second copy of a type that
+           crosses the plugin boundary breaks type identity, and the plugin is then skipped at load
+           time without any error being raised. The rest is the EF Design tooling chain - Roslyn,
+           MSBuild, Humanizer - which dotnet ef needs at design time and which has no business
+           beside a running plugin. -->
+      <PluginFiles Include="$(TargetDir)**\*"
+                   Exclude="$(TargetDir)**\*.pdb;
+                            $(TargetDir)Electronic Election Management System.*.dll;
+                            $(TargetDir)Microsoft.EntityFrameworkCore.Design.dll;
+                            $(TargetDir)Microsoft.CodeAnalysis*.dll;
+                            $(TargetDir)Microsoft.Build*.dll;
+                            $(TargetDir)Microsoft.VisualStudio.*.dll;
+                            $(TargetDir)System.Composition.*.dll;
+                            $(TargetDir)System.CodeDom.dll;
+                            $(TargetDir)Mono.TextTemplating.dll;
+                            $(TargetDir)Newtonsoft.Json.dll;
+                            $(TargetDir)Humanizer.dll;
+                            $(TargetDir)BuildHost-*\**\*" />
+    </ItemGroup>
+    <MakeDir Directories="$(HostPluginDir)" />
+    <Copy SourceFiles="@(PluginFiles)"
+          DestinationFiles="@(PluginFiles->'$(HostPluginDir)%(RecursiveDir)%(Filename)%(Extension)')"
+          SkipUnchangedFiles="true" />
+  </Target>
+
+</Project>

@@ -16,13 +16,18 @@ public sealed class ExponentialScoringPlugin : IScoringPlugin
 
     public string DisplayName => "Exponential (doubling)";
 
-    // 2^20 is already past any meaningful ballot; the cap only stops the shift overflowing.
+    // The doubling has to stop somewhere: this contract returns an int, and a question may carry
+    // up to ValidationRules.MaxOptionsPerQuestion (50) options, so 2^49 is not on the table.
     private const int MaxExponent = 20;
 
     public int GetPoints(RankingContext context)
     {
         if (context.Rank < 1 || context.Rank > context.OptionsCount) return 0;
 
-        return 1 << Math.Min(context.OptionsCount - context.Rank, MaxExponent);
+        // The cap bounds how far down the ballot the doubling runs, not the exponent of a given
+        // rank. Clamping the exponent instead would tie every rank further than the cap from last
+        // place, collapsing the top of a long ballot - where the order matters most - into one score.
+        var exponent = Math.Min(context.OptionsCount, MaxExponent + 1) - context.Rank;
+        return exponent > 0 ? 1 << exponent : 1;
     }
 }

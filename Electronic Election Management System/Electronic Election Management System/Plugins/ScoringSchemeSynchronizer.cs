@@ -21,7 +21,11 @@ public static class ScoringSchemeSynchronizer
 
         foreach (var plugin in host.GetAll<IScoringPlugin>())
         {
-            var row = pluginSchemes.FirstOrDefault(s => s.PluginKey == plugin.Key);
+            // Case-insensitive to match how IPluginHost.TryGet resolves a key. A case-sensitive
+            // comparison here would miss a row whose stored key differs only in casing and insert
+            // a second one beside it, and both would then resolve back to this same plugin.
+            var row = pluginSchemes.FirstOrDefault(
+                s => string.Equals(s.PluginKey, plugin.Key, StringComparison.OrdinalIgnoreCase));
 
             if (row is null)
             {

@@ -9,10 +9,14 @@ public sealed class PluginOptions
     public const string SectionName = "Plugins";
 
     /// <summary>
-    /// Loading third-party assemblies stays off unless it is switched on explicitly. The default
-    /// is what a deployment gets when nobody thought about plugins at all.
+    /// Whether the plugin folder is scanned at all.
     /// </summary>
-    public bool Enabled { get; init; }
+    /// <remarks>
+    /// On by default because the database providers are themselves plugins: with this off there is
+    /// no way to reach a database, so the setup wizard offers no providers and a configured
+    /// instance refuses to start. Turning it off only helps to isolate a plugin load failure.
+    /// </remarks>
+    public bool Enabled { get; init; } = true;
 
     /// <summary>Plugin folder, relative to the application directory.</summary>
     public string Directory { get; init; } = "plugins";
