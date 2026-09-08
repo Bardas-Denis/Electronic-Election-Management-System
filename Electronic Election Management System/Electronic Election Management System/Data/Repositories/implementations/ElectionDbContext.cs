@@ -288,10 +288,26 @@ namespace Electronic_Election_Management_System.Data
                 .HasIndex(ud => ud.UserId)
                 .IsUnique();
 
-            // Label: unique name
+            // Label: a name is unique among its siblings, not globally — two countries may
+            // both have a "Valencia", and only their parent tells them apart.
             modelBuilder.Entity<Label>()
-                .HasIndex(l => l.Name)
+                .HasIndex(l => new { l.ParentId, l.Name })
                 .IsUnique();
+
+            // Label: the ISO code is the stable identity for geographic labels. Filtered, because
+            // non-geographic labels ("football") legitimately share a null code.
+            modelBuilder.Entity<Label>()
+                .HasIndex(l => l.Code)
+                .IsUnique()
+                .HasFilter("\"Code\" IS NOT NULL");
+
+            // Label → parent Label: Restrict, so deleting a country cannot silently take its
+            // subdivisions — and every user assignment hanging off them — with it.
+            modelBuilder.Entity<Label>()
+                .HasOne(l => l.Parent)
+                .WithMany(l => l.Children)
+                .HasForeignKey(l => l.ParentId)
+                .OnDelete(DeleteBehavior.Restrict);
 
             // UserLabel: composite PK (UserId, LabelId) — also serves as the unique constraint
             modelBuilder.Entity<UserLabel>()

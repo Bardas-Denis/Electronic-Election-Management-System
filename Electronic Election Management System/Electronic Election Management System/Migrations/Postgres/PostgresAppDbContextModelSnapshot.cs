@@ -242,6 +242,9 @@ namespace Electronic_Election_Management_System.Migrations.Postgres
                     b.Property<string>("Category")
                         .HasColumnType("text");
 
+                    b.Property<string>("Code")
+                        .HasColumnType("text");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -249,9 +252,16 @@ namespace Electronic_Election_Management_System.Migrations.Postgres
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<Guid?>("ParentId")
+                        .HasColumnType("uuid");
+
                     b.HasKey("Id");
 
-                    b.HasIndex("Name")
+                    b.HasIndex("Code")
+                        .IsUnique()
+                        .HasFilter("\"Code\" IS NOT NULL");
+
+                    b.HasIndex("ParentId", "Name")
                         .IsUnique();
 
                     b.ToTable("Labels");
@@ -718,6 +728,16 @@ namespace Electronic_Election_Management_System.Migrations.Postgres
                     b.Navigation("ScoringScheme");
                 });
 
+            modelBuilder.Entity("Electronic_Election_Management_System.Models.Label", b =>
+                {
+                    b.HasOne("Electronic_Election_Management_System.Models.Label", "Parent")
+                        .WithMany("Children")
+                        .HasForeignKey("ParentId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Parent");
+                });
+
             modelBuilder.Entity("Electronic_Election_Management_System.Models.Notification", b =>
                 {
                     b.HasOne("Electronic_Election_Management_System.Models.User", "User")
@@ -904,6 +924,8 @@ namespace Electronic_Election_Management_System.Migrations.Postgres
 
             modelBuilder.Entity("Electronic_Election_Management_System.Models.Label", b =>
                 {
+                    b.Navigation("Children");
+
                     b.Navigation("UserLabels");
                 });
 
