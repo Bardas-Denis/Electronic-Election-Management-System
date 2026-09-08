@@ -26,6 +26,20 @@ namespace Electronic_Election_Management_System.Data.Repositories
         public Task<bool> HasChildrenAsync(Guid id)
             => _db.Labels.AnyAsync(l => l.ParentId == id);
 
+        public Task<List<GeographicNode>> GetCountriesAsync()
+            => _db.Labels
+                .Where(l => l.Category == LabelCategories.Country)
+                .OrderBy(l => l.Name)
+                .Select(l => new GeographicNode(l.Id, l.Name, l.Code, l.Category, l.Children.Any()))
+                .ToListAsync();
+
+        public Task<List<GeographicNode>> GetChildrenAsync(Guid parentId)
+            => _db.Labels
+                .Where(l => l.ParentId == parentId)
+                .OrderBy(l => l.Name)
+                .Select(l => new GeographicNode(l.Id, l.Name, l.Code, l.Category, l.Children.Any()))
+                .ToListAsync();
+
         public Task<Label?> GetByIdAsync(Guid id)
             => _db.Labels.FirstOrDefaultAsync(l => l.Id == id);
 

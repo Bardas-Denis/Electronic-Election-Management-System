@@ -5,6 +5,12 @@ using Electronic_Election_Management_System.Models;
 
 namespace Electronic_Election_Management_System.Data.Repositories
 {
+    /// <summary>
+    /// One node of the geographic tree, flattened for browsing. <paramref name="HasChildren"/>
+    /// is computed in the same query so a caller never has to ask node by node.
+    /// </summary>
+    public record GeographicNode(Guid Id, string Name, string? Code, string? Category, bool HasChildren);
+
     public interface ILabelRepository
     {
         // --- Label CRUD ---
@@ -18,6 +24,17 @@ namespace Electronic_Election_Management_System.Data.Repositories
 
         /// <summary>True when other labels point at this one as their parent.</summary>
         Task<bool> HasChildrenAsync(Guid id);
+
+        // --- Geographic tree ---
+
+        /// <summary>Every country, ordered by name. Roughly 240 rows.</summary>
+        Task<List<GeographicNode>> GetCountriesAsync();
+
+        /// <summary>
+        /// The direct children of one node, ordered by name. Never the whole subtree — the tree
+        /// is browsed one level at a time so no request ever carries thousands of rows.
+        /// </summary>
+        Task<List<GeographicNode>> GetChildrenAsync(Guid parentId);
 
         /// <summary>Returns a label by id, or null if not found.</summary>
         Task<Label?> GetByIdAsync(Guid id);

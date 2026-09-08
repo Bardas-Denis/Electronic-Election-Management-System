@@ -84,6 +84,43 @@ public class WorldSubdivisionsDataTests
         romania.Subs.Select(s => s.Name).Should().Contain("Cluj");
     }
 
+    [Fact]
+    public void EveryCountryCodeIsATwoLetterIsoCode()
+    {
+        // Natural Earth files disputed and unclaimed areas under a placeholder country code
+        // ("-1"), lumping Somaliland, Northern Cyprus and Guantanamo Bay into one pseudo-country.
+        // Those are not countries and must never reach the tree as roots.
+        Countries.Select(c => c.Code!).Should().OnlyContain(code => IsIsoCountryCode(code));
+    }
+
+    [Theory]
+    [InlineData("RO", "Romania")]
+    [InlineData("GB", "United Kingdom")]
+    [InlineData("FR", "France")]
+    [InlineData("BE", "Belgium")]
+    [InlineData("DE", "Germany")]
+    [InlineData("TK", "Tokelau")]
+    public void WellKnownCountriesCarryTheirUsualName(string code, string expected)
+    {
+        // The source names a country in several fields that disagree: for the United Kingdom one
+        // of them says "Northern Ireland", for France "French Guiana". Picking the wrong field
+        // produces a file that still passes every structural check while naming countries wrongly.
+        var country = Countries.SingleOrDefault(c => c.Code == code);
+
+        country.Should().NotBeNull();
+        country!.Name.Should().Be(expected);
+    }
+
+    [Fact]
+    public void EveryCountryHasAtLeastOneSubdivision()
+    {
+        // A country with no children would show an empty picker with no way forward.
+        Countries.Should().OnlyContain(c => c.Subs.Count > 0);
+    }
+
+    private static bool IsIsoCountryCode(string code) =>
+        code.Length == 2 && code.All(char.IsAsciiLetterUpper);
+
     private static IReadOnlyList<SeedCountry> Load()
     {
         var path = Path.Combine(AppContext.BaseDirectory, "Geo", "world-subdivisions.json");
