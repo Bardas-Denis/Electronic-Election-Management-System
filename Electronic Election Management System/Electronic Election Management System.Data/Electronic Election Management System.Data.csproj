@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <!-- Namespaces deliberately keep the original Electronic_Election_Management_System.* roots.
+         The entity model and DbContext moved assembly, not identity, so the API and the database
+         provider plugins that both consume them need no source changes. -->
+    <RootNamespace>Electronic_Election_Management_System</RootNamespace>
+    <AssemblyName>Electronic Election Management System.Data</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Relational is provider-neutral - it is what every SQL provider builds on, and it carries
+         the mapping API this model needs (ToTable with check constraints). The providers
+         themselves arrive as plugins; this assembly must not know which database it talks to. -->
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.9" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.9" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Electronic Election Management System.PluginContracts\Electronic Election Management System.PluginContracts.csproj" />
+  </ItemGroup>
+
+</Project>

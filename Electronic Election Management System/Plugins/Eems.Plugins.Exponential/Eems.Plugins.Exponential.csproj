@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Private/ExcludeAssets keep Eems.PluginContracts.dll out of this project's output. The
+         host supplies the contract; a second copy on disk breaks type identity at load time and
+         the plugin would be skipped without any error being raised. -->
+    <ProjectReference Include="..\..\Electronic Election Management System.PluginContracts\Electronic Election Management System.PluginContracts.csproj">
+      <Private>false</Private>
+      <ExcludeAssets>runtime</ExcludeAssets>
+    </ProjectReference>
+  </ItemGroup>
+
+  <!-- The Debug-time copy into the host's plugin folder lives in Plugins/Directory.Build.targets,
+       shared by every plugin project. -->
+
+</Project>

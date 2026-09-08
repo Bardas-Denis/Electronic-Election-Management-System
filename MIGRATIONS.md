@@ -16,10 +16,23 @@ Set in appsettings.Development.json (do not commit this change):
 
 Adding a Migration
 
-When you change the model in ElectionDbContext, run both commands:
+Migrations live with the database provider that owns them, not in the API project. Each provider
+is a plugin under Plugins/, carrying its own EF package and its own migration set.
 
-    dotnet ef migrations add <Name> --context SqliteAppDbContext   --output-dir Migrations
-    dotnet ef migrations add <Name> --context PostgresAppDbContext --output-dir Migrations/Postgres
+From the solution folder, run both commands:
+
+    dotnet ef migrations add <Name> \
+        --project "Plugins/Eems.Providers.Sqlite/Eems.Providers.Sqlite.csproj" \
+        --startup-project "Plugins/Eems.Providers.Sqlite/Eems.Providers.Sqlite.csproj" \
+        --output-dir Migrations
+
+    dotnet ef migrations add <Name> \
+        --project "Plugins/Eems.Providers.Postgres/Eems.Providers.Postgres.csproj" \
+        --startup-project "Plugins/Eems.Providers.Postgres/Eems.Providers.Postgres.csproj" \
+        --output-dir Migrations
+
+The model itself still lives in Electronic Election Management System.Data - that is what you
+edit. The providers only carry the generated migrations.
 
 Always commit both migration files and their updated snapshots together.
 
@@ -27,14 +40,29 @@ Always commit both migration files and their updated snapshots together.
 ---
 
 
+Removing a Migration
+
+    dotnet ef migrations remove --project <provider csproj> --startup-project <same> [--force]
+
+Removing checks whether the migration was already applied, so it opens a real connection. For
+Postgres that means a reachable server: start it with docker compose up -d postgres, or point
+the design-time factory elsewhere with EEMS_DESIGNTIME_POSTGRES. Adding a migration never
+connects, so it needs neither.
+
+Use --force to skip the check when the database is not available.
+
+
+---
+
+
 Applying Migrations
 
-Automatic: db.Database.Migrate() runs on every app startup.
+Automatic: db.Database.Migrate() runs on every app startup, using whichever provider plugin
+data/dbconfig.json names.
 
 Manual / CI:
 
-    dotnet ef database update --context SqliteAppDbContext
-    dotnet ef database update --context PostgresAppDbContext
+    dotnet ef database update --project <provider csproj> --startup-project <same>
 
 
 ---
@@ -66,8 +94,12 @@ For SQLite: delete election.db from the project folder, then dotnet run.
 
 Notes
 
-- Model snapshots (ElectionDbContextModelSnapshot.cs, PostgresAppDbContextModelSnapshot.cs)
-  are auto-generated. Never edit them manually.
+- Model snapshots are auto-generated and live beside their migrations, inside each provider
+  plugin. Never edit them manually.
+
+- A provider is only available if its assembly is in the plugin folder. Deleting it removes that
+  database from the setup screen, and the application refuses to start if dbconfig.json names a
+  provider that is not installed.
 
 - Repositories inject ElectionDbContext and are unaffected by provider switches.
   Program.cs handles the DI wiring internally.

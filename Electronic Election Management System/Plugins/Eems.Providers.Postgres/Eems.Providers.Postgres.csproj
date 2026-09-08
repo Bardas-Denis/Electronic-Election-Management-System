@@ -1,0 +1,39 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <!-- A library does not copy its NuGet assemblies to the output. A plugin must:
+         it is loaded from a folder, not resolved against the host's dependency graph. -->
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.3" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.9">
+      <PrivateAssets>all</PrivateAssets>
+      <!-- Tooling only, for dotnet ef. Without trimming this to build assets the whole
+           scaffolding chain - Roslyn, MSBuild, Humanizer - lands in the plugin folder. -->
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The host owns these. A copy in the plugin folder would define a second set of the types
+         that cross the boundary, and the provider would be rejected with no error raised. -->
+    <ProjectReference Include="..\..\Electronic Election Management System.Data\Electronic Election Management System.Data.csproj">
+      <Private>false</Private>
+      <ExcludeAssets>runtime</ExcludeAssets>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Electronic Election Management System.PluginContracts\Electronic Election Management System.PluginContracts.csproj">
+      <Private>false</Private>
+      <ExcludeAssets>runtime</ExcludeAssets>
+    </ProjectReference>
+  </ItemGroup>
+
+  <!-- The Debug-time copy into the host's plugin folder lives in Plugins/Directory.Build.targets,
+       shared by every plugin project. -->
+
+</Project>
