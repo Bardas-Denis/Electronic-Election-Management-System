@@ -22,6 +22,15 @@ namespace Electronic_Election_Management_System.Models
         public string? Code { get; set; }
 
         /// <summary>
+        /// What this place actually is, in words: "County", "City", "Commune", "Region".
+        /// Free text and purely descriptive — unlike <see cref="Category"/>, which carries the
+        /// tree's structure and is derived rather than typed. Seeded from the source data and
+        /// editable afterwards, so "County" can become "Județ" without touching anything that
+        /// depends on the tree's shape.
+        /// </summary>
+        public string? Kind { get; set; }
+
+        /// <summary>
         /// Parent in the geographic tree — a subdivision points at its country. Null for a root:
         /// every country, and every label that is not part of a tree at all.
         /// </summary>

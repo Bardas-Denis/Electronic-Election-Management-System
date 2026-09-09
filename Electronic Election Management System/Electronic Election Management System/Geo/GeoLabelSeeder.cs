@@ -102,6 +102,9 @@ namespace Electronic_Election_Management_System.Geo
                         Name = sub.Name.Trim(),
                         Code = sub.Code.Trim(),
                         Category = LabelCategories.Subdivision,
+                        // What the source calls it — "County", "State", "Department". Purely
+                        // descriptive, and an administrator is free to translate it afterwards.
+                        Kind = string.IsNullOrWhiteSpace(sub.Type) ? null : sub.Type.Trim(),
                         ParentId = countryLabel.Id
                     });
                     subdivisionCount++;

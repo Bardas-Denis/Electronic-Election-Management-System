@@ -42,7 +42,7 @@ namespace Electronic_Election_Management_System.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("AuditLogs", (string)null);
+                    b.ToTable("AuditLogs");
                 });
 
             modelBuilder.Entity("Electronic_Election_Management_System.Models.Election", b =>
@@ -93,7 +93,7 @@ namespace Electronic_Election_Management_System.Migrations
 
                     b.HasIndex("CreatedByUserId");
 
-                    b.ToTable("Elections", (string)null);
+                    b.ToTable("Elections");
                 });
 
             modelBuilder.Entity("Electronic_Election_Management_System.Models.ElectionImage", b =>
@@ -140,7 +140,7 @@ namespace Electronic_Election_Management_System.Migrations
 
                     b.HasIndex("UploadedByUserId");
 
-                    b.ToTable("ElectionImages", (string)null);
+                    b.ToTable("ElectionImages");
                 });
 
             modelBuilder.Entity("Electronic_Election_Management_System.Models.ElectionInvitation", b =>
@@ -173,7 +173,7 @@ namespace Electronic_Election_Management_System.Migrations
                     b.HasIndex("ElectionId", "Email")
                         .IsUnique();
 
-                    b.ToTable("ElectionInvitations", (string)null);
+                    b.ToTable("ElectionInvitations");
                 });
 
             modelBuilder.Entity("Electronic_Election_Management_System.Models.ElectionQuestion", b =>
@@ -225,7 +225,7 @@ namespace Electronic_Election_Management_System.Migrations
 
                     b.HasIndex("ScoringSchemeId");
 
-                    b.ToTable("ElectionQuestions", (string)null);
+                    b.ToTable("ElectionQuestions");
                 });
 
             modelBuilder.Entity("Electronic_Election_Management_System.Models.Label", b =>
@@ -241,6 +241,9 @@ namespace Electronic_Election_Management_System.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Kind")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Name")
@@ -259,7 +262,7 @@ namespace Electronic_Election_Management_System.Migrations
                     b.HasIndex("ParentId", "Name")
                         .IsUnique();
 
-                    b.ToTable("Labels", (string)null);
+                    b.ToTable("Labels");
                 });
 
             modelBuilder.Entity("Electronic_Election_Management_System.Models.Notification", b =>
@@ -292,7 +295,7 @@ namespace Electronic_Election_Management_System.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("Notifications", (string)null);
+                    b.ToTable("Notifications");
                 });
 
             modelBuilder.Entity("Electronic_Election_Management_System.Models.Option", b =>
@@ -328,7 +331,7 @@ namespace Electronic_Election_Management_System.Migrations
 
                     b.HasIndex("QuestionId");
 
-                    b.ToTable("Options", (string)null);
+                    b.ToTable("Options");
                 });
 
             modelBuilder.Entity("Electronic_Election_Management_System.Models.ScoringScheme", b =>
@@ -365,7 +368,7 @@ namespace Electronic_Election_Management_System.Migrations
                     b.HasIndex("PluginKey")
                         .IsUnique();
 
-                    b.ToTable("ScoringSchemes", (string)null);
+                    b.ToTable("ScoringSchemes");
                 });
 
             modelBuilder.Entity("Electronic_Election_Management_System.Models.User", b =>
@@ -398,7 +401,7 @@ namespace Electronic_Election_Management_System.Migrations
                     b.HasIndex("Email")
                         .IsUnique();
 
-                    b.ToTable("Users", (string)null);
+                    b.ToTable("Users");
                 });
 
             modelBuilder.Entity("Electronic_Election_Management_System.Models.UserDetails", b =>
@@ -457,7 +460,7 @@ namespace Electronic_Election_Management_System.Migrations
                     b.HasIndex("UserId")
                         .IsUnique();
 
-                    b.ToTable("UserDetails", (string)null);
+                    b.ToTable("UserDetails");
                 });
 
             modelBuilder.Entity("Electronic_Election_Management_System.Models.UserLabel", b =>
@@ -480,7 +483,7 @@ namespace Electronic_Election_Management_System.Migrations
 
                     b.HasIndex("LabelId");
 
-                    b.ToTable("UserLabels", (string)null);
+                    b.ToTable("UserLabels");
                 });
 
             modelBuilder.Entity("Electronic_Election_Management_System.Models.Vote", b =>
@@ -520,7 +523,7 @@ namespace Electronic_Election_Management_System.Migrations
 
                     b.HasIndex("VoteTokenId");
 
-                    b.ToTable("Votes", null, t =>
+                    b.ToTable("Votes", t =>
                         {
                             t.HasCheckConstraint("CK_Votes_ExactlyOneAnswerKind", "((\"OptionId\" IS NOT NULL AND \"QuestionId\" IS NULL AND \"AnswerText\" IS NULL) OR (\"OptionId\" IS NULL AND \"QuestionId\" IS NOT NULL AND \"AnswerText\" IS NOT NULL))");
 
@@ -553,7 +556,7 @@ namespace Electronic_Election_Management_System.Migrations
                     b.HasIndex("UserId", "ElectionId")
                         .IsUnique();
 
-                    b.ToTable("VoteTokens", (string)null);
+                    b.ToTable("VoteTokens");
                 });
 
             modelBuilder.Entity("Electronic_Election_Management_System.Models.VoterChangeRecord", b =>
@@ -578,7 +581,7 @@ namespace Electronic_Election_Management_System.Migrations
                     b.HasIndex("UserId", "ElectionId")
                         .IsUnique();
 
-                    b.ToTable("VoterChangeRecords", (string)null);
+                    b.ToTable("VoterChangeRecords");
                 });
 
             modelBuilder.Entity("Electronic_Election_Management_System.Models.VoterDeclaration", b =>
@@ -637,7 +640,7 @@ namespace Electronic_Election_Management_System.Migrations
                     b.HasIndex("VoteId")
                         .IsUnique();
 
-                    b.ToTable("VoterDeclarations", (string)null);
+                    b.ToTable("VoterDeclarations");
                 });
 
             modelBuilder.Entity("Electronic_Election_Management_System.Models.AuditLog", b =>

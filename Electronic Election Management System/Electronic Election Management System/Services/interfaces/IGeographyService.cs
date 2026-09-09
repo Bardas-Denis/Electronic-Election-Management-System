@@ -24,12 +24,17 @@ namespace Electronic_Election_Management_System.Services
         /// Adds a node under an existing one. Localities are not seeded, so this is how a country
         /// gets the towns an election actually needs.
         /// </summary>
-        Task<ServiceResult<GeographicNodeDto>> CreateChildAsync(Guid parentId, string name);
+        /// <param name="kind">
+        /// What the place is, in words — "Oraș", "Comună". Optional and descriptive; the node's
+        /// category, which the tree relies on, is still derived from the parent.
+        /// </param>
+        Task<ServiceResult<GeographicNodeDto>> CreateChildAsync(
+            Guid parentId, string name, string? kind);
 
         /// <summary>
-        /// Renames a node in place. The code is untouched, so anything already pointing at this
-        /// node keeps pointing at it.
+        /// Edits a node's name and kind in place. The code and the parent are untouched, so
+        /// anything already pointing at this node keeps pointing at it.
         /// </summary>
-        Task<ServiceResult<GeographicNodeDto>> RenameAsync(Guid id, string name);
+        Task<ServiceResult<GeographicNodeDto>> UpdateAsync(Guid id, string name, string? kind);
     }
 }

@@ -1,10 +1,10 @@
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, HostListener, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { TranslatePipe } from '@ngx-translate/core';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { GeographyService } from '../../core/services/geography.service';
 import { LabelService } from '../../core/services/label.service';
-import { GeographicNode } from '../../core/models/geography.model';
+import { GEOGRAPHIC_KINDS, GeographicNode, isKnownKind } from '../../core/models/geography.model';
 import { INPUT_LIMITS } from '../../core/validators/input.validators';
 
 /**
@@ -33,7 +33,9 @@ function normalize(value: string): string {
 export class GeographyManagementComponent implements OnInit {
   private geography = inject(GeographyService);
   private labels = inject(LabelService);
+  private translate = inject(TranslateService);
   readonly INPUT_LIMITS = INPUT_LIMITS;
+  readonly kinds = GEOGRAPHIC_KINDS;
 
   /** Root-to-current trail. Empty means we are looking at the list of countries. */
   path = signal<GeographicNode[]>([]);
@@ -46,14 +48,26 @@ export class GeographyManagementComponent implements OnInit {
 
   showCreateForm = signal(false);
   newName = signal('');
+  newKind = signal('');
 
-  renamingId = signal<string | null>(null);
-  renameValue = signal('');
+  editingId = signal<string | null>(null);
+  editName = signal('');
+  editKind = signal('');
 
   /** Which row is asking "are you sure?". Only ever one at a time. */
   confirmingDeleteId = signal<string | null>(null);
 
   searchTerm = signal('');
+
+  /**
+   * Which kind picker is open: 'new' for the add form, a node id for a row, null for none.
+   * A native select cannot be styled once it opens — the list is drawn by the operating
+   * system — so this one is built from a button and a panel like the app's other menus.
+   */
+  kindMenuFor = signal<string | null>(null);
+
+  /** What has been typed into the open picker. Cleared every time one opens. */
+  kindSearch = signal('');
 
   /**
    * Filtering happens here rather than on the server: one level is at most a few hundred rows
@@ -144,6 +158,7 @@ export class GeographyManagementComponent implements OnInit {
   openCreateForm(): void {
     this.showCreateForm.set(true);
     this.newName.set('');
+    this.newKind.set('');
     this.errorKey.set(null);
     this.successKey.set(null);
   }
@@ -151,6 +166,7 @@ export class GeographyManagementComponent implements OnInit {
   closeCreateForm(): void {
     this.showCreateForm.set(false);
     this.newName.set('');
+    this.newKind.set('');
   }
 
   create(): void {
@@ -161,7 +177,7 @@ export class GeographyManagementComponent implements OnInit {
     this.isSaving.set(true);
     this.errorKey.set(null);
 
-    this.geography.createChild({ parentId: parent.id, name }).subscribe({
+    this.geography.createChild({ parentId: parent.id, name, kind: this.newKind().trim() || null }).subscribe({
       next: (created) => {
         this.items.update((list) =>
           [...list, created].sort((a, b) => a.name.localeCompare(b.name))
@@ -179,25 +195,29 @@ export class GeographyManagementComponent implements OnInit {
 
   // ── Renaming ─────────────────────────────────────────────────────────────
 
-  startRename(node: GeographicNode): void {
+  startEdit(node: GeographicNode): void {
     this.closeCreateForm();
     this.cancelDelete();
-    this.renamingId.set(node.id);
-    this.renameValue.set(node.name);
+    this.editingId.set(node.id);
+    this.editName.set(node.name);
+    this.editKind.set(node.kind ?? '');
     this.errorKey.set(null);
   }
 
   cancelRename(): void {
-    this.renamingId.set(null);
-    this.renameValue.set('');
+    this.editingId.set(null);
+    this.editName.set('');
+    this.editKind.set('');
   }
 
-  saveRename(node: GeographicNode): void {
-    const name = this.renameValue().trim();
+  saveEdit(node: GeographicNode): void {
+    const name = this.editName().trim();
     if (!name) return;
 
+    const kind = this.editKind().trim() || null;
+
     // Nothing changed, so skip the round trip rather than reporting a clash with itself.
-    if (name === node.name) {
+    if (name === node.name && kind === (node.kind ?? null)) {
       this.cancelRename();
       return;
     }
@@ -205,7 +225,7 @@ export class GeographyManagementComponent implements OnInit {
     this.isSaving.set(true);
     this.errorKey.set(null);
 
-    this.geography.rename(node.id, { name }).subscribe({
+    this.geography.update(node.id, { name, kind }).subscribe({
       next: (updated) => {
         this.items.update((list) =>
           list
@@ -224,6 +244,7 @@ export class GeographyManagementComponent implements OnInit {
       }
     });
   }
+
 
   // ── Deleting ─────────────────────────────────────────────────────────────
 
@@ -263,6 +284,75 @@ export class GeographyManagementComponent implements OnInit {
   }
 
   // ── Helpers ──────────────────────────────────────────────────────────────
+
+  openKindMenu(key: string, event: Event): void {
+    // Without this the document listener below would see the same click and shut the panel
+    // in the same tick it opened.
+    event.stopPropagation();
+    if (this.kindMenuFor() === key) return;
+    this.kindSearch.set('');
+    this.kindMenuFor.set(key);
+  }
+
+  onKindSearch(key: string, text: string): void {
+    // Typing in a closed picker opens it, so the field behaves like one search box rather
+    // than needing a click first.
+    if (this.kindMenuFor() !== key) this.kindMenuFor.set(key);
+    this.kindSearch.set(text);
+  }
+
+  pickKind(key: string, value: string): void {
+    if (key === 'new') this.newKind.set(value);
+    else this.editKind.set(value);
+    this.kindMenuFor.set(null);
+    this.kindSearch.set('');
+  }
+
+  /**
+   * What the field shows: the typed filter while the picker is open, the chosen kind once it
+   * closes. Without the swap, typing would appear to erase a selection that is still there.
+   */
+  kindFieldText(key: string, value: string): string {
+    if (this.kindMenuFor() === key) return this.kindSearch();
+    return value ? this.translate.instant('geography.kinds.' + value) : '';
+  }
+
+  /**
+   * The kinds whose translated name matches what has been typed. Matching on the words the
+   * user can actually see, not on the stored keys, and ignoring diacritics so "judet" finds
+   * "Județ".
+   */
+  filteredKinds(): string[] {
+    const term = normalize(this.kindSearch());
+    if (!term) return [...this.kinds];
+    return this.kinds.filter((k) =>
+      normalize(this.translate.instant('geography.kinds.' + k)).includes(term)
+    );
+  }
+
+  /** True when the "unspecified" row should be offered — it is not a kind, so it never filters. */
+  showUnspecified(): boolean {
+    return !this.kindSearch().trim();
+  }
+
+  @HostListener('document:click')
+  closeKindMenu(): void {
+    this.kindMenuFor.set(null);
+    this.kindSearch.set('');
+  }
+
+  @HostListener('document:keydown.escape')
+  onEscape(): void {
+    this.closeKindMenu();
+  }
+
+  /**
+   * The translation key for a node's kind, or null when it carries something the picker does
+   * not know — a value straight from the seed, which is shown as typed.
+   */
+  kindKey(node: GeographicNode): string | null {
+    return isKnownKind(node.kind) ? 'geography.kinds.' + node.kind : null;
+  }
 
   /** Prefers the server's error code, so the user sees why rather than a generic failure. */
   private errorKeyFrom(err: unknown, fallback: string): string {

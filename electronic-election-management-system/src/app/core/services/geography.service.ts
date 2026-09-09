@@ -5,7 +5,7 @@ import { environment } from '../../../environments/environment';
 import {
   GeographicNode,
   CreateGeographicNodeRequest,
-  RenameGeographicNodeRequest
+  UpdateGeographicNodeRequest
 } from '../models/geography.model';
 
 // SYNC: api/geography (GeographyController) + api/admin/geography (GeographyAdminController)
@@ -39,8 +39,8 @@ export class GeographyService {
     return this.http.post<GeographicNode>(this.adminBase, request);
   }
 
-  /** Renames a node, leaving its code and its place in the tree alone. */
-  rename(id: string, request: RenameGeographicNodeRequest): Observable<GeographicNode> {
+  /** Edits a node's name and kind, leaving its code and its place in the tree alone. */
+  update(id: string, request: UpdateGeographicNodeRequest): Observable<GeographicNode> {
     return this.http.put<GeographicNode>(`${this.adminBase}/${id}`, request);
   }
 }

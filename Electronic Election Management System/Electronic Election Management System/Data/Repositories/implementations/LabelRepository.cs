@@ -30,7 +30,7 @@ namespace Electronic_Election_Management_System.Data.Repositories
             => _db.Labels
                 .Where(l => l.Category == LabelCategories.Country)
                 .OrderBy(l => l.Name)
-                .Select(l => new GeographicNode(l.Id, l.Name, l.Code, l.Category, l.Children.Any()))
+                .Select(l => new GeographicNode(l.Id, l.Name, l.Code, l.Category, l.Kind, l.Children.Any()))
                 .ToListAsync();
 
         public Task<bool> NameTakenUnderParentAsync(Guid? parentId, string name, Guid? excludeId)
@@ -99,7 +99,7 @@ namespace Electronic_Election_Management_System.Data.Repositories
             => _db.Labels
                 .Where(l => l.ParentId == parentId)
                 .OrderBy(l => l.Name)
-                .Select(l => new GeographicNode(l.Id, l.Name, l.Code, l.Category, l.Children.Any()))
+                .Select(l => new GeographicNode(l.Id, l.Name, l.Code, l.Category, l.Kind, l.Children.Any()))
                 .ToListAsync();
 
         public Task<Label?> GetByIdAsync(Guid id)

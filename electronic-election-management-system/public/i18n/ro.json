@@ -733,6 +733,34 @@
     "confirmYes": "Da, șterge",
     "searchPlaceholder": "Caută după denumire sau cod…",
     "searchCount": "{{shown}} din {{total}}",
-    "noMatches": "Nicio potrivire."
+    "noMatches": "Nicio potrivire.",
+    "fieldKind": "Tip",
+    "fieldKindHint": "Opțional. Doar descriptiv — nu schimbă cum se grupează rezultatele.",
+    "kindUnspecified": "Nespecificat",
+    "kinds": {
+      "autonomousCommunity": "Comunitate autonomă",
+      "borough": "Circumscripție",
+      "canton": "Canton",
+      "capital": "Capitală",
+      "city": "Oraș",
+      "commune": "Comună",
+      "county": "Județ",
+      "department": "Departament",
+      "district": "District",
+      "emirate": "Emirat",
+      "governorate": "Guvernorat",
+      "island": "Insulă",
+      "municipality": "Municipiu",
+      "parish": "Parohie",
+      "prefecture": "Prefectură",
+      "province": "Provincie",
+      "region": "Regiune",
+      "republic": "Republică",
+      "sector": "Sector",
+      "state": "Stat",
+      "territory": "Teritoriu",
+      "town": "Orășel",
+      "village": "Sat"
+    }
   }
 }

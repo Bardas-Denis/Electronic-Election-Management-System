@@ -9,7 +9,8 @@ namespace Electronic_Election_Management_System.Data.Repositories
     /// One node of the geographic tree, flattened for browsing. <paramref name="HasChildren"/>
     /// is computed in the same query so a caller never has to ask node by node.
     /// </summary>
-    public record GeographicNode(Guid Id, string Name, string? Code, string? Category, bool HasChildren);
+    public record GeographicNode(
+        Guid Id, string Name, string? Code, string? Category, string? Kind, bool HasChildren);
 
     public interface ILabelRepository
     {

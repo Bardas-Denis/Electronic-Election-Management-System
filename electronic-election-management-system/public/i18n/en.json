@@ -733,6 +733,34 @@
     "confirmYes": "Yes, delete",
     "searchPlaceholder": "Search by name or code…",
     "searchCount": "{{shown}} of {{total}}",
-    "noMatches": "No matches."
+    "noMatches": "No matches.",
+    "fieldKind": "Kind",
+    "fieldKindHint": "Optional. Descriptive only — it does not change how results are grouped.",
+    "kindUnspecified": "Unspecified",
+    "kinds": {
+      "autonomousCommunity": "Autonomous community",
+      "borough": "Borough",
+      "canton": "Canton",
+      "capital": "Capital",
+      "city": "City",
+      "commune": "Commune",
+      "county": "County",
+      "department": "Department",
+      "district": "District",
+      "emirate": "Emirate",
+      "governorate": "Governorate",
+      "island": "Island",
+      "municipality": "Municipality",
+      "parish": "Parish",
+      "prefecture": "Prefecture",
+      "province": "Province",
+      "region": "Region",
+      "republic": "Republic",
+      "sector": "Sector",
+      "state": "State",
+      "territory": "Territory",
+      "town": "Town",
+      "village": "Village"
+    }
   }
 }
