@@ -531,6 +531,7 @@
     "labelNameTakenUnderParent": "Există deja un nod cu acest nume sub același părinte.",
     "countryCannotBeMoved": "O țară rămâne întotdeauna la primul nivel și nu poate fi mutată.",
     "circularLabelParent": "Nu poți muta un nod sub unul dintre descendenții lui.",
+    "invalidLabelParentLevel": "Un județ stă sub o țară, iar o localitate sub un județ. Destinația aleasă nu e la nivelul potrivit.",
     "labelHasUsersAndNoParent": "Utilizatori au această țară și nu există un nivel superior la care să fie mutați.",
     "unknown": "A apărut o eroare neașteptată. Încearcă din nou."
   },

@@ -294,6 +294,17 @@ namespace Electronic_Election_Management_System.Data
                 .HasIndex(l => new { l.ParentId, l.Name })
                 .IsUnique();
 
+            // Label: a composite index on (ParentId, Name) does not keep countries apart. Both
+            // engines treat NULL as distinct, so (NULL, "Romania") twice passes it - and every
+            // country is a root. Filtered to countries alone, so labels outside the tree stay
+            // free to carry any name. The literal mirrors LabelCategories.Country, which lives
+            // in the web project and cannot be referenced from here.
+            modelBuilder.Entity<Label>()
+                .HasIndex(l => l.Name)
+                .IsUnique()
+                .HasDatabaseName("IX_Labels_CountryName")
+                .HasFilter("\"ParentId\" IS NULL AND \"Category\" = 'country'");
+
             // Label: the ISO code is the stable identity for geographic labels. Filtered, because
             // non-geographic labels ("football") legitimately share a null code.
             modelBuilder.Entity<Label>()

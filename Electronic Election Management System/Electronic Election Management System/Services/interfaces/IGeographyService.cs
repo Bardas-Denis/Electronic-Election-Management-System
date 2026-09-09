@@ -36,5 +36,16 @@ namespace Electronic_Election_Management_System.Services
         /// anything already pointing at this node keeps pointing at it.
         /// </summary>
         Task<ServiceResult<GeographicNodeDto>> UpdateAsync(Guid id, string name, string? kind);
+
+        /// <summary>
+        /// Re-parents a node, keeping its name, code and kind. The new parent must sit one level
+        /// above the node — a country for a subdivision, a subdivision for a locality — so the
+        /// node and everything beneath it keep the categories they already carry.
+        /// </summary>
+        /// <remarks>
+        /// A country is always a root and can never be moved. Moving a node moves its whole
+        /// subtree with it, and every user labelled anywhere below changes region as a result.
+        /// </remarks>
+        Task<ServiceResult<GeographicNodeDto>> MoveAsync(Guid id, Guid newParentId);
     }
 }

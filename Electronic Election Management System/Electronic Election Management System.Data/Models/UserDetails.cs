@@ -23,7 +23,7 @@ namespace Electronic_Election_Management_System.Models
         /// tree after a rename or a re-seed.
         /// </summary>
         public string? ResidenceCountry { get; set; }
-        public string? ResidenceCounty{ get; set; }
+        public string? ResidenceCounty { get; set; }
         /// <summary>
         /// ISO 3166-2 code of the subdivision picked from the geographic tree ("RO-CJ").
         /// Kept alongside <see cref="ResidenceCounty"/> rather than replacing it: the name is

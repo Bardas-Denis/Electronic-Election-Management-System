@@ -295,6 +295,96 @@ public class GeographyServiceTests
         result.Data!.Kind.Should().BeNull();
     }
 
+    // --- MoveAsync ---
+
+    [Fact]
+    public async Task MoveAsync_PutsTheNodeUnderTheNewParentAndSaves()
+    {
+        var cluj = Geo("Cluj", LabelCategories.Subdivision, "RO-CJ");
+        var moldova = Geo("Moldova", LabelCategories.Country, "MD");
+        _labels.GetByIdAsync(cluj.Id).Returns(cluj);
+        _labels.GetByIdAsync(moldova.Id).Returns(moldova);
+
+        var result = await _service.MoveAsync(cluj.Id, moldova.Id);
+
+        result.Success.Should().BeTrue();
+        cluj.ParentId.Should().Be(moldova.Id);
+        result.Data!.Code.Should().Be("RO-CJ", "a move must not disturb what points at the node");
+        await _labels.Received(1).SaveChangesAsync();
+    }
+
+    [Fact]
+    public async Task MoveAsync_WhenTheNodeIsACountry_Fails()
+    {
+        var romania = Geo("Romania", LabelCategories.Country, "RO");
+        var moldova = Geo("Moldova", LabelCategories.Country, "MD");
+        _labels.GetByIdAsync(romania.Id).Returns(romania);
+        _labels.GetByIdAsync(moldova.Id).Returns(moldova);
+
+        var result = await _service.MoveAsync(romania.Id, moldova.Id);
+
+        result.ErrorCode.Should().Be(ErrorCode.CountryCannotBeMoved);
+        await _labels.DidNotReceive().SaveChangesAsync();
+    }
+
+    // Categories describe the level, and a move that changed them would have to rewrite the whole
+    // subtree. Requiring the level above keeps the node and everything under it consistent.
+    [Fact]
+    public async Task MoveAsync_UnderAParentAtTheWrongLevel_Fails()
+    {
+        var cluj = Geo("Cluj", LabelCategories.Subdivision);
+        var timisoara = Geo("Timisoara", LabelCategories.Locality);
+        _labels.GetByIdAsync(cluj.Id).Returns(cluj);
+        _labels.GetByIdAsync(timisoara.Id).Returns(timisoara);
+
+        var result = await _service.MoveAsync(cluj.Id, timisoara.Id);
+
+        result.ErrorCode.Should().Be(ErrorCode.InvalidLabelParentLevel);
+        await _labels.DidNotReceive().SaveChangesAsync();
+    }
+
+    [Fact]
+    public async Task MoveAsync_UnderItsOwnDescendant_Fails()
+    {
+        var cluj = Geo("Cluj", LabelCategories.Subdivision);
+        var romania = Geo("Romania", LabelCategories.Country, "RO");
+        _labels.GetByIdAsync(cluj.Id).Returns(cluj);
+        _labels.GetByIdAsync(romania.Id).Returns(romania);
+        _labels.IsDescendantOfAsync(cluj.Id, romania.Id).Returns(true);
+
+        var result = await _service.MoveAsync(cluj.Id, romania.Id);
+
+        result.ErrorCode.Should().Be(ErrorCode.CircularLabelParent);
+        await _labels.DidNotReceive().SaveChangesAsync();
+    }
+
+    [Fact]
+    public async Task MoveAsync_WhenTheDestinationAlreadyHasThatName_Fails()
+    {
+        var cluj = Geo("Cluj", LabelCategories.Subdivision);
+        var moldova = Geo("Moldova", LabelCategories.Country, "MD");
+        _labels.GetByIdAsync(cluj.Id).Returns(cluj);
+        _labels.GetByIdAsync(moldova.Id).Returns(moldova);
+        _labels.NameTakenUnderParentAsync(moldova.Id, "Cluj", cluj.Id).Returns(true);
+
+        var result = await _service.MoveAsync(cluj.Id, moldova.Id);
+
+        result.ErrorCode.Should().Be(ErrorCode.LabelNameTakenUnderParent);
+        await _labels.DidNotReceive().SaveChangesAsync();
+    }
+
+    [Fact]
+    public async Task MoveAsync_WhenTheNewParentIsUnknown_ReturnsNotFound()
+    {
+        var cluj = Geo("Cluj", LabelCategories.Subdivision);
+        _labels.GetByIdAsync(cluj.Id).Returns(cluj);
+
+        var result = await _service.MoveAsync(cluj.Id, Guid.NewGuid());
+
+        result.IsNotFound.Should().BeTrue();
+        result.ErrorCode.Should().Be(ErrorCode.LabelNotFound);
+    }
+
     private static Label Geo(string name, string category, string? code = null) => new()
     {
         Id = Guid.NewGuid(),

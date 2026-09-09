@@ -259,6 +259,11 @@ namespace Electronic_Election_Management_System.Migrations
                         .IsUnique()
                         .HasFilter("\"Code\" IS NOT NULL");
 
+                    b.HasIndex("Name")
+                        .IsUnique()
+                        .HasDatabaseName("IX_Labels_CountryName")
+                        .HasFilter("\"ParentId\" IS NULL AND \"Category\" = 'country'");
+
                     b.HasIndex("ParentId", "Name")
                         .IsUnique();
 

@@ -107,6 +107,52 @@ namespace Electronic_Election_Management_System.Services
             });
         }
 
+        public async Task<ServiceResult<GeographicNodeDto>> MoveAsync(Guid id, Guid newParentId)
+        {
+            var node = await _labels.GetByIdAsync(id);
+            if (node is null || !LabelCategories.IsGeographic(node.Category))
+                return ServiceResult<GeographicNodeDto>.NotFound(ErrorCode.LabelNotFound);
+
+            if (node.Category == LabelCategories.Country)
+                return ServiceResult<GeographicNodeDto>.Fail(ErrorCode.CountryCannotBeMoved);
+
+            var newParent = await _labels.GetByIdAsync(newParentId);
+            if (newParent is null || !LabelCategories.IsGeographic(newParent.Category))
+                return ServiceResult<GeographicNodeDto>.NotFound(ErrorCode.LabelNotFound);
+
+            if (newParent.Category != ParentLevelOf(node.Category))
+                return ServiceResult<GeographicNodeDto>.Fail(ErrorCode.InvalidLabelParentLevel);
+
+            // Checked before the name clash because a loop makes the tree unwalkable, and the
+            // descendant walk is the only guard against one.
+            if (newParentId == id || await _labels.IsDescendantOfAsync(id, newParentId))
+                return ServiceResult<GeographicNodeDto>.Fail(ErrorCode.CircularLabelParent);
+
+            if (await _labels.NameTakenUnderParentAsync(newParentId, node.Name, id))
+                return ServiceResult<GeographicNodeDto>.Fail(ErrorCode.LabelNameTakenUnderParent);
+
+            node.ParentId = newParentId;
+            await _labels.SaveChangesAsync();
+
+            return ServiceResult<GeographicNodeDto>.Ok(new GeographicNodeDto
+            {
+                Id = node.Id,
+                Name = node.Name,
+                Code = node.Code,
+                Category = node.Category,
+                Kind = node.Kind,
+                HasChildren = await _labels.HasChildrenAsync(id)
+            });
+        }
+
+        /// <summary>The category a node's parent must carry, or null for a level with no parent.</summary>
+        private static string? ParentLevelOf(string? category) => category switch
+        {
+            LabelCategories.Subdivision => LabelCategories.Country,
+            LabelCategories.Locality => LabelCategories.Subdivision,
+            _ => null
+        };
+
         /// <summary>Whitespace and empty both mean "unspecified", and are stored as null.</summary>
         private static string? Blank(string? value) =>
             string.IsNullOrWhiteSpace(value) ? null : value.Trim();

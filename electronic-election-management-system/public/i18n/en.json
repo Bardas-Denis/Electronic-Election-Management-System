@@ -531,6 +531,7 @@
     "labelNameTakenUnderParent": "A node with this name already exists under the same parent.",
     "countryCannotBeMoved": "A country always stays at the top level and cannot be moved.",
     "circularLabelParent": "A node cannot be moved under one of its own descendants.",
+    "invalidLabelParentLevel": "A subdivision belongs under a country and a locality under a subdivision. The chosen destination is at neither level.",
     "labelHasUsersAndNoParent": "Users hold this country and there is no level above to move them to.",
     "unknown": "An unexpected error occurred. Please try again."
   },

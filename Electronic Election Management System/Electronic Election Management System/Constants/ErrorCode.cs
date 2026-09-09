@@ -187,6 +187,11 @@ namespace Electronic_Election_Management_System.Constants
         [JsonStringEnumMemberName("circularLabelParent")]
         CircularLabelParent,
 
+        /// <summary>A subdivision belongs under a country and a locality under a subdivision;
+        /// the chosen parent sits at neither level.</summary>
+        [JsonStringEnumMemberName("invalidLabelParentLevel")]
+        InvalidLabelParentLevel,
+
         /// <summary>Users hold this country label and there is no parent to move them up to.</summary>
         [JsonStringEnumMemberName("labelHasUsersAndNoParent")]
         LabelHasUsersAndNoParent,

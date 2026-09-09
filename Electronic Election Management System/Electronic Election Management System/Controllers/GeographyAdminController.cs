@@ -56,5 +56,23 @@ namespace Electronic_Election_Management_System.Controllers
 
             return Ok(result.Data);
         }
+
+        /// <summary>
+        /// Re-parents a node. Separate from <see cref="Update"/> on purpose: a rename disturbs
+        /// nothing, while a move takes the node's whole subtree with it and changes the region of
+        /// every user labelled below it.
+        /// </summary>
+        [HttpPut("{id:guid}/parent")]
+        public async Task<ActionResult<GeographicNodeDto>> Move(Guid id, MoveGeographicNodeRequest request)
+        {
+            var result = await _geography.MoveAsync(id, request.ParentId);
+
+            if (result.IsNotFound)
+                return NotFound(new { errorCode = result.ErrorCode });
+            if (!result.Success)
+                return BadRequest(new { errorCode = result.ErrorCode });
+
+            return Ok(result.Data);
+        }
     }
 }
