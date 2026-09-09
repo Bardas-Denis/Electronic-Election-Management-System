@@ -6,13 +6,18 @@ import { GeographyService } from '../../core/services/geography.service';
 import { LabelService } from '../../core/services/label.service';
 import { GEOGRAPHIC_KINDS, GeographicNode, isKnownKind } from '../../core/models/geography.model';
 import { INPUT_LIMITS } from '../../core/validators/input.validators';
+import { removeDiacritics } from '../../core/utils/text.util';
 
 /**
- * Strips diacritics and case so a search matches what people actually type: the seed holds
- * "Timis" while a Romanian keyboard produces "Timiș", and neither should hide the other.
+ * Folds a value for comparison, so a search matches what people actually type: the data holds
+ * "Timis" while a Romanian keyboard produces the accented spelling, and neither should hide
+ * the other.
+ *
+ * The diacritic folding itself is shared with the profile, which uses it when storing a typed
+ * city name. Case and surrounding space are dropped only here: storing a name must keep both.
  */
 function normalize(value: string): string {
-  return value.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase().trim();
+  return removeDiacritics(value).toLowerCase().trim();
 }
 
 /**

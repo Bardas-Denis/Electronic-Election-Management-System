@@ -54,6 +54,16 @@
   color: var(--text-secondary);
 }
 
+// The shared card clips its content so the corners stay rounded. That also cuts off the kind
+// picker whenever the table is shorter than the open panel — which is most of the time once a
+// search narrows the list to one row.
+.table-card {
+  // Nothing between the panel and the page may clip: the picker lives inside a table
+  // cell, so any ancestor that hides its overflow cuts the open list off.
+  overflow: visible;
+}
+
+
 // ── Kind picker ───────────────────────────────────────────────────────────
 //
 // A native <select> cannot be styled once it opens: the list is drawn by the operating
