@@ -747,7 +747,6 @@
       "autonomousCommunity": "Comunitate autonomă",
       "borough": "Circumscripție",
       "canton": "Canton",
-      "capital": "Capitală",
       "city": "Oraș",
       "commune": "Comună",
       "county": "Județ",
@@ -765,7 +764,6 @@
       "sector": "Sector",
       "state": "Stat",
       "territory": "Teritoriu",
-      "town": "Orășel",
       "village": "Sat"
     }
   }

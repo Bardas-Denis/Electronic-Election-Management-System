@@ -747,7 +747,6 @@
       "autonomousCommunity": "Autonomous community",
       "borough": "Borough",
       "canton": "Canton",
-      "capital": "Capital",
       "city": "City",
       "commune": "Commune",
       "county": "County",
@@ -765,7 +764,6 @@
       "sector": "Sector",
       "state": "State",
       "territory": "Territory",
-      "town": "Town",
       "village": "Village"
     }
   }

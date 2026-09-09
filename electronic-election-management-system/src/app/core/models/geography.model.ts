@@ -33,7 +33,6 @@ export const GEOGRAPHIC_KINDS = [
   'autonomousCommunity',
   'borough',
   'canton',
-  'capital',
   'city',
   'commune',
   'county',
@@ -51,7 +50,6 @@ export const GEOGRAPHIC_KINDS = [
   'sector',
   'state',
   'territory',
-  'town',
   'village'
 ] as const;;
 
