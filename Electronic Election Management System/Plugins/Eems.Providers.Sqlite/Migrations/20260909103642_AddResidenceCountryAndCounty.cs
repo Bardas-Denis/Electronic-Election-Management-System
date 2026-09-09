@@ -5,7 +5,7 @@
 namespace Eems.Providers.Sqlite.Migrations
 {
     /// <inheritdoc />
-    public partial class AddResidenceCountry : Migration
+    public partial class AddResidenceCountryAndCounty : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -17,7 +17,19 @@ namespace Eems.Providers.Sqlite.Migrations
                 nullable: true);
 
             migrationBuilder.AddColumn<string>(
+                name: "ResidenceCountyCode",
+                table: "VoterDeclarations",
+                type: "TEXT",
+                nullable: true);
+
+            migrationBuilder.AddColumn<string>(
                 name: "ResidenceCountry",
+                table: "UserDetails",
+                type: "TEXT",
+                nullable: true);
+
+            migrationBuilder.AddColumn<string>(
+                name: "ResidenceCountyCode",
                 table: "UserDetails",
                 type: "TEXT",
                 nullable: true);
@@ -31,7 +43,15 @@ namespace Eems.Providers.Sqlite.Migrations
                 table: "VoterDeclarations");
 
             migrationBuilder.DropColumn(
+                name: "ResidenceCountyCode",
+                table: "VoterDeclarations");
+
+            migrationBuilder.DropColumn(
                 name: "ResidenceCountry",
+                table: "UserDetails");
+
+            migrationBuilder.DropColumn(
+                name: "ResidenceCountyCode",
                 table: "UserDetails");
         }
     }

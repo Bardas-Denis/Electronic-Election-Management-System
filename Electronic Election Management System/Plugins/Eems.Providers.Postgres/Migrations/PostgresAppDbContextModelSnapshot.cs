@@ -448,7 +448,13 @@ namespace Electronic_Election_Management_System.Migrations.Postgres
                     b.Property<string>("ResidenceCity")
                         .HasColumnType("text");
 
+                    b.Property<string>("ResidenceCountry")
+                        .HasColumnType("text");
+
                     b.Property<string>("ResidenceCounty")
+                        .HasColumnType("text");
+
+                    b.Property<string>("ResidenceCountyCode")
                         .HasColumnType("text");
 
                     b.Property<DateTime>("UpdatedAt")
@@ -631,7 +637,13 @@ namespace Electronic_Election_Management_System.Migrations.Postgres
                     b.Property<string>("ResidenceCity")
                         .HasColumnType("text");
 
+                    b.Property<string>("ResidenceCountry")
+                        .HasColumnType("text");
+
                     b.Property<string>("ResidenceCounty")
+                        .HasColumnType("text");
+
+                    b.Property<string>("ResidenceCountyCode")
                         .HasColumnType("text");
 
                     b.Property<Guid>("VoteId")

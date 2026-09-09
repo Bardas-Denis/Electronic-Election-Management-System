@@ -11,8 +11,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Eems.Providers.Sqlite.Migrations
 {
     [DbContext(typeof(ElectionDbContext))]
-    [Migration("20260909100930_AddResidenceCountyCode")]
-    partial class AddResidenceCountyCode
+    [Migration("20260909103642_AddResidenceCountryAndCounty")]
+    partial class AddResidenceCountryAndCounty
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -244,6 +244,9 @@ namespace Eems.Providers.Sqlite.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Kind")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Name")
