@@ -100,7 +100,9 @@ namespace Electronic_Election_Management_System.Services
             {
                 Cnp                 = entity.Cnp,
                 FullName            = entity.FullName,
+                ResidenceCountry    = entity.ResidenceCountry,
                 ResidenceCounty     = entity.ResidenceCounty,
+                ResidenceCountyCode = entity.ResidenceCountyCode,
                 ResidenceAddress    = entity.ResidenceAddress,
                 ResidenceCity       = entity.ResidenceCity,
                 Citizenship         = entity.Citizenship,
@@ -124,7 +126,9 @@ namespace Electronic_Election_Management_System.Services
             {
                 Cnp                 = entity.Cnp,
                 FullName            = entity.FullName,
+                ResidenceCountry    = entity.ResidenceCountry,
                 ResidenceCounty     = entity.ResidenceCounty,
+                ResidenceCountyCode = entity.ResidenceCountyCode,
                 ResidenceAddress    = entity.ResidenceAddress,
                 ResidenceCity       = entity.ResidenceCity,
                 Citizenship         = entity.Citizenship,

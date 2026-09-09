@@ -131,6 +131,7 @@ namespace Electronic_Election_Management_System.Data
                         Cnp = fakeCnp,
                         BirthDate = birthDate,
                         FullName = $"{firstName} {lastName}",
+                        ResidenceCountry = "RO",
                         ResidenceCounty = counties[countyIdx],
                         ResidenceCity = cities[countyIdx],
                         ResidenceAddress = $"Str. Exemplu nr. {idx}",
@@ -667,6 +668,7 @@ namespace Electronic_Election_Management_System.Data
                             {
                                 declaration.Cnp = voterDetails.Cnp;
                                 declaration.FullName = voterDetails.FullName;
+                                declaration.ResidenceCountry = voterDetails.ResidenceCountry;
                                 declaration.ResidenceCounty = voterDetails.ResidenceCounty;
                                 declaration.ResidenceAddress = voterDetails.ResidenceAddress;
                                 declaration.ResidenceCity = voterDetails.ResidenceCity;
