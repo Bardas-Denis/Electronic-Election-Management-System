@@ -243,6 +243,9 @@ namespace Electronic_Election_Management_System.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("Kind")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("TEXT");
@@ -440,13 +443,7 @@ namespace Electronic_Election_Management_System.Migrations
                     b.Property<string>("ResidenceCity")
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("ResidenceCountry")
-                        .HasColumnType("TEXT");
-
                     b.Property<string>("ResidenceCounty")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("ResidenceCountyCode")
                         .HasColumnType("TEXT");
 
                     b.Property<DateTime>("UpdatedAt")
@@ -629,13 +626,7 @@ namespace Electronic_Election_Management_System.Migrations
                     b.Property<string>("ResidenceCity")
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("ResidenceCountry")
-                        .HasColumnType("TEXT");
-
                     b.Property<string>("ResidenceCounty")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("ResidenceCountyCode")
                         .HasColumnType("TEXT");
 
                     b.Property<Guid>("VoteId")

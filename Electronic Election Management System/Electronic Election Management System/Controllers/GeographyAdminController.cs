@@ -32,7 +32,8 @@ namespace Electronic_Election_Management_System.Controllers
         [HttpPost]
         public async Task<ActionResult<GeographicNodeDto>> Create(CreateGeographicNodeRequest request)
         {
-            var result = await _geography.CreateChildAsync(request.ParentId, request.Name);
+            var result = await _geography.CreateChildAsync(
+                request.ParentId, request.Name, request.Kind);
 
             if (result.IsNotFound)
                 return NotFound(new { errorCode = result.ErrorCode });
@@ -42,11 +43,11 @@ namespace Electronic_Election_Management_System.Controllers
             return Ok(result.Data);
         }
 
-        /// <summary>Renames a node, leaving its code and its place in the tree alone.</summary>
+        /// <summary>Edits a node's name and kind, leaving its code and its place in the tree alone.</summary>
         [HttpPut("{id:guid}")]
-        public async Task<ActionResult<GeographicNodeDto>> Rename(Guid id, RenameGeographicNodeRequest request)
+        public async Task<ActionResult<GeographicNodeDto>> Update(Guid id, UpdateGeographicNodeRequest request)
         {
-            var result = await _geography.RenameAsync(id, request.Name);
+            var result = await _geography.UpdateAsync(id, request.Name, request.Kind);
 
             if (result.IsNotFound)
                 return NotFound(new { errorCode = result.ErrorCode });

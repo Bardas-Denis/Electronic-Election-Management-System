@@ -1,0 +1,326 @@
+// ── Breadcrumb trail ──────────────────────────────────────────────────────
+
+.crumbs {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-bottom: 1.25rem;
+  font-size: 0.875rem;
+}
+
+.crumb {
+  background: none;
+  border: none;
+  padding: 2px 4px;
+  border-radius: 4px;
+  font: inherit;
+  color: var(--accent, #2563eb);
+  cursor: pointer;
+
+  &:hover:not(:disabled) {
+    text-decoration: underline;
+  }
+
+  // The last crumb is where you already are, so it is text rather than a link.
+  &--current,
+  &:disabled {
+    color: var(--text-primary);
+    font-weight: 600;
+    cursor: default;
+    text-decoration: none;
+  }
+}
+
+.crumb-sep {
+  color: var(--text-muted, #9ca3af);
+}
+
+// ── Search ───────────────────────────────────────────────────────────────
+
+.search-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.search-input {
+  flex: 0 1 320px;
+}
+
+.search-count {
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+}
+
+// ── Kind picker ───────────────────────────────────────────────────────────
+//
+// A native <select> cannot be styled once it opens: the list is drawn by the operating
+// system and ignores the page entirely. This is a button and a panel, matching the app's
+// other menus, so the open state looks like the rest of the screen.
+
+.kind-picker {
+  position: relative;
+}
+
+.kind-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+
+  // The column is narrow and some kinds are long words. Truncating keeps every row one
+  // line tall instead of letting one label push the whole table around.
+  span:first-child {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &--placeholder {
+    color: var(--text-muted, #9ca3af);
+  }
+
+  &[aria-expanded="true"] {
+    border-color: var(--border-focus, #2563eb);
+  }
+}
+
+.kind-caret {
+  flex-shrink: 0;
+  font-size: 0.7rem;
+  color: var(--text-muted, #9ca3af);
+}
+
+.kind-menu {
+  position: absolute;
+  top: calc(100% + 0.35rem);
+  left: 0;
+  z-index: 20;
+  min-width: 100%;
+  // Tall enough to browse, short enough to stay on screen next to a table row.
+  max-height: 260px;
+  overflow-y: auto;
+  padding: 0.25rem;
+  background: var(--bg-card, #ffffff);
+  border: 1px solid var(--border-color, #dee2e6);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  animation: slide-down 0.15s ease;
+}
+
+.kind-empty {
+  margin: 0;
+  padding: 0.5rem 0.6rem;
+  font-size: 0.8125rem;
+  color: var(--text-muted, #9ca3af);
+}
+
+.kind-option {
+  display: block;
+  width: 100%;
+  padding: 0.4rem 0.6rem;
+  border: none;
+  border-radius: 5px;
+  background: none;
+  font: inherit;
+  font-size: 0.875rem;
+  color: var(--text-primary);
+  text-align: left;
+  white-space: nowrap;
+  cursor: pointer;
+
+  &:hover,
+  &:focus-visible {
+    background: var(--bg-subtle, #f3f4f6);
+  }
+
+  &--active {
+    font-weight: 600;
+    color: var(--accent, #2563eb);
+  }
+}
+
+// ── Table ─────────────────────────────────────────────────────────────────
+
+.labels-table {
+  th:nth-child(2),
+  td:nth-child(2) {
+    width: 110px;
+  }
+
+  th:nth-child(3),
+  td:nth-child(3) {
+    width: 170px;
+  }
+
+  th:last-child,
+  td:last-child {
+    text-align: right;
+    width: 190px;
+    white-space: nowrap;
+  }
+}
+
+// A whole row's name is the way down into the tree, so it reads as a link but keeps
+// button semantics for the keyboard.
+.node-name {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  font-weight: 500;
+  color: var(--text-primary);
+  cursor: pointer;
+  text-align: left;
+
+  &:hover {
+    color: var(--accent, #2563eb);
+  }
+}
+
+// Asks in the row itself: the native confirm() dialog is suppressed in embedded browser
+// panes, where it returns false without appearing and the delete button looks dead.
+.confirm-note {
+  margin: 0.35rem 0 0;
+  font-size: 0.8125rem;
+  line-height: 1.35;
+  color: var(--error-color, #b91c1c);
+}
+
+.chev {
+  margin-left: 0.4rem;
+  color: var(--text-muted, #9ca3af);
+}
+
+.col-actions {
+  display: flex;
+  gap: 0.4rem;
+  justify-content: flex-end;
+}
+
+.text-muted {
+  color: var(--text-muted, #9ca3af);
+  font-size: 0.875rem;
+}
+
+// ── Inline add form ───────────────────────────────────────────────────────
+
+.create-form-card {
+  background: var(--bg-card, #ffffff);
+  border: 1px solid var(--border-color, #dee2e6);
+  border-radius: 10px;
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1.25rem;
+  animation: slide-down 0.2s ease;
+}
+
+.create-form-title {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  margin: 0 0 1rem;
+  color: var(--text-primary);
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-bottom: 1rem;
+
+  label {
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+  }
+}
+
+.form-control {
+  padding: 7px 11px;
+  border-radius: 6px;
+  border: 1px solid var(--border-color, #d1d5db);
+  background: var(--bg-page, #ffffff);
+  font-size: 0.875rem;
+  color: var(--text-primary);
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+
+  &::placeholder {
+    color: var(--text-muted, #9ca3af);
+  }
+
+  &:focus {
+    border-color: var(--border-focus, #2563eb);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  // Renaming happens in the row itself, so the field must not push the layout around.
+  &--inline {
+    width: 100%;
+    max-width: 260px;
+  }
+}
+
+.field-hint {
+  margin: 0.15rem 0 0;
+  font-size: 0.75rem;
+  color: var(--text-muted, #9ca3af);
+}
+
+.create-form-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.spinner--sm {
+  width: 12px;
+  height: 12px;
+  border-width: 2px;
+  display: inline-block;
+  vertical-align: middle;
+  margin-right: 4px;
+}
+
+.profile-banner--success {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.65rem 1rem;
+  margin-bottom: 1rem;
+  border-radius: 8px;
+  background: var(--success-bg, #ecfdf5);
+  border: 1px solid var(--success-border, #6ee7b7);
+  color: var(--success-color, #065f46);
+  font-size: 0.875rem;
+  font-weight: 500;
+  animation: slide-down 0.2s ease;
+}
+
+.btn-danger.btn-sm,
+.btn-ghost.btn-sm {
+  height: 32px;
+  padding: 0 0.65rem;
+  font-size: 0.75rem;
+}
+
+@keyframes slide-down {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

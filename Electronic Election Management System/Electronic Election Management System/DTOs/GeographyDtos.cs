@@ -15,6 +15,13 @@ namespace Electronic_Election_Management_System.DTOs
         public string Name { get; set; } = string.Empty;
         public string? Code { get; set; }
         public string? Category { get; set; }
+
+        /// <summary>
+        /// What the place is called in words — "County", "City", "Județ". Descriptive only;
+        /// <see cref="Category"/> is what carries the tree's structure.
+        /// </summary>
+        public string? Kind { get; set; }
+
         public bool HasChildren { get; set; }
     }
 
@@ -30,13 +37,25 @@ namespace Electronic_Election_Management_System.DTOs
 
         [Required, NotWhitespace, StringLength(ValidationRules.LabelNameMaxLength)]
         public string Name { get; set; } = string.Empty;
+
+        /// <summary>What the place is: "Oraș", "Comună", "Sector". Optional and free-form.</summary>
+        [StringLength(ValidationRules.LabelCategoryMaxLength)]
+        public string? Kind { get; set; }
     }
 
-    // SYNC: geography.model.ts -> RenameGeographicNodeRequest
-    public class RenameGeographicNodeRequest
+    // SYNC: geography.model.ts -> UpdateGeographicNodeRequest
+    /// <summary>
+    /// Edits the two things about a node that are safe to change by hand. Its code and its place
+    /// in the tree stay put, so nothing that points at this node is disturbed.
+    /// </summary>
+    public class UpdateGeographicNodeRequest
     {
         [Required, NotWhitespace, StringLength(ValidationRules.LabelNameMaxLength)]
         public string Name { get; set; } = string.Empty;
+
+        /// <summary>Blank clears it back to "unspecified".</summary>
+        [StringLength(ValidationRules.LabelCategoryMaxLength)]
+        public string? Kind { get; set; }
     }
 
     // SYNC: geography.model.ts -> MoveGeographicNodeRequest

@@ -39,7 +39,8 @@ namespace Electronic_Election_Management_System.Services
             return ServiceResult<List<GeographicNodeDto>>.Ok(children.Select(ToDto).ToList());
         }
 
-        public async Task<ServiceResult<GeographicNodeDto>> CreateChildAsync(Guid parentId, string name)
+        public async Task<ServiceResult<GeographicNodeDto>> CreateChildAsync(
+            Guid parentId, string name, string? kind)
         {
             var parent = await _labels.GetByIdAsync(parentId);
             if (parent is null || !LabelCategories.IsGeographic(parent.Category))
@@ -53,11 +54,13 @@ namespace Electronic_Election_Management_System.Services
             {
                 Name = trimmed,
                 ParentId = parentId,
-                // Derived, not supplied: an administrator adding a town should not have to know
-                // the vocabulary, and a hand-typed category would drift from the tree's shape.
+                // Still derived, never supplied. The category is what the tree is built on, and
+                // a hand-typed one would drift from its shape. What the caller names is Kind,
+                // which describes the place and carries no structure at all.
                 Category = parent.Category == LabelCategories.Country
                     ? LabelCategories.Subdivision
                     : LabelCategories.Locality,
+                Kind = Blank(kind),
                 // No ISO code: these nodes are local additions, and the filtered unique index on
                 // Code accepts any number of nulls.
                 Code = null
@@ -72,11 +75,12 @@ namespace Electronic_Election_Management_System.Services
                 Name = label.Name,
                 Code = label.Code,
                 Category = label.Category,
+                Kind = label.Kind,
                 HasChildren = false
             });
         }
 
-        public async Task<ServiceResult<GeographicNodeDto>> RenameAsync(Guid id, string name)
+        public async Task<ServiceResult<GeographicNodeDto>> UpdateAsync(Guid id, string name, string? kind)
         {
             var node = await _labels.GetByIdAsync(id);
             if (node is null || !LabelCategories.IsGeographic(node.Category))
@@ -89,6 +93,7 @@ namespace Electronic_Election_Management_System.Services
                 return ServiceResult<GeographicNodeDto>.Fail(ErrorCode.LabelNameTakenUnderParent);
 
             node.Name = trimmed;
+            node.Kind = Blank(kind);
             await _labels.SaveChangesAsync();
 
             return ServiceResult<GeographicNodeDto>.Ok(new GeographicNodeDto
@@ -97,9 +102,14 @@ namespace Electronic_Election_Management_System.Services
                 Name = node.Name,
                 Code = node.Code,
                 Category = node.Category,
+                Kind = node.Kind,
                 HasChildren = await _labels.HasChildrenAsync(id)
             });
         }
+
+        /// <summary>Whitespace and empty both mean "unspecified", and are stored as null.</summary>
+        private static string? Blank(string? value) =>
+            string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 
         private static GeographicNodeDto ToDto(GeographicNode node) => new()
         {
@@ -107,6 +117,7 @@ namespace Electronic_Election_Management_System.Services
             Name = node.Name,
             Code = node.Code,
             Category = node.Category,
+            Kind = node.Kind,
             HasChildren = node.HasChildren
         };
     }

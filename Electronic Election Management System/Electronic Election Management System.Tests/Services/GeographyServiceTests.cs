@@ -22,7 +22,7 @@ public class GeographyServiceTests
     {
         _labels.GetCountriesAsync().Returns(new List<GeographicNode>
         {
-            new(Guid.NewGuid(), "Romania", "RO", LabelCategories.Country, true)
+            new(Guid.NewGuid(), "Romania", "RO", LabelCategories.Country, null, true)
         });
 
         var result = await _service.GetCountriesAsync();
@@ -80,7 +80,7 @@ public class GeographyServiceTests
         _labels.GetByIdAsync(romania.Id).Returns(romania);
         _labels.GetChildrenAsync(romania.Id).Returns(new List<GeographicNode>
         {
-            new(Guid.NewGuid(), "Cluj", "RO-CJ", LabelCategories.Subdivision, false)
+            new(Guid.NewGuid(), "Cluj", "RO-CJ", LabelCategories.Subdivision, "County", false)
         });
 
         var result = await _service.GetChildrenAsync(romania.Id);
@@ -113,7 +113,7 @@ public class GeographyServiceTests
         var romania = Geo("Romania", LabelCategories.Country);
         _labels.GetByIdAsync(romania.Id).Returns(romania);
 
-        var result = await _service.CreateChildAsync(romania.Id, "Cluj");
+        var result = await _service.CreateChildAsync(romania.Id, "Cluj", null);
 
         result.Success.Should().BeTrue();
         result.Data!.Category.Should().Be(LabelCategories.Subdivision);
@@ -127,7 +127,7 @@ public class GeographyServiceTests
         var cluj = Geo("Cluj", LabelCategories.Subdivision);
         _labels.GetByIdAsync(cluj.Id).Returns(cluj);
 
-        var result = await _service.CreateChildAsync(cluj.Id, "Floresti");
+        var result = await _service.CreateChildAsync(cluj.Id, "Floresti", null);
 
         result.Data!.Category.Should().Be(LabelCategories.Locality);
     }
@@ -138,7 +138,7 @@ public class GeographyServiceTests
         var romania = Geo("Romania", LabelCategories.Country);
         _labels.GetByIdAsync(romania.Id).Returns(romania);
 
-        var result = await _service.CreateChildAsync(romania.Id, "   Cluj   ");
+        var result = await _service.CreateChildAsync(romania.Id, "   Cluj   ", null);
 
         result.Data!.Name.Should().Be("Cluj");
         await _labels.Received(1).NameTakenUnderParentAsync(romania.Id, "Cluj", null);
@@ -150,7 +150,7 @@ public class GeographyServiceTests
         var id = Guid.NewGuid();
         _labels.GetByIdAsync(id).Returns((Label?)null);
 
-        var result = await _service.CreateChildAsync(id, "Cluj");
+        var result = await _service.CreateChildAsync(id, "Cluj", null);
 
         result.IsNotFound.Should().BeTrue();
         await _labels.DidNotReceive().AddAsync(Arg.Any<Label>());
@@ -162,7 +162,7 @@ public class GeographyServiceTests
         var hr = new Label { Id = Guid.NewGuid(), Name = "HR", Category = "Department" };
         _labels.GetByIdAsync(hr.Id).Returns(hr);
 
-        var result = await _service.CreateChildAsync(hr.Id, "Cluj");
+        var result = await _service.CreateChildAsync(hr.Id, "Cluj", null);
 
         result.IsNotFound.Should().BeTrue();
         await _labels.DidNotReceive().AddAsync(Arg.Any<Label>());
@@ -177,22 +177,22 @@ public class GeographyServiceTests
         _labels.GetByIdAsync(romania.Id).Returns(romania);
         _labels.NameTakenUnderParentAsync(romania.Id, "Cluj", null).Returns(true);
 
-        var result = await _service.CreateChildAsync(romania.Id, "Cluj");
+        var result = await _service.CreateChildAsync(romania.Id, "Cluj", null);
 
         result.Success.Should().BeFalse();
         result.ErrorCode.Should().Be(ErrorCode.LabelNameTakenUnderParent);
         await _labels.DidNotReceive().AddAsync(Arg.Any<Label>());
     }
 
-    // --- RenameAsync ---
+    // --- UpdateAsync ---
 
     [Fact]
-    public async Task RenameAsync_ChangesTheNameAndKeepsTheCode()
+    public async Task UpdateAsync_ChangesTheNameAndKeepsTheCode()
     {
         var cluj = Geo("Cluj", LabelCategories.Subdivision, "RO-CJ");
         _labels.GetByIdAsync(cluj.Id).Returns(cluj);
 
-        var result = await _service.RenameAsync(cluj.Id, "Cluj-Napoca");
+        var result = await _service.UpdateAsync(cluj.Id, "Cluj-Napoca", null);
 
         result.Success.Should().BeTrue();
         result.Data!.Name.Should().Be("Cluj-Napoca");
@@ -201,41 +201,98 @@ public class GeographyServiceTests
     }
 
     [Fact]
-    public async Task RenameAsync_ToItsOwnCurrentName_IsAllowed()
+    public async Task UpdateAsync_ToItsOwnCurrentName_IsAllowed()
     {
         // The clash check excludes the node itself, otherwise saving an untouched form fails.
         var cluj = Geo("Cluj", LabelCategories.Subdivision);
         _labels.GetByIdAsync(cluj.Id).Returns(cluj);
         _labels.NameTakenUnderParentAsync(cluj.ParentId, "Cluj", cluj.Id).Returns(false);
 
-        var result = await _service.RenameAsync(cluj.Id, "Cluj");
+        var result = await _service.UpdateAsync(cluj.Id, "Cluj", null);
 
         result.Success.Should().BeTrue();
     }
 
     [Fact]
-    public async Task RenameAsync_WhenASiblingAlreadyHasTheName_Fails()
+    public async Task UpdateAsync_WhenASiblingAlreadyHasTheName_Fails()
     {
         var cluj = Geo("Cluj", LabelCategories.Subdivision);
         _labels.GetByIdAsync(cluj.Id).Returns(cluj);
         _labels.NameTakenUnderParentAsync(cluj.ParentId, "Timis", cluj.Id).Returns(true);
 
-        var result = await _service.RenameAsync(cluj.Id, "Timis");
+        var result = await _service.UpdateAsync(cluj.Id, "Timis", null);
 
         result.ErrorCode.Should().Be(ErrorCode.LabelNameTakenUnderParent);
         await _labels.DidNotReceive().SaveChangesAsync();
     }
 
     [Fact]
-    public async Task RenameAsync_WhenLabelIsNotGeographic_ReturnsNotFound()
+    public async Task UpdateAsync_WhenLabelIsNotGeographic_ReturnsNotFound()
     {
         var hr = new Label { Id = Guid.NewGuid(), Name = "HR", Category = "Department" };
         _labels.GetByIdAsync(hr.Id).Returns(hr);
 
-        var result = await _service.RenameAsync(hr.Id, "HR2");
+        var result = await _service.UpdateAsync(hr.Id, "HR2", null);
 
         result.IsNotFound.Should().BeTrue();
         await _labels.DidNotReceive().SaveChangesAsync();
+    }
+
+    // --- Kind: descriptive only, never structural ---
+
+    [Fact]
+    public async Task CreateChildAsync_StoresTheKindWithoutTouchingTheCategory()
+    {
+        var romania = Geo("Romania", LabelCategories.Country);
+        _labels.GetByIdAsync(romania.Id).Returns(romania);
+
+        var result = await _service.CreateChildAsync(romania.Id, "Cluj", "Județ");
+
+        result.Data!.Kind.Should().Be("Județ");
+        result.Data.Category.Should().Be(LabelCategories.Subdivision,
+            "the kind describes the place; the category is what the tree is built on");
+    }
+
+    [Fact]
+    public async Task CreateChildAsync_TrimsTheKindAndTreatsBlankAsUnspecified()
+    {
+        var romania = Geo("Romania", LabelCategories.Country);
+        _labels.GetByIdAsync(romania.Id).Returns(romania);
+
+        var spaced = await _service.CreateChildAsync(romania.Id, "Cluj", "  Oraș  ");
+        var blank = await _service.CreateChildAsync(romania.Id, "Alba", "   ");
+
+        spaced.Data!.Kind.Should().Be("Oraș");
+        blank.Data!.Kind.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task UpdateAsync_ChangesTheKind()
+    {
+        // The seed writes English words from the source data, so translating them is the
+        // first thing an administrator will want to do.
+        var cluj = Geo("Cluj", LabelCategories.Subdivision, "RO-CJ");
+        cluj.Kind = "County";
+        _labels.GetByIdAsync(cluj.Id).Returns(cluj);
+
+        var result = await _service.UpdateAsync(cluj.Id, "Cluj", "Județ");
+
+        result.Success.Should().BeTrue();
+        result.Data!.Kind.Should().Be("Județ");
+        result.Data.Category.Should().Be(LabelCategories.Subdivision);
+        result.Data.Code.Should().Be("RO-CJ");
+    }
+
+    [Fact]
+    public async Task UpdateAsync_WithABlankKind_ClearsItBackToUnspecified()
+    {
+        var cluj = Geo("Cluj", LabelCategories.Subdivision);
+        cluj.Kind = "County";
+        _labels.GetByIdAsync(cluj.Id).Returns(cluj);
+
+        var result = await _service.UpdateAsync(cluj.Id, "Cluj", "");
+
+        result.Data!.Kind.Should().BeNull();
     }
 
     private static Label Geo(string name, string category, string? code = null) => new()
