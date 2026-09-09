@@ -12,7 +12,8 @@
     "language": "Limbă",
     "theme": "Temă",
     "adminBadge": "Admin",
-    "managerBadge": "Manager"
+    "managerBadge": "Manager",
+    "geography": "Zone"
   },
   "auth": {
     "roleChanged": "Rolul tau a fost schimbat. Te rugam sa te autentifici din nou pentru a continua.",
@@ -696,5 +697,42 @@
     "alreadyConfigured": "Aplicația este deja configurată. Veți fi redirecționat...",
     "errorUnknown": "A apărut o eroare neașteptată. Verificați jurnalele serverului.",
     "seedData": "Populează baza de date cu date de test"
+  },
+  "geography": {
+    "heading": "Zone geografice",
+    "subtitle": "Arborele de țări, județe și localități din care își aleg votanții regiunea.",
+    "addBtn": "Adaugă",
+    "addTitle": "Adaugă sub „{{parent}}”",
+    "breadcrumbLabel": "Calea în arbore",
+    "allCountries": "Toate țările",
+    "fieldName": "Denumire",
+    "fieldNamePlaceholder": "ex. Florești",
+    "cancel": "Renunță",
+    "saveBtn": "Salvează",
+    "loading": "Se încarcă…",
+    "empty": "Nimic la acest nivel.",
+    "emptyHint": "Poți adăuga primul nod cu butonul de sus.",
+    "colName": "Denumire",
+    "colCode": "Cod",
+    "colKind": "Tip",
+    "renameBtn": "Redenumește",
+    "deleteBtn": "Șterge",
+    "confirmDelete": "Ștergi „{{name}}”? Cei care au această zonă vor fi mutați la nivelul de deasupra.",
+    "loadFailed": "Nu am putut încărca arborele.",
+    "createFailed": "Nu am putut adăuga nodul.",
+    "createSuccess": "Nod adăugat.",
+    "renameFailed": "Nu am putut redenumi nodul.",
+    "renameSuccess": "Denumire actualizată.",
+    "deleteFailed": "Nu am putut șterge nodul.",
+    "deleteSuccess": "Nod șters.",
+    "kind": {
+      "country": "Țară",
+      "subdivision": "Județ / regiune",
+      "locality": "Localitate"
+    },
+    "confirmYes": "Da, șterge",
+    "searchPlaceholder": "Caută după denumire sau cod…",
+    "searchCount": "{{shown}} din {{total}}",
+    "noMatches": "Nicio potrivire."
   }
 }

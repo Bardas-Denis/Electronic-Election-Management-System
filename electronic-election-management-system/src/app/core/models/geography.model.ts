@@ -1,4 +1,4 @@
-// SYNC: GeographyDtos.cs -> GeographicNodeDto
+// SYNC: GeographyDtos.cs -> GeographicNodeDto, CreateGeographicNodeRequest, RenameGeographicNodeRequest
 
 /**
  * One node of the geographic label tree. The tree is browsed a level at a time — countries
@@ -14,4 +14,14 @@ export interface GeographicNode {
   category?: string | null;
   /** Whether another level exists below, so a picker knows to offer one. */
   hasChildren: boolean;
+}
+
+/** Adds a node under an existing one. The category is derived server-side from the parent. */
+export interface CreateGeographicNodeRequest {
+  parentId: string;
+  name: string;
+}
+
+export interface RenameGeographicNodeRequest {
+  name: string;
 }
