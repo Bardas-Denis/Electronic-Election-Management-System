@@ -63,6 +63,12 @@ namespace Electronic_Election_Management_System.Data.Repositories
         /// <summary>Returns a label by id, or null if not found.</summary>
         Task<Label?> GetByIdAsync(Guid id);
 
+        /// <summary>
+        /// The geographic node carrying this ISO code, or null. Codes are unique among the labels
+        /// that have one, so there is never more than a single match.
+        /// </summary>
+        Task<Label?> GetByCodeAsync(string code);
+
         /// <summary>Returns all labels whose ids are in the given set.</summary>
         Task<List<Label>> GetByIdsAsync(IEnumerable<Guid> ids);
 

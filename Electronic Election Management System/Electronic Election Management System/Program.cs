@@ -100,6 +100,7 @@ try
         builder.Services.AddScoped<IScoringSchemeService, ScoringSchemeService>();
         builder.Services.AddScoped<ILabelService, LabelService>();
         builder.Services.AddScoped<IGeographyService, GeographyService>();
+        builder.Services.AddScoped<IResidenceLabelSync, ResidenceLabelSync>();
         builder.Services.AddSingleton<ICnpService, CnpService>();
         builder.Services.AddScoped<IUserNotifier, SignalRUserNotifier>();
         builder.Services.AddScoped<IEmailService, EmailService>();

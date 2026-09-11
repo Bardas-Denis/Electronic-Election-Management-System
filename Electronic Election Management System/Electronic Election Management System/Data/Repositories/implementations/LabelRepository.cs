@@ -111,6 +111,9 @@ namespace Electronic_Election_Management_System.Data.Repositories
             return _db.Labels.Where(l => idList.Contains(l.Id)).ToListAsync();
         }
 
+        public Task<Label?> GetByCodeAsync(string code)
+            => _db.Labels.FirstOrDefaultAsync(l => l.Code == code);
+
         public Task<bool> ExistsByNameAsync(string name)
             => _db.Labels.AnyAsync(l =>
                 (l.Category == null || !LabelCategories.Geographic.Contains(l.Category)) &&
