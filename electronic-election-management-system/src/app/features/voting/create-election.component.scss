@@ -1347,6 +1347,47 @@
   background: var(--bg-card);
 }
 
+
+.custom-groups-box {
+  margin-top: 0.75rem;
+  padding: 1rem;
+  border: 1px solid var(--border-color, #e2e2e2);
+  border-radius: 8px;
+  background: var(--surface-subtle, #fafafa);
+
+  label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+  }
+}
+
+.custom-group-row {
+  display: grid;
+  grid-template-columns: 1fr 2fr auto;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+  align-items: center;
+}
+
+.remove-group-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  border: 1px solid var(--border-color, #e2e2e2);
+  background: transparent;
+  cursor: pointer;
+}
+
+.add-group-btn {
+  margin-top: 0.25rem;
+  padding: 0.4rem 0.75rem;
+  border: 1px dashed var(--border-color, #ccc);
+  border-radius: 6px;
+  background: transparent;
+  cursor: pointer;
+}
+
 .question-type-toggle {
   padding: .3rem .7rem;
   border: none;

@@ -14,6 +14,8 @@ namespace Electronic_Election_Management_System.DTOs
         /// <summary>The synthetic "Other" entry: no real option behind it, so
         /// <see cref="OptionId"/> is empty and the frontend substitutes a translated label.</summary>
         public bool IsOtherOption { get; set; }
+
+        public Dictionary<string, int>? RegionalCounts { get; set; }
         public Dictionary<int, int>? RankCounts { get; set; }
     }
 

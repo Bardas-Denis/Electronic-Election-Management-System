@@ -13,6 +13,7 @@ import {
   AudienceConditionDto,
   AudienceGroupDto,
   CreateElectionQuestionDto,
+  CustomRegionGroupDto,
   ElectionDto,
   ElectionInvitationDto,
   ImageUploadResultDto,
@@ -141,6 +142,9 @@ export class CreateElectionComponent implements OnInit {
     title: ['', [trimmedRequired, Validators.maxLength(INPUT_LIMITS.title)]],
     description: ['', Validators.maxLength(INPUT_LIMITS.description)],
     type: ['Politic', Validators.required],
+    regionalGroupingType: ['None'],
+    customGroupingBaseField: ['County'],
+    customRegionGroups: this.fb.array<ReturnType<CreateElectionComponent['createCustomGroupGroup']>>([]),
     isAnonymous: [true],
     // Kept in the form payload even before the invitation UI is added, so editing
     // an existing closed election never accidentally makes it public.
@@ -155,6 +159,33 @@ export class CreateElectionComponent implements OnInit {
     endsAt: ['', Validators.required],
     questions: this.createQuestionsArray()
   }, { validators: dateRangeValidator });
+
+  get customRegionGroupsArray(): FormArray {
+    return this.form.get('customRegionGroups') as FormArray;
+  }
+
+  get isCustomRegionalGrouping(): boolean {
+    return this.form.get('regionalGroupingType')?.value === 'Custom';
+  }
+
+  /** Un grup = un nume + o listă de regiuni brute (județe/orașe), introduse ca text
+   * separat prin virgulă - cea mai simplă interacțiune pentru "desenează-ți gruparea". */
+  private createCustomGroupGroup(group?: CustomRegionGroupDto) {
+    return this.fb.group({
+      name: [group?.name ?? '', [trimmedRequired, Validators.maxLength(INPUT_LIMITS.shortText)]],
+      membersText: [group?.members?.join(', ') ?? '', trimmedRequired]
+    });
+  }
+
+  addCustomRegionGroup(): void {
+    if (this.isLocked()) return;
+    this.customRegionGroupsArray.push(this.createCustomGroupGroup());
+  }
+
+  removeCustomRegionGroup(index: number): void {
+    if (this.isLocked()) return;
+    this.customRegionGroupsArray.removeAt(index);
+  }
 
   get audienceGroupsArray(): FormArray {
     return this.form.get('audienceGroups') as FormArray;
@@ -183,6 +214,16 @@ export class CreateElectionComponent implements OnInit {
       }
     });
 
+    this.form.get('regionalGroupingType')?.valueChanges.subscribe((type) => {
+  if (type === 'Custom') {
+    if (this.customRegionGroupsArray.length === 0) {
+      this.addCustomRegionGroup();
+    }
+  } else {
+    this.customRegionGroupsArray.clear();
+  }
+  });
+
     this.syncAnonymousState(this.form.get('type')?.value);
 
     this.editingElectionId = this.route.snapshot.paramMap.get('id');
@@ -207,16 +248,25 @@ export class CreateElectionComponent implements OnInit {
           this.createQuestionsArray(normalizeEditableQuestions(election))
         );
 
-        this.form.patchValue({
+          this.form.patchValue({
           title: election.title,
           description: election.description ?? '',
           type: election.type,
+          regionalGroupingType: election.regionalGroupingType ?? 'None',
+          customGroupingBaseField: election.customGroupingBaseField ?? 'County',
           isAnonymous: election.isAnonymous,
           isClosed: election.isClosed,
           isVisible: election.isVisible,
           startsAt: toDatetimeLocal(election.startsAt),
           endsAt: toDatetimeLocal(election.endsAt)
         });
+
+        if (election.regionalGroupingType === 'Custom' && election.customRegionGroups?.length) {
+          this.customRegionGroupsArray.clear();
+          for (const group of election.customRegionGroups) {
+            this.customRegionGroupsArray.push(this.createCustomGroupGroup(group));
+          }
+        }
 
         this.syncAnonymousState(this.form.get('type')?.value);
 
@@ -1137,8 +1187,6 @@ export class CreateElectionComponent implements OnInit {
     return { effective, total };
   }
 
-
-
   toggleLabelPicker(): void {
     if (this.isLocked()) return;
     this.labelPickerOpen.update(open => !open);
@@ -1370,6 +1418,18 @@ export class CreateElectionComponent implements OnInit {
       payload.endsAt = new Date(payload.endsAt).toISOString();
     } catch { /* fall back */ }
 
+    // Map custom region groups for both create and update operations
+    payload.customGroupingBaseField = this.form.get('customGroupingBaseField')?.value ?? 'County';
+    payload.customRegionGroups = (this.customRegionGroupsArray?.value ?? [])
+      .map((g: { name: string; membersText: string }) => ({
+        name: (g.name ?? '').trim(),
+        members: (g.membersText ?? '')
+          .split(',')
+          .map((m: string) => m.trim())
+          .filter((m: string) => m.length > 0)
+      }))
+      .filter((g: CustomRegionGroupDto) => g.name && g.members.length > 0);
+
     if (this.editingElectionId && this.isClosedElection) {
       // Edit mode for a closed election: PUT the details, then diff invitations
       this.votingService.updateElection(this.editingElectionId, payload).subscribe({
@@ -1389,7 +1449,7 @@ export class CreateElectionComponent implements OnInit {
         }
       });
     } else {
-      // Create mode or editing a public election
+      // Create mode or editing a public/open election
       const request$ = this.editingElectionId
         ? this.votingService.updateElection(this.editingElectionId, payload)
         : this.votingService.createElection(payload);

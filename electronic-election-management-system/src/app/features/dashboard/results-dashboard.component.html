@@ -10,6 +10,21 @@
         <div>
           <h2>{{ results.title }}</h2>
           <p class="total-votes">{{ 'results.totalVotes' | translate }} {{ results.totalVotes }}</p>
+          
+          <!-- Dropdown pentru filtrarea pe regiuni -->
+          @if (availableRegions().length > 0) {
+  <div style="margin-top: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+    <label for="regionFilter" style="font-weight: 500; font-size: 0.9rem; color: var(--text-secondary);">
+      {{ 'elections.regionFilterLabel' | translate }}
+    </label>
+    <select id="regionFilter" (change)="activeRegionFilter.set($any($event.target).value || null)" style="padding: 0.4rem; border-radius: 6px; border: 1px solid var(--border-color); font-size: 0.9rem;">
+      <option value="">{{ 'elections.allRegionsOption' | translate }}</option>
+      @for (region of availableRegions(); track region) {
+        <option [value]="region">{{ region }}</option>
+      }
+    </select>
+  </div>
+}
         </div>
         <span class="live-indicator"><span class="live-dot"></span>{{ 'results.live' | translate }}</span>
       </div>
@@ -18,7 +33,7 @@
         @for (question of questions(results); track question.questionId) {
           <section class="result-question">
             <h3>{{ question.text }}</h3>
-            <p class="question-votes">{{ question.totalVotes }} {{ 'results.votes' | translate }}</p>
+            <p class="question-votes">{{ getQuestionTotal(question) }} {{ 'results.votes' | translate }}</p>
 
             <!-- Question Image (Displayed only if it exists) -->
             @if ($any(question).imageId) {
@@ -182,7 +197,7 @@
                   @for (option of sortedResults(question); track option.optionId; let i = $index) {
                     <div
                       class="result-row"
-                      [class.is-leading]="isLeading(option.voteCount, question)"
+                      [class.is-leading]="isLeading(option.effectiveVoteCount, question)"
                       [class.is-hovered]="isSliceActive(question.questionId, option.optionId)"
                       [class.is-selected]="isSliceSelected(question.questionId, option.optionId)"
                       role="button"
@@ -203,7 +218,7 @@
                       <div class="result-content">
                         <div class="result-label">
                           <span>{{ option.isOtherOption ? ('results.otherOptionLabel' | translate) : option.label }}</span>
-                          <span>{{ option.voteCount }} {{ 'results.votes' | translate }} · {{ percentFor(option.voteCount, questionTotal(question)) }}%</span>
+                          <span>{{ option.effectiveVoteCount }} {{ 'results.votes' | translate }} · {{ percentFor(option.effectiveVoteCount, getQuestionTotal(question)) }}%</span>
                         </div>
                       </div>
                     </div>

@@ -295,7 +295,22 @@
     "backToMyElections": "Înapoi la alegerile mele",
     "previewHeading": "Previzualizează alegerea (Blocată)",
     "optionImageTooLarge": "Imaginea este prea mare. Alege una mai mică sau cu rezoluție mai redusă.",
-    "optionImageUploadFailed": "Imaginea nu a putut fi încărcată. Încearcă din nou."
+    "optionImageUploadFailed": "Imaginea nu a putut fi încărcată. Încearcă din nou.",
+    "regionalGroupingLabel": "Grupare regională",
+  "regionalGroupingNone": "Fără grupare",
+  "regionalGroupingCounty": "Grupare pe județ",
+  "regionalGroupingRegion": "Grupare pe regiune",
+  "regionalGroupingCustom": "Grupare personalizată",
+  "customGroupsTitle": "Grupuri regionale (gerrymandering)",
+  "customGroupNamePlaceholder": "Nume grup (ex: Nord-Vest)",
+  "customGroupMembersPlaceholder": "Județe/orașe, separate prin virgulă (ex: Cluj, Sălaj)",
+  "addGroupButton": "+ Adaugă grup",
+  "regionFilterLabel": "Filtrează după regiune",
+  "allRegionsOption": "Toate regiunile",
+  "customBaseFieldLabel": "Grupează după",
+"baseFieldCounty": "Județ",
+"baseFieldCity": "Oraș",
+"baseFieldCitizenship": "Țară / cetățenie"
   },
   "vote": {
     "questionOptional": "(opțional)",
