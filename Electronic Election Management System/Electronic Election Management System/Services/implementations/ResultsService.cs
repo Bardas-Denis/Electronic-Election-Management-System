@@ -308,7 +308,7 @@ namespace Electronic_Election_Management_System.Services
                 {
                     return customGroupLookup.TryGetValue(rawValue.Trim(), out var groupName)
                         ? groupName
-                        : rawValue; // known value, just not placed in any custom group
+                        : rawValue;
                 }
             }
 
@@ -380,8 +380,8 @@ namespace Electronic_Election_Management_System.Services
                             foreach (var vote in identifiedVotes)
                             {
                                 var regionKey = RegionKeyFor(
-            var questions = election.Questions
-                .OrderBy(q => q.DisplayOrder)
+                                    vote, election.RegionalGroupingType, customBaseField,
+                                    residenceLookup, customGroupLookup);
 
                                 var pointsToAdd = q.QuestionType == QuestionType.Ranking
                                     ? scorers[q.Id](vote.Rank)
@@ -389,17 +389,17 @@ namespace Electronic_Election_Management_System.Services
 
                                 regionalVoteCounts[regionKey] = regionalVoteCounts.GetValueOrDefault(regionKey) + pointsToAdd;
                             }
-                    Results = q.Options.Select(o => new OptionResultDto
-                    {
-                        OptionId = o.Id,
-                        Label = o.Label,
-                        ImageId = o.ImageId,
-                        VoteCount = q.QuestionType == QuestionType.Ranking
-                            ? o.Votes.Sum(v => GetRankingPoints(v.Rank, q.ScoringScheme, q.Options.Count))
-                            : o.Votes.Count,
-                        RankCounts = q.QuestionType == QuestionType.Ranking
-                            ? o.Votes.Where(v => v.Rank.HasValue).GroupBy(v => v.Rank.Value).ToDictionary(g => g.Key, g => g.Count())
-                            : null
+                        }
+
+                        return new OptionResultDto
+                        {
+                            OptionId = o.Id,
+                            Label = o.Label,
+                            ImageId = o.ImageId,
+                            VoteCount = voteCount,
+                            RankCounts = rankCounts,
+                            RegionalCounts = regionalVoteCounts
+                        };
                     }).ToList(),
                     ScoringScheme = q.ScoringScheme == null ? null : new ScoringSchemeDto
                     {
@@ -411,14 +411,6 @@ namespace Electronic_Election_Management_System.Services
                         IsPredefined = q.ScoringScheme.IsPredefined,
                         PluginKey = q.ScoringScheme.PluginKey
                     },
-                    // A FreeText question's answers, or a Choice question's "Other" answers.
-                    // Ordered by when they were cast, and deliberately by the same key the
-                    // text-answer-authors endpoint uses: the dashboard swaps one list for the
-                    // other when the authors are revealed, and without a shared ordering the
-                    // answers would visibly rearrange themselves at that moment.
-                    // The id breaks ties: two answers landing in the same tick would otherwise
-                    // be ordered however the database felt like it, differently in each of the
-                    // two queries, and the list would shuffle on reveal for those rows alone.
                     TextAnswers = q.QuestionType == QuestionType.FreeText || q.AllowOtherOption
                         ? q.Votes.Where(v => v.AnswerText != null)
                             .OrderBy(v => v.CastAt)
@@ -431,8 +423,6 @@ namespace Electronic_Election_Management_System.Services
 
             foreach (var (question, source) in questions.Zip(election.Questions.OrderBy(q => q.DisplayOrder)))
             {
-                // "Other" answers get a synthetic entry shaped like a real option, so the charts
-                // account for every vote rather than only the fixed ones.
                 if (source.QuestionType == QuestionType.Choice && source.AllowOtherOption)
                 {
                     Dictionary<string, int>? otherRegionalCounts = null;
@@ -464,9 +454,6 @@ namespace Electronic_Election_Management_System.Services
                 }
                 else if (question.AllowMultipleAnswers || source.QuestionType == QuestionType.Ranking)
                 {
-                    // A respondent can appear under several options here, so summing VoteCount
-                    // would double-count them - count distinct respondents instead. A respondent
-                    // who only used "Other" (no fixed option) still needs to be counted once.
                     var optionRespondents = source.Options
                         .SelectMany(o => o.Votes)
                         .Select(v => (object?)v.UserId ?? v.VoteTokenId);
@@ -477,9 +464,6 @@ namespace Electronic_Election_Management_System.Services
                 }
                 else
                 {
-                    // Single-answer: every option pick or "Other" answer is its own respondent.
-                    // The "Other" entry added above is already part of Results, so summing it
-                    // alone (no separate "+ TextAnswers.Count") avoids double-counting.
                     question.TotalVotes = question.Results.Sum(result => result.VoteCount);
                 }
             }
@@ -538,8 +522,6 @@ namespace Electronic_Election_Management_System.Services
 
             if (!_plugins.TryGet<IScoringPlugin>(key, out var plugin))
             {
-                // Linear keeps the ranking order meaningful. Scoring everything 0 would render the
-                // election as a perfect tie, which reads as a result rather than as a fault.
                 _logger.LogWarning(
                     "Scoring scheme {Scheme} needs plugin {Key}, which is not loaded. "
                     + "Falling back to linear scoring.", scheme!.Name, key);
@@ -559,7 +541,6 @@ namespace Electronic_Election_Management_System.Services
                 }
                 catch (Exception ex)
                 {
-                    // Plugin code is not ours; one throwing must not take down the results page.
                     if (!faulted)
                     {
                         faulted = true;
