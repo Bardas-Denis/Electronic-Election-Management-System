@@ -38,32 +38,67 @@
       <textarea id="description" formControlName="description" maxlength="2000"
                 [placeholder]="'elections.descriptionPlaceholder' | translate" [attr.readonly]="isLocked() ? true : null"></textarea>
     </div>
+    
+<div class="field-row">
+  <div class="field-group" style="margin-bottom: 0;">
+    <label for="type">{{ 'elections.typeLabel' | translate }}</label>
+    <select id="type" formControlName="type" [style.pointer-events]="isLocked() ? 'none' : 'auto'">
+      <option value="Politic">{{ 'elections.typePolitical' | translate }}</option>
+      <option value="Comercial">{{ 'elections.typeCommercial' | translate }}</option>
+    </select>
+  </div>
 
-    <div class="field-row">
-      <div class="field-group" style="margin-bottom: 0;">
-        <label for="type">{{ 'elections.typeLabel' | translate }}</label>
-        <select id="type" formControlName="type" [style.pointer-events]="isLocked() ? 'none' : 'auto'">
-          <option value="Politic">{{ 'elections.typePolitical' | translate }}</option>
-          <option value="Comercial">{{ 'elections.typeCommercial' | translate }}</option>
-        </select>
-      </div>
-
-      <div class="field-group" style="margin-bottom: 0;">
-        <label>{{ 'elections.privacyLabel' | translate }}</label>
-        <div class="checkbox-field" style="margin-bottom: 0; height: 40px;" [style.pointer-events]="isLocked() ? 'none' : 'auto'">
-          <input type="checkbox" id="isAnonymous" formControlName="isAnonymous" [disabled]="true" />
-          <label for="isAnonymous">{{ 'elections.anonymousVote' | translate }}</label>
-        </div>
-      </div>
+  <div class="field-group" style="margin-bottom: 0;">
+    <label>{{ 'elections.privacyLabel' | translate }}</label>
+    <div class="checkbox-field" style="margin-bottom: 0; height: 40px;" [style.pointer-events]="isLocked() ? 'none' : 'auto'">
+      <input type="checkbox" id="isAnonymous" formControlName="isAnonymous" [disabled]="true" />
+      <label for="isAnonymous">{{ 'elections.anonymousVote' | translate }}</label>
     </div>
+  </div>
+</div>
 
-    <div class="info-box">
-      @if (isPoliticalElection) {
-      <strong>{{ 'elections.infoPolitical' | translate }}</strong>
-      } @else {
-      <strong>{{ 'elections.infoCommercial' | translate }}</strong>
-      }
-    </div>
+<div class="field-group" style="margin-bottom: 0; margin-top: 1rem;">
+  <label for="regionalGroupingType">{{ 'elections.regionalGroupingLabel' | translate }}</label>
+  <select id="regionalGroupingType" formControlName="regionalGroupingType" [style.pointer-events]="isLocked() ? 'none' : 'auto'">
+    <option value="None">{{ 'elections.regionalGroupingNone' | translate }}</option>
+    <option value="County">{{ 'elections.regionalGroupingCounty' | translate }}</option>
+    <option value="Region">{{ 'elections.regionalGroupingRegion' | translate }}</option>
+    <option value="Custom">{{ 'elections.regionalGroupingCustom' | translate }}</option>
+  </select>
+</div>
+
+@if (isCustomRegionalGrouping) {
+  <div class="field-group" style="margin-top: 0.75rem;">
+    <label for="customGroupingBaseField">{{ 'elections.customBaseFieldLabel' | translate }}</label>
+    <select id="customGroupingBaseField" formControlName="customGroupingBaseField">
+      <option value="County">{{ 'elections.baseFieldCounty' | translate }}</option>
+      <option value="City">{{ 'elections.baseFieldCity' | translate }}</option>
+      <option value="Citizenship">{{ 'elections.baseFieldCitizenship' | translate }}</option>
+    </select>
+  </div>
+
+  <div class="field-group custom-groups-box" formArrayName="customRegionGroups">
+    <label>{{ 'elections.customGroupsTitle' | translate }}</label>
+    @for (group of customRegionGroupsArray.controls; track $index; let i = $index) {
+      <div [formGroupName]="i" class="custom-group-row">
+        <input type="text" formControlName="name" [placeholder]="'elections.customGroupNamePlaceholder' | translate" />
+        <input type="text" formControlName="membersText" [placeholder]="'elections.customGroupMembersPlaceholder' | translate" />
+        <button type="button" class="remove-group-btn" (click)="removeCustomRegionGroup(i)" [disabled]="isLocked()">✕</button>
+      </div>
+    }
+    <button type="button" class="add-group-btn" (click)="addCustomRegionGroup()" [disabled]="isLocked()">
+      {{ 'elections.addGroupButton' | translate }}
+    </button>
+  </div>
+}
+
+<div class="info-box" style="margin-top: 1rem;">
+  @if (isPoliticalElection) {
+    <strong>{{ 'elections.infoPolitical' | translate }}</strong>
+  } @else {
+    <strong>{{ 'elections.infoCommercial' | translate }}</strong>
+  }
+</div>
 
     <div class="section-divider visibility-section">
       <h3>{{ 'elections.visibilityLabel' | translate }}</h3>

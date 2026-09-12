@@ -295,7 +295,18 @@
     "backToMyElections": "Back to my elections",
     "previewHeading": "Preview election (Locked)",
     "optionImageTooLarge": "That image is too large. Pick a smaller file or a lower resolution.",
-    "optionImageUploadFailed": "The image could not be uploaded. Please try again."
+    "optionImageUploadFailed": "The image could not be uploaded. Please try again.",
+    "regionalGroupingLabel": "Regional Grouping",
+    "regionalGroupingNone": "No grouping",
+    "regionalGroupingCounty": "Group by County",
+    "regionalGroupingRegion": "Group by Region",
+    "regionalGroupingCustom": "Custom grouping",
+    "customGroupsTitle": "Regional groups (gerrymandering)",
+    "customGroupNamePlaceholder": "Group name (e.g. North-West)",
+    "customGroupMembersPlaceholder": "Counties/cities, comma-separated (e.g. Cluj, Salaj)",
+    "addGroupButton": "+ Add group",
+    "regionFilterLabel": "Filter by region",
+    "allRegionsOption": "All Regions"
   },
   "vote": {
     "questionOptional": "(optional)",
@@ -637,6 +648,7 @@
       "workEmail": "Work email",
       "workEmailPlaceholder": "e.g. john.smith@company.com"
     }
+    
   },
   "setup": {
     "heading": "Database Setup",

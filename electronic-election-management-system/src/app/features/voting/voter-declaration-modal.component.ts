@@ -226,21 +226,23 @@ export class VoterDeclarationModalComponent implements OnInit {
     });
   }
 
-  onConfirm(): void {
-    if (this.isPolitic()) {
-      this.politicForm.markAllAsTouched();
-      if (this.politicForm.invalid) return;
+onConfirm(): void {
+  if (this.isPolitic()) {
+    this.politicForm.markAllAsTouched();
+    if (this.politicForm.invalid) return;
 
-      this.cnpValue.set(this.cnpCtrl.value ?? '');
-      const { cnp, fullName, residenceCounty, residenceAddress } = this.politicForm.getRawValue();
-      this.confirmed.emit({
-        cnp: cnp!,
-        fullName: fullName!,
-        residenceCounty: residenceCounty!,
-        residenceAddress: residenceAddress!
-      });
-      return;
-    }
+    this.cnpValue.set(this.cnpCtrl.value ?? '');
+    const { cnp, fullName, residenceCounty, residenceAddress, residenceCity, citizenship } = this.politicForm.getRawValue();
+    this.confirmed.emit({
+      cnp: cnp!,
+      fullName: fullName!,
+      residenceCounty: residenceCounty!,
+      residenceAddress: residenceAddress!,
+      residenceCity: residenceCity || undefined,
+      citizenship: citizenship || undefined
+    });
+    return;
+  }
 
     this.comercialForm.markAllAsTouched();
     if (this.comercialForm.invalid) return;

@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Electronic_Election_Management_System.Constants;
 using Electronic_Election_Management_System.Data.Repositories;
 using Electronic_Election_Management_System.DTOs;
@@ -189,11 +190,157 @@ namespace Electronic_Election_Management_System.Services
                 .Where(d => !string.IsNullOrWhiteSpace(d.FullName))
                 .ToDictionary(d => d.UserId, d => d.FullName!.Trim());
 
+        /// <summary>Residence data for a set of identified voters, keyed by UserId. Fallback
+        /// source for regional grouping when a vote has no <see cref="VoterDeclaration"/>
+        /// attached - which is every vote on a non-Politic election, since the declaration is
+        /// only collected there.</summary>
+        private async Task<Dictionary<Guid, UserDetails>> ResidenceForAsync(IEnumerable<Vote> votes)
+            => (await _users.GetUserDetailsForUsersAsync(
+                    votes.Where(v => v.UserId.HasValue).Select(v => v.UserId!.Value)))
+                .ToDictionary(d => d.UserId);
+
+        /// <summary>
+        /// Parses the creator-defined "Custom" region groups off an election (see
+        /// <c>Election.CustomRegionGroupsJson</c>) into a flat lookup: raw value (county/city/
+        /// citizenship, trimmed, case-insensitive) -> the group name it belongs to. This is the
+        /// "gerrymandering" mapping - several raw values collapse into one creator-named group.
+        /// Empty/invalid JSON yields an empty lookup rather than throwing, so a malformed or
+        /// missing definition degrades to "everyone unmapped" instead of a broken results page.
+        /// </summary>
+        private static Dictionary<string, string> ParseCustomGroupLookup(string? customRegionGroupsJson)
+        {
+            var lookup = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            if (string.IsNullOrWhiteSpace(customRegionGroupsJson))
+                return lookup;
+
+            List<CustomRegionGroupDto>? groups;
+            try
+            {
+                groups = JsonSerializer.Deserialize<List<CustomRegionGroupDto>>(customRegionGroupsJson);
+            }
+            catch (JsonException)
+            {
+                return lookup;
+            }
+
+            if (groups is null)
+                return lookup;
+
+            foreach (var group in groups)
+            {
+                if (string.IsNullOrWhiteSpace(group.Name))
+                    continue;
+
+                foreach (var member in group.Members)
+                {
+                    if (string.IsNullOrWhiteSpace(member))
+                        continue;
+
+                    // First group wins on a duplicate raw value - CreateElectionRequest.Validate
+                    // already refuses this at creation time, so it should never actually happen.
+                    lookup.TryAdd(member.Trim(), group.Name.Trim());
+                }
+            }
+
+            return lookup;
+        }
+
+        /// <summary>
+        /// The raw value a vote carries for a given base field ("County", "City" or
+        /// "Citizenship"), preferring the vote's own <see cref="VoterDeclaration"/> (Politic
+        /// elections - a snapshot taken at vote time) and falling back to the voter's current
+        /// profile residence (needed for Comercial elections, which never collect a declaration).
+        /// </summary>
+        private static string? RawValueFor(
+            Vote vote,
+            string baseField,
+            IReadOnlyDictionary<Guid, UserDetails> residenceLookup)
+        {
+            UserDetails? profile = vote.UserId.HasValue && residenceLookup.TryGetValue(vote.UserId.Value, out var d)
+                ? d
+                : null;
+
+            return baseField switch
+            {
+                "City" => vote.VoterDeclaration?.ResidenceCity ?? profile?.ResidenceCity,
+                "Citizenship" => vote.VoterDeclaration?.Citizenship ?? profile?.Citizenship,
+                // "County" and any unrecognised value default to county - matches the field's
+                // own default and keeps pre-existing elections (created before this field
+                // existed) grouping exactly as they did before.
+                _ => vote.VoterDeclaration?.ResidenceCounty ?? profile?.ResidenceCounty
+            };
+        }
+
+        /// <summary>
+        /// The region key for one vote, given <paramref name="groupingType"/> ("County",
+        /// "Region" or "Custom"). "County" and "Region" keep their original fixed meaning
+        /// (county / city respectively) for backward compatibility. "Custom" reads the raw value
+        /// from whichever field the creator picked (<paramref name="customBaseField"/> - County,
+        /// City, or Citizenship for a global, cross-country election) and replaces it with the
+        /// creator's group name via <paramref name="customGroupLookup"/> (e.g. "Romania" ->
+        /// "Eastern Hemisphere"). A raw value that exists but was not assigned to any group falls
+        /// back to itself, so a voter is never silently dropped just because the creator forgot
+        /// to place their county/country somewhere.
+        /// </summary>
+        private static string RegionKeyFor(
+            Vote vote,
+            string groupingType,
+            string customBaseField,
+            IReadOnlyDictionary<Guid, UserDetails> residenceLookup,
+            IReadOnlyDictionary<string, string> customGroupLookup)
+        {
+            if (groupingType == "County")
+            {
+                var county = RawValueFor(vote, "County", residenceLookup);
+                if (!string.IsNullOrWhiteSpace(county))
+                    return county;
+            }
+            else if (groupingType == "Region")
+            {
+                var city = RawValueFor(vote, "City", residenceLookup);
+                if (!string.IsNullOrWhiteSpace(city))
+                    return city;
+            }
+            else if (groupingType == "Custom")
+            {
+                var rawValue = RawValueFor(vote, customBaseField, residenceLookup);
+                if (!string.IsNullOrWhiteSpace(rawValue))
+                {
+                    return customGroupLookup.TryGetValue(rawValue.Trim(), out var groupName)
+                        ? groupName
+                        : rawValue; // known value, just not placed in any custom group
+                }
+            }
+
+            return "Necunoscut";
+        }
+
         public async Task<ElectionResultsDto?> GetResultsAsync(Guid electionId)
         {
             var election = await _elections.GetByIdWithResultsAsync(electionId);
             if (election is null)
                 return null;
+
+            var regionalGroupingActive =
+                !string.IsNullOrWhiteSpace(election.RegionalGroupingType) &&
+                election.RegionalGroupingType != "None" &&
+                !election.IsAnonymous;
+
+            var customBaseField = string.IsNullOrWhiteSpace(election.CustomGroupingBaseField)
+                ? "County"
+                : election.CustomGroupingBaseField;
+
+            var allElectionVotes = election.Questions.SelectMany(q => q.Options.SelectMany(o => o.Votes))
+                .Concat(election.Questions.SelectMany(q => q.Votes))
+                .Concat(election.Options.SelectMany(o => o.Votes));
+
+            var residenceLookup = regionalGroupingActive
+                ? await ResidenceForAsync(allElectionVotes)
+                : new Dictionary<Guid, UserDetails>();
+
+            var customGroupLookup = (regionalGroupingActive && election.RegionalGroupingType == "Custom")
+                ? ParseCustomGroupLookup(election.CustomRegionGroupsJson)
+                : new Dictionary<string, string>();
 
             // One scorer per question, resolved before any ballot is counted: a missing or
             // misbehaving plugin then costs a single log line rather than one per vote per option.
@@ -210,13 +357,45 @@ namespace Electronic_Election_Management_System.Services
                     AllowMultipleAnswers = q.AllowMultipleAnswers,
                     QuestionType = q.QuestionType.ToString(),
                     RequiredRankCount = q.RequiredRankCount,
+                    Results = q.Options.Select(o =>
+                    {
+                        var voteCount = q.QuestionType == QuestionType.Ranking
+                            ? o.Votes.Sum(v => scorers[q.Id](v.Rank))
+                            : o.Votes.Count;
+
+                        var rankCounts = q.QuestionType == QuestionType.Ranking
+                            ? o.Votes.Where(v => v.Rank.HasValue).GroupBy(v => v.Rank.Value).ToDictionary(g => g.Key, g => g.Count())
+                            : null;
+
+                        Dictionary<string, int>? regionalVoteCounts = null;
+
+                        // Gerrymandering / Regional Grouping Logic
+                        if (regionalGroupingActive)
+                        {
+                            regionalVoteCounts = new Dictionary<string, int>();
+                            var identifiedVotes = o.Votes
+                                .Where(v => v.VoterDeclaration != null || v.UserId.HasValue)
+                                .ToList();
+
+                            foreach (var vote in identifiedVotes)
+                            {
+                                var regionKey = RegionKeyFor(
+            var questions = election.Questions
+                .OrderBy(q => q.DisplayOrder)
+
+                                var pointsToAdd = q.QuestionType == QuestionType.Ranking
+                                    ? scorers[q.Id](vote.Rank)
+                                    : 1;
+
+                                regionalVoteCounts[regionKey] = regionalVoteCounts.GetValueOrDefault(regionKey) + pointsToAdd;
+                            }
                     Results = q.Options.Select(o => new OptionResultDto
                     {
                         OptionId = o.Id,
                         Label = o.Label,
                         ImageId = o.ImageId,
                         VoteCount = q.QuestionType == QuestionType.Ranking
-                            ? o.Votes.Sum(v => scorers[q.Id](v.Rank))
+                            ? o.Votes.Sum(v => GetRankingPoints(v.Rank, q.ScoringScheme, q.Options.Count))
                             : o.Votes.Count,
                         RankCounts = q.QuestionType == QuestionType.Ranking
                             ? o.Votes.Where(v => v.Rank.HasValue).GroupBy(v => v.Rank.Value).ToDictionary(g => g.Key, g => g.Count())
@@ -249,18 +428,33 @@ namespace Electronic_Election_Management_System.Services
                         : new List<string>()
                 })
                 .ToList();
+
             foreach (var (question, source) in questions.Zip(election.Questions.OrderBy(q => q.DisplayOrder)))
             {
                 // "Other" answers get a synthetic entry shaped like a real option, so the charts
                 // account for every vote rather than only the fixed ones.
                 if (source.QuestionType == QuestionType.Choice && source.AllowOtherOption)
                 {
+                    Dictionary<string, int>? otherRegionalCounts = null;
+                    if (regionalGroupingActive)
+                    {
+                        otherRegionalCounts = new Dictionary<string, int>();
+                        foreach (var vote in source.Votes.Where(v => v.AnswerText != null))
+                        {
+                            var regionKey = RegionKeyFor(
+                                vote, election.RegionalGroupingType, customBaseField,
+                                residenceLookup, customGroupLookup);
+                            otherRegionalCounts[regionKey] = otherRegionalCounts.GetValueOrDefault(regionKey) + 1;
+                        }
+                    }
+
                     question.Results.Add(new OptionResultDto
                     {
                         OptionId = Guid.Empty,
                         Label = "Other",
                         VoteCount = question.TextAnswers.Count,
-                        IsOtherOption = true
+                        IsOtherOption = true,
+                        RegionalCounts = otherRegionalCounts
                     });
                 }
 
@@ -405,7 +599,17 @@ namespace Electronic_Election_Management_System.Services
             {
                 return rank.Value switch
                 {
-                    1 => 12, 2 => 10, 3 => 8, 4 => 7, 5 => 6, 6 => 5, 7 => 4, 8 => 3, 9 => 2, 10 => 1, _ => 0
+                    1 => 12,
+                    2 => 10,
+                    3 => 8,
+                    4 => 7,
+                    5 => 6,
+                    6 => 5,
+                    7 => 4,
+                    8 => 3,
+                    9 => 2,
+                    10 => 1,
+                    _ => 0
                 };
             }
 

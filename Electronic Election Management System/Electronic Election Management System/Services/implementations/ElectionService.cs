@@ -147,6 +147,11 @@ namespace Electronic_Election_Management_System.Services
 
             var election = new Election
             {
+                RegionalGroupingType = request.RegionalGroupingType ?? "None",
+                CustomGroupingBaseField = request.CustomGroupingBaseField ?? "County",
+                CustomRegionGroupsJson = string.Equals(request.RegionalGroupingType, "Custom", StringComparison.OrdinalIgnoreCase)
+                   ? JsonSerializer.Serialize(request.CustomRegionGroups ?? new List<CustomRegionGroupDto>())
+                 : null,
                 CreatedByUserId = userId,
                 Title = request.Title.Trim(),
                 Description = request.Description,
@@ -265,6 +270,12 @@ namespace Electronic_Election_Management_System.Services
             election.IsVisible = request.IsVisible;
             election.StartsAt = request.StartsAt;
             election.EndsAt = request.EndsAt;
+
+            election.RegionalGroupingType = request.RegionalGroupingType ?? "None";
+            election.CustomGroupingBaseField = request.CustomGroupingBaseField ?? "County";
+            election.CustomRegionGroupsJson = string.Equals(request.RegionalGroupingType, "Custom", StringComparison.OrdinalIgnoreCase)
+                ? JsonSerializer.Serialize(request.CustomRegionGroups ?? new List<CustomRegionGroupDto>())
+                : null;
 
             var existingOptions = election.Options.ToList();
             var existingQuestions = election.Questions.ToList();
@@ -800,6 +811,11 @@ namespace Electronic_Election_Management_System.Services
                 Description = e.Description,
                 Question = e.Question,
                 Type = e.Type.ToString(),
+                RegionalGroupingType = e.RegionalGroupingType,
+                CustomGroupingBaseField = e.CustomGroupingBaseField,
+                CustomRegionGroups = !string.IsNullOrWhiteSpace(e.CustomRegionGroupsJson)
+    ? JsonSerializer.Deserialize<List<CustomRegionGroupDto>>(e.CustomRegionGroupsJson)
+    : null,
                 IsAnonymous = e.IsAnonymous,
                 IsClosed = e.IsClosed,
                 IsVisible = e.IsVisible,
