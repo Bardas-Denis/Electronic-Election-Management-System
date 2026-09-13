@@ -14,7 +14,10 @@ namespace Electronic_Election_Management_System.Models
 
         public Guid LabelId { get; set; }
 
-        /// <summary>The ID of the admin user who assigned this label.</summary>
+        /// <summary>
+        /// Who caused the assignment: the administrator who handed the label out, or - for a
+        /// geographic label - the user themselves, since it follows from their own profile.
+        /// </summary>
         public Guid AssignedBy { get; set; }
 
         public DateTime AssignedAt { get; set; } = DateTime.UtcNow;

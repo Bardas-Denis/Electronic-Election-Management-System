@@ -1,0 +1,230 @@
+<div class="page">
+  <div class="page-header">
+    <div>
+      <h2>{{ 'geography.heading' | translate }}</h2>
+      <p>{{ 'geography.subtitle' | translate }}</p>
+    </div>
+    @if (canAddHere()) {
+      <button type="button" class="btn-primary" (click)="openCreateForm()" [disabled]="showCreateForm()">
+        + {{ 'geography.addBtn' | translate }}
+      </button>
+    }
+  </div>
+
+  <!-- Breadcrumb: index -1 is the country level, above every node -->
+  <nav class="crumbs" [attr.aria-label]="'geography.breadcrumbLabel' | translate">
+    <button type="button" class="crumb" [class.crumb--current]="path().length === 0"
+            [disabled]="path().length === 0" (click)="goTo(-1)">
+      {{ 'geography.allCountries' | translate }}
+    </button>
+    @for (node of path(); track node.id; let i = $index; let last = $last) {
+      <span class="crumb-sep" aria-hidden="true">/</span>
+      <button type="button" class="crumb" [class.crumb--current]="last" [disabled]="last" (click)="goTo(i)">
+        {{ node.name }}
+      </button>
+    }
+  </nav>
+
+  @if (successKey()) {
+    <div class="profile-banner profile-banner--success">{{ successKey()! | translate }}</div>
+  }
+  @if (errorKey()) {
+    <p class="error-text">{{ errorKey()! | translate }}</p>
+  }
+
+  @if (!isLoading() && items().length > 0) {
+    <div class="search-row">
+      <input type="search" class="form-control search-input"
+             [placeholder]="'geography.searchPlaceholder' | translate"
+             [attr.aria-label]="'geography.searchPlaceholder' | translate"
+             [ngModel]="searchTerm()" (ngModelChange)="searchTerm.set($event)" />
+      @if (isFiltered()) {
+        <span class="search-count">
+          {{ 'geography.searchCount' | translate: { shown: visibleItems().length, total: items().length } }}
+        </span>
+      }
+    </div>
+  }
+
+  @if (showCreateForm() && canAddHere()) {
+    <div class="create-form-card">
+      <h3 class="create-form-title">
+        {{ 'geography.addTitle' | translate: { parent: currentParent()!.name } }}
+      </h3>
+      <div class="form-group">
+        <label for="nodeName">{{ 'geography.fieldName' | translate }} *</label>
+        <input id="nodeName" type="text" class="form-control"
+               [placeholder]="'geography.fieldNamePlaceholder' | translate"
+               [ngModel]="newName()" (ngModelChange)="newName.set($event)"
+               [attr.maxlength]="INPUT_LIMITS.labelName" [disabled]="isSaving()"
+               (keyup.enter)="create()" autofocus />
+      </div>
+      <div class="form-group">
+        <label for="nodeKind">{{ 'geography.fieldKind' | translate }}</label>
+        <div class="kind-picker">
+          <input id="nodeKind" type="text" class="form-control kind-trigger" autocomplete="off"
+                 [placeholder]="'geography.kindUnspecified' | translate"
+                 [value]="kindFieldText('new', newKind())"
+                 (input)="onKindSearch('new', $any($event.target).value)"
+                 (click)="openKindMenu('new', $event)"
+                 [disabled]="isSaving()" [attr.aria-expanded]="kindMenuFor() === 'new'" />
+          @if (kindMenuFor() === 'new') {
+            <div class="kind-menu" role="listbox" (click)="$event.stopPropagation()">
+              @if (showUnspecified()) {
+                <button type="button" class="kind-option" [class.kind-option--active]="!newKind()"
+                        (click)="pickKind('new', '')">
+                  {{ 'geography.kindUnspecified' | translate }}
+                </button>
+              }
+              @for (k of filteredKinds(); track k) {
+                <button type="button" class="kind-option" [class.kind-option--active]="newKind() === k"
+                        (click)="pickKind('new', k)">
+                  {{ 'geography.kinds.' + k | translate }}
+                </button>
+              } @empty {
+                <p class="kind-empty">{{ 'geography.noMatches' | translate }}</p>
+              }
+            </div>
+          }
+        </div>
+        <p class="field-hint">{{ 'geography.fieldKindHint' | translate }}</p>
+      </div>
+      <div class="create-form-actions">
+        <button type="button" class="btn-ghost btn-sm" [disabled]="isSaving()" (click)="closeCreateForm()">
+          {{ 'geography.cancel' | translate }}
+        </button>
+        <button type="button" class="btn-primary btn-sm"
+                [disabled]="isSaving() || !newName().trim()" (click)="create()">
+          @if (isSaving()) { <span class="spinner spinner--sm"></span> }
+          {{ 'geography.saveBtn' | translate }}
+        </button>
+      </div>
+    </div>
+  }
+
+  @if (isLoading()) {
+    <div class="state-block">
+      <span class="spinner"></span>
+      <p>{{ 'geography.loading' | translate }}</p>
+    </div>
+  } @else if (items().length === 0) {
+    <div class="state-block">
+      <p class="state-title">{{ 'geography.empty' | translate }}</p>
+      @if (canAddHere()) {
+        <p class="text-muted">{{ 'geography.emptyHint' | translate }}</p>
+      }
+    </div>
+  } @else if (visibleItems().length === 0) {
+    <div class="state-block">
+      <p class="state-title">{{ 'geography.noMatches' | translate }}</p>
+    </div>
+  } @else {
+    <div class="table-card">
+      <table class="labels-table">
+        <thead>
+          <tr>
+            <th>{{ 'geography.colName' | translate }}</th>
+            <th>{{ 'geography.colCode' | translate }}</th>
+            <th>{{ 'geography.colKind' | translate }}</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (node of visibleItems(); track node.id) {
+            <tr>
+              <td>
+                @if (editingId() === node.id) {
+                  <input type="text" class="form-control form-control--inline"
+                         [ngModel]="editName()" (ngModelChange)="editName.set($event)"
+                         [attr.maxlength]="INPUT_LIMITS.labelName" [disabled]="isSaving()"
+                         (keyup.enter)="saveEdit(node)" (keyup.escape)="cancelRename()" autofocus />
+                } @else {
+                  <button type="button" class="node-name" (click)="open(node)">
+                    {{ node.name }}
+                    @if (node.hasChildren) {
+                      <span class="chev" aria-hidden="true">›</span>
+                    }
+                  </button>
+                  @if (confirmingDeleteId() === node.id) {
+                    <p class="confirm-note">
+                      {{ 'geography.confirmDelete' | translate: { name: node.name } }}
+                    </p>
+                  }
+                }
+              </td>
+              <td>
+                @if (node.code) {
+                  <span class="badge badge--neutral">{{ node.code }}</span>
+                } @else {
+                  <span class="text-muted">—</span>
+                }
+              </td>
+              <td>
+                @if (editingId() === node.id) {
+                  <div class="kind-picker">
+                    <input type="text" class="form-control form-control--inline kind-trigger" autocomplete="off"
+                           [placeholder]="'geography.kindUnspecified' | translate"
+                           [value]="kindFieldText(node.id, editKind())"
+                           (input)="onKindSearch(node.id, $any($event.target).value)"
+                           (click)="openKindMenu(node.id, $event)"
+                           [disabled]="isSaving()" [attr.aria-expanded]="kindMenuFor() === node.id" />
+                    @if (kindMenuFor() === node.id) {
+                      <div class="kind-menu" role="listbox" (click)="$event.stopPropagation()">
+                        @if (showUnspecified()) {
+                          <button type="button" class="kind-option" [class.kind-option--active]="!editKind()"
+                                  (click)="pickKind(node.id, '')">
+                            {{ 'geography.kindUnspecified' | translate }}
+                          </button>
+                        }
+                        @for (k of filteredKinds(); track k) {
+                          <button type="button" class="kind-option" [class.kind-option--active]="editKind() === k"
+                                  (click)="pickKind(node.id, k)">
+                            {{ 'geography.kinds.' + k | translate }}
+                          </button>
+                        } @empty {
+                          <p class="kind-empty">{{ 'geography.noMatches' | translate }}</p>
+                        }
+                      </div>
+                    }
+                  </div>
+                } @else if (kindKey(node)) {
+                  <span class="text-muted">{{ kindKey(node)! | translate }}</span>
+                } @else if (node.kind) {
+                  <!-- Straight from the seed, in the source's own words, until someone picks a kind. -->
+                  <span class="text-muted">{{ node.kind }}</span>
+                } @else {
+                  <span class="text-muted">{{ 'geography.kind.' + node.category | translate }}</span>
+                }
+              </td>
+              <td class="col-actions">
+                @if (editingId() === node.id) {
+                  <button type="button" class="btn-ghost btn-sm" [disabled]="isSaving()" (click)="cancelRename()">
+                    {{ 'geography.cancel' | translate }}
+                  </button>
+                  <button type="button" class="btn-primary btn-sm"
+                          [disabled]="isSaving() || !editName().trim()" (click)="saveEdit(node)">
+                    {{ 'geography.saveBtn' | translate }}
+                  </button>
+                } @else if (confirmingDeleteId() === node.id) {
+                  <button type="button" class="btn-ghost btn-sm" (click)="cancelDelete()">
+                    {{ 'geography.cancel' | translate }}
+                  </button>
+                  <button type="button" class="btn-danger btn-sm" (click)="remove(node)">
+                    {{ 'geography.confirmYes' | translate }}
+                  </button>
+                } @else {
+                  <button type="button" class="btn-ghost btn-sm" (click)="startEdit(node)">
+                    {{ 'geography.renameBtn' | translate }}
+                  </button>
+                  <button type="button" class="btn-danger btn-sm" (click)="askDelete(node)">
+                    {{ 'geography.deleteBtn' | translate }}
+                  </button>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</div>

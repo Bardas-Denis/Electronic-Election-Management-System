@@ -59,7 +59,7 @@ public class LabelServiceTests
             Category = "Employer",
             CreatedAt = createdAt
         };
-        _labels.GetAllAsync().Returns([label]);
+        _labels.GetAssignableAsync().Returns([label]);
 
         var result = await _service.GetAllLabelsAsync();
 
@@ -128,6 +128,23 @@ public class LabelServiceTests
         result.Success.Should().BeFalse();
         result.IsNotFound.Should().BeTrue();
         result.ErrorCode.Should().Be(ErrorCode.LabelNotFound);
+        _labels.DidNotReceive().Remove(Arg.Any<Label>());
+        await _labels.DidNotReceive().SaveChangesAsync();
+    }
+
+    [Fact]
+    public async Task DeleteLabelAsync_WhenLabelHasChildren_ReturnsLabelHasChildren()
+    {
+        // The self-referencing foreign key is Restrict, so letting this through would surface
+        // as a database failure and a 500 rather than something the client can show.
+        var country = new Label { Id = Guid.NewGuid(), Name = "Romania" };
+        _labels.GetByIdAsync(country.Id).Returns(country);
+        _labels.HasChildrenAsync(country.Id).Returns(true);
+
+        var result = await _service.DeleteLabelAsync(country.Id);
+
+        result.Success.Should().BeFalse();
+        result.ErrorCode.Should().Be(ErrorCode.LabelHasChildren);
         _labels.DidNotReceive().Remove(Arg.Any<Label>());
         await _labels.DidNotReceive().SaveChangesAsync();
     }
@@ -346,5 +363,82 @@ public class LabelServiceTests
             AssignedBy = assignedBy ?? Guid.NewGuid(),
             AssignedAt = DateTime.UtcNow.AddMinutes(-10)
         };
+    }
+
+    // --- DeleteLabelAsync: what happens to the users attached to a geographic node ---
+
+    [Fact]
+    public async Task DeleteLabelAsync_WhenGeographicLeafHasUsers_MovesThemUpToTheParent()
+    {
+        // Someone who lived in a commune still lives in the county above it. Precision is lost,
+        // correctness is not — and nobody is left without a region.
+        var countyId = Guid.NewGuid();
+        var town = new Label
+        {
+            Id = Guid.NewGuid(), Name = "Floresti",
+            Category = LabelCategories.Locality, ParentId = countyId
+        };
+        _labels.GetByIdAsync(town.Id).Returns(town);
+        _labels.HasChildrenAsync(town.Id).Returns(false);
+        _labels.CountUsersWithLabelAsync(town.Id).Returns(3);
+
+        var result = await _service.DeleteLabelAsync(town.Id);
+
+        result.Success.Should().BeTrue();
+        await _labels.Received(1).ReassignUserLabelsAsync(town.Id, countyId);
+        _labels.Received(1).Remove(town);
+    }
+
+    [Fact]
+    public async Task DeleteLabelAsync_WhenCountryHasUsers_RefusesBecauseThereIsNowhereToMoveThem()
+    {
+        var country = new Label
+        {
+            Id = Guid.NewGuid(), Name = "Romania",
+            Category = LabelCategories.Country, ParentId = null
+        };
+        _labels.GetByIdAsync(country.Id).Returns(country);
+        _labels.HasChildrenAsync(country.Id).Returns(false);
+        _labels.CountUsersWithLabelAsync(country.Id).Returns(12);
+
+        var result = await _service.DeleteLabelAsync(country.Id);
+
+        result.Success.Should().BeFalse();
+        result.ErrorCode.Should().Be(ErrorCode.LabelHasUsersAndNoParent);
+        _labels.DidNotReceive().Remove(Arg.Any<Label>());
+        await _labels.DidNotReceive().ReassignUserLabelsAsync(Arg.Any<Guid>(), Arg.Any<Guid>());
+    }
+
+    [Fact]
+    public async Task DeleteLabelAsync_WhenGeographicNodeHasNoUsers_SkipsTheReassignment()
+    {
+        var town = new Label
+        {
+            Id = Guid.NewGuid(), Name = "Floresti",
+            Category = LabelCategories.Locality, ParentId = Guid.NewGuid()
+        };
+        _labels.GetByIdAsync(town.Id).Returns(town);
+        _labels.CountUsersWithLabelAsync(town.Id).Returns(0);
+
+        var result = await _service.DeleteLabelAsync(town.Id);
+
+        result.Success.Should().BeTrue();
+        await _labels.DidNotReceive().ReassignUserLabelsAsync(Arg.Any<Guid>(), Arg.Any<Guid>());
+    }
+
+    [Fact]
+    public async Task DeleteLabelAsync_WhenLabelIsNotGeographic_KeepsTheOldCascadeBehaviour()
+    {
+        // "HR" is not part of the tree, so there is no parent to move anyone to and the
+        // database cascade stays the right answer.
+        var hr = new Label { Id = Guid.NewGuid(), Name = "HR", Category = "Department" };
+        _labels.GetByIdAsync(hr.Id).Returns(hr);
+
+        var result = await _service.DeleteLabelAsync(hr.Id);
+
+        result.Success.Should().BeTrue();
+        await _labels.DidNotReceive().CountUsersWithLabelAsync(Arg.Any<Guid>());
+        await _labels.DidNotReceive().ReassignUserLabelsAsync(Arg.Any<Guid>(), Arg.Any<Guid>());
+        _labels.Received(1).Remove(hr);
     }
 }

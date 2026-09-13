@@ -12,6 +12,7 @@ namespace Electronic_Election_Management_System.Services
         private readonly IAuditLogRepository _auditLogs;
         private readonly IUserNotifier _notifier;
         private readonly ICnpService _cnp;
+        private readonly IResidenceLabelSync _residenceLabels;
         private readonly ILogger<UserService> _logger;
 
         public UserService(
@@ -19,12 +20,14 @@ namespace Electronic_Election_Management_System.Services
             IAuditLogRepository auditLogs,
             IUserNotifier notifier,
             ICnpService cnp,
+            IResidenceLabelSync residenceLabels,
             ILogger<UserService> logger)
         {
             _users = users;
             _auditLogs = auditLogs;
             _notifier = notifier;
             _cnp = cnp;
+            _residenceLabels = residenceLabels;
             _logger = logger;
         }
 
@@ -100,7 +103,9 @@ namespace Electronic_Election_Management_System.Services
             {
                 Cnp                 = entity.Cnp,
                 FullName            = entity.FullName,
+                ResidenceCountry    = entity.ResidenceCountry,
                 ResidenceCounty     = entity.ResidenceCounty,
+                ResidenceCountyCode = entity.ResidenceCountyCode,
                 ResidenceAddress    = entity.ResidenceAddress,
                 ResidenceCity       = entity.ResidenceCity,
                 Citizenship         = entity.Citizenship,
@@ -119,12 +124,18 @@ namespace Electronic_Election_Management_System.Services
                 return ServiceResult<PersonalDetailsDto>.Fail(ErrorCode.InvalidCnp);
 
             var entity = await _users.SaveUserDetailsAsync(userId, dto);
+            // Two saves rather than one transaction. A failure between them leaves the labels one
+            // save behind, which the next profile save puts right: the sync rebuilds the whole set
+            // from the profile each time rather than applying a delta.
+            await _residenceLabels.SyncAsync(userId, entity);
 
             return ServiceResult<PersonalDetailsDto>.Ok(new PersonalDetailsDto
             {
                 Cnp                 = entity.Cnp,
                 FullName            = entity.FullName,
+                ResidenceCountry    = entity.ResidenceCountry,
                 ResidenceCounty     = entity.ResidenceCounty,
+                ResidenceCountyCode = entity.ResidenceCountyCode,
                 ResidenceAddress    = entity.ResidenceAddress,
                 ResidenceCity       = entity.ResidenceCity,
                 Citizenship         = entity.Citizenship,

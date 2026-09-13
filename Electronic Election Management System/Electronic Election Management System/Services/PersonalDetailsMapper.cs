@@ -15,7 +15,9 @@ namespace Electronic_Election_Management_System.Services
         {
             target.Cnp               = Trim(source.Cnp);
             target.FullName          = Trim(source.FullName);
+            target.ResidenceCountry  = Trim(source.ResidenceCountry);
             target.ResidenceCounty   = Trim(source.ResidenceCounty);
+            target.ResidenceCountyCode = Trim(source.ResidenceCountyCode);
             target.ResidenceAddress  = Trim(source.ResidenceAddress);
             target.ResidenceCity     = Trim(source.ResidenceCity);
             target.Citizenship       = Trim(source.Citizenship);
@@ -34,7 +36,9 @@ namespace Electronic_Election_Management_System.Services
         {
             target.Cnp               = Trim(source.Cnp);
             target.FullName          = Trim(source.FullName);
+            target.ResidenceCountry  = Trim(source.ResidenceCountry);
             target.ResidenceCounty   = Trim(source.ResidenceCounty);
+            target.ResidenceCountyCode = Trim(source.ResidenceCountyCode);
             target.ResidenceAddress  = Trim(source.ResidenceAddress);
             target.ResidenceCity     = Trim(source.ResidenceCity);
             target.Citizenship       = Trim(source.Citizenship);

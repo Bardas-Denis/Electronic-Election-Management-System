@@ -12,8 +12,21 @@ namespace Electronic_Election_Management_System.DTOs
         public string? Cnp { get; set; }
         [StringLength(ValidationRules.ShortTextMaxLength)]
         public string? FullName { get; set; }
+        /// <summary>
+        /// ISO 3166-1 alpha-2 country code, matched against <c>Label.Code</c> in the geographic
+        /// tree. Constrained here because every seeded country carries exactly this shape, so a
+        /// display name or an alpha-3 code could only ever fail to resolve.
+        /// </summary>
+        [RegularExpression(@"^[A-Z]{2}$")]
+        public string? ResidenceCountry { get; set; }
         [StringLength(ValidationRules.ShortTextMaxLength)]
         public string? ResidenceCounty { get; set; }
+        /// <summary>
+        /// ISO 3166-2 subdivision code. Only length-checked: 170 of the seeded codes are Natural
+        /// Earth placeholders shaped like "AE-X01~", so a strict pattern would reject real nodes.
+        /// </summary>
+        [StringLength(ValidationRules.SubdivisionCodeMaxLength)]
+        public string? ResidenceCountyCode { get; set; }
         [StringLength(ValidationRules.AddressMaxLength)]
         public string? ResidenceAddress { get; set; }
         [StringLength(ValidationRules.ShortTextMaxLength)]
