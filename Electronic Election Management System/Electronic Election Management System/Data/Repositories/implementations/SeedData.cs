@@ -1,3 +1,4 @@
+using Electronic_Election_Management_System.Constants;
 using Electronic_Election_Management_System.Models;
 using Microsoft.EntityFrameworkCore;
 using Electronic_Election_Management_System.Services;
@@ -130,6 +131,7 @@ namespace Electronic_Election_Management_System.Data
                         Cnp = fakeCnp,
                         BirthDate = birthDate,
                         FullName = $"{firstName} {lastName}",
+                        ResidenceCountry = "RO",
                         ResidenceCounty = counties[countyIdx],
                         ResidenceCity = cities[countyIdx],
                         ResidenceAddress = $"Str. Exemplu nr. {idx}",
@@ -174,7 +176,10 @@ namespace Electronic_Election_Management_System.Data
             // ------------------------------------------------------------
             // 2. Labels (no role-type labels - department/geography only) + UserLabels
             // ------------------------------------------------------------
-            bool anyLabels = await db.Labels.AnyAsync();
+            // Only the assignable labels count here. The geographic tree is seeded separately and
+            // always present, so a plain AnyAsync() would skip this block on every fresh install.
+            bool anyLabels = await db.Labels
+                .AnyAsync(l => l.Category == null || !LabelCategories.Geographic.Contains(l.Category));
             List<Label> labels;
             if (!anyLabels)
             {
@@ -663,6 +668,7 @@ namespace Electronic_Election_Management_System.Data
                             {
                                 declaration.Cnp = voterDetails.Cnp;
                                 declaration.FullName = voterDetails.FullName;
+                                declaration.ResidenceCountry = voterDetails.ResidenceCountry;
                                 declaration.ResidenceCounty = voterDetails.ResidenceCounty;
                                 declaration.ResidenceAddress = voterDetails.ResidenceAddress;
                                 declaration.ResidenceCity = voterDetails.ResidenceCity;

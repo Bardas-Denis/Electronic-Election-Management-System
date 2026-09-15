@@ -24,7 +24,14 @@ namespace Electronic_Election_Management_System.Models
         /// </summary>
         public string? Cnp { get; set; }
         public string? FullName { get; set; }
+        /// <summary>
+        /// ISO 3166-1 alpha-2 code of the country of residence, frozen at the moment of
+        /// voting. Held as a code for the same reason as on <see cref="UserDetails"/>.
+        /// </summary>
+        public string? ResidenceCountry { get; set; }
         public string? ResidenceCounty { get; set; }
+        /// <summary>ISO 3166-2 subdivision code, when the profile had one to copy across.</summary>
+        public string? ResidenceCountyCode { get; set; }
         public string? ResidenceAddress { get; set; }
         public string? ResidenceCity { get; set; }
         public string? Citizenship { get; set; }

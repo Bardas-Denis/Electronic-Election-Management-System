@@ -288,10 +288,37 @@ namespace Electronic_Election_Management_System.Data
                 .HasIndex(ud => ud.UserId)
                 .IsUnique();
 
-            // Label: unique name
+            // Label: a name is unique among its siblings, not globally — two countries may
+            // both have a "Valencia", and only their parent tells them apart.
+            modelBuilder.Entity<Label>()
+                .HasIndex(l => new { l.ParentId, l.Name })
+                .IsUnique();
+
+            // Label: a composite index on (ParentId, Name) does not keep countries apart. Both
+            // engines treat NULL as distinct, so (NULL, "Romania") twice passes it - and every
+            // country is a root. Filtered to countries alone, so labels outside the tree stay
+            // free to carry any name. The literal mirrors LabelCategories.Country, which lives
+            // in the web project and cannot be referenced from here.
             modelBuilder.Entity<Label>()
                 .HasIndex(l => l.Name)
-                .IsUnique();
+                .IsUnique()
+                .HasDatabaseName("IX_Labels_CountryName")
+                .HasFilter("\"ParentId\" IS NULL AND \"Category\" = 'country'");
+
+            // Label: the ISO code is the stable identity for geographic labels. Filtered, because
+            // non-geographic labels ("football") legitimately share a null code.
+            modelBuilder.Entity<Label>()
+                .HasIndex(l => l.Code)
+                .IsUnique()
+                .HasFilter("\"Code\" IS NOT NULL");
+
+            // Label → parent Label: Restrict, so deleting a country cannot silently take its
+            // subdivisions — and every user assignment hanging off them — with it.
+            modelBuilder.Entity<Label>()
+                .HasOne(l => l.Parent)
+                .WithMany(l => l.Children)
+                .HasForeignKey(l => l.ParentId)
+                .OnDelete(DeleteBehavior.Restrict);
 
             // UserLabel: composite PK (UserId, LabelId) — also serves as the unique constraint
             modelBuilder.Entity<UserLabel>()

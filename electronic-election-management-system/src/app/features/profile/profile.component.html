@@ -142,12 +142,35 @@
 
         <div class="profile-grid">
           <div class="form-group">
+            <label for="profile-residenceCountry">{{ 'profile.field.tara' | translate }}</label>
+            @if (geographyUnavailable()) {
+              <p class="profile-field-note">{{ 'profile.field.geographyUnavailable' | translate }}</p>
+            } @else {
+              <select id="profile-residenceCountry"
+                [disabled]="isLoadingCountries()"
+                (change)="updateCountry($any($event.target).value)">
+                <option value="">{{ 'profile.field.taraSelect' | translate }}</option>
+                @for (country of countries(); track country.id) {
+                  <option [value]="country.code"
+                    [selected]="country.code === getField('residenceCountry')">{{ country.name }}</option>
+                }
+              </select>
+            }
+          </div>
+
+          <div class="form-group">
             <label for="profile-residenceCounty">{{ 'profile.field.judet' | translate }}</label>
-            <input id="profile-residenceCounty" type="text"
-              maxlength="100"
-              [value]="getField('residenceCounty')"
-              (input)="updateField('residenceCounty', $any($event.target).value)"
-              [placeholder]="'profile.field.judetPlaceholder' | translate" />
+            <select id="profile-residenceCounty"
+              [disabled]="isLoadingCounties() || counties().length === 0"
+              (change)="updateCounty($any($event.target).value)">
+              <option value="">{{ (counties().length === 0
+                ? 'profile.field.judetPickCountryFirst'
+                : 'profile.field.judetSelect') | translate }}</option>
+              @for (county of counties(); track county.id) {
+                <option [value]="county.code"
+                  [selected]="county.code === getField('residenceCountyCode')">{{ county.name }}</option>
+              }
+            </select>
           </div>
 
           <div class="form-group">
@@ -155,8 +178,9 @@
             <input id="profile-residenceCity" type="text"
               maxlength="100"
               [value]="getField('residenceCity')"
-              (input)="updateField('residenceCity', $any($event.target).value)"
+              (input)="updateCity($any($event.target).value)"
               [placeholder]="'profile.field.localitatesPlaceholder' | translate" />
+            <small class="profile-field-hint">{{ 'profile.field.localitateHint' | translate }}</small>
           </div>
 
           <div class="form-group profile-grid--full">

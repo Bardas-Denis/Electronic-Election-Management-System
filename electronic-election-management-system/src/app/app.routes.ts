@@ -116,6 +116,14 @@ export const routes: Routes = [
             (m) => m.LabelManagementComponent
           )
       },
+      {
+        path: 'admin/geography',
+        canActivate: [adminGuard],
+        loadComponent: () =>
+          import('./features/admin/geography-management.component').then(
+            (m) => m.GeographyManagementComponent
+          )
+      },
 
       // Any logged-in user — personal profile / details
       {

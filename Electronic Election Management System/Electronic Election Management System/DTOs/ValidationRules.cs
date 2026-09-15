@@ -9,6 +9,8 @@ namespace Electronic_Election_Management_System.DTOs
         public const int PasswordMaxLength = 128;
         public const int ShortTextMaxLength = 100;
         public const int LabelNameMaxLength = 50;
+        /// <summary>Longest ISO 3166-2 subdivision code in the seeded tree is 7 characters.</summary>
+        public const int SubdivisionCodeMaxLength = 10;
         public const int LabelCategoryMaxLength = 50;
         public const int TitleMaxLength = 200;
         public const int QuestionMaxLength = 500;
