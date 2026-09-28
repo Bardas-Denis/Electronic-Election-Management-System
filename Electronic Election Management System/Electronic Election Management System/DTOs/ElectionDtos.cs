@@ -85,6 +85,18 @@ namespace Electronic_Election_Management_System.DTOs
         }
     }
 
+    /// <summary>One creator-defined region group (only used when
+    /// <c>RegionalGroupingType == "Custom"</c>), e.g. Name="Nord-Vest",
+    /// Members=["Cluj","Sălaj","Bistrița-Năsăud"]. "Members" holds raw residence values
+    /// (county or city names, matching whatever the voters' UserDetails/VoterDeclaration carry).</summary>
+    public class CustomRegionGroupDto
+    {
+        [Required, NotWhitespace, StringLength(ValidationRules.ShortTextMaxLength)]
+        public string Name { get; set; } = string.Empty;
+        [Required, MinLength(1), MaxLength(50)]
+        public List<string> Members { get; set; } = new();
+    }
+
     // SYNC: voting.model.ts -> ElectionDto
     public class ElectionDto
     {
@@ -107,7 +119,6 @@ namespace Electronic_Election_Management_System.DTOs
         /// <summary>Restored in edit mode so group badges and summaries survive a re-open.</summary>
         public List<AudienceGroupDto>? AudienceGroups { get; set; }
 
-
         /// <summary>Whether the current user has already voted.</summary>
         public bool HasUserVoted { get; set; } = false;
 
@@ -116,6 +127,9 @@ namespace Electronic_Election_Management_System.DTOs
 
         /// <summary>Once true the election can only be viewed or deleted, no longer edited.</summary>
         public bool HasVotes { get; set; } = false;
+        public string? RegionalGroupingType { get; set; }
+        public List<CustomRegionGroupDto>? CustomRegionGroups { get; set; }
+        public string? CustomGroupingBaseField { get; set; }
     }
 
     // SYNC: voting.model.ts -> AudienceConditionDto
@@ -183,6 +197,14 @@ namespace Electronic_Election_Management_System.DTOs
         [Required, MaxLength(ValidationRules.MaxQuestions)]
         public List<CreateElectionQuestionDto> Questions { get; set; } = new();
 
+        public string? RegionalGroupingType { get; set; }
+        public List<CustomRegionGroupDto>? CustomRegionGroups { get; set; } = new();
+
+        /// <summary>Only meaningful when <see cref="RegionalGroupingType"/> is <c>"Custom"</c>.
+        /// Which raw voter field the groups are built from: "County", "City" or "Citizenship".
+        /// Defaults to "County" for backward compatibility.</summary>
+        public string CustomGroupingBaseField { get; set; } = "County";
+
         public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
         {
             if (StartsAt == default)
@@ -238,6 +260,54 @@ namespace Electronic_Election_Management_System.DTOs
                 yield return new ValidationResult(
                     ValidationMessages.AudienceGroupRequiresPositiveCondition,
                     new[] { nameof(InvitedAudienceGroups) });
+            }
+
+            var validGroupingTypes = new[] { "None", "County", "Region", "Custom" };
+            if (!string.IsNullOrWhiteSpace(RegionalGroupingType) &&
+                !validGroupingTypes.Contains(RegionalGroupingType))
+            {
+                yield return new ValidationResult(
+                    "Tip de grupare regională invalid.",
+                    new[] { nameof(RegionalGroupingType) });
+            }
+
+            if (string.Equals(RegionalGroupingType, "Custom", StringComparison.OrdinalIgnoreCase))
+            {
+                var validBaseFields = new[] { "County", "City", "Citizenship" };
+                if (!validBaseFields.Contains(CustomGroupingBaseField))
+                {
+                    yield return new ValidationResult(
+                        "Câmp de bază invalid pentru gruparea Custom. Valori valide: County, City, Citizenship.",
+                        new[] { nameof(CustomGroupingBaseField) });
+                }
+
+                var groups = CustomRegionGroups ?? new List<CustomRegionGroupDto>();
+                if (groups.Count == 0)
+                {
+                    yield return new ValidationResult(
+                        "Gruparea Custom necesită cel puțin un grup regional definit.",
+                        new[] { nameof(CustomRegionGroups) });
+                }
+
+                if (groups.Any(g => string.IsNullOrWhiteSpace(g.Name) || g.Members.Count == 0))
+                {
+                    yield return new ValidationResult(
+                        "Fiecare grup regional trebuie să aibă un nume și cel puțin un membru.",
+                        new[] { nameof(CustomRegionGroups) });
+                }
+
+                var allMembers = groups
+                    .SelectMany(g => g.Members)
+                    .Where(m => !string.IsNullOrWhiteSpace(m))
+                    .Select(m => m.Trim())
+                    .ToList();
+
+                if (allMembers.Count != allMembers.Distinct(StringComparer.OrdinalIgnoreCase).Count())
+                {
+                    yield return new ValidationResult(
+                        "Aceeași valoare (județ/oraș/țară) nu poate apărea în două grupuri diferite.",
+                        new[] { nameof(CustomRegionGroups) });
+                }
             }
         }
     }

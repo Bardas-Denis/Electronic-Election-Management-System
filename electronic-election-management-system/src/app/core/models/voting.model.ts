@@ -46,6 +46,9 @@ export interface ElectionDto {
   // The actual question shown to voters, displayed above the options
   question?: string;
   type: ElectionType;
+  regionalGroupingType?: string;
+  customRegionGroups?: CustomRegionGroupDto[];
+  customGroupingBaseField?: string;
   isAnonymous: boolean;
   // Closed elections are only visible to their creator and invited accounts/emails.
   isClosed: boolean;
@@ -104,6 +107,11 @@ export interface AudienceGroupDto {
   conditions: AudienceConditionDto[];
 }
 
+export interface CustomRegionGroupDto {
+  name: string;
+  members: string[];
+}
+
 // Payload for both create AND update (same shape, different HTTP verb)
 export interface CreateElectionRequest {
   title: string;
@@ -124,6 +132,9 @@ export interface CreateElectionRequest {
   endsAt: string;
   options: CreateOptionDto[];
   questions: CreateElectionQuestionDto[];
+  regionalGroupingType?: string;
+  customRegionGroups?: CustomRegionGroupDto[];
+  customGroupingBaseField?: string;
 }
 
 // Which fields matter depends on the election's type - see VoterDeclarationModalComponent.

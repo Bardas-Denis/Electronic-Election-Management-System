@@ -94,8 +94,24 @@ export class ResultsDashboardComponent implements OnInit, OnDestroy {
   isLoading = signal(true);
   snapshot = signal<ElectionResultsDto | null>(null);
 
-  // liveResults vine direct din serviciu (SignalR); folosim computed
-  // ca sa afisam mereu cea mai recenta versiune (live daca a venit, altfel snapshot-ul initial)
+  // Filtru activ pentru regiune / județ
+  activeRegionFilter = signal<string | null>(null);
+
+  // Extrage automat toate regiunile disponibile din rezultate
+  availableRegions = computed(() => {
+    const res = this.displayedResults();
+    if (!res) return [];
+    const regions = new Set<string>();
+    res.questions.forEach(q => {
+      q.results.forEach(o => {
+        if (o.regionalCounts) {
+          Object.keys(o.regionalCounts).forEach(r => regions.add(r));
+        }
+      });
+    });
+    return Array.from(regions).sort();
+  });
+
   displayedResults = computed(() => this.resultsService.liveResults() ?? this.snapshot());
 
   // How many voters a group shows before collapsing the rest behind "+N more".
@@ -150,7 +166,54 @@ export class ResultsDashboardComponent implements OnInit, OnDestroy {
     this.resultsService.connectToLiveResults(this.electionId);
   }
 
-  questionTotal(question: QuestionResultDto): number {
+  ngOnDestroy(): void {
+    this.resultsService.disconnect();
+  }
+
+  getDisplayVoteCount(option: OptionResultDto, question: QuestionResultDto): number {
+    const region = this.activeRegionFilter();
+    if (region && option.regionalCounts) {
+      return option.regionalCounts[region] || 0;
+    }
+    return option.voteCount;
+  }
+
+  getEffectiveVoteCount(option: OptionResultDto, question: QuestionResultDto): number {
+    const region = this.activeRegionFilter();
+    const maxRank = this.rankingFilters()[question.questionId];
+    const isSimulated = !!this.simulatedSchemes()[question.questionId];
+
+    if (region && option.regionalCounts) {
+      return option.regionalCounts[region] || 0;
+    }
+
+    if (!maxRank && !isSimulated) {
+      return option.voteCount;
+    }
+
+    if (!option.rankCounts) {
+      return option.voteCount;
+    }
+
+    let sum = 0;
+    for (const [rankStr, count] of Object.entries(option.rankCounts)) {
+      const rank = Number(rankStr);
+      if (!maxRank || rank <= maxRank) {
+        sum += count * this.getRankingPoints(rank, question);
+      }
+    }
+    return sum;
+  }
+
+  getQuestionTotal(question: QuestionResultDto): number {
+    const region = this.activeRegionFilter();
+    if (region) {
+      if (question.questionType === 'Ranking') {
+         return question.results.reduce((sum, opt) => sum + this.getEffectiveVoteCount(opt, question), 0);
+      }
+      return question.results.reduce((sum, opt) => sum + this.getDisplayVoteCount(opt, question), 0);
+    }
+    
     if (question.questionType === 'Ranking') {
       return question.results.reduce((sum, opt) => sum + this.getEffectiveVoteCount(opt, question), 0);
     }
@@ -221,42 +284,15 @@ export class ResultsDashboardComponent implements OnInit, OnDestroy {
     return 0;
   }
 
-  getEffectiveVoteCount(option: OptionResultDto, question: QuestionResultDto): number {
-    const maxRank = this.rankingFilters()[question.questionId];
-    const isSimulated = !!this.simulatedSchemes()[question.questionId];
-
-    // If no filter is applied and we're not simulating, use the backend's pre-calculated total
-    if (!maxRank && !isSimulated) {
-      return option.voteCount;
-    }
-
-    if (!option.rankCounts) {
-      return option.voteCount;
-    }
-
-    let sum = 0;
-    for (const [rankStr, count] of Object.entries(option.rankCounts)) {
-      const rank = Number(rankStr);
-      // If no maxRank is set, include all ranks
-      if (!maxRank || rank <= maxRank) {
-        sum += count * this.getRankingPoints(rank, question);
-      }
-    }
-    return sum;
-  }
-
   sortedResults(question: QuestionResultDto): (OptionResultDto & { effectiveVoteCount: number })[] {
     if (question.questionType === 'Ranking') {
       return question.results
         .map(o => ({ ...o, effectiveVoteCount: this.getEffectiveVoteCount(o, question) }))
         .sort((a, b) => b.effectiveVoteCount - a.effectiveVoteCount);
     }
-    return question.results.map(o => ({ ...o, effectiveVoteCount: o.voteCount }));
-  }
-
-  // important: inchide conexiunea SignalR la parasirea paginii
-  ngOnDestroy(): void {
-    this.resultsService.disconnect();
+    return question.results
+        .map(o => ({ ...o, effectiveVoteCount: this.getDisplayVoteCount(o, question) }))
+        .sort((a, b) => b.effectiveVoteCount - a.effectiveVoteCount);
   }
 
   questions(results: ElectionResultsDto): QuestionResultDto[] {
@@ -281,10 +317,15 @@ export class ResultsDashboardComponent implements OnInit, OnDestroy {
     return leader > 0 ? Math.round((effectiveVoteCount / leader) * 100) : 0;
   }
 
-  // true daca aceasta optiune e in frunte (folosit probabil pt highlight in UI)
   isLeading(effectiveVoteCount: number, question: QuestionResultDto): boolean {
-    if (question.totalVotes === 0 || effectiveVoteCount === 0) return false;
-    return effectiveVoteCount === Math.max(...question.results.map((r) => this.getEffectiveVoteCount(r, question)));
+    const total = this.getQuestionTotal(question);
+    if (total === 0 || effectiveVoteCount === 0) return false;
+    
+    const maxCount = question.questionType === 'Ranking' 
+        ? Math.max(...question.results.map((r) => this.getEffectiveVoteCount(r, question)))
+        : Math.max(...question.results.map((r) => this.getDisplayVoteCount(r, question)));
+
+    return effectiveVoteCount === maxCount;
   }
 
   /**
@@ -526,14 +567,15 @@ export class ResultsDashboardComponent implements OnInit, OnDestroy {
   // appends to `results` when applicable, same as any other option - it just
   // gets its own ring like everything else here.
   optionMeters(question: QuestionResultDto): OptionMeter[] {
-    const total = question.totalVotes;
+    const total = this.getQuestionTotal(question);
     return question.results.map((option: OptionResultDto, index: number) => {
-      const percent = this.percentFor(option.voteCount, total);
+      const count = this.getDisplayVoteCount(option, question);
+      const percent = this.percentFor(count, total);
       const filled = (percent / 100) * this.meterCircumference;
       return {
         optionId: option.optionId,
         label: option.label,
-        voteCount: option.voteCount,
+        voteCount: count,
         percent,
         colorVar: `var(--series-${(index % 8) + 1})`,
         dasharray: `${filled} ${this.meterCircumference - filled}`,
@@ -553,17 +595,15 @@ export class ResultsDashboardComponent implements OnInit, OnDestroy {
   // gets its own wedge like everything else here, which is what keeps the
   // slices' vote counts summing back up to the question's total.
   pieSegments(question: QuestionResultDto): PieSegment[] {
-    const total = this.questionTotal(question);
-    const optionsWithVotes = question.results.filter((r) => r.voteCount > 0).length;
-    // Only cut a gap when at least two options actually have votes - a single
-    // option holding 100% must render as one unbroken circle, not a wedge
-    // with a stray sliver where the (empty) neighbour would be.
+    const total = this.getQuestionTotal(question);
+    const activeOptions = question.results.map(o => ({...o, count: this.getDisplayVoteCount(o, question)}));
+    const optionsWithVotes = activeOptions.filter((r) => r.count > 0).length;
     const padAngle = optionsWithVotes > 1 ? (this.padAngleDeg * Math.PI) / 180 : 0;
 
-    let angleCursor = -Math.PI / 2; // start at 12 o'clock
+    let angleCursor = -Math.PI / 2;
 
-    return question.results.map((option: OptionResultDto, index: number) => {
-      const fraction = total > 0 ? option.voteCount / total : 0;
+    return activeOptions.map((option, index: number) => {
+      const fraction = total > 0 ? option.count / total : 0;
       const sweep = fraction * 2 * Math.PI;
       const start = angleCursor;
       angleCursor += sweep;
@@ -576,8 +616,8 @@ export class ResultsDashboardComponent implements OnInit, OnDestroy {
       return {
         optionId: option.optionId,
         label: option.label,
-        voteCount: option.voteCount,
-        percent: this.percentFor(option.voteCount, total),
+        voteCount: option.count,
+        percent: this.percentFor(option.count, total),
         colorVar: `var(--series-${(index % 8) + 1})`,
         path,
         isFullCircle,

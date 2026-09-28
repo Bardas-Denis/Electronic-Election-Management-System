@@ -25,6 +25,33 @@ namespace Electronic_Election_Management_System.Models
 
         public ElectionType Type { get; set; }
 
+        /// <summary>Valid values: <c>"None"</c>, <c>"County"</c>, <c>"Region"</c>, <c>"Custom"</c>.
+        /// "Custom" reads its group definitions from <see cref="CustomRegionGroupsJson"/>, applied
+        /// to the raw field chosen in <see cref="CustomGroupingBaseField"/>.</summary>
+        public string RegionalGroupingType { get; set; } = "None";
+
+        /// <summary>
+        /// Only meaningful when <see cref="RegionalGroupingType"/> is <c>"Custom"</c>. Which raw
+        /// voter field the creator's custom groups are built from - valid values:
+        /// <c>"County"</c> (domiciliu/județ - for grouping within one country, e.g. Romanian
+        /// regions), <c>"City"</c>, or <c>"Citizenship"</c> (nationality/country - for grouping
+        /// across countries, e.g. hemispheres or continents on a global election). Defaults to
+        /// "County" for elections created before this field existed.
+        /// </summary>
+        public string CustomGroupingBaseField { get; set; } = "County";
+
+        /// <summary>
+        /// JSON snapshot of the creator-defined region groups (only meaningful when
+        /// <see cref="RegionalGroupingType"/> is <c>"Custom"</c>), e.g. mapping raw counties
+        /// like "Cluj" / "Sălaj" into a creator-named group like "Nord-Vest", or - when
+        /// <see cref="CustomGroupingBaseField"/> is "Citizenship" - mapping countries like
+        /// "Romania" / "Germany" into a group like "Eastern Hemisphere". Stored the same way as
+        /// <see cref="AudienceGroupsSnapshot"/> - a JSON snapshot on the election itself, rather
+        /// than a separate table, since the grouping is specific to this one election and never
+        /// queried on its own.
+        /// </summary>
+        public string? CustomRegionGroupsJson { get; set; }
+
         /// <summary>
         /// When <c>true</c>, votes are recorded via <see cref="VoteToken"/> with no user link (Vote.VoteTokenId is set, Vote.UserId is null).
         /// When <c>false</c>, Vote.UserId is set directly and Vote.VoteTokenId is null.

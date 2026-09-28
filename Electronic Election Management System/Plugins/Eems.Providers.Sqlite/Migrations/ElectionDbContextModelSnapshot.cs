@@ -60,6 +60,13 @@ namespace Electronic_Election_Management_System.Migrations
                     b.Property<Guid>("CreatedByUserId")
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("CustomGroupingBaseField")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("CustomRegionGroupsJson")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("Description")
                         .HasColumnType("TEXT");
 
@@ -76,6 +83,10 @@ namespace Electronic_Election_Management_System.Migrations
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("Question")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("RegionalGroupingType")
+                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.Property<DateTime>("StartsAt")

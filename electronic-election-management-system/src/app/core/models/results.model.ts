@@ -10,6 +10,7 @@ export interface OptionResultDto {
   // no real option behind it, so the label is replaced with a translated string in the UI.
   isOtherOption?: boolean;
   rankCounts?: Record<number, number>;
+  regionalCounts?: Record<string, number>;
 }
 
 export interface QuestionResultDto {
